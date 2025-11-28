@@ -1,5 +1,11 @@
 # File Naming Conventions and Path Standards
 
+<metadata>
+**Scope**: Naming patterns for files, tests, and paths
+**Load if**: Creating new files, refactoring, configuring paths
+**Prerequisites**: None
+</metadata>
+
 Standardized naming patterns and path reference conventions.
 
 ## Core Naming Principles

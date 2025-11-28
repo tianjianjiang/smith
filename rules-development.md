@@ -1,5 +1,11 @@
 # Development Workflow Standards
 
+<metadata>
+**Scope**: Daily development workflow and quality gates
+**Load if**: Writing code, running local builds, managing packages
+**Prerequisites**: [Core Standards](./rules-core.md)
+</metadata>
+
 This document defines development workflow standards and code quality requirements.
 
 ## Code Quality (MANDATORY)
