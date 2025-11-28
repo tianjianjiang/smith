@@ -1,5 +1,11 @@
 # Tool Configurations
 
+<metadata>
+**Scope**: IDE, Editor, and Tool configurations
+**Load if**: Configuring IDEs (VS Code, Cursor, Kiro) or setting up tools
+**Prerequisites**: None
+</metadata>
+
 This document defines configuration standards for development tools, IDEs, and external integrations.
 
 ## IDE & Extension Settings
