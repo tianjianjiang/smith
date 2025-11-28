@@ -1,5 +1,11 @@
 # Git Workflow Standards
 
+<metadata>
+**Scope**: Git version control standards and workflows
+**Load if**: Performing git operations, branching, merging
+**Prerequisites**: None
+</metadata>
+
 This document defines **local Git operations** and workflow standards.
 
 ## Scope
@@ -26,6 +32,28 @@ This document defines **local Git operations** and workflow standards.
 - MUST use merge commits for feature branches (preserves history)
 - MUST keep branches up-to-date with base branch
 </required>
+
+### Stacked Pull Requests
+
+**Use for large features:**
+- Break large features into dependent branches: `feat/part-1` -> `feat/part-2`
+- **Naming**: `feature/my-feat-part1`, `feature/my-feat-part2`
+- **Workflow**:
+  1. Create `part-1` from `develop`
+  2. Create `part-2` from `part-1`
+  3. Submit PR for `part-1` (target: `develop`)
+  4. Submit PR for `part-2` (target: `part-1` initially, or `develop` but mark as dependent)
+- **Tools**: Use `git rebase --onto` to update dependent branches when base changes
+
+### Signed Commits
+
+<required>
+- MUST sign all commits using GPG/SSH (`git commit -S`)
+- MUST verify signature setup in GitHub settings
+</required>
+
+**Why**: Verifies identity and prevents impersonation.
+
 
 ## Commit Standards
 
@@ -56,6 +84,22 @@ Supports multiple filter conditions with AND/OR logic.
 
 Closes #123"
 ```
+
+## Atomic Commits
+
+**Definition**: A commit should contain a **single logical change** that leaves the codebase in a working state.
+
+<required>
+- **Single Responsibility**: One commit = one fix, one feature, or one refactor. NEVER mix them.
+- **Passing Tests**: Every commit MUST pass tests. Do not commit broken code.
+- **Revertible**: You should be able to revert the commit without side effects on unrelated features.
+</required>
+
+**Workflow**:
+1. `git add -p` (patch mode) to stage specific chunks.
+2. `git stash` unrelated changes.
+3. Commit the focused change.
+4. Unstash and repeat.
 
 ## File Operations
 
@@ -121,6 +165,18 @@ git push origin develop
 - Updating feature branch with latest develop
 - Cleaning up local commits before push
 - **NEVER** rebase shared branches (main, develop)
+
+### Linear History
+
+**Goal**: Maintain a clean, linear history on `develop` and `main` where possible, but preserve feature context.
+
+- **Local Development**: Rebase frequently on `develop` to keep feature branch linear relative to base.
+  ```bash
+  git fetch origin
+  git rebase origin/develop
+  ```
+- **Squashing**: Squash "WIP" or "fix typo" commits before merging to keep history clean.
+- **Merge**: Use `--no-ff` for feature merges to preserve the "feature bubble" in history, but ensure the feature branch itself is clean (atomic commits).
 
 ## Working with Remotes
 
