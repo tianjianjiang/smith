@@ -1,5 +1,11 @@
 # IDE Path Variable Mappings
 
+<metadata>
+**Scope**: IDE-specific path variable syntax
+**Load if**: Configuring IDE settings or debugging path issues
+**Prerequisites**: [Naming Standards](./rules-naming.md)
+</metadata>
+
 ## Overview
 
 Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see [Naming Standards]($HOME/.smith/rules-naming.md#path-reference-standards).

@@ -1,5 +1,11 @@
 # MCP Tool Integration (Optional)
 
+<metadata>
+**Scope**: Optional MCP tool usage and configuration
+**Load if**: Task requires advanced context, web fetching, or session persistence
+**Prerequisites**: [Tool Configurations](./rules-tools.md)
+</metadata>
+
 This document describes **OPTIONAL** MCP tool integrations. These tools are NOT required for standard development work.
 
 ## Overview
