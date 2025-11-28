@@ -50,6 +50,25 @@ Example in project AGENTS.md or CLAUDE.md:
 - **Declarative:** Standards, not automation
 - **Portable:** Git clone and go
 
+## References & Citations
+
+Key resources used to define these standards:
+
+### Progressive Loading
+- **Anthropic**: Context Efficiency & Prompt Engineering
+- **Google Vertex AI**: Grounding & Retrieval
+- **Design Patterns**: Progressive Disclosure for Agents
+
+### Git Workflows
+- **Stacked PRs**: [Graphite.dev](https://graphite.dev/blog/stacked-pull-requests), [Stacking.dev](https://stacking.dev)
+- **Linear History**: [Atlassian Git Tutorials](https://www.atlassian.com/git/tutorials/merging-vs-rebasing)
+- **Atomic Commits**: [The Odin Project](https://www.theodinproject.com/lessons/git-atomic-commits), [Conventional Commits](https://www.conventionalcommits.org/)
+
+### Prompt Engineering
+- **XML for Structure**: [Anthropic Docs](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags), [Prompt Engineering Guide](https://www.promptingguide.ai/)
+- **Placeholders**: Jinja2 for templates, Shell variables (`$VAR`) for paths
+
+
 ## License
 
 MIT
