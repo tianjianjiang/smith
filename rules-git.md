@@ -33,6 +33,32 @@ This document defines **local Git operations** and workflow standards.
 - MUST keep branches up-to-date with base branch
 </required>
 
+### Branch Naming
+
+**Pattern**: `type/descriptive-name`
+
+**Types**:
+- `feature/` - New features
+- `fix/` - Bug fixes
+- `docs/` - Documentation changes
+- `refactor/` - Code refactoring
+- `test/` - Test additions
+- `chore/` - Maintenance tasks
+
+**Examples**:
+```
+feature/user-authentication
+fix/login-validation
+docs/api-endpoints
+refactor/database-schema
+```
+
+<forbidden>
+- NEVER use conventional commit format in branch names (e.g., `feat(scope): description`)
+- NEVER use underscores in branch names (use hyphens)
+- NEVER use uppercase letters
+</forbidden>
+
 ### Stacked Pull Requests
 
 **Use for large features:**
