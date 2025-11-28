@@ -10,9 +10,9 @@ Standardized naming patterns and path reference conventions.
 
 ## Core Naming Principles
 
-### Non-Python Files
-- **Hyphen (-)**: Subset/hierarchical relationships (e.g., `rules-core.md`, `2025-09-26`)
-- **Underscore (_)**: Multi-word phrases as single concepts (e.g., `semantic_integrity`)
+### Branch Names & Non-Python Files
+- **Hyphen (-)**: Subset/hierarchical relationships (e.g., `feature/user-auth`, `rules-core.md`, `2025-09-26`)
+- **Underscore (_)**: Multi-word phrases as single concepts in files/paths (e.g., `semantic_integrity`)
 
 ### Python Files
 - **snake_case**: Modules, functions, variables
@@ -58,6 +58,7 @@ test_selective_expansion.py (missing module name)
 ## When to Use Each Separator
 
 ### Hyphen (-)
+- **Branch names**: `feature/user-authentication`, `fix/login-validation`
 - Date formats: `2025-09-26`
 - Subset relationships: `rules-core`, `docs-cli`
 - Version numbers: `v2.1.3`
