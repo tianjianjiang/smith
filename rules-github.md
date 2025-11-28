@@ -1,5 +1,11 @@
 # GitHub Workflow Standards
 
+<metadata>
+**Scope**: GitHub platform interactions (PRs, Issues, Reviews)
+**Load if**: Creating/reviewing PRs, managing issues, using gh CLI
+**Prerequisites**: [Git Standards](./rules-git.md)
+</metadata>
+
 This document defines **GitHub platform workflows** for pull requests, issues, and code reviews.
 
 ## Scope
