@@ -26,6 +26,20 @@ pnpm lint:fix && pnpm test
 
 **For Python-specific patterns**: See [Python Standards]($HOME/.smith/rules-python.md)
 
+## Pre-PR Quality Gates
+
+<required>
+Before creating a pull request:
+- MUST run all formatters: `poetry run ruff format .`
+- MUST run all linters: `poetry run ruff check --fix .`
+- MUST run all tests: `poetry run pytest`
+- MUST ensure branch is up-to-date with base branch
+- MUST review your own changes first (`git diff`)
+</required>
+
+**See**: `$HOME/.smith/rules-pr.md` - Pull request creation workflow
+**See**: `$HOME/.smith/rules-github.md` - GitHub-specific PR commands
+
 ## Package Management
 
 **Python:**
