@@ -94,4 +94,15 @@ For daily workflow, code quality checks, and tool usage:
 
 For Git and GitHub workflows:
 - [Git Standards]($HOME/.smith/rules-git.md)
+- [PR Workflows]($HOME/.smith/rules-pr.md)
 - [GitHub Workflows]($HOME/.smith/rules-github.md)
+
+### Pull Requests
+
+<forbidden>
+- **NEVER** force push to PRs from other authors
+- **NEVER** amend commits that are already pushed to shared branches
+- **NEVER** amend commits from other authors (check authorship first)
+- **NEVER** merge your own PR without review (unless emergency hotfix)
+- **NEVER** create PRs with failing tests or linting errors
+</forbidden>
