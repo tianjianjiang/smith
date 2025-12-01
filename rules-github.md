@@ -101,6 +101,65 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - NEVER merge without required approvals
 </forbidden>
 
+## Working on Existing PRs (For Coding Agents)
+
+### CRITICAL: Always Use Actual Branch Name
+
+<forbidden>
+**NEVER create arbitrary local branch names when working on PRs:**
+- ❌ `git fetch origin pull/2371/head:pr-2371`  # Wrong - arbitrary name
+- ❌ Assume branch name is `pr-<number>`
+- ❌ Make changes without verifying current branch
+</forbidden>
+
+<required>
+**ALWAYS get and use the actual PR branch name:**
+
+```bash
+# 1. Get actual branch name from PR
+BRANCH=$(gh pr view <PR_NUMBER> --json headRefName -q .headRefName)
+
+# 2. Fetch and checkout from origin
+git fetch origin
+git checkout -b "$BRANCH" "origin/$BRANCH"
+
+# 3. VERIFY you're on the correct branch
+git branch --show-current  # MUST match headRefName from step 1
+
+# 4. Before making ANY changes, verify again
+git status  # Should show "On branch <actual-branch-name>"
+```
+</required>
+
+### Why This Matters
+
+**Problem**: Using `git fetch origin pull/<number>/head:pr-<number>` creates a local branch with an arbitrary name that doesn't match the PR's actual branch name.
+
+**Impact**:
+- Your changes won't push to the PR
+- You're working on a disconnected branch
+- Risk of losing work or creating merge conflicts
+
+**Solution**: Always use `gh pr view --json headRefName` to get the real branch name, then checkout from origin.
+
+### Recovery if You Made This Mistake
+
+If you already made changes to the wrong branch:
+
+```bash
+# 1. Get the actual branch name
+BRANCH=$(gh pr view <PR_NUMBER> --json headRefName -q .headRefName)
+
+# 2. Checkout the correct branch
+git checkout "$BRANCH"
+
+# 3. Cherry-pick your commits from the wrong branch
+git cherry-pick <commit-sha-from-wrong-branch>
+
+# 4. Delete the wrong branch
+git branch -D pr-<number>  # or whatever wrong name you used
+```
+
 ## Code Review Process
 
 ### Requesting Review
