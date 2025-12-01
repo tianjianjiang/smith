@@ -23,8 +23,9 @@ cd ~/.smith && git pull
 - **AGENTS.md** - Primary entry point for coding agents
 - **rules-core.md** - Critical NEVER/ALWAYS rules
 - **rules-development.md** - Workflow and quality gates
-- **rules-git.md** - Git practices
-- **rules-github.md** - GitHub workflows
+- **rules-git.md** - Git version control practices
+- **rules-pr.md** - Platform-neutral pull request workflows
+- **rules-github.md** - GitHub-specific operations (gh CLI)
 - **rules-testing.md** - Test requirements
 - **rules-naming.md** - Naming conventions
 - **rules-python.md** - Python-specific standards
@@ -40,6 +41,8 @@ Example in project AGENTS.md or CLAUDE.md:
 ```markdown
 **Standards**: `$HOME/.smith/rules-core.md` - Core standards
 **Python**: `$HOME/.smith/rules-python.md` - Python guidelines
+**PR Workflows**: `$HOME/.smith/rules-pr.md` - Pull request workflows
+**GitHub**: `$HOME/.smith/rules-github.md` - GitHub CLI operations
 **Testing**: `$HOME/.smith/rules-testing.md` - Test requirements
 ```
 
