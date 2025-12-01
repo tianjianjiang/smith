@@ -19,9 +19,30 @@
 **LOAD**: `$HOME/.smith/rules-git.md`
 </trigger>
 
+<trigger context="pull_request_workflows">
+**IF** creating pull requests OR reviewing code OR merging PRs:
+**LOAD**: `$HOME/.smith/rules-pr.md`
+</trigger>
+
 <trigger context="github_workflows">
-**IF** creating PRs, reviewing code, or managing issues:
+**IF** using GitHub CLI OR managing GitHub-specific features:
 **LOAD**: `$HOME/.smith/rules-github.md`
+</trigger>
+
+<trigger context="modifying_existing_pr">
+**IF** working on existing PR OR addressing review comments:
+**LOAD**: `$HOME/.smith/rules-pr.md`
+</trigger>
+
+<trigger context="pr_review_response">
+**IF** responding to PR review feedback OR resolving review comments:
+**LOAD**: `$HOME/.smith/rules-pr.md`
+</trigger>
+
+<trigger context="pre_commit_hooks">
+**IF** pre-commit hooks modify files OR need to amend commits:
+**LOAD**: `$HOME/.smith/rules-pr.md`
+**LOAD**: `$HOME/.smith/rules-git.md`
 </trigger>
 
 <trigger context="testing">
