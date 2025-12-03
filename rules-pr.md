@@ -264,6 +264,84 @@ git branch -d feature/my-feature
 git push origin --delete feature/my-feature
 ```
 
+## Agent-Created Pull Requests
+
+**Context**: AI agents (Claude Code, GitHub Copilot) creating PRs
+
+<required>
+- Agent MUST analyze full commit history from base branch divergence
+- Agent MUST review ALL changed files (not just latest commit)
+- Agent MUST write summary based on actual cumulative changes
+- Agent MUST run all checks before PR creation
+- Agent MUST verify branch tracks correct remote
+</required>
+
+**Workflow**:
+```bash
+# 1. Understand full scope of changes
+git diff base...HEAD  # See all cumulative changes
+git log base..HEAD    # Review all commits that will be included
+
+# 2. Analyze cumulative impact (not just latest commit)
+# Read all modified files
+# Understand how commits work together
+
+# 3. Draft summary covering ALL changes
+# NOT just latest commit - entire PR scope
+# 1-3 bullets covering cumulative impact
+
+# 4. Create test plan
+# Based on all changes, not just latest
+
+# 5. Run pre-PR checks
+poetry run ruff format . && poetry run ruff check --fix .
+poetry run pytest
+
+# 6. Create PR with structured body
+# Use platform CLI or API
+```
+
+### Common Agent Mistakes
+
+<forbidden>
+- **NEVER** analyze only the latest commit for PR summary
+- **NEVER** skip full diff review (base...HEAD)
+- **NEVER** create PR without running checks
+- **NEVER** assume file contents without reading
+- **NEVER** write generic summaries ("updated files")
+</forbidden>
+
+**Example - Bad vs Good**:
+```markdown
+❌ Bad (only looked at latest commit):
+Summary:
+- Fixed typo in README
+
+(But PR actually includes 5 commits adding entire auth system!)
+
+✓ Good (analyzed full diff):
+Summary:
+- Implement OAuth2 authentication with token refresh
+- Add rate limiting to prevent abuse (10 req/min)
+- Update API documentation with auth examples
+
+(Accurately reflects all 5 commits in the PR)
+```
+
+### PR Analysis Checklist
+
+<required>
+Before creating PR, agent MUST:
+1. Run `git diff base...HEAD` to see cumulative changes
+2. Run `git log base..HEAD` to see all commits
+3. Read all modified files (not assume contents)
+4. Identify cumulative impact across all commits
+5. Verify tests pass for all changes
+6. Draft summary reflecting full PR scope
+</required>
+
+**See**: `$HOME/.smith/rules-ai_agents.md` - Complete agent interaction standards
+
 ## Agent Workflow Guidelines
 
 ### Pre-Commit Hook Coordination
