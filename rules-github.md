@@ -1,33 +1,38 @@
-# GitHub Workflow Standards
+# GitHub CLI Operations
 
-This document defines **GitHub platform workflows** for pull requests, issues, and code reviews.
+<metadata>
+**Scope**: GitHub platform-specific operations (gh CLI only)
+**Load if**: Using GitHub CLI commands, GitHub-specific features
+**Prerequisites**: [Git Standards](./rules-git.md), [PR Workflows](./rules-pr.md)
+</metadata>
+
+This document defines **GitHub-specific operations** using the `gh` CLI and GitHub platform features.
 
 ## Scope
 
-- **This document**: PRs, issues, code reviews, gh CLI, protected branches, GitHub Actions
-- **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges, history
+- **This document**: GitHub CLI commands, GitHub-specific features
+- **Platform-neutral workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for concepts, agent guidelines, best practices
+- **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
 
-## Pull Request Creation
-
-### Prerequisites
-
-<required>
-- MUST run all quality checks before creating PR
-- MUST ensure branch is up-to-date with base branch
-- MUST have meaningful commit messages
-- MUST link to related issues
-</required>
+## GitHub CLI Installation
 
 ```bash
-poetry run ruff check --fix && poetry run pytest
-git pull origin develop
-git push -u origin feature/my-feature
+# macOS
+brew install gh
+
+# Authenticate
+gh auth login
 ```
 
-### Creating PR
+## Pull Request Operations
 
-**Using GitHub CLI:**
+### Creating PRs
+
 ```bash
+# Basic PR creation
+gh pr create --title "feat: add feature" --body "Description"
+
+# With full template
 gh pr create --title "feat: add semantic search" --body "$(cat <<'EOF'
 ## Summary
 - Implement metadata-based filtering
@@ -44,158 +49,172 @@ Closes #123
 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
+
+# Create draft PR
+gh pr create --draft --title "WIP: feature" --body "Work in progress"
+
+# Create PR with specific reviewers
+gh pr create --title "feat: feature" --body "Description" --reviewer @user1,@user2
+
+# Create PR targeting specific branch
+gh pr create --base develop --title "feat: feature" --body "Description"
 ```
 
-**PR Title Format:**
-```
-<type>(<scope>): <description>
-```
-Examples:
-- `feat(rag): add semantic search filtering`
-- `fix(api): resolve CORS issues`
-- `docs: update deployment guide`
+### Viewing PRs
 
-**PR Body Template:**
-```markdown
-## Summary
-- Bullet point 1
-- Bullet point 2
-- Bullet point 3
-
-## Test Plan
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] Manual testing completed
-- [ ] Documentation updated
-
-## Related Issues
-Closes #123
-Fixes #456
-
-Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-### PR Requirements
-
-<required>
-- MUST have descriptive title following conventional commits format
-- MUST include summary (1-3 bullet points)
-- MUST include test plan with checklist
-- MUST link to related issues
-- MUST have all CI checks passing
-- MUST have minimum 1 approval (if enforced)
-</required>
-
-<forbidden>
-- NEVER create PR with failing tests
-- NEVER merge PR with unresolved conflicts
-- NEVER skip CI checks
-- NEVER merge without required approvals
-</forbidden>
-
-## Code Review Process
-
-### Requesting Review
-
-**Using GitHub CLI:**
 ```bash
-gh pr create  # Creates PR and auto-requests reviews based on CODEOWNERS
-gh pr view 123  # View PR details
-gh pr checks 123  # View CI status
+# List all open PRs
+gh pr list
+
+# List PRs with filters
+gh pr list --state all
+gh pr list --author @me
+gh pr list --label bug
+gh pr list --limit 20
+
+# View specific PR
+gh pr view 123
+
+# View PR in browser
+gh pr view 123 --web
+
+# Get PR metadata (JSON)
+gh pr view 123 --json number,title,body,state,author
+
+# Get PR branch name (CRITICAL for agents)
+gh pr view 123 --json headRefName -q .headRefName
+
+# View PR diff
+gh pr diff 123
+
+# View PR commits
+gh pr view 123 --json commits
+
+# View PR comments
+gh pr view 123 --comments
 ```
 
-**Best practices:**
-- Request reviews from relevant team members
-- Provide context in PR description
-- Link to design docs or RFCs if applicable
-- Highlight areas needing special attention
+### Checking Out PRs
 
-### Responding to Reviews
-
-**Address all comments:**
-1. Read all review comments carefully
-2. Respond to each comment thread
-3. Make requested changes
-4. Mark conversations as resolved
-5. Re-request review after changes
-
-**Using GitHub CLI:**
 ```bash
-git add .
-git commit -m "refactor: address review comments"
-git push
+# Get the actual branch name first (CRITICAL)
+BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
 
-gh pr review 123 --comment -b "Addressed all comments, please review again"
+# Fetch and checkout
+git fetch origin
+git checkout -b "$BRANCH" "origin/$BRANCH"
+
+# Verify you're on the correct branch
+git branch --show-current  # Must match $BRANCH
+```
+
+### PR Status and Checks
+
+```bash
+# View CI check status
+gh pr checks 123
+
+# Watch checks in real-time
+gh pr checks 123 --watch
+
+# View specific check run
+gh run view <run-id>
+
+# View check logs
+gh run view <run-id> --log
+
+# Re-run failed checks
+gh run rerun <run-id>
+
+# Re-run all checks
+gh pr checks 123 --rerun
+```
+
+### Merging PRs
+
+```bash
+# Merge commit
+gh pr merge 123 --merge
+
+# Squash and merge
+gh pr merge 123 --squash
+
+# Rebase and merge
+gh pr merge 123 --rebase
+
+# Auto-merge when checks pass
+gh pr merge 123 --auto --squash
+
+# Merge and delete branch
+gh pr merge 123 --squash --delete-branch
+```
+
+## Code Review Operations
+
+### Requesting Reviews
+
+```bash
+# Request review from user
+gh pr edit 123 --add-reviewer @username
+
+# Request review from team
+gh pr edit 123 --add-reviewer @org/team
+
+# Remove reviewer
+gh pr edit 123 --remove-reviewer @username
 ```
 
 ### Giving Reviews
 
-**Review checklist:**
-- [ ] Code follows project standards
-- [ ] Tests are adequate and passing
-- [ ] Documentation is updated
-- [ ] No security vulnerabilities
-- [ ] Performance considerations addressed
-- [ ] Error handling is appropriate
-
-**Using GitHub CLI:**
 ```bash
+# Approve PR
+gh pr review 123 --approve
+
+# Approve with comment
 gh pr review 123 --approve -b "LGTM! Great implementation"
+
+# Request changes
 gh pr review 123 --request-changes -b "Please address the concerns in comments"
+
+# Comment without approval
 gh pr review 123 --comment -b "Minor suggestions, but looks good overall"
 ```
 
-## Merging Pull Requests
-
-### Pre-Merge Checklist
-
-<required>
-- MUST have all CI checks passing
-- MUST have required approvals
-- MUST be up-to-date with base branch
-- MUST have no merge conflicts
-- MUST have related issues linked
-</required>
-
-### Merge Strategies
-
-**Merge commit (default for feature branches):**
-```bash
-gh pr merge 123 --merge
-```
-
-**Squash and merge (for small fixes):**
-```bash
-gh pr merge 123 --squash
-```
-
-**Rebase and merge (for clean history):**
-```bash
-gh pr merge 123 --rebase
-```
-
-**When to use each:**
-- **Merge commit**: Feature branches with multiple logical commits
-- **Squash**: Tiny fixes, documentation updates, single logical change
-- **Rebase**: When linear history is required and commits are clean
-
-### Post-Merge Cleanup
+### PR Comments
 
 ```bash
-git checkout develop
-git pull origin develop
-git branch -d feature/my-feature
-git push origin --delete feature/my-feature
+# Add comment to PR
+gh pr comment 123 --body "Great work!"
+
+# Add comment with multiline text
+gh pr comment 123 --body "$(cat <<'EOF'
+Addressed all review comments:
+- Extracted validation into separate function
+- Added error handling for edge cases
+- Updated tests to cover new scenarios
+EOF
+)"
+
+# Edit PR description
+gh pr edit 123 --body "Updated description"
+
+# Edit PR title
+gh pr edit 123 --title "feat: updated title"
+
+# Add/remove labels
+gh pr edit 123 --add-label bug,priority:high
+gh pr edit 123 --remove-label wontfix
 ```
 
-## Issue Management
+## Issue Operations
 
 ### Creating Issues
 
-**Using GitHub CLI:**
 ```bash
+# Basic issue creation
+gh issue create --title "Bug: error message" --body "Description"
+
+# With template
 gh issue create --title "bug: API returns 500 error" --body "$(cat <<'EOF'
 ## Description
 API endpoint /api/v1/query returns 500 error when...
@@ -217,26 +236,59 @@ Returns 500 with error message
 - Python: 3.11
 EOF
 )"
+
+# Assign issue
+gh issue create --title "Bug" --body "Description" --assignee @me
+
+# Add labels
+gh issue create --title "Bug" --body "Description" --label bug,priority:high
 ```
 
-### Issue Labels
+### Viewing Issues
 
-**Standard labels:**
-- `bug` - Something isn't working
-- `feat` - New feature request
-- `docs` - Documentation improvements
-- `enhancement` - Improvement to existing feature
-- `question` - Further information requested
-- `wontfix` - This will not be worked on
-- `duplicate` - This issue already exists
-- `good first issue` - Good for newcomers
-- `help wanted` - Extra attention needed
-- `priority:high` - High priority issue
-- `priority:low` - Low priority issue
+```bash
+# List issues
+gh issue list
 
-### Linking Issues to PRs
+# List with filters
+gh issue list --state all
+gh issue list --assignee @me
+gh issue list --label bug
+gh issue list --author @username
 
-**In commit messages:**
+# View specific issue
+gh issue view 123
+
+# View in browser
+gh issue view 123 --web
+```
+
+### Managing Issues
+
+```bash
+# Close issue
+gh issue close 123
+
+# Close with comment
+gh issue close 123 --comment "Fixed in PR #456"
+
+# Reopen issue
+gh issue reopen 123
+
+# Edit issue
+gh issue edit 123 --title "Updated title"
+gh issue edit 123 --body "Updated description"
+gh issue edit 123 --add-label bug
+gh issue edit 123 --add-assignee @user
+
+# Add comment
+gh issue comment 123 --body "Update on progress..."
+```
+
+## Issue and PR Linking
+
+### In Commit Messages
+
 ```bash
 git commit -m "fix(api): resolve 500 error
 
@@ -245,7 +297,14 @@ This fixes the issue where API returned 500 error due to...
 Fixes #123"
 ```
 
-**In PR descriptions:**
+### In PR Descriptions
+
+Use these keywords to auto-close issues:
+- `Closes #123` - Closes issue when PR merges
+- `Fixes #123` - Same as Closes
+- `Resolves #123` - Same as Closes
+- `Relates to #123` - Links but doesn't close
+
 ```markdown
 ## Related Issues
 Closes #123
@@ -253,37 +312,18 @@ Fixes #456
 Relates to #789
 ```
 
-**Using keywords:**
-- `Closes #123` - Automatically closes issue when PR is merged
-- `Fixes #123` - Same as Closes
-- `Resolves #123` - Same as Closes
-- `Relates to #123` - Links but doesn't close
+### Link Issues to PRs
 
-## GitHub CLI Reference
-
-**Installation:**
 ```bash
-brew install gh  # macOS
-gh auth login
-```
+# Link PR to issue (in PR body)
+gh pr edit 123 --body "Fixes #456
 
-**Common commands:**
-```bash
-gh pr list
-gh pr view 123
-gh pr diff 123
-gh pr checks 123
-gh pr create
-gh pr merge 123
-gh pr review 123 --approve
-
-gh issue list
-gh issue view 123
-gh issue create
-gh issue close 123
+Original description..."
 ```
 
 ## Protected Branch Settings
+
+Protected branches are configured in repository settings, not via CLI.
 
 ### Main Branch Protection
 
@@ -294,6 +334,8 @@ gh issue close 123
 - MUST restrict who can push to main
 </required>
 
+**Configuration**: Repository Settings → Branches → Branch protection rules
+
 ### Develop Branch Protection
 
 <required>
@@ -301,31 +343,118 @@ gh issue close 123
 - MUST allow force pushes only by admins
 </required>
 
-## Best Practices
+## GitHub Actions Integration
 
-**PR Size:**
-- Keep PRs focused and small (< 400 lines changed ideal)
-- Split large features into multiple PRs
-- Use draft PRs for work in progress
+### Viewing Workflow Runs
 
-**Communication:**
-- Use PR comments for technical discussions
-- Use issue comments for requirements and planning
-- Tag relevant team members with @mentions
+```bash
+# List workflow runs
+gh run list
 
-**Documentation:**
-- Update README if public API changes
-- Update CHANGELOG for notable changes
-- Add inline code comments for complex logic
+# List runs for specific workflow
+gh run list --workflow ci.yml
 
-**CI Integration:**
-- Ensure all tests run in CI
-- Set up automatic deployment previews
-- Configure status checks as required
+# View specific run
+gh run view <run-id>
+
+# View run logs
+gh run view <run-id> --log
+
+# Download run artifacts
+gh run download <run-id>
+```
+
+### Re-running Workflows
+
+```bash
+# Re-run failed jobs
+gh run rerun <run-id> --failed
+
+# Re-run all jobs
+gh run rerun <run-id>
+```
+
+### Workflow Status in PRs
+
+```bash
+# Check workflow status for PR
+gh pr checks 123
+
+# View specific workflow run
+gh pr view 123 --json statusCheckRollup
+```
+
+## CODEOWNERS
+
+CODEOWNERS file automatically requests reviews from code owners.
+
+**File location**: `.github/CODEOWNERS`
+
+**Example:**
+```
+# Default owners for everything
+* @org/core-team
+
+# Python code owners
+*.py @org/python-team
+
+# Documentation owners
+/docs/ @org/docs-team
+
+# Specific file owners
+/src/critical-file.py @user1 @user2
+```
+
+When PR is created, GitHub automatically requests reviews from matching owners.
+
+## Common Command Patterns
+
+### Check PR status before making changes
+
+```bash
+# Get PR info
+gh pr view 123
+
+# Check CI status
+gh pr checks 123
+
+# Get branch name
+BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
+
+# Checkout and work
+git checkout "$BRANCH"
+```
+
+### Complete review response workflow
+
+```bash
+# View PR comments
+gh pr view 123 --comments
+
+# Make changes and commit
+git add .
+git commit -m "refactor: address review feedback"
+git push
+
+# Respond to review
+gh pr comment 123 --body "Addressed all feedback, ready for re-review"
+
+# Request re-review
+gh pr edit 123 --add-reviewer @reviewer
+```
+
+### Monitor CI and merge
+
+```bash
+# Watch CI checks
+gh pr checks 123 --watch
+
+# Once passed, merge
+gh pr merge 123 --squash --delete-branch
+```
 
 ## Related Standards
 
-- **Git Operations**: `$HOME/.smith/rules-git.md` - Commit, branch, merge
-- **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
-- **Code Review**: `$HOME/.smith/rules-development.md` - Review guidelines
-- **Testing**: `$HOME/.smith/rules-testing.md` - Test requirements
+- **PR Workflows**: `$HOME/.smith/rules-pr.md` - Platform-neutral concepts, agent guidelines, best practices
+- **Git Operations**: `$HOME/.smith/rules-git.md` - Commits, branches, merges
+- **Development Workflow**: `$HOME/.smith/rules-development.md` - Quality gates, pre-PR checks
