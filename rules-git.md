@@ -5,7 +5,8 @@ This document defines **local Git operations** and workflow standards.
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **GitHub workflows**: See [GitHub Standards]($HOME/.smith/rules-github.md) for PRs, code reviews, gh CLI, protected branches
+- **PR workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for pull request workflows, code reviews, agent guidelines
+- **GitHub operations**: See [GitHub Standards]($HOME/.smith/rules-github.md) for GitHub CLI commands
 
 ## Branch Strategy
 
@@ -193,7 +194,8 @@ git merge --abort
 
 ## Related Standards
 
-- **GitHub Workflows**: `$HOME/.smith/rules-github.md` - PR creation, reviews
+- **PR Workflows**: `$HOME/.smith/rules-pr.md` - Pull request workflows, agent guidelines
+- **GitHub Workflows**: `$HOME/.smith/rules-github.md` - GitHub CLI operations
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - Branch naming
 - **Personal Rules**: `$HOME/.smith/rules-core.md` - Core standards
