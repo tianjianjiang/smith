@@ -62,6 +62,11 @@
 **LOAD**: `$HOME/.smith/rules-ide_mappings.md`
 </trigger>
 
+<trigger context="ai_agent_interaction">
+**IF** using Claude Code OR GitHub Copilot OR AI pair programming:
+**LOAD**: `$HOME/.smith/rules-ai_agents.md`
+</trigger>
+
 <trigger context="always_active">
 **ALWAYS LOAD**: `$HOME/.smith/rules-core.md` (Critical NEVER/ALWAYS rules)
 </trigger>
