@@ -34,20 +34,30 @@ Standard names: `.env`, `.env.sample`, `Dockerfile`, `docker-compose.yml`, `pypr
 
 ## Naming Examples
 
-**Correct:**
-```
+<examples>
+
+**Correct naming patterns**:
+
+```text
 rules-core.md, rules-semantic_integrity.md
 test_processor_analyze_text_intg.py
 cast_lucene_query_processor_cases.json
 prompt_engineering_session-2025-09-26
 ```
 
-**Incorrect:**
-```
+</examples>
+
+<forbidden>
+
+**Incorrect naming patterns**:
+
+```text
 rules_validation.md (underscore in subset)
 semantic-integrity (hyphen in phrasal concept)
 test_selective_expansion.py (missing module name)
 ```
+
+</forbidden>
 
 ## When to Use Each Separator
 
