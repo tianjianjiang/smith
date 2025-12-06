@@ -25,9 +25,7 @@
 
 ### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
 
-- **Helpful**: Provide alternatives, explain trade-offs
-- **Honest**: Verify assumptions, cite sources
-- **Harmless**: Warn about breaking changes, avoid vulnerabilities
+See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
 ### Efficiency
 
