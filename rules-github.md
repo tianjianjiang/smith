@@ -8,6 +8,8 @@
 
 </metadata>
 
+<context>
+
 This document defines **GitHub-specific operations** using the `gh` CLI and GitHub platform features.
 
 ## Scope
@@ -15,6 +17,8 @@ This document defines **GitHub-specific operations** using the `gh` CLI and GitH
 - **This document**: GitHub CLI commands, GitHub-specific features
 - **Platform-neutral workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for concepts, agent guidelines, best practices
 - **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
+
+</context>
 
 ## GitHub CLI Installation
 
@@ -475,6 +479,8 @@ BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
 git checkout "$BRANCH"
 ```
 
+<scenario>
+
 ### Complete review response workflow
 
 ```sh
@@ -493,6 +499,8 @@ gh pr comment 123 --body "Addressed all feedback, ready for re-review"
 gh pr edit 123 --add-reviewer @reviewer
 ```
 
+</scenario>
+
 ### Monitor CI and merge
 
 ```sh
@@ -505,6 +513,10 @@ gh pr merge 123 --squash --delete-branch
 
 ## Related Standards
 
+<related>
+
 - **PR Workflows**: `$HOME/.smith/rules-pr.md` - Platform-neutral concepts, agent guidelines, best practices
 - **Git Operations**: `$HOME/.smith/rules-git.md` - Commits, branches, merges
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Quality gates, pre-PR checks
+
+</related>
