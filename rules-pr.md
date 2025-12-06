@@ -159,9 +159,13 @@ main
 **PR description for stacked PRs**:
 ```markdown
 ## Stack
-- Depends on: #123 (feature/auth-base)
-- Blocks: #125 (feature/auth-oauth)
+- **Depends on**: #123 (feature/auth-base) ← This PR requires #123 to be merged first
+- **Blocks**: #125 (feature/auth-oauth) ← PR #125 depends on this PR
 ```
+
+**Field meanings**:
+- `Depends on`: PRs that must merge before this one (upstream dependencies)
+- `Blocks`: PRs waiting for this one to merge (downstream dependents)
 
 </examples>
 

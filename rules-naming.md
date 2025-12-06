@@ -143,8 +143,8 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 | Underscore (_) | Multi-word phrases/concepts | `feature/user_authentication` |
 | Hyphen (-) | Parts/subsets of a whole | `feature/auth-login` |
 | Hyphen (-) | Co-existing/differentiation | `feature/api-rest` vs `feature/api-graphql` |
-| Hyphen (-) | ISO dates | `-2025-01-15` |
-| Hyphen (-) | Ticket IDs | `JIRA-1234-`, `GH-567-` |
+| Hyphen (-) | ISO dates | `2025-01-15` |
+| Hyphen (-) | Ticket IDs | `JIRA-1234`, `GH-567` |
 | Slash (/) | Type delimiter only | `docs/`, `feature/`, `fix/` |
 
 **Complex Pattern**: `type/TICKET-number-topic_clause-another_topic-YYYY-MM-DD`
@@ -165,7 +165,7 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 
 <examples>
 
-```
+```text
 feat: add semantic filtering
 feat(query_processor): add semantic filtering
 docs(agents_md): expand configuration examples
@@ -177,7 +177,7 @@ refactor(api-rest): extract validation logic
 
 <forbidden>
 
-```
+```text
 feat(query-processor): add semantic filtering  # hyphen joining words in scope
 Docs: Update README  # capitalized type
 feat: Add new feature  # capitalized description
