@@ -90,6 +90,51 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 | `<error_handling>` | Edge case responses | Missing data handling |
 | `<final_instruction>` | Critical closing directive | Before execution |
 
+## Markdown Rendering with XML Tags
+
+<required>
+
+**Blank lines are required** after opening XML tags and before closing XML tags for proper markdown rendering. Without blank lines, markdown inside XML tags renders as literal text.
+
+</required>
+
+<formatting>
+
+**Correct XML tag structure**:
+
+```text
+<required>
+
+- List item renders as bullet
+- Another item
+
+</required>
+```
+
+**Incorrect** (renders as literal text):
+
+```text
+<required>
+- This won't render as a bullet
+- Neither will this
+</required>
+```
+
+</formatting>
+
+<examples>
+
+**Elements requiring blank lines inside XML**:
+
+1. **Bullet lists** (`-`, `*`, `+`)
+2. **Numbered lists** (`1.`, `2.`)
+3. **Code blocks** (triple backticks)
+4. **Blockquotes** (`>`)
+5. **Headers** (`#`, `##`)
+6. **Tables** (`|---|---|`)
+
+</examples>
+
 ## Placeholder Alternatives
 
 <forbidden>

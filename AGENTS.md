@@ -126,7 +126,7 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 
 <trigger context="prompt_engineering">
 
-- **IF** writing or reviewing prompts, documentation, or XML tag usage:
+- **IF** writing or reviewing AI prompts, AGENTS.md files, or rules documentation:
 - **LOAD**: `$HOME/.smith/rules-xml_tags.md`
 
 </trigger>
