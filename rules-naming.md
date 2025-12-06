@@ -2,6 +2,8 @@
 
 Standardized naming patterns and path reference conventions.
 
+<context>
+
 ## Core Naming Principles
 
 ### Non-Python Files
@@ -12,6 +14,8 @@ Standardized naming patterns and path reference conventions.
 - **snake_case**: Modules, functions, variables
 - **PascalCase**: Classes
 - **UPPER_SNAKE_CASE**: Constants
+
+</context>
 
 ## File Categories
 
@@ -197,6 +201,10 @@ feat: Add new feature  # capitalized description
 
 ## Related Standards
 
+<related>
+
 - **Python Naming**: [Python Standards](rules-python.md) - Python-specific conventions
 - **IDE Mappings**: [IDE Mappings](rules-ide_mappings.md) - IDE variable syntax
 - **Git Conventions**: [Git Standards](rules-git.md) - Branch and commit naming
+
+</related>

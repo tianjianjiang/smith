@@ -8,7 +8,11 @@
 
 </metadata>
 
+<context>
+
 ## Approved XML Tags
+
+</context>
 
 <required>
 
@@ -91,6 +95,12 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 | `<final_instruction>` | Critical closing directive | Before execution |
 
 ## Markdown Rendering with XML Tags
+
+<context>
+
+**Blank lines are required** for proper markdown rendering inside XML tags.
+
+</context>
 
 <required>
 
@@ -200,6 +210,10 @@ Do NOT use XML-like placeholders:
 
 ## Related Standards
 
+<related>
+
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - General naming rules
 - **Git Standards**: `$HOME/.smith/rules-git.md` - Branch and commit naming
 - **AI Agent Guidelines**: `$HOME/.smith/rules-ai_agents.md` - Agent interaction patterns
+
+</related>
