@@ -27,7 +27,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 <forbidden>
 
 - NEVER write inline comments except in config files (.env, .env.sample, .env.tmpl) or `# TODO:` comments
-- **NEVER use emoji or Unicode symbols** (including ❌, ✓, ✅, ⚠️, 📝) in code, logs, print statements, error messages, or documentation. Exception: user-facing UI text if explicitly requested. Use plain text labels instead (e.g., "Bad:", "Good:", "Note:").
+- **NEVER use decorative emoji** (including ❌, ✅, ⚠️, 📝, 🎉, 👍) in code, logs, print statements, error messages, or documentation. Exception: user-facing UI text if explicitly requested. Unicode symbols for functional purposes (arrows →, math ±×÷) are allowed. Checkmarks (✓✗) are redundant when followed by descriptive labels (Good/Bad, Correct/Incorrect).
 - NEVER write excessive blank lines between code blocks
 - NEVER commit files without exactly one trailing newline
 
