@@ -33,6 +33,10 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 - Prefer pointers (file:line) over embedded snippets
 - Static content first for [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
 
+### XML Tag Standards
+
+See `rules-xml_tags.md` for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
+
 <context_triggers>
 
 <!-- Load these files ONLY if the specific context applies -->
@@ -117,6 +121,13 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
 - **IF** using Claude Code OR GitHub Copilot OR AI pair programming:
 - **LOAD**: `$HOME/.smith/rules-ai_agents.md`
+
+</trigger>
+
+<trigger context="prompt_engineering">
+
+- **IF** writing or reviewing AI prompts, AGENTS.md files, or rules documentation:
+- **LOAD**: `$HOME/.smith/rules-xml_tags.md`
 
 </trigger>
 
