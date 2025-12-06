@@ -12,18 +12,25 @@ git clone https://github.com/tianjianjiang/smith.git $HOME/.smith
 
 Then point your AI coding tool to `$HOME/.smith/AGENTS.md`:
 
-| Tool | Global Config | Project Config |
-|------|---------------|----------------|
-| **Claude Code** | `~/.claude/CLAUDE.md` | `AGENTS.md` or `CLAUDE.md` |
-| **OpenAI Codex** | `~/.codex/AGENTS.md` | `AGENTS.md` hierarchy |
-| **GitHub Copilot** | — | `.github/copilot-instructions.md` |
-| **Cursor** | — | `.cursor/rules/*.mdc` |
-| **Amp** | `~/.config/AGENTS.md` | `AGENTS.md` + subdirs |
-| **Roo Code** | `~/.roo/rules/` | `.roo/rules/` |
-| **Kiro** | — | `.kiro/steering/*.md` |
-| **Google Gemini** | `~/.gemini/settings.json` | `GEMINI.md` |
-| **JetBrains Junie** | `~/.junie/mcp.json` | `.junie/guidelines.md` |
-| **Continue** | `~/.continue/config.json` | `.continue/` |
+| Tool | Global | Project | [AGENTS.md] |
+|------|--------|---------|:-----------:|
+| [Claude Code][claude] | `~/.claude/CLAUDE.md` | `AGENTS.md` | ✓ |
+| [OpenAI Codex][codex] | `~/.codex/AGENTS.md` | `AGENTS.md` | ✓ |
+| [GitHub Copilot][copilot] | — ¹ | `.github/copilot-instructions.md` | ✓ |
+| [Cursor][cursor] | — ² | `.cursor/rules/*.mdc` | ✓ |
+| [Windsurf][windsurf] | `.windsurf/rules` | `AGENTS.md` | ✓ |
+| [Amp][amp] | `~/.config/AGENTS.md` | `AGENTS.md` | ✓ |
+| [Zed][zed] | — | `AGENTS.md` | ✓ |
+| [Roo Code][roo] | `~/.roo/rules/` | `.roo/rules/` | ✓ |
+| [Kiro][kiro] | `~/.kiro/steering/` | `.kiro/steering/` | ✓ |
+| [Aider][aider] | `~/.aider.conf.yml` | `AGENTS.md` | ✓ |
+| [Continue][continue] | `~/.continue/config.yaml` | `.continue/` | ✓ |
+| [Gemini CLI][gemini] | `~/.gemini/` | `GEMINI.md` | ✓ |
+| [JetBrains Junie][junie] | — ³ | `.junie/guidelines.md` | — |
+
+¹ VS Code: IDE settings only. JetBrains: `~/.config/github-copilot/`
+² [Feature requested][cursor-req], not yet implemented
+³ Uses own format; MCP config at `~/.junie/mcp/mcp.json`
 
 ### Example: Claude Code
 
@@ -31,13 +38,9 @@ Then point your AI coding tool to `$HOME/.smith/AGENTS.md`:
 mkdir -p ~/.claude && echo '**Standards**: $HOME/.smith/AGENTS.md' > ~/.claude/CLAUDE.md
 ```
 
-### Example: Cross-Tool (XDG Standard)
+### Tools Supporting `~/.config/`
 
-```bash
-mkdir -p ~/.config/agents && echo '**Standards**: $HOME/.smith/AGENTS.md' > ~/.config/agents/AGENTS.md
-```
-
-**Tools supporting `~/.config/`**: OpenAI Codex, Amp (native AGENTS.md discovery)
+OpenAI Codex, Amp, GitHub Copilot (JetBrains) support XDG-style `~/.config/` paths.
 
 ## What's Inside
 
@@ -55,14 +58,32 @@ Standards are organized by context and loaded on-demand. See [AGENTS.md](AGENTS.
 ## Philosophy
 
 - **Minimal**: Just markdown files. One `git clone`, standards follow you everywhere.
-- **Universal**: Works across Claude Code, Codex, Copilot, Cursor, Amp, Roo Code, Kiro, Gemini, Junie.
+- **Universal**: Works across 20+ AI coding tools via [AGENTS.md] standard.
 - **Declarative**: Instructions, not code. No linters, no automation, no installation.
 - **Portable**: Works on any machine with git. No env vars, no shell rc modifications.
 
-## Links
+## References
 
-- [AGENTS.md Standard](https://agents.md)
+### Standards
+- [AGENTS.md] — Open standard for AI coding agents (20k+ repos)
 - [OpenAI Codex Guide](https://developers.openai.com/codex/guides/agents-md/)
+
+### Tool Documentation
+[AGENTS.md]: https://agents.md
+[claude]: https://docs.anthropic.com/en/docs/claude-code
+[codex]: https://developers.openai.com/codex/guides/agents-md/
+[copilot]: https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot
+[cursor]: https://docs.cursor.com/context/rules
+[cursor-req]: https://forum.cursor.com/t/support-for-cursor-rules-for-global-mdc-rules/144819
+[windsurf]: https://docs.windsurf.com/
+[amp]: https://ampcode.com/docs
+[zed]: https://zed.dev/docs/ai/agent-panel
+[roo]: https://docs.roocode.com/features/custom-instructions
+[kiro]: https://kiro.dev/docs/steering/
+[aider]: https://aider.chat/
+[continue]: https://docs.continue.dev/
+[gemini]: https://developers.google.com/gemini-code-assist/docs/use-agentic-chat-pair-programmer
+[junie]: https://www.jetbrains.com/help/junie/customize-guidelines.html
 
 ## License
 
