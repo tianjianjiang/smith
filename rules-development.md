@@ -30,7 +30,11 @@ pnpm lint:fix && pnpm test
 
 ## Agent-Assisted Development
 
+<context>
+
 **Context**: Working with Claude Code or AI pair programming tools
+
+</context>
 
 ### Exploration Workflow
 
@@ -44,6 +48,8 @@ pnpm lint:fix && pnpm test
 - Agent MUST explain trade-offs when multiple approaches exist
 
 </required>
+
+<scenario>
 
 <examples>
 
@@ -61,6 +67,8 @@ Agent exploration:
 
 </examples>
 
+</scenario>
+
 ### Debugging Workflow
 
 **Pattern**: Reproduce → Analyze → Hypothesize → Test → Verify
@@ -74,6 +82,8 @@ Agent exploration:
 - Agent MUST verify fix with tests
 
 </required>
+
+<scenario>
 
 <examples>
 
@@ -92,6 +102,8 @@ Agent debugging:
 ```
 
 </examples>
+
+</scenario>
 
 ### CLAUDE.md Optimization for Prompt Caching
 

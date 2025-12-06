@@ -16,7 +16,11 @@
 
 </dependencies>
 
+<context>
+
 Python-specific coding standards. For personal rules, see `rules-core.md`.
+
+</context>
 
 ## Import Rules
 
@@ -107,7 +111,11 @@ class TestDataBuilder:
 
 ## Virtual Environment Execution
 
+<context>
+
 **Pattern**: Use package manager's virtual environment runner for all Python commands
+
+</context>
 
 <required>
 
@@ -166,10 +174,14 @@ import library  # Now library sees the config
 
 </examples>
 
+<constraints>
+
 **Environment files:**
 - Store in `.env` files (NEVER commit to version control)
 - Use `.env.example` as template for required variables
 - Virtual env runners (poetry run/uv run) load .env automatically
+
+</constraints>
 
 ## Package Management
 
@@ -222,7 +234,11 @@ class Config:
 
 ## Related Standards
 
+<related>
+
 - **Personal Rules**: `$HOME/.smith/rules-core.md` - NEVER/ALWAYS for all languages
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
 - **Testing Standards**: `$HOME/.smith/rules-testing.md` - Test execution
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - File naming
+
+</related>
