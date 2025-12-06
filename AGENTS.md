@@ -48,6 +48,7 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
 - **IF** performing git commits, merges, or branch management:
 - **LOAD**: `$HOME/.smith/rules-git.md`
+- **LOAD**: `$HOME/.smith/rules-naming.md`
 
 </trigger>
 
@@ -55,12 +56,14 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
 - **IF** creating pull requests OR reviewing code OR merging PRs:
 - **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-github.md`
+- **LOAD**: `$HOME/.smith/rules-naming.md`
 
 </trigger>
 
 <trigger context="github_workflows">
 
-- **IF** using GitHub CLI OR managing GitHub-specific features:
+- **IF** using GitHub CLI OR creating PRs OR managing GitHub features:
 - **LOAD**: `$HOME/.smith/rules-github.md`
 
 </trigger>

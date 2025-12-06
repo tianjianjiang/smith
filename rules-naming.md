@@ -130,6 +130,61 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 - Ensure documentation links use correct names
 - Reference files with correct names in commit messages
 
+## Git Branch and Commit Naming
+
+### Branch Names
+
+<formatting>
+
+**Pattern**: `type/descriptive_name` (e.g., `feature/user_authentication`, `fix/JIRA-1234-query_processor`)
+
+| Separator | Use Case | Example |
+|-----------|----------|---------|
+| Underscore (_) | Multi-word phrases/concepts | `feature/user_authentication` |
+| Hyphen (-) | Parts/subsets of a whole | `feature/auth-login` |
+| Hyphen (-) | Co-existing/differentiation | `feature/api-rest` vs `feature/api-graphql` |
+| Hyphen (-) | ISO dates | `-2025-01-15` |
+| Hyphen (-) | Ticket IDs | `JIRA-1234-`, `GH-567-` |
+| Slash (/) | Type delimiter only | `docs/`, `feature/`, `fix/` |
+
+**Complex Pattern**: `type/TICKET-number-topic_clause-another_topic-YYYY-MM-DD`
+
+</formatting>
+
+### Commit and PR Titles
+
+<formatting>
+
+**Format**: `type: description` or `type(scope): description`
+
+- Type: lowercase (`feat`, `fix`, `docs`)
+- Scope: optional, module/component name, underscore for multi-word concepts
+- Description: imperative mood, lowercase start
+
+</formatting>
+
+<examples>
+
+```
+feat: add semantic filtering
+feat(query_processor): add semantic filtering
+docs(agents_md): expand configuration examples
+fix(auth-login): resolve token refresh issue
+refactor(api-rest): extract validation logic
+```
+
+</examples>
+
+<forbidden>
+
+```
+feat(query-processor): add semantic filtering  # hyphen joining words in scope
+Docs: Update README  # capitalized type
+feat: Add new feature  # capitalized description
+```
+
+</forbidden>
+
 ## Related Standards
 
 - **Python Naming**: [Python Standards](rules-python.md) - Python-specific conventions

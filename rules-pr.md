@@ -47,27 +47,40 @@ git push -u origin feature/my-feature
 
 ### PR Title Format
 
-Use conventional commits format:
-```
-<type>(<scope>): <description>
-```
+<formatting>
 
-**Examples:**
+**Format**: `type: description` or `type(scope): description`
+
+Scope is optional. Choose type based on PRIMARY change:
+
+- `feat`: New user-facing functionality
+- `fix`: Bug fix for existing functionality
+- `docs`: Documentation ONLY (no code changes)
+- `refactor`: Code restructure without behavior change
+- `style`: Formatting ONLY (whitespace, semicolons)
+- `test`: Test changes ONLY
+- `chore`: Build/tooling (CI, dependencies, scripts)
+- `perf`: Performance improvement
+
+</formatting>
+
+<examples>
+
 - `feat(rag): add semantic search filtering`
 - `fix(api): resolve CORS issues`
 - `docs: update deployment guide`
 - `refactor(auth): extract validation logic`
 - `test: add integration tests for search`
 
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `refactor`: Code restructuring without changing behavior
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
-- `perf`: Performance improvements
-- `style`: Code style changes (formatting, no logic change)
+</examples>
+
+<forbidden>
+
+- Using `docs` when also changing code → use `feat` or `fix`
+- Using `refactor` for bug fixes → use `fix`
+- Using `chore` for new features → use `feat`
+
+</forbidden>
 
 ### PR Body Template
 
@@ -113,6 +126,44 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - NEVER merge without required approvals
 
 </forbidden>
+
+### Stacked PRs
+
+<required>
+
+For large features, use stacked PRs to maintain atomic, reviewable changes.
+
+**When to stack**:
+- Feature requires 500+ lines of changes
+- Multiple logical components that can be reviewed independently
+- Need to unblock dependent work before full feature is ready
+
+**How to stack**:
+1. Create base PR with foundation (e.g., `feature/auth-base`)
+2. Create child PR branching from base (e.g., `feature/auth-login` from `feature/auth-base`)
+3. Each PR should be independently reviewable and mergeable
+4. Merge bottom-up: base first, then children
+
+</required>
+
+<examples>
+
+**Stack structure**:
+```
+main
+ └── feature/auth-base (PR #1: models, migrations)
+      └── feature/auth-login (PR #2: login endpoint)
+           └── feature/auth-oauth (PR #3: OAuth integration)
+```
+
+**PR description for stacked PRs**:
+```markdown
+## Stack
+- Depends on: #123 (feature/auth-base)
+- Blocks: #125 (feature/auth-oauth)
+```
+
+</examples>
 
 ## Working on Existing PRs
 

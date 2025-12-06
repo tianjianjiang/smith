@@ -32,16 +32,60 @@ This document defines **local Git operations** and workflow standards.
 
 </required>
 
+### Branch Naming Conventions
+
+<formatting>
+
+**Pattern**: `type/descriptive_name` (e.g., `feature/user_authentication`, `fix/JIRA-1234-query_processor`)
+
+**Separator Rules** (see [Dash on Wikipedia](https://en.wikipedia.org/wiki/Dash)):
+
+| Separator | Use Case | Example |
+|-----------|----------|---------|
+| Underscore (_) | Multi-word phrases/concepts | `user_authentication`, `semantic_search` |
+| Hyphen (-) | Parts/subsets of a whole | `auth-login`, `auth-password` (login/password are parts of auth) |
+| Hyphen (-) | Co-existing/differentiation | `api-rest`, `api-graphql` |
+| Hyphen (-) | ISO dates | `2025-01-15` |
+| Hyphen (-) | Ticket IDs | `JIRA-1234`, `GH-567` |
+
+</formatting>
+
+<examples>
+
+- `docs/enhance_agents_md` (multi-word concept)
+- `feature/user_authentication` (multi-word concept)
+- `feature/auth-login` (login is subset of auth module)
+- `feature/api-rest` (rest is a variant/type of api)
+- `fix/JIRA-1234-query_processor` (ticket ID + concept)
+- `feature/GH-123-semantic_search-2025-01-15` (ticket + concept + date)
+
+</examples>
+
+<forbidden>
+
+- `docs/enhance-agents-md` (hyphen for multi-word phrase - should be underscore)
+- `feature/add-semantic-search` (hyphens joining words in a phrase)
+- `fix/query-processor-null-check` (excessive hyphens for simple phrase)
+
+</forbidden>
+
 ## Commit Standards
 
-**Conventional Commits Format:**
-```
-<type>(<scope>): <description>
+<formatting>
 
-[optional body]
+**Conventional Commits Format**: `type: description` or `type(scope): description`
 
-[optional footer]
+Scope is optional. Example structure:
 ```
+feat(auth): add OAuth2 login
+
+Implement OAuth2 authentication flow with token refresh.
+Supports Google and GitHub providers.
+
+Closes #123
+```
+
+</formatting>
 
 **Types:**
 - `feat`: New feature
@@ -104,6 +148,77 @@ poetry run pytest
 - Reference issues with `#123` or `Closes #123`
 - Keep subject line under 72 characters
 - Use imperative mood ("add feature" not "added feature")
+
+### GPG Signing
+
+<required>
+
+All commits MUST be GPG signed.
+
+```bash
+git commit -S -m "type: description"
+```
+
+GPG should be pre-configured for automatic signing.
+
+</required>
+
+### Linear History
+
+<required>
+
+Maintain linear commit history for clarity and bisectability.
+
+- Use rebase to update feature branches: `git rebase main`
+- Squash WIP commits before merging
+- Each commit should be a complete, working unit
+- Avoid merge commits in feature branches
+
+</required>
+
+### Atomic Commits
+
+<required>
+
+Each commit MUST be:
+- **Logically atomic**: One coherent change per commit
+- **Semantically complete**: Passes tests, compiles, works independently
+- **Reversible**: Can be reverted without breaking other changes
+
+</required>
+
+<examples>
+
+Three separate commits for three logical changes
+
+</examples>
+
+<forbidden>
+
+One commit with "add feature, fix bug, update docs"
+
+</forbidden>
+
+### Atomic Workflow
+
+<required>
+
+Workflow for new work:
+
+1. Create branch with correct naming
+2. Make changes in atomic commits with GPG signing
+3. Push branch to remote
+4. Create PR (recommended)
+
+```bash
+git checkout -b "type/descriptive_name"
+git add .
+git commit -S -m "type: description"
+git push -u origin "type/descriptive_name"
+gh pr create --title "type: description" --body "..."
+```
+
+</required>
 
 ## Merge Strategy
 
