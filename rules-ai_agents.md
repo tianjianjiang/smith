@@ -45,21 +45,21 @@
 
 </required>
 
+<forbidden>
+
+**Anti-pattern - Bad**: Direct implementation without exploration
+- User: "Add caching to the API"
+- Agent: *immediately starts writing Redis code*
+
+</forbidden>
+
 <examples>
 
-**Anti-pattern**: Direct implementation without exploration
-
-```text
-Bad:
-User: "Add caching to the API"
-Agent: *immediately starts writing Redis code*
-
-Good:
-User: "Add caching to the API"
-Agent: *uses Task tool to explore existing caching patterns*
-Agent: *reads configuration files*
-Agent: "I found two caching approaches in the codebase. Should we use Redis (like user service) or in-memory (like session service)?"
-```
+**Good practice**: Explore before implementing
+- User: "Add caching to the API"
+- Agent: *uses Task tool to explore existing caching patterns*
+- Agent: *reads configuration files*
+- Agent: "I found two caching approaches in the codebase. Should we use Redis (like user service) or in-memory (like session service)?"
 
 </examples>
 
@@ -121,12 +121,16 @@ Agent: *refactors while keeping tests green*
 - Security analysis requiring threat modeling
 - Performance optimization requiring profiling analysis
 
+<examples>
+
 **Steering approach**:
 ```markdown
 "Use extended thinking to analyze the authentication flow across all services,
 identify potential race conditions, and propose a comprehensive fix that maintains
 backward compatibility."
 ```
+
+</examples>
 
 <forbidden>
 
@@ -146,14 +150,17 @@ backward compatibility."
 - Focus on outcome specification, not process
 - Allow model to apply internal reasoning
 
-<examples>
+<forbidden>
 
 **Anti-pattern**:
+- "Think step-by-step about how to implement authentication"
 
-```text
-Bad: "Think step-by-step about how to implement authentication"
-Good: "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
-```
+</forbidden>
+
+<examples>
+
+**Good practice**:
+- "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
 
 </examples>
 
@@ -258,18 +265,23 @@ Agent: *proposes next logical step based on commit history*
 
 </required>
 
-**Example - Cache-friendly pattern**:
-```text
-Good (cache hit):
-Call 1: System message (1500 tokens) + Tools (2000 tokens) + User query
-Call 2: Same system + Same tools + Different user query
-→ First ~3500 tokens cached, only new query processed
+<examples>
 
-Bad (cache miss):
-Call 1: System message + Tools in order [A, B, C]
-Call 2: System message + Tools in order [A, C, B]
-→ No cache hit due to reordering
-```
+**Cache-friendly pattern (good)**:
+- Call 1: System message (1500 tokens) + Tools (2000 tokens) + User query
+- Call 2: Same system + Same tools + Different user query
+- Result: First ~3500 tokens cached, only new query processed
+
+</examples>
+
+<forbidden>
+
+**Cache-unfriendly pattern (bad)**:
+- Call 1: System message + Tools in order [A, B, C]
+- Call 2: System message + Tools in order [A, C, B]
+- Result: No cache hit due to reordering
+
+</forbidden>
 
 **File organization for caching**:
 - AGENTS.md metadata section: Static, always cached
@@ -742,7 +754,9 @@ Follow existing test structure in tests/auth/*.test.ts"
 
 </required>
 
-**Example - Code review schema**:
+<examples>
+
+**Code review schema**:
 ```json
 {
   "type": "object",
@@ -774,6 +788,17 @@ Follow existing test structure in tests/auth/*.test.ts"
 }
 ```
 
+**Good schema** (appropriate complexity):
+```json
+{
+  "code": "string",
+  "classes": [{"name": "string", "methods": ["string"]}],
+  "tests": ["string"]
+}
+```
+
+</examples>
+
 ### Anti-patterns
 
 <forbidden>
@@ -783,9 +808,7 @@ Follow existing test structure in tests/auth/*.test.ts"
 - NEVER use structured outputs for free-form creative tasks
 - NEVER define schemas without examples
 
-</forbidden>
-
-**Bad schema** (too complex):
+**Bad schema example** (too complex, >3 nesting levels):
 ```json
 {
   "code": {
@@ -800,14 +823,7 @@ Follow existing test structure in tests/auth/*.test.ts"
 }
 ```
 
-**Good schema** (appropriate complexity):
-```json
-{
-  "code": "string",
-  "classes": [{"name": "string", "methods": ["string"]}],
-  "tests": ["string"]
-}
-```
+</forbidden>
 
 ## Agent Task Decomposition
 

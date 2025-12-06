@@ -44,13 +44,16 @@ Python-specific coding standards. For personal rules, see `rules-core.md`.
 
 </required>
 
-**Example:**
+<examples>
+
 ```python
 from typing import Optional, List
 
 def process_documents(docs: List[str], max_count: Optional[int] = None) -> bool:
     pass
 ```
+
+</examples>
 
 ## Code Style
 
@@ -85,7 +88,9 @@ poetry run ruff format
 
 </required>
 
-**Example - Function-based tests:**
+<examples>
+
+**Function-based tests:**
 ```python
 def test_should_parse_pdf_when_valid_file_provided():
     result = parse_pdf("valid.pdf")
@@ -97,6 +102,8 @@ class TestDataBuilder:
     def create_valid_input() -> dict:
         return {"key": "value"}
 ```
+
+</examples>
 
 ## Virtual Environment Execution
 
@@ -130,6 +137,8 @@ uv run ruff check --fix
 
 ## Environment Variables
 
+<examples>
+
 **Reading environment variables:**
 ```python
 import os
@@ -154,6 +163,8 @@ import os
 os.environ["LIBRARY_CONFIG"] = "value"
 import library  # Now library sees the config
 ```
+
+</examples>
 
 **Environment files:**
 - Store in `.env` files (NEVER commit to version control)

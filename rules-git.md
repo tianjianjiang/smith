@@ -108,7 +108,8 @@ Closes #123
 - `test`: Test additions or changes
 - `chore`: Build process, tooling changes
 
-**Example:**
+<examples>
+
 ```sh
 git commit -m "feat(rag): add semantic search filtering
 
@@ -118,9 +119,12 @@ Supports multiple filter conditions with AND/OR logic.
 Closes #123"
 ```
 
+</examples>
+
 ## File Operations
 
 **Renaming files:**
+
 <required>
 
 - MUST use `git mv` for renames (preserves Git history)
@@ -128,10 +132,14 @@ Closes #123"
 
 </required>
 
+<examples>
+
 ```sh
 git mv old_name.py new_name.py
 git commit -m "refactor: rename old_name to new_name"
 ```
+
+</examples>
 
 **Large file handling:**
 - Use `.gitignore` for build artifacts, debug outputs, `.venv`
@@ -140,12 +148,16 @@ git commit -m "refactor: rename old_name to new_name"
 
 ## Commit Workflow
 
+<examples>
+
 **Before committing:**
 ```sh
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
 ```
+
+</examples>
 
 <forbidden>
 
@@ -320,7 +332,8 @@ git checkout main && git pull # Sync local main
 
 ## Stash Management
 
-**Save work in progress:**
+<examples>
+
 ```sh
 git stash push -m "WIP: feature implementation"
 git stash list
@@ -328,7 +341,11 @@ git stash pop
 git stash apply stash@{0}
 ```
 
+</examples>
+
 ## History Management
+
+<examples>
 
 **View history:**
 ```sh
@@ -347,6 +364,8 @@ git rebase -i HEAD~3  # Last 3 commits
 git commit --amend --no-edit
 git commit --amend  # Edit message
 ```
+
+</examples>
 
 ## Conflict Resolution
 

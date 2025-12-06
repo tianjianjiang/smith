@@ -45,7 +45,9 @@ pnpm lint:fix && pnpm test
 
 </required>
 
-**Example workflow**:
+<examples>
+
+**Exploration workflow**:
 ```markdown
 User: "Add caching to the API"
 
@@ -56,6 +58,8 @@ Agent exploration:
 4. Proposes approach with trade-offs
 5. Implements after approval
 ```
+
+</examples>
 
 ### Debugging Workflow
 
@@ -71,7 +75,9 @@ Agent exploration:
 
 </required>
 
-**Example workflow**:
+<examples>
+
+**Debugging workflow**:
 ```markdown
 User: "Fix authentication timeout bug"
 
@@ -84,6 +90,8 @@ Agent debugging:
 6. Implements fix + test
 7. Verifies timeout no longer occurs
 ```
+
+</examples>
 
 ### CLAUDE.md Optimization for Prompt Caching
 

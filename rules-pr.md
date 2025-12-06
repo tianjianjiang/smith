@@ -97,6 +97,8 @@ Scope is optional. Choose type based on PRIMARY change:
 
 ### PR Body Template
 
+<examples>
+
 ```markdown
 ## Summary
 - Bullet point 1: Main change
@@ -117,6 +119,8 @@ Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
+
+</examples>
 
 ### PR Requirements
 
@@ -572,6 +576,8 @@ git push origin --delete feature/my_feature
 
 </required>
 
+<examples>
+
 **Workflow**:
 ```sh
 # 1. Understand full scope of changes
@@ -596,6 +602,8 @@ poetry run pytest
 # 6. Create PR with structured body
 # Use platform CLI or API
 ```
+
+</examples>
 
 ### Common Agent Mistakes
 

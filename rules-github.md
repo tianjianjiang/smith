@@ -18,6 +18,8 @@ This document defines **GitHub-specific operations** using the `gh` CLI and GitH
 
 ## GitHub CLI Installation
 
+<examples>
+
 ```sh
 # macOS
 brew install gh
@@ -26,9 +28,13 @@ brew install gh
 gh auth login
 ```
 
+</examples>
+
 ## Pull Request Operations
 
 ### Creating PRs
+
+<examples>
 
 ```sh
 # Basic PR creation
@@ -62,6 +68,8 @@ gh pr create --title "feat: feature" --body "Description" --reviewer @user1,@use
 gh pr create --base develop --title "feat: feature" --body "Description"
 ```
 
+</examples>
+
 ### PR Self-Assignment
 
 <required>
@@ -79,6 +87,8 @@ gh pr edit <pr-number> --add-assignee @me
 </required>
 
 ### Viewing PRs
+
+<examples>
 
 ```sh
 # List all open PRs
@@ -112,7 +122,11 @@ gh pr view 123 --json commits
 gh pr view 123 --comments
 ```
 
+</examples>
+
 ### Checking Out PRs
+
+<examples>
 
 ```sh
 # Get the actual branch name first (CRITICAL)
@@ -126,7 +140,11 @@ git checkout -b "$BRANCH" "origin/$BRANCH"
 git branch --show-current  # Must match $BRANCH
 ```
 
+</examples>
+
 ### PR Status and Checks
+
+<examples>
 
 ```sh
 # View CI check status
@@ -148,7 +166,11 @@ gh run rerun <run-id>
 gh pr checks 123 --rerun
 ```
 
+</examples>
+
 ### Merging PRs
+
+<examples>
 
 ```sh
 # Merge commit
@@ -167,9 +189,13 @@ gh pr merge 123 --auto --squash
 gh pr merge 123 --squash --delete-branch
 ```
 
+</examples>
+
 ## Code Review Operations
 
 ### Requesting Reviews
+
+<examples>
 
 ```sh
 # Request review from user
@@ -181,6 +207,8 @@ gh pr edit 123 --add-reviewer @org/team
 # Remove reviewer
 gh pr edit 123 --remove-reviewer @username
 ```
+
+</examples>
 
 ### Giving Reviews
 
