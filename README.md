@@ -45,11 +45,11 @@ mkdir -p ~/.claude && echo '**Standards**: $HOME/.smith/AGENTS.md' > ~/.claude/C
 
 ### XDG-Style Global Config
 
-Some tools follow [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/) conventions under `~/.config/`:
-- Amp: `~/.config/AGENTS.md`
-- GitHub Copilot (JetBrains only[[11]](#ref-11)): `~/.config/github-copilot/`
-- JetBrains AI: `~/.config/JetBrains/*/ai-assistant/rules/`
-- Tabnine: `~/.config/TabNine/`
+Some tools follow [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/)[[26]](#ref-26) conventions under `~/.config/`:
+- Amp[[2]](#ref-2): `~/.config/AGENTS.md`
+- GitHub Copilot (JetBrains only)[[11]](#ref-11): `~/.config/github-copilot/`
+- JetBrains AI[[13]](#ref-13): `~/.config/JetBrains/*/ai-assistant/rules/`
+- Tabnine[[20]](#ref-20): `~/.config/TabNine/`
 
 ## References
 
@@ -78,7 +78,8 @@ Some tools follow [XDG Base Directory](https://specifications.freedesktop.org/ba
 23. <span id="ref-23"></span>[Windsurf Documentation](https://docs.windsurf.com/)
 24. <span id="ref-24"></span>[Zed Agent Panel](https://zed.dev/docs/ai/agent-panel)
 25. <span id="ref-25"></span>[Zed Global Config Discussion](https://github.com/zed-industries/zed/discussions/36560) — Project-level only
-26. <span id="ref-26"></span>[AGENTS.md Standard](https://agents.md) — Open format for AI coding agents
+26. <span id="ref-26"></span>[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) — Defines `$XDG_CONFIG_HOME` defaulting to `~/.config/`
+27. <span id="ref-27"></span>[AGENTS.md Standard](https://agents.md) — Open format for AI coding agents
 
 ## License
 
