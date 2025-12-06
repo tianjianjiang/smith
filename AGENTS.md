@@ -8,6 +8,31 @@
 
 </metadata>
 
+## Design Principles
+
+- [**DRY**](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself): Don't Repeat Yourself
+- [**KISS**](https://en.wikipedia.org/wiki/KISS_principle): Keep It Simple, Stupid
+- [**YAGNI**](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it): You Aren't Gonna Need It
+- [**MECE**](https://en.wikipedia.org/wiki/MECE_principle): Mutually Exclusive, Collectively Exhaustive
+
+### [SOLID](https://en.wikipedia.org/wiki/SOLID)
+
+- **S**ingle Responsibility: One reason to change per class/module
+- **O**pen/Closed: Open for extension, closed for modification
+- **L**iskov Substitution: Subtypes must be substitutable for base types
+- **I**nterface Segregation: Many specific interfaces over one general
+- **D**ependency Inversion: Depend on abstractions, not concretions
+
+### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
+
+See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
+
+### Efficiency
+
+- Research with today's date for current information
+- Prefer pointers (file:line) over embedded snippets
+- Static content first for [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+
 <context_triggers>
 
 <!-- Load these files ONLY if the specific context applies -->
