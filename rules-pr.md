@@ -8,6 +8,8 @@
 
 </metadata>
 
+<context>
+
 This document defines **platform-neutral PR workflows** and best practices applicable to any Git platform (GitHub, GitLab, Bitbucket, Azure DevOps, etc.).
 
 ## Scope
@@ -16,9 +18,13 @@ This document defines **platform-neutral PR workflows** and best practices appli
 - **Platform-specific operations**: See platform-specific files (e.g., rules-github.md for GitHub CLI)
 - **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
 
+</context>
+
 ## Pull Request Creation
 
 ### Prerequisites
+
+<constraints>
 
 <required>
 
@@ -44,6 +50,8 @@ git rebase origin/main  # or merge, depending on project
 # Push your changes
 git push -u origin feature/my_feature
 ```
+
+</constraints>
 
 ### PR Title Format
 
@@ -146,7 +154,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Stacked PRs
 
-<required>
+<context>
 
 For large features, use stacked PRs to maintain atomic, reviewable changes.
 
@@ -154,6 +162,10 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 - Feature requires 500+ lines of changes
 - Multiple logical components that can be reviewed independently
 - Need to unblock dependent work before full feature is ready
+
+</context>
+
+<required>
 
 **How to stack**:
 1. Create base PR with foundation (e.g., `feature/auth-base`)
@@ -413,6 +425,8 @@ git status  # Should show "On branch <actual-branch-name>"
 
 ### Why This Matters
 
+<context>
+
 **Problem**: Creating local branches with assumed names that don't match the PR's actual branch name.
 
 **Impact**:
@@ -421,6 +435,8 @@ git status  # Should show "On branch <actual-branch-name>"
 - Risk of losing work or creating merge conflicts
 
 **Solution**: Always verify the PR's actual branch name from your platform, then checkout from origin.
+
+</context>
 
 ### Recovery if You Made This Mistake
 
@@ -526,6 +542,8 @@ git push
 
 ### Merge Strategies
 
+<context>
+
 **Merge commit:**
 - Creates a merge commit preserving all individual commits
 - **Use for**: Feature branches with multiple logical commits
@@ -545,6 +563,8 @@ git push
 - **Merge commit**: Feature branches with meaningful commit history
 - **Squash**: Tiny fixes, doc updates, experimental branches with messy commits
 - **Rebase**: Projects requiring linear history with clean commits
+
+</context>
 
 ### Post-Merge Cleanup
 
@@ -707,6 +727,8 @@ git commit -m "style: apply pre-commit hook fixes"
 
 ### CI Check Coordination
 
+<scenario>
+
 <required>
 
 **Monitor CI status before and after changes:**
@@ -741,6 +763,8 @@ git push
 
 **Best practices:**
 - Wait for all checks to pass before requesting review
+
+</scenario>
 - If checks fail, fix immediately before other work
 - Monitor checks continuously to catch failures early
 
@@ -798,6 +822,8 @@ fi
 
 ### Review Response Workflow
 
+<scenario>
+
 <required>
 
 **Systematic approach to address review comments:**
@@ -830,6 +856,8 @@ git push
 - Write clear commit messages referencing review feedback
 - Respond to each comment thread explaining your changes
 - Re-request review only after all comments addressed
+
+</scenario>
 
 ### Troubleshooting Common Issues
 
@@ -966,10 +994,14 @@ git push
 
 ### PR Size
 
+<constraints>
+
 - Keep PRs focused and small (< 400 lines changed ideal)
 - Split large features into multiple PRs
 - Use draft PRs for work in progress
 - One logical change per PR
+
+</constraints>
 
 ### Communication
 

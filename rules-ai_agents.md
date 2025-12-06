@@ -18,6 +18,8 @@
 
 ## Exploration-Before-Implementation Pattern
 
+<context>
+
 **Foundation**: Anthropic Claude Code best practices, validated across production deployments
 
 **Workflow**:
@@ -26,6 +28,8 @@
 3. **Propose**: Agent MUST explain trade-offs when multiple approaches exist
 4. **Review**: Agent MUST analyze full context (not just latest commit)
 5. **Implement**: Agent executes approved approach with atomic commits
+
+</context>
 
 <forbidden>
 
@@ -109,6 +113,8 @@ Agent: *refactors while keeping tests green*
 
 ## Extended Thinking Guidance
 
+<context>
+
 **Context**: Advanced reasoning models with extended internal reasoning
 
 ### Claude 3.7+ Extended Thinking
@@ -120,6 +126,8 @@ Agent: *refactors while keeping tests green*
 - Multi-step refactoring with dependency tracking
 - Security analysis requiring threat modeling
 - Performance optimization requiring profiling analysis
+
+</context>
 
 <examples>
 
@@ -181,6 +189,8 @@ backward compatibility."
 
 </required>
 
+<scenario>
+
 **Example**:
 ```markdown
 User: "Fix the authentication bug and add rate limiting"
@@ -196,7 +206,11 @@ Agent: *investigates and finds issue*
 Agent: *marks #1 as completed, #2 as in_progress*
 ```
 
+</scenario>
+
 ### Long-term Memory (Multi-Session)
+
+<context>
 
 **Strategy**: Persistent documentation and structured context
 
@@ -219,6 +233,8 @@ Agent: *marks #1 as completed, #2 as in_progress*
 - Dynamic content (code examples, evolving documentation) goes after cache breakpoints
 - Reuse cached prefix across sessions (90% cost reduction)
 
+</context>
+
 ### Multi-Session Work Management
 
 **Pattern**: Commit early and often with descriptive messages
@@ -232,6 +248,8 @@ Agent: *marks #1 as completed, #2 as in_progress*
 
 </required>
 
+<scenario>
+
 **Context restoration**:
 ```markdown
 Session 1:
@@ -244,7 +262,11 @@ Agent: *reads committed code to understand current state*
 Agent: *proposes next logical step based on commit history*
 ```
 
+</scenario>
+
 ## Prompt Caching Awareness
+
+<context>
 
 **Context**: Anthropic prompt caching reduces costs by 90% and latency by 85%
 
@@ -253,6 +275,8 @@ Agent: *proposes next logical step based on commit history*
 2. Prefix (before breakpoint) must be identical for cache hit
 3. Cache lifetime: 5 minutes (active use), extended with each hit
 4. Applies to system messages, tools, and long contexts
+
+</context>
 
 **Agent behavior implications**:
 
@@ -291,6 +315,8 @@ Agent: *proposes next logical step based on commit history*
 
 ## Prompt Caching Optimization
 
+<context>
+
 **Goal**: Maximize cache hit rate for 90% cost reduction and 85% latency reduction
 
 **Research source**: [Anthropic Prompt Caching Guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
@@ -302,6 +328,8 @@ Agent: *proposes next logical step based on commit history*
 2. **Tool definitions** (consistent order, complete schemas)
 3. **Project context** (AGENTS.md, architecture docs, static references)
 4. **Dynamic context** (recent code changes, session-specific data)
+
+</context>
 
 **Implementation**:
 ```markdown
@@ -390,13 +418,19 @@ Recent git commits, current file changes, session-specific todos
 
 ## Token Efficiency Techniques
 
+<context>
+
 **Goal**: Reduce token usage without sacrificing quality
 
 **Research sources**:
 - [Microsoft LLMLingua](https://github.com/microsoft/LLMLingua) - Token compression
 - [Anthropic Prompt Engineering](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering) - Efficiency patterns
 
+</context>
+
 ### Progressive Disclosure
+
+<context>
 
 **Principle**: Load information on-demand, not upfront
 
@@ -422,6 +456,8 @@ Level 3: Full details when accessed (1000+ tokens)
 - Start with metadata scanning (Glob/Grep for relevant files)
 - Load core concepts only when context matches
 - Read full documentation only when actively working on feature
+
+</context>
 
 ### Sparse Attention Patterns
 
@@ -500,6 +536,8 @@ Bad: Full path repetition: "/Users/name/project/src/auth/middleware.ts"
 </forbidden>
 
 ## Constitutional AI Principles
+
+<guiding_principles>
 
 **Foundation**: Anthropic's HHH framework (Helpful, Honest, Harmless)
 
@@ -666,7 +704,11 @@ for ~30 seconds on production (5M rows). Should we schedule during low-traffic
 window, or use online index creation?"
 ```
 
+</guiding_principles>
+
 ## Structured Output Steering
+
+<context>
 
 **Context**: Platforms offer different structured output mechanisms
 
@@ -674,6 +716,8 @@ window, or use online index creation?"
 - [OpenAI Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
 - [Anthropic Tool Use](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 - [Google Gemini responseSchema](https://ai.google.dev/gemini-api/docs/structured-output)
+
+</context>
 
 ### Platform Comparison
 
@@ -696,6 +740,8 @@ window, or use online index creation?"
 - **Best for**: Creative generation with structure constraints
 
 ### Agent Steering Patterns
+
+<scenario>
 
 **Code generation output**:
 ```markdown
@@ -742,6 +788,8 @@ Steering:
 
 Follow existing test structure in tests/auth/*.test.ts"
 ```
+
+</scenario>
 
 ### Schema Design Principles
 
