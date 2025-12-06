@@ -10,8 +10,6 @@
 
 <context>
 
-This document defines **platform-neutral PR workflows** and best practices applicable to any Git platform (GitHub, GitLab, Bitbucket, Azure DevOps, etc.).
-
 ## Scope
 
 - **This document**: PR concepts, code review workflows, merge strategies, agent guidelines
@@ -820,44 +818,6 @@ fi
 - Fixing bugs found after push
 - Any change to commits from other authors
 
-### Review Response Workflow
-
-<scenario>
-
-<required>
-
-**Systematic approach to address review comments:**
-
-```sh
-# 1. Fetch latest review comments from your platform
-
-# 2. For each comment thread:
-#    - Understand the concern
-#    - Make necessary code changes
-#    - Test the changes
-#    - Commit with descriptive message
-
-git add .
-git commit -m "refactor: extract validation logic per review"
-
-# 3. Push all changes together
-git push
-
-# 4. Respond to review comments in your platform's UI
-# Explain what you changed and why
-
-# 5. Re-request review through your platform
-```
-
-</required>
-
-**Best practices:**
-- Group related fixes into single commit when logical
-- Write clear commit messages referencing review feedback
-- Respond to each comment thread explaining your changes
-- Re-request review only after all comments addressed
-
-</scenario>
 
 ### Troubleshooting Common Issues
 

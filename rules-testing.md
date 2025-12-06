@@ -16,11 +16,6 @@
 
 </dependencies>
 
-<context>
-
-Testing requirements, standards, and best practices.
-
-</context>
 
 ## Test Requirements
 

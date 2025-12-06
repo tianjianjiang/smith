@@ -10,8 +10,6 @@
 
 <context>
 
-This document defines **GitHub-specific operations** using the `gh` CLI and GitHub platform features.
-
 ## Scope
 
 - **This document**: GitHub CLI commands, GitHub-specific features

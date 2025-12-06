@@ -2,8 +2,6 @@
 
 <context>
 
-This document defines **local Git operations** and workflow standards.
-
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution

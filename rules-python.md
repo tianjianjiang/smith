@@ -18,7 +18,7 @@
 
 <context>
 
-Python-specific coding standards. For personal rules, see `rules-core.md`.
+For personal rules, see `rules-core.md`.
 
 </context>
 
