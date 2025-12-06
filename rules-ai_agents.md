@@ -46,12 +46,12 @@
 </required>
 
 **Anti-pattern**: Direct implementation without exploration
-```markdown
-❌ Bad:
+```text
+Bad:
 User: "Add caching to the API"
 Agent: *immediately starts writing Redis code*
 
-✓ Good:
+Good:
 User: "Add caching to the API"
 Agent: *uses Task tool to explore existing caching patterns*
 Agent: *reads configuration files*
@@ -86,12 +86,12 @@ Agent: "I found two caching approaches in the codebase. Should we use Redis (lik
 - Coverage meets or exceeds existing standards
 
 **Anti-pattern**: Implementation-first approach
-```markdown
-❌ Bad:
+```text
+Bad:
 Agent: *writes implementation code*
 Agent: *then writes tests to match implementation*
 
-✓ Good:
+Good:
 Agent: *writes failing tests defining expected behavior*
 Agent: *implements minimal code to make tests pass*
 Agent: *refactors while keeping tests green*
@@ -137,9 +137,9 @@ backward compatibility."
 - Allow model to apply internal reasoning
 
 **Anti-pattern**:
-```markdown
-❌ Bad: "Think step-by-step about how to implement authentication"
-✓ Good: "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
+```text
+Bad: "Think step-by-step about how to implement authentication"
+Good: "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
 ```
 
 ## Memory Management
@@ -244,13 +244,13 @@ Agent: *proposes next logical step based on commit history*
 </required>
 
 **Example - Cache-friendly pattern**:
-```markdown
-✓ Good (cache hit):
+```text
+Good (cache hit):
 Call 1: System message (1500 tokens) + Tools (2000 tokens) + User query
 Call 2: Same system + Same tools + Different user query
 → First ~3500 tokens cached, only new query processed
 
-❌ Bad (cache miss):
+Bad (cache miss):
 Call 1: System message + Tools in order [A, B, C]
 Call 2: System message + Tools in order [A, C, B]
 → No cache hit due to reordering
@@ -401,12 +401,12 @@ Level 3: Full details when accessed (1000+ tokens)
 **Technique**: Focus agent attention on relevant code sections
 
 **File reading strategy**:
-```markdown
-❌ Inefficient:
+```text
+Inefficient:
 Agent: *reads entire 5000-line file*
 Agent: *searches for relevant function*
 
-✓ Efficient:
+Efficient:
 Agent: *uses Grep to find function location*
 Agent: *reads file with offset/limit targeting specific section*
 Agent: *reads only necessary context (±20 lines)*
@@ -446,21 +446,21 @@ Agent workflow:
 ### Compression Techniques
 
 **Template reuse**:
-```markdown
-❌ Verbose:
+```text
+Verbose:
 Agent: "I'm going to read the file to understand its contents, then I'll analyze
 the structure, and after that I'll make the necessary changes..."
 
-✓ Concise:
+Concise:
 Agent: *reads file* *makes edit* "Updated validation logic in auth/middleware.ts:67"
 ```
 
 **Reference-based communication**:
-```markdown
-✓ Use file:line format: "Fixed in auth.ts:123"
-✓ Use commit refs: "Addresses issue from commit a3b4c5d"
-✓ Use relative paths: "Updated ../config/database.ts"
-❌ Avoid full path repetition: "/Users/name/project/src/auth/middleware.ts"
+```text
+Good: Use file:line format: "Fixed in auth.ts:123"
+Good: Use commit refs: "Addresses issue from commit a3b4c5d"
+Good: Use relative paths: "Updated ../config/database.ts"
+Bad: Full path repetition: "/Users/name/project/src/auth/middleware.ts"
 ```
 
 <forbidden>
@@ -492,8 +492,8 @@ Agent: *reads file* *makes edit* "Updated validation logic in auth/middleware.ts
 </required>
 
 **Examples**:
-```markdown
-✓ Helpful:
+```text
+Helpful:
 User: "Add authentication"
 Agent: "I can implement authentication using:
 1. OAuth2 (matches existing user service pattern) - recommended
@@ -501,7 +501,7 @@ Agent: "I can implement authentication using:
 3. Session-based (simpler but doesn't scale horizontally)
 Which approach fits your requirements?"
 
-❌ Not helpful:
+Not helpful:
 Agent: "I'll add JWT authentication" *starts implementing*
 ```
 
@@ -526,19 +526,19 @@ Agent: "I'll add JWT authentication" *starts implementing*
 </required>
 
 **Examples**:
-```markdown
-✓ Honest:
+```text
+Honest:
 Agent: "I found two possible causes for this bug. Let me verify which by reading
 the test suite... After checking tests/auth.test.ts:45, it's the token expiration logic."
 
-❌ Dishonest (hallucination):
+Dishonest (hallucination):
 Agent: "This bug is definitely caused by X" *without verification*
 
-✓ Honest (uncertainty):
+Honest (uncertainty):
 Agent: "I don't see how this API is called. Should I search the codebase for
 references, or do you know the calling context?"
 
-❌ Dishonest (guessing):
+Dishonest (guessing):
 Agent: "This API is probably called from the user service" *assumes without checking*
 ```
 
@@ -585,18 +585,18 @@ Agent: "Actually, I need to correct myself - the schema already has this column
 ```
 
 **Examples**:
-```markdown
-✓ Harmless:
+```text
+Harmless:
 User: "Add user search endpoint"
 Agent: *implements with parameterized query and input validation*
 Agent: "Added pagination (max 100 results) and rate limiting (10 req/min)
 to prevent abuse. Search endpoint in api/users.ts:89"
 
-❌ Harmful:
+Harmful:
 Agent: *implements with string concatenation*
 SELECT * FROM users WHERE name = '" + userInput + "'"
 
-✓ Harmless (breaking change warning):
+Harmless (breaking change warning):
 Agent: "Changing this interface will break 3 existing consumers:
 - user-service/auth.ts:45
 - admin-panel/api.ts:123
@@ -604,7 +604,7 @@ Agent: "Changing this interface will break 3 existing consumers:
 Should I update all consumers in this PR, or create a deprecated
 version for backward compatibility?"
 
-❌ Harmful:
+Harmful:
 Agent: *makes breaking change without checking consumers*
 ```
 
@@ -622,7 +622,7 @@ Agent: *makes breaking change without checking consumers*
 3. **Harmless**: Check security → Warn about breaking changes → Validate before implementing
 
 **Example workflow**:
-```markdown
+```text
 User: "Make the API faster"
 
 Agent (Helpful): *uses Task tool to profile performance*
@@ -813,8 +813,8 @@ Follow existing test structure in tests/auth/*.test.ts"
 
 **Examples**:
 
-```markdown
-✓ Good decomposition:
+```text
+Good decomposition:
 User: "Add user authentication with OAuth2"
 
 Todos:
@@ -825,7 +825,7 @@ Todos:
 
 (4 tasks, each is a logical phase, each gets atomic commit)
 
-❌ Too granular:
+Too granular:
 1. Create oauth_config.ts file
 2. Add CLIENT_ID constant
 3. Add CLIENT_SECRET constant
@@ -835,7 +835,7 @@ Todos:
 ...
 (20+ micro-steps, loses high-level picture)
 
-❌ Too coarse:
+Too coarse:
 1. Implement authentication
 (1 task, no progress tracking, unclear completion)
 ```
@@ -867,17 +867,17 @@ Agent: *works on task 2*
 ### Completion Criteria
 
 **When to mark completed**:
-- ✓ Code implemented and working
-- ✓ Tests written and passing
-- ✓ No blocking errors or failures
-- ✓ Changes committed to git
+- Code implemented and working
+- Tests written and passing
+- No blocking errors or failures
+- Changes committed to git
 
 **When NOT to mark completed**:
-- ✗ Tests are failing
-- ✗ Implementation is partial
-- ✗ Encountered unresolved errors
-- ✗ Blocked waiting for user decision
-- ✗ Need to investigate further
+- Tests are failing
+- Implementation is partial
+- Encountered unresolved errors
+- Blocked waiting for user decision
+- Need to investigate further
 
 **Blocked task handling**:
 ```markdown
@@ -893,14 +893,14 @@ I've added a task to evaluate alternatives. Should we switch libraries or work a
 
 **Pattern**: Start high-level, refine as you learn
 
-```markdown
+```text
 Initial todos:
 1. Research existing authentication patterns
 2. Implement OAuth2 authentication
 3. Add tests and documentation
 
 After research (task 1 completed):
-1. ✓ Research existing authentication patterns
+1. [completed] Research existing authentication patterns
 2. Implement OAuth2 client registration
 3. Implement token exchange and validation
 4. Add authentication middleware
@@ -915,10 +915,10 @@ After research (task 1 completed):
 **Pattern**: Use git commits + todos for session bridging
 
 **Session 1**:
-```markdown
+```text
 Todos:
-1. ✓ Set up OAuth2 configuration
-2. ✓ Implement token exchange endpoint
+1. [completed] Set up OAuth2 configuration
+2. [completed] Implement token exchange endpoint
 3. [in_progress] Add refresh token rotation
 4. [pending] Write integration tests
 
@@ -927,7 +927,7 @@ Agent: *partial work on task 3, commits WIP*
 ```
 
 **Session 2**:
-```markdown
+```text
 User: "Continue authentication work"
 Agent: *reads git log, sees WIP commit*
 Agent: *reads todos.md or recreates from commit messages*
@@ -936,8 +936,8 @@ Agent: "I see you're implementing OAuth2. Last session completed token exchange
 in commit f7e8d9c)?"
 
 Todos (restored):
-1. ✓ Set up OAuth2 configuration
-2. ✓ Implement token exchange endpoint
+1. [completed] Set up OAuth2 configuration
+2. [completed] Implement token exchange endpoint
 3. [in_progress] Add refresh token rotation (resume)
 4. [pending] Write integration tests
 ```
