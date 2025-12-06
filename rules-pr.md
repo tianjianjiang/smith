@@ -4,7 +4,7 @@
 
 - **Scope**: Platform-neutral pull request and workflow concepts
 - **Load if**: Creating PRs, reviewing code, merging changes, working with any Git platform
-- **Prerequisites**: [Git Standards](./rules-git.md)
+- **Prerequisites**: [Core Standards](./rules-core.md), [Git Standards](./rules-git.md)
 
 </metadata>
 
@@ -346,9 +346,9 @@ git merge main
 
 **NEVER create arbitrary local branch names when working on PRs:**
 
-- ❌ Create local branches with assumed names like `pr-123`
-- ❌ Assume branch name follows a pattern
-- ❌ Make changes without verifying current branch
+- Do NOT create local branches with assumed names like `pr-123`
+- Do NOT assume branch name follows a pattern
+- Do NOT make changes without verifying current branch
 
 </forbidden>
 
@@ -577,13 +577,13 @@ poetry run pytest
 
 **Example - Bad vs Good**:
 ```markdown
-❌ Bad (only looked at latest commit):
+Bad (only looked at latest commit):
 Summary:
 - Fixed typo in README
 
 (But PR actually includes 5 commits adding entire auth system!)
 
-✓ Good (analyzed full diff):
+Good (analyzed full diff):
 Summary:
 - Implement OAuth2 authentication with token refresh
 - Add rate limiting to prevent abuse (10 req/min)
@@ -660,8 +660,8 @@ git commit -m "style: apply pre-commit hook fixes"
 </forbidden>
 
 **Decision tree:**
-- ✅ Amend IF: You authored last commit AND commit not pushed yet
-- ❌ New commit IF: Last commit from someone else OR already pushed
+- Amend IF: You authored last commit AND commit not pushed yet
+- New commit IF: Last commit from someone else OR already pushed
 
 ### CI Check Coordination
 
@@ -708,10 +708,10 @@ git push
 
 **NEVER amend in these scenarios:**
 
-- ❌ Commit authored by someone else
-- ❌ Commit already pushed to remote (unless you force push intentionally)
-- ❌ Working on protected branches (main, develop)
-- ❌ Commit is part of a PR under active review by others
+- Commit authored by someone else
+- Commit already pushed to remote (unless you force push intentionally)
+- Working on protected branches (main, develop)
+- Commit is part of a PR under active review by others
 
 </forbidden>
 
@@ -745,14 +745,14 @@ fi
 </required>
 
 **Safe amend scenarios:**
-- ✅ Pre-commit hook modified files (see Pre-Commit Hook Coordination)
-- ✅ Fixing typo in commit message you just made
-- ✅ Adding forgotten file to your last commit (before push)
+- Pre-commit hook modified files (see Pre-Commit Hook Coordination)
+- Fixing typo in commit message you just made
+- Adding forgotten file to your last commit (before push)
 
 **When to create new commit instead:**
-- 📝 Addressing review feedback (keep review history)
-- 📝 Fixing bugs found after push
-- 📝 Any change to commits from other authors
+- Addressing review feedback (keep review history)
+- Fixing bugs found after push
+- Any change to commits from other authors
 
 ### Review Response Workflow
 
