@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-```bash
+```sh
 git clone https://github.com/tianjianjiang/smith.git $HOME/.smith
 ```
 
@@ -39,7 +39,7 @@ Point your AI coding tool to `$HOME/.smith/AGENTS.md`:
 
 ### Example
 
-```bash
+```sh
 mkdir -p ~/.claude && echo '**Standards**: $HOME/.smith/AGENTS.md' > ~/.claude/CLAUDE.md
 ```
 
