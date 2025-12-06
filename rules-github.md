@@ -1,9 +1,11 @@
 # GitHub CLI Operations
 
 <metadata>
-**Scope**: GitHub platform-specific operations (gh CLI only)
-**Load if**: Using GitHub CLI commands, GitHub-specific features
-**Prerequisites**: [Git Standards](./rules-git.md), [PR Workflows](./rules-pr.md)
+
+- **Scope**: GitHub platform-specific operations (gh CLI only)
+- **Load if**: Using GitHub CLI commands, GitHub-specific features
+- **Prerequisites**: [Git Standards](./rules-git.md), [PR Workflows](./rules-pr.md)
+
 </metadata>
 
 This document defines **GitHub-specific operations** using the `gh` CLI and GitHub platform features.
@@ -328,10 +330,12 @@ Protected branches are configured in repository settings, not via CLI.
 ### Main Branch Protection
 
 <required>
+
 - MUST require pull request reviews (minimum 1 approval)
 - MUST require status checks to pass before merging
 - MUST require branches to be up-to-date before merging
 - MUST restrict who can push to main
+
 </required>
 
 **Configuration**: Repository Settings → Branches → Branch protection rules
@@ -339,8 +343,10 @@ Protected branches are configured in repository settings, not via CLI.
 ### Develop Branch Protection
 
 <required>
+
 - MUST require status checks to pass before merging
 - MUST allow force pushes only by admins
+
 </required>
 
 ## GitHub Actions Integration

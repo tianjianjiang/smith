@@ -1,15 +1,19 @@
 # AI Agent Interaction Standards
 
 <metadata>
-**Scope**: Steering coding agents (Claude Code, GitHub Copilot, AI pair programming)
-**Load if**: Working with AI agents for development tasks
-**Prerequisites**: `$HOME/.smith/rules-core.md`, `$HOME/.smith/rules-development.md`
+
+- **Scope**: Steering coding agents (Claude Code, GitHub Copilot, AI pair programming)
+- **Load if**: Working with AI agents for development tasks
+- **Prerequisites**: `$HOME/.smith/rules-core.md`, `$HOME/.smith/rules-development.md`
+
 </metadata>
 
 <dependencies>
-**Requires**: Understanding of prompt engineering, Constitutional AI principles
-**Provides**: Agent steering patterns, efficiency optimization, quality assurance
-**Research**: Anthropic (Claude Code, Prompt Caching, Constitutional AI), OpenAI (o1/o3, Structured Outputs), Microsoft (LLMLingua)
+
+- **Requires**: Understanding of prompt engineering, Constitutional AI principles
+- **Provides**: Agent steering patterns, efficiency optimization, quality assurance
+- **Research**: Anthropic (Claude Code, Prompt Caching, Constitutional AI), OpenAI (o1/o3, Structured Outputs), Microsoft (LLMLingua)
+
 </dependencies>
 
 ## Exploration-Before-Implementation Pattern
@@ -24,17 +28,21 @@
 5. **Implement**: Agent executes approved approach with atomic commits
 
 <forbidden>
+
 - NEVER propose changes to code you haven't read
 - NEVER assume file contents without verification
 - NEVER skip clarification when requirements are ambiguous
 - NEVER implement without explaining alternatives
+
 </forbidden>
 
 <required>
+
 - Agent MUST use Task tool with subagent_type=Explore for codebase discovery
 - Agent MUST read files with Read tool before editing
 - Agent MUST ask questions before making architectural decisions
 - Agent MUST verify assumptions against actual code
+
 </required>
 
 **Anti-pattern**: Direct implementation without exploration
@@ -62,11 +70,13 @@ Agent: "I found two caching approaches in the codebase. Should we use Redis (lik
 5. **Refactor**: Improve code while maintaining passing tests
 
 <required>
+
 - Agent MUST analyze existing test structure before writing new tests
 - Agent MUST write tests BEFORE implementation code
 - Agent MUST run full test suite after changes
 - Agent MUST verify no regressions in existing tests
 - Agent MUST mark todo as completed ONLY when tests pass
+
 </required>
 
 **Success criteria**:
@@ -109,9 +119,11 @@ backward compatibility."
 ```
 
 <forbidden>
+
 - NEVER use "think step-by-step" prompts (counterproductive for extended thinking models)
 - NEVER ask for visible reasoning steps (defeats efficiency purpose)
 - NEVER use for simple, straightforward tasks
+
 </forbidden>
 
 ### OpenAI o1/o3 Models
@@ -139,10 +151,12 @@ backward compatibility."
 **Tool**: TodoWrite for task tracking
 
 <required>
+
 - Agent MUST create todos for multi-step tasks (3+ steps)
 - Agent MUST mark todos in_progress BEFORE starting work
 - Agent MUST mark todos completed IMMEDIATELY after finishing
 - Agent MUST maintain exactly ONE todo in_progress at a time
+
 </required>
 
 **Example**:
@@ -188,10 +202,12 @@ Agent: *marks #1 as completed, #2 as in_progress*
 **Pattern**: Commit early and often with descriptive messages
 
 <required>
+
 - Agent MUST commit after each logical unit of work
 - Agent MUST write commit messages explaining WHY, not just WHAT
 - Agent MUST include file:line references in explanations
 - Agent MUST read git log to understand project commit style
+
 </required>
 
 **Context restoration**:
@@ -219,10 +235,12 @@ Agent: *proposes next logical step based on commit history*
 **Agent behavior implications**:
 
 <required>
+
 - Agent MUST maintain consistent tool order across calls
 - Agent MUST avoid unnecessary variations in repeated context
 - Agent MUST reuse exact prompt structures when possible
 - Agent MUST place dynamic content AFTER static content
+
 </required>
 
 **Example - Cache-friendly pattern**:
@@ -320,18 +338,22 @@ Recent git commits, current file changes, session-specific todos
 ### Optimization Checklist
 
 <required>
+
 - Static content (methodology, rules) MUST come first
 - Tool definitions MUST maintain consistent order
 - AGENTS.md structure MUST prioritize metadata/triggers before examples
 - Dynamic content (code snippets, recent changes) MUST be placed last
 - Each cached section SHOULD exceed 1024 tokens for breakpoint efficiency
+
 </required>
 
 <forbidden>
+
 - NEVER reorder tools between calls
 - NEVER inject dynamic content into static sections
 - NEVER modify cached prefix unnecessarily
 - NEVER place evolving examples before stable rules
+
 </forbidden>
 
 **Measurement**:
@@ -391,10 +413,12 @@ Agent: *reads only necessary context (±20 lines)*
 ```
 
 <required>
+
 - Use Grep with output_mode="content" to locate code
 - Use Read with offset/limit for large files (>500 lines)
 - Read incrementally: start narrow, expand only if needed
 - Use Task tool for multi-file exploration (delegates efficiently)
+
 </required>
 
 ### Semantic Chunking
@@ -440,10 +464,12 @@ Agent: *reads file* *makes edit* "Updated validation logic in auth/middleware.ts
 ```
 
 <forbidden>
+
 - NEVER load full files when targeted reads suffice
 - NEVER read documentation when metadata answers the question
 - NEVER repeat user's question in responses
 - NEVER provide unnecessary explanations for straightforward changes
+
 </forbidden>
 
 ## Constitutional AI Principles
@@ -457,10 +483,12 @@ Agent: *reads file* *makes edit* "Updated validation logic in auth/middleware.ts
 **Definition**: Provide clear, actionable solutions with alternatives
 
 <required>
+
 - Agent MUST explain trade-offs when multiple approaches exist
 - Agent MUST provide actionable next steps
 - Agent MUST offer alternatives when user request is ambiguous
 - Agent MUST guide toward best practices, not just working solutions
+
 </required>
 
 **Examples**:
@@ -488,11 +516,13 @@ Agent: "I'll add JWT authentication" *starts implementing*
 **Definition**: Admit uncertainty, cite sources, correct mistakes
 
 <required>
+
 - Agent MUST admit when lacking information instead of hallucinating
 - Agent MUST cite sources for claims (docs, research, code references)
 - Agent MUST correct own mistakes immediately when discovered
 - Agent MUST verify assumptions against actual code
 - Agent MUST distinguish between facts and inferences
+
 </required>
 
 **Examples**:
@@ -530,23 +560,27 @@ Agent: "Actually, I need to correct myself - the schema already has this column
 **Definition**: Avoid security issues, respect code ownership, prevent destructive changes
 
 <required>
+
 - Agent MUST warn about breaking changes before implementing
 - Agent MUST avoid security vulnerabilities (OWASP Top 10)
 - Agent MUST ask before destructive operations (force push, hard reset, delete)
 - Agent MUST respect existing architecture and patterns
 - Agent MUST validate user input in generated code
 - Agent MUST use parameterized queries (never string concatenation)
+
 </required>
 
 **Security checklist**:
 ```markdown
 <forbidden>
+
 - NEVER generate SQL queries via string concatenation
 - NEVER store secrets in code (use environment variables)
 - NEVER disable security features without explicit user request
 - NEVER expose sensitive data in logs or error messages
 - NEVER implement authentication without rate limiting
 - NEVER trust user input without validation
+
 </forbidden>
 ```
 
@@ -685,10 +719,12 @@ Follow existing test structure in tests/auth/*.test.ts"
 ### Schema Design Principles
 
 <required>
+
 - Schemas MUST match existing project patterns
 - Schemas MUST include descriptions for complex fields
 - Schemas MUST use appropriate types (string, number, boolean, array, object)
 - Schemas MUST define required vs optional fields clearly
+
 </required>
 
 **Example - Code review schema**:
@@ -726,10 +762,12 @@ Follow existing test structure in tests/auth/*.test.ts"
 ### Anti-patterns
 
 <forbidden>
+
 - NEVER use overly complex schemas (>3 nesting levels)
 - NEVER expect 100% compliance without OpenAI strict mode
 - NEVER use structured outputs for free-form creative tasks
 - NEVER define schemas without examples
+
 </forbidden>
 
 **Bad schema** (too complex):
@@ -765,10 +803,12 @@ Follow existing test structure in tests/auth/*.test.ts"
 **Sweet spot**: 3-5 high-level milestones, not micro-steps
 
 <required>
+
 - Task decomposition MUST focus on logical phases
 - Tasks MUST be independently verifiable
 - Tasks MUST have clear completion criteria
 - Tasks MUST align with atomic commits
+
 </required>
 
 **Examples**:
@@ -805,10 +845,12 @@ Todos:
 **States**: pending, in_progress, completed
 
 <required>
+
 - Exactly ONE task MUST be in_progress at any time
 - Task MUST be marked in_progress BEFORE starting work
 - Task MUST be marked completed IMMEDIATELY after finishing
 - Task MUST NOT be marked completed if tests fail or errors occur
+
 </required>
 
 **Workflow**:
@@ -918,7 +960,9 @@ Agent workflow:
 ```
 
 <related>
-**Foundation**: `$HOME/.smith/rules-core.md` (core principles), `$HOME/.smith/rules-development.md` (workflow)
-**Practices**: `$HOME/.smith/rules-pr.md` (pull requests), `$HOME/.smith/rules-tools.md` (tool configuration)
-**Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
+
+- **Foundation**: `$HOME/.smith/rules-core.md` (core principles), `$HOME/.smith/rules-development.md` (workflow)
+- **Practices**: `$HOME/.smith/rules-pr.md` (pull requests), `$HOME/.smith/rules-tools.md` (tool configuration)
+- **Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
+
 </related>
