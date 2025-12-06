@@ -1,5 +1,7 @@
 # Git Workflow Standards
 
+<context>
+
 This document defines **local Git operations** and workflow standards.
 
 ## Scope
@@ -8,13 +10,19 @@ This document defines **local Git operations** and workflow standards.
 - **PR workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for pull request workflows, code reviews, agent guidelines
 - **GitHub operations**: See [GitHub Standards]($HOME/.smith/rules-github.md) for GitHub CLI commands
 
+</context>
+
 ## Branch Strategy
+
+<context>
 
 **Branch Structure:**
 - `main` - Production-ready code
 - `develop` - Integration branch for features
 - `feature/*` - Feature branches from develop
 - `hotfix/*` - Emergency fixes from main
+
+</context>
 
 <forbidden>
 
@@ -189,6 +197,8 @@ GPG should be pre-configured for automatic signing.
 
 ### Linear History
 
+<guiding_principles>
+
 <required>
 
 Maintain linear commit history for clarity and bisectability.
@@ -200,7 +210,11 @@ Maintain linear commit history for clarity and bisectability.
 
 </required>
 
+</guiding_principles>
+
 ### Atomic Commits
+
+<guiding_principles>
 
 <required>
 
@@ -230,6 +244,8 @@ git commit -m "feat(auth): add OAuth2 login, fix token bug, update docs"
 ```
 
 </forbidden>
+
+</guiding_principles>
 
 ### Atomic Workflow
 
@@ -332,6 +348,8 @@ git checkout main && git pull # Sync local main
 
 ## Stash Management
 
+<scenario>
+
 <examples>
 
 ```sh
@@ -343,7 +361,11 @@ git stash apply stash@{0}
 
 </examples>
 
+</scenario>
+
 ## History Management
+
+<scenario>
 
 <examples>
 
@@ -366,6 +388,8 @@ git commit --amend  # Edit message
 ```
 
 </examples>
+
+</scenario>
 
 ## Conflict Resolution
 
