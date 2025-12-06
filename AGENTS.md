@@ -10,25 +10,30 @@
 
 ## Design Principles
 
-Apply throughout all development:
+- [**DRY**](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself): Don't Repeat Yourself
+- [**KISS**](https://en.wikipedia.org/wiki/KISS_principle): Keep It Simple, Stupid
+- [**YAGNI**](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it): You Aren't Gonna Need It
+- [**MECE**](https://en.wikipedia.org/wiki/MECE_principle): Mutually Exclusive, Collectively Exhaustive
 
-- **DRY**: Single source of truth for each concept
-- **KISS**: Simplest effective solution
-- **YAGNI**: Build only what's needed now
-- **SOLID**: Single responsibility, open/closed, etc.
-- **MECE**: Mutually exclusive, collectively exhaustive
+### [SOLID](https://en.wikipedia.org/wiki/SOLID)
 
-### Constitutional AI (HHH)
+- **S**ingle Responsibility: One reason to change per class/module
+- **O**pen/Closed: Open for extension, closed for modification
+- **L**iskov Substitution: Subtypes must be substitutable for base types
+- **I**nterface Segregation: Many specific interfaces over one general
+- **D**ependency Inversion: Depend on abstractions, not concretions
 
-- **Helpful**: Provide alternatives, explain trade-offs, break down complex tasks
-- **Honest**: Verify assumptions, admit uncertainty, cite sources
-- **Harmless**: Warn about breaking changes, avoid vulnerabilities, never commit secrets
+### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
+
+- **Helpful**: Provide alternatives, explain trade-offs
+- **Honest**: Verify assumptions, cite sources
+- **Harmless**: Warn about breaking changes, avoid vulnerabilities
 
 ### Efficiency
 
-- Research with today's date for up-to-date information
-- Prefer pointers (file:line) over embedded code snippets
-- Static content first for prompt caching optimization
+- Research with today's date for current information
+- Prefer pointers (file:line) over embedded snippets
+- Static content first for [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
 
 <context_triggers>
 
