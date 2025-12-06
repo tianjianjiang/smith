@@ -1,9 +1,11 @@
 # Pull Request Workflows
 
 <metadata>
-**Scope**: Platform-neutral pull request and workflow concepts
-**Load if**: Creating PRs, reviewing code, merging changes, working with any Git platform
-**Prerequisites**: [Git Standards](./rules-git.md)
+
+- **Scope**: Platform-neutral pull request and workflow concepts
+- **Load if**: Creating PRs, reviewing code, merging changes, working with any Git platform
+- **Prerequisites**: [Git Standards](./rules-git.md)
+
 </metadata>
 
 This document defines **platform-neutral PR workflows** and best practices applicable to any Git platform (GitHub, GitLab, Bitbucket, Azure DevOps, etc.).
@@ -19,10 +21,12 @@ This document defines **platform-neutral PR workflows** and best practices appli
 ### Prerequisites
 
 <required>
+
 - MUST run all quality checks before creating PR
 - MUST ensure branch is up-to-date with base branch
 - MUST have meaningful commit messages
 - MUST link to related issues
+
 </required>
 
 **Pre-PR checklist:**
@@ -91,19 +95,23 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### PR Requirements
 
 <required>
+
 - MUST have descriptive title following conventional commits format
 - MUST include summary (1-3 bullet points)
 - MUST include test plan with checklist
 - MUST link to related issues
 - MUST have all CI checks passing
 - MUST have minimum 1 approval (if enforced by project)
+
 </required>
 
 <forbidden>
+
 - NEVER create PR with failing tests
 - NEVER merge PR with unresolved conflicts
 - NEVER skip CI checks
 - NEVER merge without required approvals
+
 </forbidden>
 
 ## Working on Existing PRs
@@ -111,13 +119,17 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### CRITICAL: Always Use Actual Branch Name
 
 <forbidden>
+
 **NEVER create arbitrary local branch names when working on PRs:**
+
 - ❌ Create local branches with assumed names like `pr-123`
 - ❌ Assume branch name follows a pattern
 - ❌ Make changes without verifying current branch
+
 </forbidden>
 
 <required>
+
 **ALWAYS get and use the actual PR branch name:**
 
 ```bash
@@ -134,6 +146,7 @@ git branch --show-current  # MUST match the PR's actual branch name
 # 4. Before making ANY changes, verify again
 git status  # Should show "On branch <actual-branch-name>"
 ```
+
 </required>
 
 ### Why This Matters
@@ -219,11 +232,13 @@ git push
 ### Pre-Merge Checklist
 
 <required>
+
 - MUST have all CI checks passing
 - MUST have required approvals
 - MUST be up-to-date with base branch
 - MUST have no merge conflicts
 - MUST have related issues linked
+
 </required>
 
 ### Merge Strategies
@@ -269,11 +284,13 @@ git push origin --delete feature/my-feature
 **Context**: AI agents (Claude Code, GitHub Copilot) creating PRs
 
 <required>
+
 - Agent MUST analyze full commit history from base branch divergence
 - Agent MUST review ALL changed files (not just latest commit)
 - Agent MUST write summary based on actual cumulative changes
 - Agent MUST run all checks before PR creation
 - Agent MUST verify branch tracks correct remote
+
 </required>
 
 **Workflow**:
@@ -304,11 +321,13 @@ poetry run pytest
 ### Common Agent Mistakes
 
 <forbidden>
+
 - **NEVER** analyze only the latest commit for PR summary
 - **NEVER** skip full diff review (base...HEAD)
 - **NEVER** create PR without running checks
 - **NEVER** assume file contents without reading
 - **NEVER** write generic summaries ("updated files")
+
 </forbidden>
 
 **Example - Bad vs Good**:
@@ -331,13 +350,16 @@ Summary:
 ### PR Analysis Checklist
 
 <required>
+
 Before creating PR, agent MUST:
+
 1. Run `git diff base...HEAD` to see cumulative changes
 2. Run `git log base..HEAD` to see all commits
 3. Read all modified files (not assume contents)
 4. Identify cumulative impact across all commits
 5. Verify tests pass for all changes
 6. Draft summary reflecting full PR scope
+
 </required>
 
 **See**: `$HOME/.smith/rules-ai_agents.md` - Complete agent interaction standards
@@ -347,13 +369,17 @@ Before creating PR, agent MUST:
 ### Pre-Commit Hook Coordination
 
 <scenario>
+
 **When hooks modify files during commit:**
+
 1. Pre-commit hook runs automatically
 2. Hook modifies files (formatting, linting fixes)
 3. Commit fails with "files were modified by hook"
+
 </scenario>
 
 <required>
+
 **Workflow for hook modifications:**
 
 ```bash
@@ -377,12 +403,15 @@ git commit --amend --no-edit
 # 6. IF UNSAFE: Create new commit instead
 git commit -m "style: apply pre-commit hook fixes"
 ```
+
 </required>
 
 <forbidden>
+
 - **NEVER** amend without checking commit authorship
 - **NEVER** amend commits already pushed to remote
 - **NEVER** amend commits from other authors
+
 </forbidden>
 
 **Decision tree:**
@@ -392,6 +421,7 @@ git commit -m "style: apply pre-commit hook fixes"
 ### CI Check Coordination
 
 <required>
+
 **Monitor CI status before and after changes:**
 
 ```bash
@@ -411,12 +441,15 @@ git add .
 git commit -m "fix: resolve CI check failures"
 git push
 ```
+
 </required>
 
 <forbidden>
+
 - **NEVER** request review while CI checks are failing
 - **NEVER** ignore CI check failures
 - **NEVER** merge with failing checks
+
 </forbidden>
 
 **Best practices:**
@@ -427,14 +460,18 @@ git push
 ### Amend Operations Safety
 
 <forbidden>
+
 **NEVER amend in these scenarios:**
+
 - ❌ Commit authored by someone else
 - ❌ Commit already pushed to remote (unless you force push intentionally)
 - ❌ Working on protected branches (main, develop)
 - ❌ Commit is part of a PR under active review by others
+
 </forbidden>
 
 <required>
+
 **Verification checklist before amending:**
 
 ```bash
@@ -459,6 +496,7 @@ if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
   exit 1
 fi
 ```
+
 </required>
 
 **Safe amend scenarios:**
@@ -474,6 +512,7 @@ fi
 ### Review Response Workflow
 
 <required>
+
 **Systematic approach to address review comments:**
 
 ```bash
@@ -496,6 +535,7 @@ git push
 
 # 5. Re-request review through your platform
 ```
+
 </required>
 
 **Best practices:**

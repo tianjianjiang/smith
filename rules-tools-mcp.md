@@ -85,18 +85,22 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 ## Best Practices
 
 <required>
+
 - MUST check codebase and local docs first before using MCP tools
 - MUST only use MCP tools when task specifically requires them or user requests
 - SHOULD activate tools conditionally based on task needs, not by default
+
 </required>
 
 ## Common Misunderstandings
 
 <forbidden>
+
 - NEVER mandate Serena MCP for all plans (only for multi-session tasks)
 - NEVER require Context7 for all libraries (only for unfamiliar external ones)
 - NEVER load MCP tools unconditionally in every session
 - NEVER use MCP tools for simple single-session tasks
+
 </forbidden>
 
 ## When to Use Each Tool

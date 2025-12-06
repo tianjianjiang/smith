@@ -1,15 +1,19 @@
 # Testing Standards
 
 <metadata>
-**Scope**: Testing requirements and execution patterns
-**Load if**: Writing tests, running test suites, pytest configuration
-**Prerequisites**: [Core Standards](./rules-core.md) → [Python Standards](./rules-python.md)
+
+- **Scope**: Testing requirements and execution patterns
+- **Load if**: Writing tests, running test suites, pytest configuration
+- **Prerequisites**: [Core Standards](./rules-core.md) → [Python Standards](./rules-python.md)
+
 </metadata>
 
 <dependencies>
-**Requires**: [Python Standards](./rules-python.md#testing-with-pytest) - Pytest patterns
-**Referenced by**: Development workflows
-**Optional**: [Naming](./rules-naming.md#test-files) - Test file naming
+
+- **Requires**: [Python Standards](./rules-python.md#testing-with-pytest) - Pytest patterns
+- **Referenced by**: Development workflows
+- **Optional**: [Naming](./rules-naming.md#test-files) - Test file naming
+
 </dependencies>
 
 Testing requirements, standards, and best practices.
@@ -17,10 +21,12 @@ Testing requirements, standards, and best practices.
 ## Test Requirements
 
 <required>
+
 - MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
 - MUST follow test file naming conventions - see [Naming Standards]($HOME/.smith/rules-naming.md#test-files)
 - MUST use pytest functions (not classes) - see [Python Standards]($HOME/.smith/rules-python.md)
 - MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
+
 </required>
 
 **Test organization:**
@@ -39,12 +45,16 @@ poetry run pytest tests/integration/ -v
 ```
 
 <required>
+
 - MUST use virtual env runner for pytest - see [Python Standards]($HOME/.smith/rules-python.md#virtual-environment-execution)
 - MUST run unit and integration tests separately if mirrored structure exists
+
 </required>
 
 <forbidden>
+
 - NEVER use `pytest -m "not integration"` if folder structure is mirrored (import conflicts)
+
 </forbidden>
 
 **For pytest execution patterns, .env loading**: See [Python Standards]($HOME/.smith/rules-python.md)

@@ -17,15 +17,19 @@ This document defines **local Git operations** and workflow standards.
 - `hotfix/*` - Emergency fixes from main
 
 <forbidden>
+
 - NEVER commit directly to main branch
 - NEVER force push to main or develop branches
 - NEVER use `--no-verify` flag (always run hooks)
+
 </forbidden>
 
 <required>
+
 - MUST create feature branches from develop
 - MUST use merge commits for feature branches (preserves history)
 - MUST keep branches up-to-date with base branch
+
 </required>
 
 ## Commit Standards
@@ -62,8 +66,10 @@ Closes #123"
 
 **Renaming files:**
 <required>
+
 - MUST use `git mv` for renames (preserves Git history)
 - NEVER delete + recreate (loses history)
+
 </required>
 
 ```bash
@@ -86,9 +92,11 @@ poetry run pytest
 ```
 
 <forbidden>
+
 - NEVER skip pre-commit hooks with `--no-verify`
 - NEVER commit files without running quality checks
 - NEVER commit with failing tests
+
 </forbidden>
 
 **Commit message guidelines:**
@@ -108,9 +116,11 @@ git push origin develop
 ```
 
 <required>
+
 - MUST use merge commits (`--no-ff`) for feature branches
 - MUST resolve conflicts locally before pushing
 - MUST ensure all tests pass after merge
+
 </required>
 
 **When to squash:**
@@ -138,8 +148,10 @@ git push -u origin feature/my-feature  # First push with tracking
 ```
 
 <forbidden>
+
 - NEVER use `git push --force` on main or develop
 - NEVER push without pulling latest changes first
+
 </forbidden>
 
 **Force push (only for personal feature branches):**

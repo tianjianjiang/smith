@@ -5,9 +5,11 @@ This document defines development workflow standards and code quality requiremen
 ## Code Quality (MANDATORY)
 
 <required>
+
 - MUST run formatters and linters before commits
 - MUST run tests before commits
 - MUST fix all linting errors
+
 </required>
 
 **Python projects:**
@@ -35,10 +37,12 @@ pnpm lint:fix && pnpm test
 **Pattern**: Read → Ask → Propose → Review → Implement
 
 <required>
+
 - Agent MUST read relevant files before proposing changes
 - Agent MUST use Task tool with subagent_type=Explore for codebase discovery
 - Agent MUST clarify ambiguities before implementation
 - Agent MUST explain trade-offs when multiple approaches exist
+
 </required>
 
 **Example workflow**:
@@ -58,11 +62,13 @@ Agent exploration:
 **Pattern**: Reproduce → Analyze → Hypothesize → Test → Verify
 
 <required>
+
 - Agent MUST reproduce the issue before proposing fixes
 - Agent MUST analyze logs and error messages
 - Agent MUST read relevant code sections (not entire files)
 - Agent MUST propose hypothesis with supporting evidence
 - Agent MUST verify fix with tests
+
 </required>
 
 **Example workflow**:
@@ -108,12 +114,15 @@ Recent changes: [last few commits]
 ## Pre-PR Quality Gates
 
 <required>
+
 Before creating a pull request:
+
 - MUST run all formatters: `poetry run ruff format .`
 - MUST run all linters: `poetry run ruff check --fix .`
 - MUST run all tests: `poetry run pytest`
 - MUST ensure branch is up-to-date with base branch
 - MUST review your own changes first (`git diff`)
+
 </required>
 
 **See**: `$HOME/.smith/rules-pr.md` - Pull request creation workflow

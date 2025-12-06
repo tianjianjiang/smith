@@ -1,15 +1,19 @@
 # Python Development Standards
 
 <metadata>
-**Scope**: Python-specific coding standards
-**Load if**: Writing Python code, pytest tests, virtual env configuration
-**Prerequisites**: [Core Standards](./rules-core.md)
+
+- **Scope**: Python-specific coding standards
+- **Load if**: Writing Python code, pytest tests, virtual env configuration
+- **Prerequisites**: [Core Standards](./rules-core.md)
+
 </metadata>
 
 <dependencies>
-**Requires**: [Core Standards](./rules-core.md) - Personal formatting, NEVER/ALWAYS
-**Referenced by**: Testing, Development workflows
-**Optional**: [Naming](./rules-naming.md) - File naming patterns
+
+- **Requires**: [Core Standards](./rules-core.md) - Personal formatting, NEVER/ALWAYS
+- **Referenced by**: Testing, Development workflows
+- **Optional**: [Naming](./rules-naming.md) - File naming patterns
+
 </dependencies>
 
 Python-specific coding standards. For personal rules, see `rules-core.md`.
@@ -17,21 +21,27 @@ Python-specific coding standards. For personal rules, see `rules-core.md`.
 ## Import Rules
 
 <forbidden>
+
 - NEVER use relative imports (from .module import something)
 - NEVER use inline imports (import statements within functions)
+
 </forbidden>
 
 <required>
+
 - ALWAYS use absolute imports (from package.module import something)
 - ALWAYS organize imports: standard library, third-party, local application
+
 </required>
 
 ## Type System
 
 <required>
+
 - MUST use type hints for all function signatures
 - MUST use mypy for static type checking
 - MUST use proper type annotations for complex types (Dict, List, Optional, Union)
+
 </required>
 
 **Example:**
@@ -59,16 +69,20 @@ poetry run ruff format
 ## Testing with Pytest
 
 <forbidden>
+
 - NEVER use unittest-style test classes (TestCase inheritance)
 - NEVER use pytest class-based tests (class TestFoo: def test_bar)
 - NEVER execute pytest without virtual env runner (missing .env vars)
+
 </forbidden>
 
 <required>
+
 - MUST use function-based tests: `def test_should_<action>_when_<condition>():`
 - MUST use virtual env runner for test execution (poetry run/uv run)
 - MUST use type hints in test function signatures
-- MUST use pytest.approx() for floating point comparisons
+- MUST use pytest.approx() for floating-point comparisons
+
 </required>
 
 **Example - Function-based tests:**
@@ -89,9 +103,11 @@ class TestDataBuilder:
 **Pattern**: Use package manager's virtual environment runner for all Python commands
 
 <required>
+
 - MUST use virtual env runner for pytest (ensures .env loading, proper paths)
 - MUST use virtual env runner for formatters/linters (ruff)
 - MUST use package manager for dependency management
+
 </required>
 
 **Implementation by tool**:
@@ -106,8 +122,10 @@ uv run ruff check --fix
 ```
 
 <forbidden>
+
 - NEVER execute tests directly: `.venv/bin/python -m pytest` (missing .env vars)
 - NEVER mix package managers in same project
+
 </forbidden>
 
 ## Environment Variables
