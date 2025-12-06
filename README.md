@@ -51,6 +51,8 @@ Some tools follow [XDG Base Directory](https://specifications.freedesktop.org/ba
 - JetBrains AI[[13]](#ref-13): `~/.config/JetBrains/*/ai-assistant/rules/`
 - Tabnine[[20]](#ref-20): `~/.config/TabNine/`
 
+A proposal to standardize `~/.config/agents/AGENTS.md` as the global location is under discussion[[27]](#ref-27).
+
 ## References
 
 1. <span id="ref-1"></span>[Aider](https://aider.chat/)
@@ -79,7 +81,8 @@ Some tools follow [XDG Base Directory](https://specifications.freedesktop.org/ba
 24. <span id="ref-24"></span>[Zed Agent Panel](https://zed.dev/docs/ai/agent-panel)
 25. <span id="ref-25"></span>[Zed Global Config Discussion](https://github.com/zed-industries/zed/discussions/36560) — Project-level only
 26. <span id="ref-26"></span>[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) — Defines `$XDG_CONFIG_HOME` defaulting to `~/.config/`
-27. <span id="ref-27"></span>[AGENTS.md Standard](https://agents.md) — Open format for AI coding agents
+27. <span id="ref-27"></span>[Global AGENTS.md Proposal](https://github.com/openai/agents.md/issues/91) — Proposes `~/.config/agents/AGENTS.md` as standard global location
+28. <span id="ref-28"></span>[AGENTS.md Standard](https://agents.md) — Open format for AI coding agents
 
 ## License
 
