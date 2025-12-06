@@ -298,7 +298,7 @@ git push --force-with-lease origin feature/my_feature
 
 <required>
 
-After merging a PR (yours or others'), sync local repository:
+After merging a PR (yours or someone else's), sync local repository:
 
 ```sh
 git fetch origin              # Update remote tracking refs

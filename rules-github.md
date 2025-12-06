@@ -62,6 +62,22 @@ gh pr create --title "feat: feature" --body "Description" --reviewer @user1,@use
 gh pr create --base develop --title "feat: feature" --body "Description"
 ```
 
+### PR Self-Assignment
+
+<required>
+
+**ALWAYS assign yourself** when creating or updating a PR where you are not already an assignee.
+
+```sh
+# When creating PR
+gh pr create --title "feat: feature" --body "Description" --assignee @me
+
+# When updating existing PR
+gh pr edit <pr-number> --add-assignee @me
+```
+
+</required>
+
 ### Viewing PRs
 
 ```sh

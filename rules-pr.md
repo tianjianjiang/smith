@@ -260,14 +260,14 @@ main ──●──●──●──M
 
 <required>
 
-**Squash merge IS allowed** if you follow the two-step branch deletion process (see "Branch Deletion with Stacked PRs").
+**Squash merge IS allowed** if you follow the branch deletion process for stacked PRs (see "Branch Deletion with Stacked PRs").
 
 **Merge strategy by position**:
 
-| PR Position | Squash Merge | Branch Deletion |
+| PR Position | Squash Merge | Branch Deletion Timing |
 |-------------|--------------|-----------------|
-| Parent (has children) | OK with two-step | After child base updated |
-| Middle | OK with two-step | After child base updated |
+| Parent (has children) | OK with process | After child base updated |
+| Middle | OK with process | After child base updated |
 | Final (leaf) | OK | Immediate OK |
 
 </required>
@@ -349,7 +349,7 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
 
 <required>
 
-**Two-step process for stacked PRs:**
+**Process for stacked PRs:**
 
 1. Merge parent PR WITHOUT deleting branch:
    ```sh
