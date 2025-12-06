@@ -81,7 +81,7 @@ poetry run ruff format
 - MUST use function-based tests: `def test_should_<action>_when_<condition>():`
 - MUST use virtual env runner for test execution (poetry run/uv run)
 - MUST use type hints in test function signatures
-- MUST use pytest.approx() for floating point comparisons
+- MUST use pytest.approx() for floating-point comparisons
 
 </required>
 
