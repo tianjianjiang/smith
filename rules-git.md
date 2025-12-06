@@ -294,6 +294,30 @@ git push -u origin feature/my_feature  # First push with tracking
 git push --force-with-lease origin feature/my_feature
 ```
 
+### Post-Merge Local Sync
+
+<required>
+
+After merging a PR (yours or others'), sync local repository:
+
+```sh
+git fetch origin              # Update remote tracking refs
+git checkout main && git pull # Sync local main
+```
+
+**Why both commands:**
+- `git fetch`: Updates `origin/main` reference without modifying working directory
+- `git pull`: Fast-forwards local `main` to match remote
+
+</required>
+
+<forbidden>
+
+- Working on stale local main (always pull after merges)
+- Forgetting to fetch (remote refs become outdated)
+
+</forbidden>
+
 ## Stash Management
 
 **Save work in progress:**

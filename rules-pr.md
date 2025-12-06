@@ -256,34 +256,32 @@ main ──●──●──●──M
 
 </examples>
 
-### Squash Merge Restrictions
+### Squash Merge with Stacked PRs
 
-<forbidden>
+<required>
 
-**NEVER squash merge parent PRs in a stack.**
+**Squash merge IS allowed** if you follow the two-step branch deletion process (see "Branch Deletion with Stacked PRs").
+
+**Merge strategy by position**:
+
+| PR Position | Squash Merge | Branch Deletion |
+|-------------|--------------|-----------------|
+| Parent (has children) | OK with two-step | After child base updated |
+| Middle | OK with two-step | After child base updated |
+| Final (leaf) | OK | Immediate OK |
+
+</required>
+
+**Why squash merge requires extra steps**:
 
 Squash merge creates a single commit, destroying commit ancestry. Child branches still contain parent's original commits, causing:
 - Duplicate commits in child PR
 - Merge conflicts when rebasing
 - Git unable to recognize commits already in main
 
-</forbidden>
-
-<required>
-
-**Merge strategy by position**:
-
-| PR Position | Allowed Merge Strategy |
-|-------------|----------------------|
-| Parent (base) | Merge commit only |
-| Middle | Merge commit only |
-| Final (leaf) | Any (squash OK) |
-
-</required>
-
 <examples>
 
-**Workaround if squash merge was used**:
+**Fixing child PR after parent was squash merged**:
 
 Option 1 - Rebase with `--fork-point`:
 ```sh
@@ -337,6 +335,42 @@ git merge main
 - [How to handle stacked PRs on GitHub](https://www.nutrient.io/blog/how-to-handle-stacked-pull-requests-on-github/)
 - [Stacked pull requests with squash merge](https://echobind.com/post/stacked-pull-requests-with-squash-merge/)
 - [How to merge stacked PRs in GitHub](https://graphite.com/guides/how-to-merge-stack-pull-requests-github)
+- [Dave Pacheco's Stacked PR Workflow](https://www.davepacheco.net/blog/2025/stacked-prs-on-github/)
+
+### Branch Deletion with Stacked PRs
+
+<forbidden>
+
+**NEVER use `--delete-branch` when merging a PR that has dependent child PRs.**
+
+The GitHub API immediately deletes the branch, closing all child PRs before their base can be updated. This is a known GitHub API limitation ([cli/cli#1168](https://github.com/cli/cli/issues/1168)).
+
+</forbidden>
+
+<required>
+
+**Two-step process for stacked PRs:**
+
+1. Merge parent PR WITHOUT deleting branch:
+   ```sh
+   gh pr merge 123 --squash  # No --delete-branch
+   ```
+
+2. Update child PR base and rebase:
+   ```sh
+   gh pr edit 124 --base main
+   git fetch origin
+   git checkout feature/child_branch
+   git rebase --onto origin/main feature/parent_branch
+   git push --force-with-lease
+   ```
+
+3. Delete parent branch AFTER child is updated:
+   ```sh
+   git push origin --delete feature/parent_branch
+   ```
+
+</required>
 
 ## Working on Existing PRs
 
