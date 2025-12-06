@@ -27,7 +27,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 <forbidden>
 
 - NEVER write inline comments except in config files (.env, .env.sample, .env.tmpl) or `# TODO:` comments
-- NEVER use emoji in code, logs, print statements, error messages, or documentation (exception: user-facing UI text if explicitly requested)
+- **NEVER use emoji or Unicode symbols** (including ❌, ✓, ✅, ⚠️, 📝) in code, logs, print statements, error messages, or documentation. Exception: user-facing UI text if explicitly requested. Use plain text labels instead (e.g., "Bad:", "Good:", "Note:").
 - NEVER write excessive blank lines between code blocks
 - NEVER commit files without exactly one trailing newline
 
@@ -52,6 +52,11 @@ Fundamental coding rules applying as personal standards across all languages, co
 **String Quotes**: Consistent within language
 - Python: Double quotes preferred
 - JavaScript/TypeScript: Single quotes or project standard
+
+**Code Blocks in Documentation**:
+- Use `sh` for shell commands (portable across bash, zsh, fish)
+- Describe code blocks outside the block, not with inline comments
+- Use `text` for non-executable examples (commit messages, diagrams)
 
 ### DateTime Standards
 
@@ -85,7 +90,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 <forbidden>
 
-- NEVER use emoji in agent-generated code/docs (unless explicitly requested by user)
+- NEVER use emoji or Unicode symbols in agent-generated code/docs (see Universal Code Standards above)
 - NEVER generate overly verbose explanations when code is self-evident
 - NEVER add unnecessary inline comments to code
 - NEVER create files proactively without user request

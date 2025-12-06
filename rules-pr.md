@@ -4,7 +4,7 @@
 
 - **Scope**: Platform-neutral pull request and workflow concepts
 - **Load if**: Creating PRs, reviewing code, merging changes, working with any Git platform
-- **Prerequisites**: [Git Standards](./rules-git.md)
+- **Prerequisites**: [Core Standards](./rules-core.md), [Git Standards](./rules-git.md)
 
 </metadata>
 
@@ -30,7 +30,7 @@ This document defines **platform-neutral PR workflows** and best practices appli
 </required>
 
 **Pre-PR checklist:**
-```bash
+```sh
 # Run formatters and linters
 poetry run ruff format . && poetry run ruff check --fix .
 
@@ -42,32 +42,58 @@ git fetch origin
 git rebase origin/main  # or merge, depending on project
 
 # Push your changes
-git push -u origin feature/my-feature
+git push -u origin feature/my_feature
 ```
 
 ### PR Title Format
 
-Use conventional commits format:
-```
-<type>(<scope>): <description>
-```
+<formatting>
 
-**Examples:**
+**Format**: `type: description` or `type(scope): description`
+
+Scope is optional. Choose type based on PRIMARY change:
+
+- `feat`: New user-facing functionality
+- `fix`: Bug fix for existing functionality
+- `docs`: Documentation ONLY (no code changes)
+- `refactor`: Code restructure without behavior change
+- `style`: Formatting ONLY (whitespace, semicolons)
+- `test`: Test changes ONLY
+- `chore`: Build/tooling (CI, dependencies, scripts)
+- `perf`: Performance improvement
+
+</formatting>
+
+<required>
+
+**Length limits** (PR title becomes merge commit subject):
+- **Target**: 50 characters (forces conciseness)
+- **Hard limit**: 72 characters (GitLab enforces, GitHub truncates)
+
+**Atomicity indicator**: If title exceeds 50 chars, consider if PR combines multiple changes. Split into stacked PRs if needed.
+
+</required>
+
+<examples>
+
 - `feat(rag): add semantic search filtering`
 - `fix(api): resolve CORS issues`
 - `docs: update deployment guide`
 - `refactor(auth): extract validation logic`
 - `test: add integration tests for search`
 
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `refactor`: Code restructuring without changing behavior
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
-- `perf`: Performance improvements
-- `style`: Code style changes (formatting, no logic change)
+</examples>
+
+<forbidden>
+
+- PR title over 72 characters
+- Multiple unrelated changes in title (e.g., "add X and fix Y and update Z")
+- Using "and" to join unrelated changes (indicator of non-atomic PR)
+- Using `docs` when also changing code → use `feat` or `fix`
+- Using `refactor` for bug fixes → use `fix`
+- Using `chore` for new features → use `feat`
+
+</forbidden>
 
 ### PR Body Template
 
@@ -114,6 +140,204 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 </forbidden>
 
+### Stacked PRs
+
+<required>
+
+For large features, use stacked PRs to maintain atomic, reviewable changes.
+
+**When to stack**:
+- Feature requires 500+ lines of changes
+- Multiple logical components that can be reviewed independently
+- Need to unblock dependent work before full feature is ready
+
+**How to stack**:
+1. Create base PR with foundation (e.g., `feature/auth-base`)
+2. Create child PR branching from base (e.g., `feature/auth-login` from `feature/auth-base`)
+3. Each PR should be independently reviewable and mergeable
+4. Merge bottom-up: base first, then children
+
+</required>
+
+<examples>
+
+**Stack structure**:
+```text
+main
+ └── feature/auth-base (PR #1: models, migrations)
+      └── feature/auth-login (PR #2: login endpoint)
+           └── feature/auth-oauth (PR #3: OAuth integration)
+```
+
+**PR description for stacked PRs**:
+```markdown
+## Stack
+- **Depends on**: #123 (feature/auth-base) ← This PR requires #123 to be merged first
+- **Blocks**: #125 (feature/auth-oauth) ← PR #125 depends on this PR
+```
+
+**Field meanings**:
+- `Depends on`: PRs that must merge before this one (upstream dependencies)
+- `Blocks`: PRs waiting for this one to merge (downstream dependents)
+
+</examples>
+
+### Stacked PR Merge Workflow
+
+<required>
+
+**Sequential merge order** (bottom-up):
+1. Wait for parent PR approval
+2. Merge parent PR into `main`
+3. Rebase child PR onto updated `main`
+4. Get child PR approved
+5. Repeat for each level in stack
+
+</required>
+
+<forbidden>
+
+- NEVER merge child PR before parent (merges into parent branch, not main)
+- NEVER merge main directly into child branch (corrupts history)
+- NEVER use squash merge for non-final PRs in a stack
+
+</forbidden>
+
+<examples>
+
+**Correct merge sequence**:
+```text
+1. Merge PR #1 (feature/auth-base) → main
+2. Rebase PR #2 (feature/auth-login) onto main
+3. Merge PR #2 → main
+4. Rebase PR #3 (feature/auth-oauth) onto main
+5. Merge PR #3 → main (can squash this one)
+```
+
+</examples>
+
+### Rebasing After Parent Merges
+
+<required>
+
+When a parent PR merges, child PRs must be rebased:
+
+1. Fetch latest changes
+2. Checkout child branch
+3. Rebase onto updated main
+4. Force push (safe for your PR branch)
+
+```sh
+git fetch origin
+git checkout feature/auth-login
+git rebase --onto origin/main feature/auth-base
+git push --force-with-lease
+```
+
+**Why `--onto`**: Only transplants commits unique to child branch (commits between parent and child), avoiding duplicate commits.
+
+</required>
+
+<examples>
+
+**Before rebase** (after parent merged):
+```text
+main ──●──●──●──M (parent merged as M)
+                 \
+feature/auth-login ──A──B──C (still based on old parent)
+```
+
+**After `git rebase --onto origin/main feature/auth-base`**:
+```text
+main ──●──●──●──M
+                 \
+                  └──A'──B'──C' (feature/auth-login rebased)
+```
+
+</examples>
+
+### Squash Merge Restrictions
+
+<forbidden>
+
+**NEVER squash merge parent PRs in a stack.**
+
+Squash merge creates a single commit, destroying commit ancestry. Child branches still contain parent's original commits, causing:
+- Duplicate commits in child PR
+- Merge conflicts when rebasing
+- Git unable to recognize commits already in main
+
+</forbidden>
+
+<required>
+
+**Merge strategy by position**:
+
+| PR Position | Allowed Merge Strategy |
+|-------------|----------------------|
+| Parent (base) | Merge commit only |
+| Middle | Merge commit only |
+| Final (leaf) | Any (squash OK) |
+
+</required>
+
+<examples>
+
+**Workaround if squash merge was used**:
+
+Option 1 - Rebase with `--fork-point`:
+```sh
+git fetch origin
+git checkout feature/auth-login
+git rebase --onto origin/main --fork-point origin/feature/auth-base
+git push --force-with-lease
+```
+
+Option 2 - Interactive rebase to drop parent's commits:
+```sh
+git checkout main && git pull
+git checkout feature/auth-login
+git rebase -i main
+```
+In the interactive editor, mark all commits from the parent branch as `drop`.
+
+</examples>
+
+### Keeping Stack Updated
+
+<required>
+
+When pulling changes from main into a stack, cascade updates through the stack sequentially:
+
+```sh
+git checkout feature/auth-base
+git merge main
+git push
+
+git checkout feature/auth-login
+git merge feature/auth-base
+git push
+```
+
+</required>
+
+<forbidden>
+
+Merging main directly into a child branch corrupts history:
+
+```sh
+git checkout feature/auth-login
+git merge main
+```
+
+</forbidden>
+
+### Stacked PR References
+
+- [How to handle stacked PRs on GitHub](https://www.nutrient.io/blog/how-to-handle-stacked-pull-requests-on-github/)
+- [Stacked pull requests with squash merge](https://echobind.com/post/stacked-pull-requests-with-squash-merge/)
+- [How to merge stacked PRs in GitHub](https://graphite.com/guides/how-to-merge-stack-pull-requests-github)
+
 ## Working on Existing PRs
 
 ### CRITICAL: Always Use Actual Branch Name
@@ -122,9 +346,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 **NEVER create arbitrary local branch names when working on PRs:**
 
-- ❌ Create local branches with assumed names like `pr-123`
-- ❌ Assume branch name follows a pattern
-- ❌ Make changes without verifying current branch
+- Do NOT create local branches with assumed names like `pr-123`
+- Do NOT assume branch name follows a pattern
+- Do NOT make changes without verifying current branch
 
 </forbidden>
 
@@ -132,7 +356,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 **ALWAYS get and use the actual PR branch name:**
 
-```bash
+```sh
 # 1. Get actual branch name from your platform
 # (Use your platform's CLI or UI to find the branch name)
 
@@ -164,7 +388,7 @@ git status  # Should show "On branch <actual-branch-name>"
 
 If you already made changes to the wrong branch:
 
-```bash
+```sh
 # 1. Get the actual branch name from your platform
 
 # 2. Checkout the correct branch
@@ -176,6 +400,27 @@ git cherry-pick <commit-sha-from-wrong-branch>
 # 4. Delete the wrong branch
 git branch -D <wrong-branch-name>
 ```
+
+### Post-Push Requirements
+
+<required>
+
+After pushing changes to a PR:
+
+1. **Address review comments**: Read and respond to all new review comments
+2. **Revise PR title**: Update if changes have shifted the PR's focus
+3. **Revise PR body**: Update summary to reflect current cumulative changes
+4. **Verify atomicity**: Confirm PR still represents a single logical change
+
+</required>
+
+<forbidden>
+
+- Leaving review comments unaddressed after push
+- PR title/body that doesn't reflect actual changes
+- Pushing without checking for new review comments
+
+</forbidden>
 
 ## Code Review Process
 
@@ -199,7 +444,7 @@ git branch -D <wrong-branch-name>
 6. Re-request review after changes
 
 **Workflow:**
-```bash
+```sh
 # Make changes based on review feedback
 git add .
 git commit -m "refactor: address review comments"
@@ -265,7 +510,7 @@ git push
 
 ### Post-Merge Cleanup
 
-```bash
+```sh
 # Switch to main branch
 git checkout main
 
@@ -273,10 +518,10 @@ git checkout main
 git pull origin main
 
 # Delete local feature branch
-git branch -d feature/my-feature
+git branch -d feature/my_feature
 
 # Delete remote feature branch (if not auto-deleted)
-git push origin --delete feature/my-feature
+git push origin --delete feature/my_feature
 ```
 
 ## Agent-Created Pull Requests
@@ -294,7 +539,7 @@ git push origin --delete feature/my-feature
 </required>
 
 **Workflow**:
-```bash
+```sh
 # 1. Understand full scope of changes
 git diff base...HEAD  # See all cumulative changes
 git log base..HEAD    # Review all commits that will be included
@@ -332,13 +577,13 @@ poetry run pytest
 
 **Example - Bad vs Good**:
 ```markdown
-❌ Bad (only looked at latest commit):
+Bad (only looked at latest commit):
 Summary:
 - Fixed typo in README
 
 (But PR actually includes 5 commits adding entire auth system!)
 
-✓ Good (analyzed full diff):
+Good (analyzed full diff):
 Summary:
 - Implement OAuth2 authentication with token refresh
 - Add rate limiting to prevent abuse (10 req/min)
@@ -382,7 +627,7 @@ Before creating PR, agent MUST:
 
 **Workflow for hook modifications:**
 
-```bash
+```sh
 # 1. Make your changes
 git add .
 git commit -m "feat: add feature"
@@ -415,8 +660,8 @@ git commit -m "style: apply pre-commit hook fixes"
 </forbidden>
 
 **Decision tree:**
-- ✅ Amend IF: You authored last commit AND commit not pushed yet
-- ❌ New commit IF: Last commit from someone else OR already pushed
+- Amend IF: You authored last commit AND commit not pushed yet
+- New commit IF: Last commit from someone else OR already pushed
 
 ### CI Check Coordination
 
@@ -424,7 +669,7 @@ git commit -m "style: apply pre-commit hook fixes"
 
 **Monitor CI status before and after changes:**
 
-```bash
+```sh
 # 1. Check current CI status in your platform's UI
 
 # 2. After making changes and pushing
@@ -463,10 +708,10 @@ git push
 
 **NEVER amend in these scenarios:**
 
-- ❌ Commit authored by someone else
-- ❌ Commit already pushed to remote (unless you force push intentionally)
-- ❌ Working on protected branches (main, develop)
-- ❌ Commit is part of a PR under active review by others
+- Commit authored by someone else
+- Commit already pushed to remote (unless you force push intentionally)
+- Working on protected branches (main, develop)
+- Commit is part of a PR under active review by others
 
 </forbidden>
 
@@ -474,7 +719,7 @@ git push
 
 **Verification checklist before amending:**
 
-```bash
+```sh
 # 1. Check commit authorship
 AUTHOR=$(git log -1 --format='%ae')
 if [ "$AUTHOR" != "your-email@example.com" ]; then
@@ -500,14 +745,14 @@ fi
 </required>
 
 **Safe amend scenarios:**
-- ✅ Pre-commit hook modified files (see Pre-Commit Hook Coordination)
-- ✅ Fixing typo in commit message you just made
-- ✅ Adding forgotten file to your last commit (before push)
+- Pre-commit hook modified files (see Pre-Commit Hook Coordination)
+- Fixing typo in commit message you just made
+- Adding forgotten file to your last commit (before push)
 
 **When to create new commit instead:**
-- 📝 Addressing review feedback (keep review history)
-- 📝 Fixing bugs found after push
-- 📝 Any change to commits from other authors
+- Addressing review feedback (keep review history)
+- Fixing bugs found after push
+- Any change to commits from other authors
 
 ### Review Response Workflow
 
@@ -515,7 +760,7 @@ fi
 
 **Systematic approach to address review comments:**
 
-```bash
+```sh
 # 1. Fetch latest review comments from your platform
 
 # 2. For each comment thread:
@@ -551,7 +796,7 @@ git push
 **Symptoms**: You made changes and committed but PR doesn't show them
 
 **Diagnosis:**
-```bash
+```sh
 # Check which branch you're on
 git branch --show-current
 
@@ -562,7 +807,7 @@ git branch -vv
 ```
 
 **Solution:**
-```bash
+```sh
 # If on wrong branch, see "Recovery if You Made This Mistake" above
 
 # If branch doesn't track remote
@@ -575,14 +820,14 @@ git push
 **Symptoms**: PR shows merge conflicts with base branch
 
 **Diagnosis:**
-```bash
+```sh
 # Check if base branch updated
 git fetch origin
 git log HEAD..origin/main  # Check what changed in main
 ```
 
 **Solution:**
-```bash
+```sh
 # Update local main
 git fetch origin main:main
 
@@ -604,7 +849,7 @@ git push --force-with-lease
 **Symptoms**: Pre-commit passes locally but CI fails
 
 **Solution:**
-```bash
+```sh
 # CI may have different tool versions
 # Check CI config to match versions locally
 
@@ -626,7 +871,7 @@ poetry run pytest --cov=<same-as-ci>
 **Problem**: Pushed PR branch to wrong repository
 
 **Solution:**
-```bash
+```sh
 # 1. Check remotes
 git remote -v
 
@@ -645,7 +890,7 @@ git push -u origin <branch-name>
 **Problem**: Made commit but want to redo it differently
 
 **Solution:**
-```bash
+```sh
 # Undo commit but keep changes staged
 git reset --soft HEAD~1
 
@@ -662,7 +907,7 @@ git commit -m "better commit message"
 **Problem**: Base branch (main/develop) has new commits
 
 **Solution:**
-```bash
+```sh
 # Fetch latest
 git fetch origin
 

@@ -61,7 +61,7 @@ def process_documents(docs: List[str], max_count: Optional[int] = None) -> bool:
 - PEP8 compliance for all Python code
 
 **Run before commit:**
-```bash
+```sh
 poetry run ruff check --fix
 poetry run ruff format
 ```
@@ -111,7 +111,7 @@ class TestDataBuilder:
 </required>
 
 **Implementation by tool**:
-```bash
+```sh
 # Poetry
 poetry run pytest
 poetry run ruff check --fix
@@ -163,7 +163,7 @@ import library  # Now library sees the config
 ## Package Management
 
 **Dependency management:**
-```bash
+```sh
 # Poetry
 poetry install
 poetry add <package>

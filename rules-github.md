@@ -18,7 +18,7 @@ This document defines **GitHub-specific operations** using the `gh` CLI and GitH
 
 ## GitHub CLI Installation
 
-```bash
+```sh
 # macOS
 brew install gh
 
@@ -30,7 +30,7 @@ gh auth login
 
 ### Creating PRs
 
-```bash
+```sh
 # Basic PR creation
 gh pr create --title "feat: add feature" --body "Description"
 
@@ -64,7 +64,7 @@ gh pr create --base develop --title "feat: feature" --body "Description"
 
 ### Viewing PRs
 
-```bash
+```sh
 # List all open PRs
 gh pr list
 
@@ -98,7 +98,7 @@ gh pr view 123 --comments
 
 ### Checking Out PRs
 
-```bash
+```sh
 # Get the actual branch name first (CRITICAL)
 BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
 
@@ -112,7 +112,7 @@ git branch --show-current  # Must match $BRANCH
 
 ### PR Status and Checks
 
-```bash
+```sh
 # View CI check status
 gh pr checks 123
 
@@ -134,7 +134,7 @@ gh pr checks 123 --rerun
 
 ### Merging PRs
 
-```bash
+```sh
 # Merge commit
 gh pr merge 123 --merge
 
@@ -155,7 +155,7 @@ gh pr merge 123 --squash --delete-branch
 
 ### Requesting Reviews
 
-```bash
+```sh
 # Request review from user
 gh pr edit 123 --add-reviewer @username
 
@@ -168,7 +168,7 @@ gh pr edit 123 --remove-reviewer @username
 
 ### Giving Reviews
 
-```bash
+```sh
 # Approve PR
 gh pr review 123 --approve
 
@@ -184,7 +184,7 @@ gh pr review 123 --comment -b "Minor suggestions, but looks good overall"
 
 ### PR Comments
 
-```bash
+```sh
 # Add comment to PR
 gh pr comment 123 --body "Great work!"
 
@@ -212,7 +212,7 @@ gh pr edit 123 --remove-label wontfix
 
 ### Creating Issues
 
-```bash
+```sh
 # Basic issue creation
 gh issue create --title "Bug: error message" --body "Description"
 
@@ -248,7 +248,7 @@ gh issue create --title "Bug" --body "Description" --label bug,priority:high
 
 ### Viewing Issues
 
-```bash
+```sh
 # List issues
 gh issue list
 
@@ -267,7 +267,7 @@ gh issue view 123 --web
 
 ### Managing Issues
 
-```bash
+```sh
 # Close issue
 gh issue close 123
 
@@ -291,7 +291,7 @@ gh issue comment 123 --body "Update on progress..."
 
 ### In Commit Messages
 
-```bash
+```sh
 git commit -m "fix(api): resolve 500 error
 
 This fixes the issue where API returned 500 error due to...
@@ -316,7 +316,7 @@ Relates to #789
 
 ### Link Issues to PRs
 
-```bash
+```sh
 # Link PR to issue (in PR body)
 gh pr edit 123 --body "Fixes #456
 
@@ -353,7 +353,7 @@ Protected branches are configured in repository settings, not via CLI.
 
 ### Viewing Workflow Runs
 
-```bash
+```sh
 # List workflow runs
 gh run list
 
@@ -372,7 +372,7 @@ gh run download <run-id>
 
 ### Re-running Workflows
 
-```bash
+```sh
 # Re-run failed jobs
 gh run rerun <run-id> --failed
 
@@ -382,7 +382,7 @@ gh run rerun <run-id>
 
 ### Workflow Status in PRs
 
-```bash
+```sh
 # Check workflow status for PR
 gh pr checks 123
 
@@ -417,7 +417,7 @@ When PR is created, GitHub automatically requests reviews from matching owners.
 
 ### Check PR status before making changes
 
-```bash
+```sh
 # Get PR info
 gh pr view 123
 
@@ -433,7 +433,7 @@ git checkout "$BRANCH"
 
 ### Complete review response workflow
 
-```bash
+```sh
 # View PR comments
 gh pr view 123 --comments
 
@@ -451,7 +451,7 @@ gh pr edit 123 --add-reviewer @reviewer
 
 ### Monitor CI and merge
 
-```bash
+```sh
 # Watch CI checks
 gh pr checks 123 --watch
 

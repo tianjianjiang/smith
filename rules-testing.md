@@ -38,7 +38,7 @@ Testing requirements, standards, and best practices.
 ## Test Execution
 
 **Python projects:**
-```bash
+```sh
 # Use virtual env runner (poetry run or uv run)
 poetry run pytest tests/unit/ -v
 poetry run pytest tests/integration/ -v
