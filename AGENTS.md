@@ -8,6 +8,28 @@
 
 </metadata>
 
+## Design Principles
+
+Apply throughout all development:
+
+- **DRY**: Single source of truth for each concept
+- **KISS**: Simplest effective solution
+- **YAGNI**: Build only what's needed now
+- **SOLID**: Single responsibility, open/closed, etc.
+- **MECE**: Mutually exclusive, collectively exhaustive
+
+### Constitutional AI (HHH)
+
+- **Helpful**: Provide alternatives, explain trade-offs, break down complex tasks
+- **Honest**: Verify assumptions, admit uncertainty, cite sources
+- **Harmless**: Warn about breaking changes, avoid vulnerabilities, never commit secrets
+
+### Efficiency
+
+- Research with today's date for up-to-date information
+- Prefer pointers (file:line) over embedded code snippets
+- Static content first for prompt caching optimization
+
 <context_triggers>
 
 <!-- Load these files ONLY if the specific context applies -->
