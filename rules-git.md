@@ -246,7 +246,7 @@ gh pr create --title "type: description" --body "..."
 ```sh
 git checkout develop
 git pull origin develop
-git merge --no-ff feature/my-feature
+git merge --no-ff feature/my_feature
 git push origin develop
 ```
 
@@ -278,8 +278,8 @@ git pull origin develop
 
 **Push branches:**
 ```sh
-git push origin feature/my-feature
-git push -u origin feature/my-feature  # First push with tracking
+git push origin feature/my_feature
+git push -u origin feature/my_feature  # First push with tracking
 ```
 
 <forbidden>
@@ -291,7 +291,7 @@ git push -u origin feature/my-feature  # First push with tracking
 
 **Force push (only for personal feature branches):**
 ```sh
-git push --force-with-lease origin feature/my-feature
+git push --force-with-lease origin feature/my_feature
 ```
 
 ## Stash Management

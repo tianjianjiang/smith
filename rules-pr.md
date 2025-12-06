@@ -42,7 +42,7 @@ git fetch origin
 git rebase origin/main  # or merge, depending on project
 
 # Push your changes
-git push -u origin feature/my-feature
+git push -u origin feature/my_feature
 ```
 
 ### PR Title Format
@@ -518,10 +518,10 @@ git checkout main
 git pull origin main
 
 # Delete local feature branch
-git branch -d feature/my-feature
+git branch -d feature/my_feature
 
 # Delete remote feature branch (if not auto-deleted)
-git push origin --delete feature/my-feature
+git push origin --delete feature/my_feature
 ```
 
 ## Agent-Created Pull Requests
