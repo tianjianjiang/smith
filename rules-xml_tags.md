@@ -39,9 +39,12 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 
 **Chain-of-Thought Reference**: [Let Claude think](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/chain-of-thought)
 
-### OpenAI GPT-5 Tags
+### OpenAI GPT-5/5.1 Tags
 
-**Reference**: [GPT-5 Prompting Guide](https://cookbook.openai.com/examples/gpt-5/gpt-5_prompting_guide)
+**References**:
+
+- [GPT-5 Prompting Guide](https://cookbook.openai.com/examples/gpt-5/gpt-5_prompting_guide)
+- [GPT-5.1 Prompting Guide](https://cookbook.openai.com/examples/gpt-5/gpt-5-1_prompting_guide)
 
 | Tag | Purpose | Example |
 |-----|---------|---------|
@@ -53,6 +56,19 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 | `<self_reflection>` | Internal quality evaluation | Rubrics |
 | `<code_editing_rules>` | Coding standards | Subsections |
 | `<guiding_principles>` | Foundational philosophies | Engineering tenets |
+| `<tool_preambles>` | Agent communication patterns | Before tool calls |
+| `<efficiency>` | Time-conscious execution | Optimization |
+| `<instructions>` | Operational guidelines | Technical constraints |
+
+**GPT-5.1 Additional Tags**:
+
+| Tag | Purpose | Example |
+|-----|---------|---------|
+| `<final_answer_formatting>` | Output structure rules | Length, format |
+| `<output_verbosity_spec>` | Response conciseness | Content priority |
+| `<user_updates_spec>` | Progress update rules | Frequency, tone |
+| `<solution_persistence>` | Autonomous completion | No early termination |
+| `<design_system_enforcement>` | UI component styling | Design tokens |
 
 ### Google Gemini 2.5/3 Tags
 
@@ -99,9 +115,9 @@ Do NOT use XML-like placeholders:
 
 <examples>
 
-Correct:
+**Approved placeholder styles**:
 
-```
+```text
 **Pattern**: `type: description` or `type(scope): description`
 **Template**: {{ branch_type }}/{{ feature_name }}
 ```
@@ -110,9 +126,9 @@ Correct:
 
 <forbidden>
 
-Incorrect:
+**XML-like placeholders** (do not use):
 
-```
+```text
 **Pattern**: <type>: <description>
 **Template**: <branch_type>/<feature_name>
 ```
