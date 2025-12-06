@@ -64,6 +64,16 @@ Scope is optional. Choose type based on PRIMARY change:
 
 </formatting>
 
+<required>
+
+**Length limits** (PR title becomes merge commit subject):
+- **Target**: 50 characters (forces conciseness)
+- **Hard limit**: 72 characters (GitLab enforces, GitHub truncates)
+
+**Atomicity indicator**: If title exceeds 50 chars, consider if PR combines multiple changes. Split into stacked PRs if needed.
+
+</required>
+
 <examples>
 
 - `feat(rag): add semantic search filtering`
@@ -76,6 +86,9 @@ Scope is optional. Choose type based on PRIMARY change:
 
 <forbidden>
 
+- PR title over 72 characters
+- Multiple unrelated changes in title (e.g., "add X and fix Y and update Z")
+- Using "and" to join unrelated changes (indicator of non-atomic PR)
 - Using `docs` when also changing code → use `feat` or `fix`
 - Using `refactor` for bug fixes → use `fix`
 - Using `chore` for new features → use `feat`
@@ -149,7 +162,7 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 <examples>
 
 **Stack structure**:
-```
+```text
 main
  └── feature/auth-base (PR #1: models, migrations)
       └── feature/auth-login (PR #2: login endpoint)
@@ -387,6 +400,27 @@ git cherry-pick <commit-sha-from-wrong-branch>
 # 4. Delete the wrong branch
 git branch -D <wrong-branch-name>
 ```
+
+### Post-Push Requirements
+
+<required>
+
+After pushing changes to a PR:
+
+1. **Address review comments**: Read and respond to all new review comments
+2. **Revise PR title**: Update if changes have shifted the PR's focus
+3. **Revise PR body**: Update summary to reflect current cumulative changes
+4. **Verify atomicity**: Confirm PR still represents a single logical change
+
+</required>
+
+<forbidden>
+
+- Leaving review comments unaddressed after push
+- PR title/body that doesn't reflect actual changes
+- Pushing without checking for new review comments
+
+</forbidden>
 
 ## Code Review Process
 

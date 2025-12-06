@@ -76,7 +76,7 @@ This document defines **local Git operations** and workflow standards.
 **Conventional Commits Format**: `type: description` or `type(scope): description`
 
 Scope is optional. Example structure:
-```
+```text
 feat(auth): add OAuth2 login
 
 Implement OAuth2 authentication flow with token refresh.
@@ -86,6 +86,18 @@ Closes #123
 ```
 
 </formatting>
+
+<required>
+
+**Subject line limits** ([50/72 Rule](https://dev.to/noelworden/improving-your-commit-message-with-the-50-72-rule-3g79)):
+- **Target**: 50 characters (ideal for `git log --oneline`)
+- **Hard limit**: 72 characters (80-char terminal - 4-char git indent - 4-char margin)
+
+**Body line limit**: 72 characters per line
+
+**Atomicity indicator**: Exceeding 50 chars suggests combining multiple changes. Split into separate commits.
+
+</required>
 
 **Types:**
 - `feat`: New feature
