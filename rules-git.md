@@ -97,7 +97,7 @@ Closes #123
 - `chore`: Build process, tooling changes
 
 **Example:**
-```bash
+```sh
 git commit -m "feat(rag): add semantic search filtering
 
 Implement metadata-based filtering for semantic search queries.
@@ -116,7 +116,7 @@ Closes #123"
 
 </required>
 
-```bash
+```sh
 git mv old_name.py new_name.py
 git commit -m "refactor: rename old_name to new_name"
 ```
@@ -129,7 +129,7 @@ git commit -m "refactor: rename old_name to new_name"
 ## Commit Workflow
 
 **Before committing:**
-```bash
+```sh
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
@@ -155,7 +155,7 @@ poetry run pytest
 
 All commits MUST be GPG signed.
 
-```bash
+```sh
 git commit -S -m "type: description"
 ```
 
@@ -218,7 +218,7 @@ Workflow for new work:
 3. Push branch to remote
 4. Create PR (recommended)
 
-```bash
+```sh
 git checkout -b "type/descriptive_name"
 git add .
 git commit -S -m "type: description"
@@ -231,7 +231,7 @@ gh pr create --title "type: description" --body "..."
 ## Merge Strategy
 
 **Feature branches:**
-```bash
+```sh
 git checkout develop
 git pull origin develop
 git merge --no-ff feature/my-feature
@@ -259,13 +259,13 @@ git push origin develop
 ## Working with Remotes
 
 **Fetch and pull:**
-```bash
+```sh
 git fetch origin
 git pull origin develop
 ```
 
 **Push branches:**
-```bash
+```sh
 git push origin feature/my-feature
 git push -u origin feature/my-feature  # First push with tracking
 ```
@@ -278,14 +278,14 @@ git push -u origin feature/my-feature  # First push with tracking
 </forbidden>
 
 **Force push (only for personal feature branches):**
-```bash
+```sh
 git push --force-with-lease origin feature/my-feature
 ```
 
 ## Stash Management
 
 **Save work in progress:**
-```bash
+```sh
 git stash push -m "WIP: feature implementation"
 git stash list
 git stash pop
@@ -295,19 +295,19 @@ git stash apply stash@{0}
 ## History Management
 
 **View history:**
-```bash
+```sh
 git log --oneline --graph --decorate
 git log --author="name" --since="2 weeks ago"
 git diff main...feature/branch  # Changes since branching
 ```
 
 **Interactive rebase (local only):**
-```bash
+```sh
 git rebase -i HEAD~3  # Last 3 commits
 ```
 
 **Amend last commit (before push):**
-```bash
+```sh
 git commit --amend --no-edit
 git commit --amend  # Edit message
 ```
@@ -322,7 +322,7 @@ git commit --amend  # Edit message
 5. Test thoroughly before pushing
 
 **Abort if needed:**
-```bash
+```sh
 git rebase --abort
 git merge --abort
 ```

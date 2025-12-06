@@ -53,6 +53,11 @@ Fundamental coding rules applying as personal standards across all languages, co
 - Python: Double quotes preferred
 - JavaScript/TypeScript: Single quotes or project standard
 
+**Code Blocks in Documentation**:
+- Use `sh` for shell commands (portable across bash, zsh, fish)
+- Describe code blocks outside the block, not with inline comments
+- Use `text` for non-executable examples (commit messages, diagrams)
+
 ### DateTime Standards
 
 **Timezone**: All timestamps MUST use Asia/Tokyo (UTC+9)
