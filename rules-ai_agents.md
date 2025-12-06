@@ -45,7 +45,10 @@
 
 </required>
 
+<examples>
+
 **Anti-pattern**: Direct implementation without exploration
+
 ```text
 Bad:
 User: "Add caching to the API"
@@ -57,6 +60,8 @@ Agent: *uses Task tool to explore existing caching patterns*
 Agent: *reads configuration files*
 Agent: "I found two caching approaches in the codebase. Should we use Redis (like user service) or in-memory (like session service)?"
 ```
+
+</examples>
 
 ## Test-Driven Development with Agents
 
@@ -85,7 +90,10 @@ Agent: "I found two caching approaches in the codebase. Should we use Redis (lik
 - Tests are isolated and deterministic
 - Coverage meets or exceeds existing standards
 
+<examples>
+
 **Anti-pattern**: Implementation-first approach
+
 ```text
 Bad:
 Agent: *writes implementation code*
@@ -96,6 +104,8 @@ Agent: *writes failing tests defining expected behavior*
 Agent: *implements minimal code to make tests pass*
 Agent: *refactors while keeping tests green*
 ```
+
+</examples>
 
 ## Extended Thinking Guidance
 
@@ -136,11 +146,16 @@ backward compatibility."
 - Focus on outcome specification, not process
 - Allow model to apply internal reasoning
 
+<examples>
+
 **Anti-pattern**:
+
 ```text
 Bad: "Think step-by-step about how to implement authentication"
 Good: "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
 ```
+
+</examples>
 
 ## Memory Management
 
