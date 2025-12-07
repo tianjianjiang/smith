@@ -41,7 +41,7 @@
 4. Sync local repository
 
 **Option A: Using GitHub MCP** (preferred):
-```
+```text
 # Get merged PR details
 Use MCP tool: mcp__github__pull_request_read
 Parameters:
@@ -91,7 +91,7 @@ fi
 ```
 
 **Stacked PR cascade example**:
-```
+```text
 User: "PR #123 merged"
 Agent: "PR #123 (feature/parent_feature) merged. Found stack:
   main

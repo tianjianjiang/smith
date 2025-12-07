@@ -92,7 +92,7 @@ git merge-tree "$(git merge-base HEAD origin/main)" HEAD origin/main | grep -q "
 **Trigger**: User says "request review on PR #123" or about to request review
 
 **Option A: Using GitHub MCP** (preferred):
-```
+```text
 # Get PR details
 Use MCP tool: mcp__github__pull_request_read
 Parameters:
@@ -156,7 +156,7 @@ Which would you prefer?"
 **Trigger**: Parent PR in stack just merged
 
 **Option A: Using GitHub MCP** (preferred):
-```
+```text
 # Get parent PR details
 Use MCP tool: mcp__github__pull_request_read
 Parameters:
@@ -293,11 +293,11 @@ Check git status and resolve authentication or branch protection issues.
 
 <examples>
 
-**Good: Informative, offers choice**
+### Good: Informative, offers choice
 
 "PR #123 is 3 days behind main (12 commits). Rebasing now would catch any breaking changes early. Shall I rebase it?"
 
-**Good: Explains trade-offs**
+### Good: Explains trade-offs
 
 "This PR has merge conflicts with main. I can't auto-rebase. Options:
 1. I'll guide you through manual resolution
@@ -308,11 +308,11 @@ Check git status and resolve authentication or branch protection issues.
 
 <forbidden>
 
-**Bad: Too aggressive**
+### Bad: Too aggressive
 
 "Rebasing PR #123 now..." (no asking, just doing)
 
-**Bad: Not informative**
+### Bad: Not informative
 
 "PR needs update. Rebase?" (doesn't explain why or impact)
 
@@ -367,13 +367,13 @@ When conflicts are detected during rebase:
 <scenario>
 
 **Passive notification** (5-10 commits behind):
-```
+```text
 User: "What's the status of PR #123?"
 Agent: "PR #123 is 7 commits behind main (last updated 2 days ago). Consider rebasing to stay current with latest changes."
 ```
 
 **Active recommendation** (>10 commits behind):
-```
+```text
 User: "Work on PR #123"
 Agent: "PR #123 is 15 commits behind main (last updated 4 days ago). Rebasing now would:
 - Prevent merge conflicts
@@ -387,12 +387,12 @@ Agent: [Executes rebase] "Successfully rebased PR #123 on latest main. No confli
 ```
 
 **Strong recommendation** (>20 commits OR >7 days):
-```
+```text
 Agent: "PR #123 is 25 commits behind main (last updated 1 week ago). High conflict risk. Recommended to rebase before continuing work to avoid difficult merge conflicts later."
 ```
 
 **AI conflict resolution**:
-```
+```text
 Agent: [During rebase] "Detected 3 conflicts during rebase:
 
 1. auth.py:45 - Whitespace/formatting differences (auto-resolved)
@@ -411,7 +411,7 @@ Agent: [Applies resolution, completes rebase] "Rebase completed successfully. Re
 ```
 
 **Stacked PR cascade rebase**:
-```
+```text
 Agent: "PR #123 was just updated in main. Detected stack:
 - PR #124: feature/auth_login (child of #123)
 - PR #125: feature/auth_session (child of #124)

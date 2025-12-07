@@ -29,7 +29,7 @@
 **Example workflows**:
 
 **Option A: Using GitHub MCP** (preferred):
-```
+```text
 Use MCP tool: mcp__github__create_pull_request
 Parameters:
   - owner: {owner}
@@ -138,7 +138,7 @@ fi
 <scenario>
 
 **Workflow example**:
-```
+```text
 User: "Create PR for this work"
 
 Agent: [Analyzes full diff from base branch]
@@ -182,7 +182,7 @@ Agent: [Creates PR with generated description using gh or platform API]
 <examples>
 
 **Comprehensive analysis**:
-"Analyzed 5 commits across 12 files. Generated summary covering auth implementation (auth.py:45-120), rate limiting middleware (middleware.py:23-45), and API docs (README.md:100-150)."
+"Analyzed 5 commits across 12 files. Generated summary covering auth implementation (auth.py:45-120), rate-limiting middleware (middleware.py:23-45), and API docs (README.md:100-150)."
 
 **Identifies gaps**:
 "Generated description but noticed no tests were added in this PR. Should I mention this limitation in the PR description or add tests first?"

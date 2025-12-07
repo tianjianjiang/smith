@@ -123,8 +123,8 @@
    <planning_process>
 
    - **Analyze confidence**: Determine if request is clear and unambiguous
-   - **High confidence (>70%)**: Implement directly and explain what was done
-   - **Medium confidence (40-70%)**: Implement with explanation, ask for confirmation
+   - **High confidence (>70%)**: Implement directly and document changes
+   - **Medium confidence (40-70%)**: Implement and request confirmation of approach
    - **Low confidence (<40%)**: Ask user for clarification before implementing
 
    </planning_process>
