@@ -270,6 +270,32 @@ main ──●──●──●──M
 
 </examples>
 
+### Agent-Assisted Stack Management
+
+<context>
+
+When working with stacked PRs, agents can proactively detect when rebasing is needed.
+
+**Agent responsibilities**:
+1. Detect when parent PR merges
+2. Identify child PRs from "Depends on" links in PR body
+3. Offer to update child PR base and rebase
+4. Handle branch deletion timing correctly
+
+</context>
+
+<required>
+
+Agent MUST:
+- Parse PR bodies for "Depends on: #{number}" to build dependency graph
+- Offer cascade updates immediately after parent merge
+- Verify child PR base update before rebasing
+- Ask before force-pushing to child PR branches
+
+</required>
+
+**See**: "Agent Proactive Rebase Workflows" section for detailed automation workflows
+
 ### Squash Merge with Stacked PRs
 
 <required>
@@ -566,19 +592,74 @@ git push
 
 ### Post-Merge Cleanup
 
+**For non-stacked PRs** (simple feature branch):
+
 ```sh
-# Switch to main branch
 git checkout main
-
-# Pull latest changes
+git fetch --prune origin
 git pull origin main
-
-# Delete local feature branch
 git branch -d feature/my_feature
-
-# Delete remote feature branch (if not auto-deleted)
-git push origin --delete feature/my_feature
+git ls-remote --exit-code --heads origin feature/my_feature >/dev/null 2>&1 && git push origin --delete feature/my_feature
 ```
+
+<context>
+
+**Command explanation:**
+
+- `git fetch --prune`: Update remote refs and remove stale tracking branches
+- `git pull origin main`: Update local main with merged commits (required for branch -d check)
+- `git branch -d`: Safe delete (fails if branch not merged to main)
+- `git ls-remote --exit-code`: Check if remote branch exists before attempting deletion
+- Works whether GitHub auto-delete is enabled or disabled
+
+</context>
+
+**For stacked PRs** (parent with children):
+
+See "Branch Deletion with Stacked PRs" section and "Agent-Assisted Stack Management" for automated workflows.
+
+### Agent Post-Merge Workflow
+
+<scenario>
+
+**Context**: Agent just merged PR or user informs agent of merge
+
+**Agent workflow**:
+1. Check if merged PR has child PRs (parse "Blocks: #{number}" in PR body)
+2. If children exist, trigger cascade update workflow
+3. If no children, perform standard cleanup
+4. Sync local repository
+
+```sh
+# After merging PR #123
+MERGED_BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
+
+# Check for child PRs
+CHILD_PRS=$(gh pr list --json number,body --jq '.[] | select(.body | contains("Depends on: #123")) | .number')
+
+if [ -n "$CHILD_PRS" ]; then
+  # Agent: "I found {N} child PR(s). Shall I update them now?"
+  # Trigger "Workflow 2: Post-Parent-Merge Cascade"
+else
+  # Standard cleanup
+  git checkout main
+  git fetch --prune origin
+  git pull origin main
+  git branch -d "$MERGED_BRANCH"
+  git ls-remote --exit-code --heads origin "$MERGED_BRANCH" >/dev/null 2>&1 && \
+    git push origin --delete "$MERGED_BRANCH"
+fi
+```
+
+</scenario>
+
+<forbidden>
+
+- NEVER use `git branch -D` (force delete) unless you are certain the branch should be abandoned
+- NEVER delete local branch before PR is merged
+- NEVER skip `git fetch --prune` (leaves stale remote-tracking refs)
+
+</forbidden>
 
 ## Agent-Created Pull Requests
 
@@ -591,6 +672,21 @@ git push origin --delete feature/my_feature
 - Agent MUST write summary based on actual cumulative changes
 - Agent MUST run all checks before PR creation
 - Agent MUST verify branch tracks correct remote
+- Agent MUST check if branch is current with base before PR creation
+- Agent MUST offer to rebase if branch is behind base
+- Agent MUST verify no merge conflicts exist with base
+
+**Pre-PR freshness check**:
+```sh
+# Before creating PR
+git fetch origin
+BASE_BRANCH="main"  # or detect from git config
+BEHIND=$(git rev-list HEAD..origin/$BASE_BRANCH --count)
+
+if [ "$BEHIND" -gt 0 ]; then
+  # Agent: "Your branch is {N} commits behind {base}. Rebase before creating PR?"
+fi
+```
 
 </required>
 
@@ -668,6 +764,271 @@ Before creating PR, agent MUST:
 </required>
 
 **See**: `$HOME/.smith/rules-ai_agents.md` - Complete agent interaction standards
+
+## Agent Proactive Rebase Workflows
+
+**Context**: AI agents detecting and responding to rebase needs
+
+### When Agents Should Detect Rebase Needs
+
+<required>
+
+Agent MUST check for rebase needs in these scenarios:
+
+1. **Before PR review request**: Verify PR is current with base branch
+2. **After parent PR merge**: Detect child PRs that need rebasing
+3. **When working on existing PR**: Check if base branch has advanced
+4. **Before merge operations**: Ensure no conflicts with latest base
+
+**Detection commands**:
+```sh
+# Check if PR branch is behind base
+git fetch origin
+git rev-list HEAD..origin/main --count  # > 0 means behind
+
+# Check for merge conflicts without merging
+git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main | grep -q "^+<<<<<<<" && echo "conflicts" || echo "clean"
+```
+
+</required>
+
+### Agent Decision Tree: When to Rebase Automatically vs Ask
+
+<required>
+
+**Decision matrix**:
+
+| Scenario | Agent Action | Rationale |
+|----------|-------------|-----------|
+| PR behind base, no conflicts, user not explicitly working on it | ASK user | Respectful of user control |
+| PR behind base, no conflicts, user just said "update PR" | AUTO-REBASE | Clear intent |
+| PR behind base, conflicts detected | INFORM + ASK | Requires manual resolution |
+| Parent PR merged, child PR exists | INFORM + OFFER | Helpful but not intrusive |
+| User about to request review, PR outdated | BLOCK + INFORM | Prevent bad review request |
+| PR current with base | DO NOTHING | No action needed |
+
+**Safe auto-rebase criteria** (ALL must be true):
+1. User gave explicit update/rebase command
+2. No merge conflicts detected
+3. Branch is not shared (only user has commits)
+4. Branch tracks correct remote
+5. Working directory is clean
+
+</required>
+
+### Workflow 1: Pre-Review Freshness Check
+
+<scenario>
+
+**Trigger**: User says "request review on PR #123" or agent about to run `gh pr edit --add-reviewer`
+
+**Agent workflow**:
+```sh
+# 1. Get PR branch name
+BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
+BASE=$(gh pr view 123 --json baseRefName -q .baseRefName)
+
+# 2. Check if behind
+git fetch origin
+BEHIND=$(git rev-list origin/$BRANCH..origin/$BASE --count)
+
+# 3. Decision
+if [ "$BEHIND" -gt 0 ]; then
+  # Agent: "This PR is behind $BASE by $BEHIND commits. Should I rebase it before requesting review?"
+  # Wait for user response
+
+  # If user says yes:
+  git checkout "$BRANCH"
+  git rebase "origin/$BASE"
+  git push --force-with-lease
+
+  # Then request review
+  gh pr edit 123 --add-reviewer @reviewer
+fi
+```
+
+**Agent message template**:
+
+"I notice PR #123 is behind `{base}` by `{N}` commits. To ensure reviewers see the latest code:
+- Option 1: Rebase now (I'll handle it)
+- Option 2: Continue anyway (reviewers will see outdated version)
+- Option 3: Cancel review request
+
+Which would you prefer?"
+
+</scenario>
+
+### Workflow 2: Post-Parent-Merge Cascade
+
+<scenario>
+
+**Trigger**: Parent PR in stack just merged (agent performed merge or user informed agent)
+
+**Agent workflow**:
+```sh
+# 1. After parent PR #123 merges
+PARENT_BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
+
+# 2. Find child PRs (depends on tracking in PR body)
+# Agent reads all open PRs, looks for "Depends on: #123"
+CHILD_PRS=$(gh pr list --json number,body --jq '.[] | select(.body | contains("Depends on: #123")) | .number')
+
+# 3. For each child PR
+for CHILD_PR in $CHILD_PRS; do
+  CHILD_BRANCH=$(gh pr view $CHILD_PR --json headRefName -q .headRefName)
+
+  # Agent: "Parent PR #123 merged. Child PR #$CHILD_PR needs rebasing. Shall I update it?"
+  # Wait for user response
+
+  # If user approves:
+  gh pr edit $CHILD_PR --base main
+  git fetch origin
+  git checkout "$CHILD_BRANCH"
+  git rebase --onto origin/main "$PARENT_BRANCH"
+  git push --force-with-lease
+done
+
+# 4. Delete parent branch (after all children updated)
+git push origin --delete "$PARENT_BRANCH"
+```
+
+**Agent message template**:
+
+"Parent PR #{parent} merged successfully. I found `{N}` child PR(s):
+- PR #{child1}: {title}
+- PR #{child2}: {title}
+
+I can rebase these onto main now. Proceed?"
+
+</scenario>
+
+### Workflow 3: Periodic Freshness Detection
+
+<scenario>
+
+**Trigger**: User asks agent to work on PR, or agent performs any PR operation
+
+**Agent workflow**:
+```sh
+# 1. When starting work on PR
+BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
+BASE=$(gh pr view 123 --json baseRefName -q .baseRefName)
+
+# 2. Silent freshness check
+git fetch origin
+BEHIND=$(git rev-list origin/$BRANCH..origin/$BASE --count)
+
+# 3. Inform if significantly behind (> 5 commits or > 1 day old)
+if [ "$BEHIND" -gt 5 ]; then
+  # Agent: "Note: This PR is {N} commits behind {base}. This might cause conflicts.
+  # Would you like me to rebase before we continue?"
+fi
+```
+
+**Agent message template**:
+
+"Note: This PR is `{N}` commits behind `{base}` (last updated {timeago}). Rebasing now would:
+- Reduce merge conflict risk
+- Make CI failures easier to diagnose
+- Ensure changes work with latest code
+
+Rebase now?"
+
+</scenario>
+
+### Safety Checks Before Rebase
+
+<required>
+
+Agent MUST verify ALL of these before rebasing:
+
+```sh
+# 1. Check authorship (only rebase if user owns recent commits)
+RECENT_AUTHORS=$(git log -5 --format='%ae' | sort -u)
+# If multiple authors, ASK before rebasing
+
+# 2. Check branch status
+git status --porcelain
+# If dirty working tree, ABORT
+
+# 3. Check remote tracking
+git branch -vv | grep "$BRANCH"
+# If not tracking remote correctly, ABORT
+
+# 4. Check for conflicts (dry-run)
+git merge-tree $(git merge-base HEAD origin/$BASE) HEAD origin/$BASE
+# If conflicts detected, INFORM + ASK
+
+# 5. Check if force-push is safe
+git log @{upstream}.. --oneline
+# If branch already pushed, warn about force-push
+```
+
+</required>
+
+### Error Handling and Recovery
+
+<required>
+
+**If rebase fails**:
+
+```sh
+# Agent workflow:
+git rebase --abort  # Always abort first
+
+# Agent: "Rebase failed due to conflicts in:
+# - file1.py (lines 45-67)
+# - file2.py (lines 123-145)
+#
+# I can either:
+# 1. Show you the conflicts (I'll format them for you)
+# 2. Guide you through manual resolution
+# 3. Abort and leave PR as-is
+#
+# What would you like?"
+```
+
+**If force-push fails**:
+
+```sh
+# Agent: "Force-push failed. This usually means:
+# 1. Someone else pushed to this branch (check with team)
+# 2. Branch protection prevents force-push
+# 3. Authentication issue
+#
+# Check git status and let me know what you'd like to do."
+```
+
+</required>
+
+### Communication Templates
+
+<examples>
+
+**Good: Informative, offers choice**
+
+"PR #123 is 3 days behind main (12 commits). Rebasing now would catch any breaking changes early. Shall I rebase it?"
+
+**Good: Explains trade-offs**
+
+"This PR has merge conflicts with main. I can't auto-rebase. Options:
+1. I'll guide you through manual resolution
+2. Merge main into PR (creates merge commit, simpler)
+3. Continue as-is (conflicts will appear at merge time)"
+
+</examples>
+
+<forbidden>
+
+**Bad: Too aggressive**
+
+"Rebasing PR #123 now..." (no asking, just doing)
+
+**Bad: Not informative**
+
+"PR needs update. Rebase?" (doesn't explain why or impact)
+
+</forbidden>
 
 ## Agent Workflow Guidelines
 
