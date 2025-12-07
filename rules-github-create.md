@@ -26,6 +26,30 @@
 
 **Decision logic**: Try MCP tools first. If not available, fall back to gh CLI.
 
+**Example workflows**:
+
+**Option A: Using GitHub MCP** (preferred):
+```
+Use MCP tool: mcp__github__create_pull_request
+Parameters:
+  - owner: {owner}
+  - repo: {repo}
+  - title: "feat: add user authentication"
+  - body: "[Generated description from PR template]"
+  - head: "feature/auth"
+  - base: "main"
+  - draft: false
+```
+
+**Option B: Using gh CLI** (fallback):
+```sh
+gh pr create \
+  --title "feat: add user authentication" \
+  --body "[Generated description from PR template]" \
+  --base main \
+  --head feature/auth
+```
+
 </context>
 
 ## Creating Pull Requests

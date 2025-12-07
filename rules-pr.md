@@ -16,7 +16,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### Platform-Neutral PR Concepts
 
-**File**: `$HOME/.smith/rules-pr-concepts.md` (~425 lines)
+**File**: `$HOME/.smith/rules-pr-concepts.md` (~580 lines)
 
 **Contains**:
 - PR Creation (title format, body template, requirements)
@@ -28,7 +28,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### GitHub Operations
 
-**File**: `$HOME/.smith/rules-github-pr.md` (~100 lines)
+**File**: `$HOME/.smith/rules-github-pr.md` (~112 lines)
 
 **Contains**:
 - Branch deletion with stacked PRs
@@ -36,7 +36,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### Automation Workflows
 
-**File**: `$HOME/.smith/rules-github-review.md` (~470 lines)
+**File**: `$HOME/.smith/rules-github-review.md` (~443 lines)
 
 **Contains**:
 - Review Cycle Automation
@@ -45,7 +45,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Inline review thread handling (MCP + gh CLI)
 - Auto-merge criteria verification
 
-**File**: `$HOME/.smith/rules-github-create.md` (~220 lines)
+**File**: `$HOME/.smith/rules-github-create.md` (~246 lines)
 
 **Contains**:
 - Creating Pull Requests
@@ -53,7 +53,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Full diff analysis and ticket integration
 - Common mistakes and PR analysis checklist
 
-**File**: `$HOME/.smith/rules-github-rebase.md` (~410 lines)
+**File**: `$HOME/.smith/rules-github-rebase.md` (~467 lines)
 
 **Contains**:
 - Proactive Rebase Workflows
@@ -63,14 +63,14 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Multi-tier staleness thresholds
 - AI conflict resolution
 
-**File**: `$HOME/.smith/rules-github-merge.md` (~60 lines)
+**File**: `$HOME/.smith/rules-github-merge.md` (~126 lines)
 
 **Contains**:
 - Post-Merge Workflow
 - Child PR detection and cascade updates
 - Stacked PR cascade examples
 
-**File**: `$HOME/.smith/rules-github-utils.md` (~215 lines)
+**File**: `$HOME/.smith/rules-github-utils.md` (~242 lines)
 
 **Contains**:
 - Pre-Commit Hook Coordination
@@ -113,7 +113,7 @@ If you have any scripts or tools referencing `rules-pr.md`, update them to use t
 
 ## Related Standards
 
-- **Git Operations**: [Git Standards](./rules-git.md) - Local git operations
-- **GitHub Operations**: [GitHub Standards](./rules-github.md) - GitHub CLI commands
-- **Development Workflow**: [Development Standards](./rules-development.md) - Daily practices
-- **AI Agent Principles**: [AI Agent Standards](./rules-ai_agents.md) - Constitutional AI principles
+- **Git Operations**: rules-git.md - Local git operations
+- **GitHub Operations**: rules-github.md - GitHub CLI commands
+- **Development Workflow**: rules-development.md - Daily practices
+- **AI Agent Principles**: rules-ai_agents.md - Constitutional AI principles

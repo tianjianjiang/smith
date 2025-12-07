@@ -2,7 +2,7 @@
 
 <metadata>
 
-- **Scope**: Basic GitHub PR operations using gh CLI (non-agent workflows)
+- **Scope**: Basic GitHub PR merge and branch deletion operations
 - **Load if**: Creating or managing PRs on GitHub, working with GitHub CLI
 - **Prerequisites**: rules-core.md, rules-pr-concepts.md, rules-github.md
 

@@ -160,19 +160,50 @@ Fixed in commit ${COMMIT_SHA}."
 
    **Mark thread as resolved**:
 
-   **Using gh CLI + GraphQL API** (only option - MCP doesn't support this):
+   **Using gh CLI + GraphQL API** (only option - requires two steps):
+
+   **CRITICAL**: Review threads are GraphQL-only. You cannot get the thread ID from REST API.
+
+   **Step 1: Find the thread ID for your comment** (query all threads, match by comment ID):
    ```sh
-   COMMENT_ID=2596414027
    OWNER="{owner}"
    REPO="{repo}"
+   PR_NUMBER=21
+   COMMENT_ID=2596414027  # The REST API comment ID you replied to
 
-   # Get the GraphQL thread node ID from the review comment
-   THREAD_NODE_ID=$(gh api "repos/$OWNER/$REPO/pulls/comments/$COMMENT_ID" --jq '.node_id')
+   # Query all review threads via GraphQL
+   gh api graphql -f query='
+   query {
+     repository(owner: "'"$OWNER"'", name: "'"$REPO"'") {
+       pullRequest(number: '"$PR_NUMBER"') {
+         reviewThreads(first: 100) {
+           nodes {
+             id
+             isResolved
+             comments(first: 10) {
+               nodes {
+                 databaseId
+                 body
+                 author { login }
+               }
+             }
+           }
+         }
+       }
+     }
+   }' | jq -r '.data.repository.pullRequest.reviewThreads.nodes[] |
+     select(.comments.nodes[] | .databaseId == '"$COMMENT_ID"') | .id'
+   ```
 
-   # Resolve the thread using GraphQL
+   This returns the GraphQL thread ID (format: `PR_kwDOQckce863jGTC_..`)
+
+   **Step 2: Resolve the thread** using the thread ID from Step 1:
+   ```sh
+   THREAD_ID="PR_kwDOQckce863jGTC_..."  # From Step 1
+
    gh api graphql -f query='
    mutation {
-     resolveReviewThread(input: {threadId: "'"$THREAD_NODE_ID"'"}) {
+     resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) {
        thread {
          id
          isResolved
@@ -181,7 +212,9 @@ Fixed in commit ${COMMIT_SHA}."
    }'
    ```
 
-   **Note**: Resolving threads requires GraphQL API. The standard GitHub MCP server doesn't support this operation yet.
+   **Permission Required**: Repository Contents write access (not just PR write permissions - counterintuitive!)
+
+   **Note**: The standard GitHub MCP server doesn't support review thread resolution. Earlier versions of this documentation referenced optional MCP tools (`reply_to_pull_request_comment`, `resolve_pull_request_review_thread`) from third-party extensions like wjessup/github-mcp-server-review-tools. These are not in the standard GitHub MCP server and not widely available, so we use gh CLI + GraphQL as the primary approach.
 
    </final_instruction>
 

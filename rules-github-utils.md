@@ -2,7 +2,7 @@
 
 <metadata>
 
-- **Scope**: General workflow coordination, troubleshooting, and recovery procedures
+- **Scope**: GitHub workflow coordination, troubleshooting, and recovery procedures
 - **Load if**: Pre-commit hooks, CI checks, amend operations, troubleshooting PR issues
 - **Prerequisites**: rules-pr-concepts.md, rules-git.md, rules-ai_agents.md
 
@@ -110,7 +110,8 @@ git push
 
 ```sh
 AUTHOR=$(git log -1 --format='%ae')
-if [ "$AUTHOR" != "your-email@example.com" ]; then
+CURRENT_USER=$(git config user.email)
+if [ "$AUTHOR" != "$CURRENT_USER" ]; then
   echo "Not your commit - create new commit instead"
   exit 1
 fi
