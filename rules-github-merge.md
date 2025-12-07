@@ -101,9 +101,9 @@ Agent: "PR #123 (feature/parent_feature) merged. Found stack:
 
 Auto-updating stack..."
 Agent: [Updates #124 base to main, rebases onto origin/main]
-Agent: "✓ PR #124 rebased successfully. No conflicts."
+Agent: "PR #124 rebased successfully. No conflicts."
 Agent: [Updates #125 base, rebases]
-Agent: "✓ PR #125 rebased successfully. No conflicts."
+Agent: "PR #125 rebased successfully. No conflicts."
 Agent: [Deletes local and remote feature/parent_feature]
 Agent: "Stack updated. All PRs ready for continued review."
 ```

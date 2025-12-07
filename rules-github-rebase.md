@@ -420,8 +420,8 @@ Auto-rebasing entire stack to stay synchronized?"
 
 User: "Yes"
 Agent: [Rebases all dependent PRs in order]
-Agent: "✓ PR #124 rebased successfully (no conflicts)
-✓ PR #125 rebased successfully (no conflicts)
+Agent: "PR #124 rebased successfully (no conflicts)
+PR #125 rebased successfully (no conflicts)
 Stack synchronized with main."
 ```
 
