@@ -23,10 +23,7 @@
 <examples>
 
 ```sh
-# macOS
 brew install gh
-
-# Authenticate
 gh auth login
 ```
 
@@ -39,10 +36,7 @@ gh auth login
 <examples>
 
 ```sh
-# Basic PR creation
 gh pr create --title "feat: add feature" --body "Description"
-
-# With full template
 gh pr create --title "feat: add semantic search" --body "$(cat <<'EOF'
 ## Summary
 - Implement metadata-based filtering
@@ -59,14 +53,8 @@ Closes #123
 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
-
-# Create draft PR
 gh pr create --draft --title "WIP: feature" --body "Work in progress"
-
-# Create PR with specific reviewers
 gh pr create --title "feat: feature" --body "Description" --reviewer @user1,@user2
-
-# Create PR targeting specific branch
 gh pr create --base develop --title "feat: feature" --body "Description"
 ```
 
@@ -79,10 +67,7 @@ gh pr create --base develop --title "feat: feature" --body "Description"
 **ALWAYS assign yourself** when creating or updating a PR where you are not already an assignee.
 
 ```sh
-# When creating PR
 gh pr create --title "feat: feature" --body "Description" --assignee @me
-
-# When updating existing PR
 gh pr edit <pr-number> --add-assignee @me
 ```
 
@@ -93,34 +78,17 @@ gh pr edit <pr-number> --add-assignee @me
 <examples>
 
 ```sh
-# List all open PRs
 gh pr list
-
-# List PRs with filters
 gh pr list --state all
 gh pr list --author @me
 gh pr list --label bug
 gh pr list --limit 20
-
-# View specific PR
 gh pr view 123
-
-# View PR in browser
 gh pr view 123 --web
-
-# Get PR metadata (JSON)
 gh pr view 123 --json number,title,body,state,author
-
-# Get PR branch name (CRITICAL for agents)
 gh pr view 123 --json headRefName -q .headRefName
-
-# View PR diff
 gh pr diff 123
-
-# View PR commits
 gh pr view 123 --json commits
-
-# View PR comments
 gh pr view 123 --comments
 ```
 
@@ -131,15 +99,11 @@ gh pr view 123 --comments
 <examples>
 
 ```sh
-# Get the actual branch name first (CRITICAL)
 BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
-
-# Fetch and checkout
 git fetch origin
 git checkout -b "$BRANCH" "origin/$BRANCH"
 
-# Verify you're on the correct branch
-git branch --show-current  # Must match $BRANCH
+git branch --show-current
 ```
 
 </examples>
@@ -149,22 +113,11 @@ git branch --show-current  # Must match $BRANCH
 <examples>
 
 ```sh
-# View CI check status
 gh pr checks 123
-
-# Watch checks in real-time
 gh pr checks 123 --watch
-
-# View specific check run
 gh run view <run-id>
-
-# View check logs
 gh run view <run-id> --log
-
-# Re-run failed checks
 gh run rerun <run-id>
-
-# Re-run all checks
 gh pr checks 123 --rerun
 ```
 
@@ -175,19 +128,10 @@ gh pr checks 123 --rerun
 <examples>
 
 ```sh
-# Merge commit
 gh pr merge 123 --merge
-
-# Squash and merge
 gh pr merge 123 --squash
-
-# Rebase and merge
 gh pr merge 123 --rebase
-
-# Auto-merge when checks pass
 gh pr merge 123 --auto --squash
-
-# Merge and delete branch
 gh pr merge 123 --squash --delete-branch
 ```
 
@@ -200,13 +144,8 @@ gh pr merge 123 --squash --delete-branch
 <examples>
 
 ```sh
-# Request review from user
 gh pr edit 123 --add-reviewer @username
-
-# Request review from team
 gh pr edit 123 --add-reviewer @org/team
-
-# Remove reviewer
 gh pr edit 123 --remove-reviewer @username
 ```
 
@@ -215,26 +154,16 @@ gh pr edit 123 --remove-reviewer @username
 ### Giving Reviews
 
 ```sh
-# Approve PR
 gh pr review 123 --approve
-
-# Approve with comment
 gh pr review 123 --approve -b "LGTM! Great implementation"
-
-# Request changes
 gh pr review 123 --request-changes -b "Please address the concerns in comments"
-
-# Comment without approval
 gh pr review 123 --comment -b "Minor suggestions, but looks good overall"
 ```
 
 ### PR Comments
 
 ```sh
-# Add comment to PR
 gh pr comment 123 --body "Great work!"
-
-# Add comment with multiline text
 gh pr comment 123 --body "$(cat <<'EOF'
 Addressed all review comments:
 - Extracted validation into separate function
@@ -242,14 +171,8 @@ Addressed all review comments:
 - Updated tests to cover new scenarios
 EOF
 )"
-
-# Edit PR description
 gh pr edit 123 --body "Updated description"
-
-# Edit PR title
 gh pr edit 123 --title "feat: updated title"
-
-# Add/remove labels
 gh pr edit 123 --add-label bug,priority:high
 gh pr edit 123 --remove-label wontfix
 ```
@@ -259,10 +182,7 @@ gh pr edit 123 --remove-label wontfix
 ### Creating Issues
 
 ```sh
-# Basic issue creation
 gh issue create --title "Bug: error message" --body "Description"
-
-# With template
 gh issue create --title "bug: API returns 500 error" --body "$(cat <<'EOF'
 ## Description
 API endpoint /api/v1/query returns 500 error when...
@@ -284,52 +204,32 @@ Returns 500 with error message
 - Python: 3.11
 EOF
 )"
-
-# Assign issue
 gh issue create --title "Bug" --body "Description" --assignee @me
-
-# Add labels
 gh issue create --title "Bug" --body "Description" --label bug,priority:high
 ```
 
 ### Viewing Issues
 
 ```sh
-# List issues
 gh issue list
-
-# List with filters
 gh issue list --state all
 gh issue list --assignee @me
 gh issue list --label bug
 gh issue list --author @username
-
-# View specific issue
 gh issue view 123
-
-# View in browser
 gh issue view 123 --web
 ```
 
 ### Managing Issues
 
 ```sh
-# Close issue
 gh issue close 123
-
-# Close with comment
 gh issue close 123 --comment "Fixed in PR #456"
-
-# Reopen issue
 gh issue reopen 123
-
-# Edit issue
 gh issue edit 123 --title "Updated title"
 gh issue edit 123 --body "Updated description"
 gh issue edit 123 --add-label bug
 gh issue edit 123 --add-assignee @user
-
-# Add comment
 gh issue comment 123 --body "Update on progress..."
 ```
 
@@ -363,7 +263,6 @@ Relates to #789
 ### Link Issues to PRs
 
 ```sh
-# Link PR to issue (in PR body)
 gh pr edit 123 --body "Fixes #456
 
 Original description..."
@@ -400,39 +299,24 @@ Protected branches are configured in repository settings, not via CLI.
 ### Viewing Workflow Runs
 
 ```sh
-# List workflow runs
 gh run list
-
-# List runs for specific workflow
 gh run list --workflow ci.yml
-
-# View specific run
 gh run view <run-id>
-
-# View run logs
 gh run view <run-id> --log
-
-# Download run artifacts
 gh run download <run-id>
 ```
 
 ### Re-running Workflows
 
 ```sh
-# Re-run failed jobs
 gh run rerun <run-id> --failed
-
-# Re-run all jobs
 gh run rerun <run-id>
 ```
 
 ### Workflow Status in PRs
 
 ```sh
-# Check workflow status for PR
 gh pr checks 123
-
-# View specific workflow run
 gh pr view 123 --json statusCheckRollup
 ```
 
@@ -444,16 +328,9 @@ CODEOWNERS file automatically requests reviews from code owners.
 
 **Example:**
 ```
-# Default owners for everything
 * @org/core-team
-
-# Python code owners
 *.py @org/python-team
-
-# Documentation owners
 /docs/ @org/docs-team
-
-# Specific file owners
 /src/critical-file.py @user1 @user2
 ```
 
@@ -464,16 +341,9 @@ When PR is created, GitHub automatically requests reviews from matching owners.
 ### Check PR status before making changes
 
 ```sh
-# Get PR info
 gh pr view 123
-
-# Check CI status
 gh pr checks 123
-
-# Get branch name
 BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
-
-# Checkout and work
 git checkout "$BRANCH"
 ```
 
@@ -482,18 +352,11 @@ git checkout "$BRANCH"
 ### Complete review response workflow
 
 ```sh
-# View PR comments
 gh pr view 123 --comments
-
-# Make changes and commit
 git add .
 git commit -m "refactor: address review feedback"
 git push
-
-# Respond to review
 gh pr comment 123 --body "Addressed all feedback, ready for re-review"
-
-# Request re-review
 gh pr edit 123 --add-reviewer @reviewer
 ```
 
@@ -502,10 +365,7 @@ gh pr edit 123 --add-reviewer @reviewer
 ### Monitor CI and merge
 
 ```sh
-# Watch CI checks
 gh pr checks 123 --watch
-
-# Once passed, merge
 gh pr merge 123 --squash --delete-branch
 ```
 

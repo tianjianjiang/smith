@@ -226,7 +226,6 @@ Each commit MUST be:
 <examples>
 
 ```text
-# Good: Three separate commits for three logical changes
 git commit -m "feat(auth): add OAuth2 login flow"
 git commit -m "fix(auth): resolve token refresh race condition"
 git commit -m "docs(auth): update authentication guide"
@@ -237,7 +236,6 @@ git commit -m "docs(auth): update authentication guide"
 <forbidden>
 
 ```text
-# Bad: Single commit with unrelated changes
 git commit -m "feat(auth): add OAuth2 login, fix token bug, update docs"
 ```
 
