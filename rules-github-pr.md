@@ -45,7 +45,7 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
 1. Merge parent PR WITHOUT deleting branch:
 
    **Option A: Using GitHub MCP** (preferred):
-   ```
+   ```text
    Use MCP tool: mcp__github__merge_pull_request
    Parameters:
      - owner: {owner}
@@ -62,7 +62,7 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
 2. Update child PR base and rebase:
 
    **Option A: Using GitHub MCP** (preferred):
-   ```
+   ```text
    Use MCP tool: mcp__github__update_pull_request
    Parameters:
      - owner: {owner}
