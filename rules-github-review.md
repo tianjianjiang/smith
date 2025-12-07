@@ -164,15 +164,17 @@ Fixed in commit ${COMMIT_SHA}."
 
    **CRITICAL**: Review threads are GraphQL-only. You cannot get the thread ID from REST API.
 
-   **Step 1: Find the thread ID for your comment** (query all threads, match by comment ID):
+   **VERIFIED WORKFLOW** (tested 2025-12-07 on PR #23, comments 2596545103 and 2596545104):
+
+   **Step 1: Find the thread ID for your comment** (query all threads, match by comment databaseId):
    ```sh
-   OWNER="{owner}"
-   REPO="{repo}"
-   PR_NUMBER=21
-   COMMENT_ID=2596414027  # The REST API comment ID you replied to
+   OWNER="tianjianjiang"
+   REPO="smith"
+   PR_NUMBER=23
+   COMMENT_ID=2596545103  # The REST API comment databaseId
 
    # Query all review threads via GraphQL
-   gh api graphql -f query='
+   THREAD_ID=$(gh api graphql -f query='
    query {
      repository(owner: "'"$OWNER"'", name: "'"$REPO"'") {
        pullRequest(number: '"$PR_NUMBER"') {
@@ -183,8 +185,6 @@ Fixed in commit ${COMMIT_SHA}."
              comments(first: 10) {
                nodes {
                  databaseId
-                 body
-                 author { login }
                }
              }
            }
@@ -192,15 +192,15 @@ Fixed in commit ${COMMIT_SHA}."
        }
      }
    }' | jq -r '.data.repository.pullRequest.reviewThreads.nodes[] |
-     select(.comments.nodes[] | .databaseId == '"$COMMENT_ID"') | .id'
+     select(.comments.nodes[] | .databaseId == '"$COMMENT_ID"') | .id')
+
+   echo "Thread ID: $THREAD_ID"
    ```
 
-   This returns the GraphQL thread ID (format: `PR_kwDOQckce863jGTC_..`)
+   **Expected output**: `PRRT_kwDOQckce85lDi4k` (GraphQL thread ID format starts with `PRRT_`)
 
    **Step 2: Resolve the thread** using the thread ID from Step 1:
    ```sh
-   THREAD_ID="PR_kwDOQckce863jGTC_..."  # From Step 1
-
    gh api graphql -f query='
    mutation {
      resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) {
@@ -212,7 +212,24 @@ Fixed in commit ${COMMIT_SHA}."
    }'
    ```
 
+   **Expected output**:
+   ```json
+   {"data":{"resolveReviewThread":{"thread":{"id":"PRRT_kwDOQckce85lDi4k","isResolved":true}}}}
+   ```
+
    **Permission Required**: Repository Contents write access (not just PR write permissions - counterintuitive!)
+
+   **CRITICAL - Bot Comment Handling** ([GitHub Docs](https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/reviewing-a-pull-request-created-by-copilot)):
+
+   **DO NOT mention bots** when replying to review comments (Copilot, CodeRabbit, etc.):
+   - ❌ **Wrong**: `@copilot Thank you for the feedback!` → Triggers unwanted PR creation
+   - ✅ **Correct**: `Thank you for the feedback!` → Just acknowledges the comment
+
+   **When to use @copilot**:
+   - ONLY when you want Copilot to create a new PR with changes
+   - Example: `@copilot Please implement this suggestion`
+
+   **Since August 2025**: Copilot requires explicit @copilot mentions to respond. Comments on Copilot's code review are visible to humans but won't trigger Copilot unless @copilot is mentioned.
 
    **Note**: The standard GitHub MCP server doesn't support review thread resolution. Earlier versions of this documentation referenced optional MCP tools (`reply_to_pull_request_comment`, `resolve_pull_request_review_thread`) from third-party extensions like wjessup/github-mcp-server-review-tools. These are not in the standard GitHub MCP server and not widely available, so we use gh CLI + GraphQL as the primary approach.
 
