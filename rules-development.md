@@ -14,7 +14,6 @@ This document defines development workflow standards and code quality requiremen
 
 **Python projects:**
 ```sh
-# Use virtual env runner (poetry run or uv run)
 poetry run ruff check --fix && poetry run ruff format
 poetry run pytest
 ```
