@@ -115,6 +115,9 @@ if [ "$AUTHOR" != "$CURRENT_USER" ]; then
   echo "Not your commit - create new commit instead"
   exit 1
 fi
+# Check if HEAD is in the list of unpushed commits
+# git log @{upstream}.. lists commits that exist locally but not on remote
+# If grep finds HEAD in that list, the commit hasn't been pushed yet
 if git log @{upstream}.. | grep -q "$(git rev-parse HEAD)"; then
   echo "Commit not pushed yet - safe to amend"
 else
