@@ -662,6 +662,127 @@ fi
 
 </required>
 
+### PR Description Auto-Generation
+
+<context>
+
+**Industry Standard**: AI assistants can generate comprehensive PR descriptions achieving 80% user satisfaction by analyzing code changes and commit history (GitHub Copilot research).
+
+**Philosophy**: Generate context-aware PR descriptions that save time while maintaining quality. Include ticket integration and compliance analysis for complete context.
+
+</context>
+
+<required>
+
+**Before creating PR**, agent MUST:
+
+1. Analyze full diff: `git diff origin/main...HEAD`
+2. Read ALL commit messages: `git log origin/main..HEAD --format='%s%n%b'`
+3. Read ALL changed files (verify contents, don't assume)
+4. Identify associated tickets from GitHub Issues, commit messages, or branch names
+5. Generate structured summary:
+   - **What**: 2-3 bullets describing changes
+   - **Why**: Purpose/motivation (from commits + tickets)
+   - **Testing**: How to verify (from test files or commit descriptions)
+   - **Dependencies**: Links to related PRs/issues (stacked PRs, blocking issues)
+   - **Compliance**: How changes fulfill ticket requirements (if applicable)
+
+**PR Description Template**:
+```markdown
+## Summary
+- [Main change - what was added/fixed/changed]
+- [Secondary change or impact]
+- [Additional context if needed]
+
+## Context
+[Why this change is needed - from commit messages and associated tickets]
+
+## Testing
+- [How to verify the changes work - from test files or manual steps]
+- [Specific test commands or scenarios]
+
+## Dependencies
+- Depends on: #[PR number] (if this is a stacked PR)
+- Fixes: #[issue number] (if fixing a reported bug)
+- Blocks: #[PR number] (if other PRs depend on this)
+
+## Related Tickets
+- Closes: #[issue number] or JIRA-[ticket-id]
+- Relates to: #[issue number] (if related but doesn't close)
+```
+
+**Customization**: Include project-specific code conventions in generated descriptions (Devin AI best practice).
+
+</required>
+
+<scenario>
+
+**Agent workflow example**:
+```
+User: "Create PR for this work"
+
+Agent: [Analyzes full diff from base branch]
+Agent: [Reads ALL commits: git log origin/main..HEAD]
+Agent: [Reads ALL changed files to verify contents]
+Agent: [Identifies ticket references in commits/branch name]
+
+Agent: "I'll create PR with this description:
+
+## Summary
+- Add OAuth2 authentication with automatic token refresh
+- Implement rate limiting (10 requests/min per user)
+- Update API documentation with authentication examples
+
+## Context
+Users need secure API access without exposing credentials (closes #42).
+OAuth2 provides industry-standard token-based authentication with automatic
+token refresh for improved security.
+
+## Testing
+- Unit tests: `pytest tests/test_auth.py`
+- Integration tests: `pytest tests/integration/test_oauth_flow.py`
+- Manual verification: POST /oauth/token with client credentials
+
+## Dependencies
+- Fixes: #42 (API authentication requirement)
+
+## Related Tickets
+- Closes: #42 (Add OAuth2 authentication)
+
+Looks good?"
+
+User: "Yes"
+Agent: [Creates PR with generated description using gh or platform API]
+```
+
+</scenario>
+
+<examples>
+
+**Comprehensive analysis**:
+"Analyzed 5 commits across 12 files. Generated summary covering auth implementation (auth.py:45-120), rate limiting middleware (middleware.py:23-45), and API docs (README.md:100-150)."
+
+**Identifies gaps**:
+"Generated description but noticed no tests were added in this PR. Should I mention this limitation in the PR description or add tests first?"
+
+**Ticket integration**:
+"Found reference to JIRA-1234 in commit messages. Including acceptance criteria from that ticket in PR description for reviewer context."
+
+</examples>
+
+<forbidden>
+
+**Only analyzed latest commit** (should analyze ALL commits):
+"PR adds authentication" - but PR actually includes 5 commits with auth + rate limiting + docs. Agent only looked at latest commit message instead of full diff.
+
+**Assumed file contents** (should read ALL files):
+"PR updates auth.py and docs" - but doesn't describe WHAT changes were made because agent didn't actually read the files.
+
+**Generic summaries** (should be specific):
+"Updated files" - provides no value. Should describe actual changes with file:line references.
+
+</forbidden>
+
 <examples>
 
 **Workflow**:
@@ -982,6 +1103,143 @@ git rebase --abort  # Always abort first
 **Bad: Not informative**
 
 "PR needs update. Rebase?" (doesn't explain why or impact)
+
+</forbidden>
+
+## Proactive Branch Freshness Monitoring
+
+<context>
+
+**Philosophy**: Prevention over cure - detect branch staleness early and offer rebase before conflicts occur.
+
+**Industry Standard**: Modern tools like Graphite automate stack rebasing with a single command, keeping all dependent PRs synchronized. AI conflict resolution tools (GitKraken AI, GitHub Copilot, Cursor Agent) auto-resolve simple conflicts with explanations.
+
+**Benefits**: Proactive monitoring prevents conflicts, keeps PRs current, and reduces review friction. AI-assisted resolution handles simple conflicts automatically while escalating complex cases to humans.
+
+</context>
+
+<required>
+
+**Agent monitors PR branch staleness** when:
+- User says "work on PR #123" or "check PR status"
+- User says "ready to request review"
+- User returns to session (background check on session start)
+
+**Staleness check**:
+```sh
+git fetch origin
+BASE_BRANCH="main"  # or detect from branch config
+BEHIND=$(git rev-list HEAD..origin/$BASE_BRANCH --count)
+DAYS_OLD=$(git log -1 --format=%cd --date=relative)
+
+# Optional: Check for potential conflicts (dry-run)
+CONFLICTS=$(git merge-tree $(git merge-base HEAD origin/$BASE_BRANCH) HEAD origin/$BASE_BRANCH | grep -c "^@@" || echo 0)
+```
+
+**Thresholds for action**:
+- **< 5 commits behind**: No action needed (fresh enough)
+- **5-10 commits behind**: Passive notification (inform user)
+- **> 10 commits OR > 3 days old**: Active recommendation (suggest rebase)
+- **> 20 commits OR > 7 days old**: Strong recommendation (likely conflicts, urgent)
+
+**AI Conflict Resolution**:
+When conflicts are detected during rebase:
+1. **Auto-resolve simple conflicts**: Whitespace differences, formatting changes, import statement order
+2. **Analyze complex conflicts**: Present both sides with context, suggest resolution approach
+3. **Request human approval**: Always get user approval before committing AI-proposed resolutions
+4. **Learn from patterns**: Track resolution decisions for future reference (optional enhancement)
+
+</required>
+
+<scenario>
+
+**Passive notification** (5-10 commits behind):
+```
+User: "What's the status of PR #123?"
+Agent: "PR #123 is 7 commits behind main (last updated 2 days ago). Consider rebasing to stay current with latest changes."
+```
+
+**Active recommendation** (>10 commits behind):
+```
+User: "Work on PR #123"
+Agent: "PR #123 is 15 commits behind main (last updated 4 days ago). Rebasing now would:
+- Prevent merge conflicts
+- Make CI failures easier to diagnose
+- Ensure changes work with latest code
+
+Rebase now?"
+
+User: "Yes"
+Agent: [Executes rebase] "Successfully rebased PR #123 on latest main. No conflicts detected."
+```
+
+**Strong recommendation** (>20 commits OR >7 days):
+```
+Agent: "⚠ PR #123 is 25 commits behind main (last updated 1 week ago). High conflict risk. Recommended to rebase before continuing work to avoid difficult merge conflicts later."
+```
+
+**AI conflict resolution**:
+```
+Agent: [During rebase] "Detected 3 conflicts during rebase:
+
+1. auth.py:45 - Whitespace/formatting differences (auto-resolved)
+2. config.py:12 - Import statement order (auto-resolved)
+3. api.py:78 - Function signature change (needs review)
+
+For api.py conflict:
+- Your branch: Added `timeout` parameter to authenticate()
+- Main branch: Added `retry_count` parameter to authenticate()
+- Suggested resolution: Combine both parameters: authenticate(timeout=30, retry_count=3)
+
+Apply this resolution?"
+
+User: "Yes"
+Agent: [Applies resolution, completes rebase] "Rebase completed successfully. Resolved 3 conflicts (2 auto, 1 with approval)."
+```
+
+**Stacked PR cascade rebase**:
+```
+Agent: "PR #123 was just updated in main. Detected stack:
+- PR #124: feature/auth_login (child of #123)
+- PR #125: feature/auth_session (grandchild of #123)
+
+Auto-rebasing entire stack to stay synchronized?"
+
+User: "Yes"
+Agent: [Rebases all dependent PRs in order]
+Agent: "✓ PR #124 rebased successfully (no conflicts)
+✓ PR #125 rebased successfully (no conflicts)
+Stack synchronized with main."
+```
+
+</scenario>
+
+<examples>
+
+**Proactive prevention**:
+"Checked PR #123 freshness. 12 commits behind main. Offering rebase BEFORE user starts work prevents conflicts."
+
+**Context-aware AI resolution**:
+"Auto-resolved whitespace conflicts in 3 files. For function signature conflict in auth.py:78, analyzed both changes and suggested combining parameters rather than choosing one side."
+
+**Stacked PR intelligence**:
+"Detected 'Depends on: #123' in PR #124 body. When #123 merges, automatically offering to rebase #124 to maintain stack integrity."
+
+</examples>
+
+<forbidden>
+
+**Force rebase without asking**:
+"Rebasing PR #123..." (no user confirmation) - ALWAYS ask before rebasing.
+
+**Vague notifications**:
+"PR needs update" - doesn't explain why, how many commits behind, or impact.
+
+**Ignoring stacked dependencies**:
+Rebasing parent PR without checking/updating child PRs breaks stack integrity.
+
+**Auto-applying complex resolutions**:
+Applying AI-suggested conflict resolutions without human review for non-trivial conflicts.
 
 </forbidden>
 
