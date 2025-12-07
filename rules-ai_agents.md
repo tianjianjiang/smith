@@ -706,6 +706,145 @@ window, or use online index creation?"
 
 </guiding_principles>
 
+## Rebase Automation Principles
+
+<context>
+
+**Balance**: Be proactive in detection, conservative in execution
+
+**Research**: Aligns with Constitutional AI "Harmless" principle - avoid destructive operations without user awareness
+
+</context>
+
+### Detection Without Intrusion
+
+<required>
+
+Agent MUST:
+- Silently check PR freshness during any PR operation
+- Only inform user if issue is significant (> 5 commits behind OR > 3 days old)
+- Provide context in notifications (not just "PR outdated")
+- Explain impact of rebasing vs not rebasing
+
+Agent MUST NOT:
+- Constantly nag about minor staleness (1-2 commits)
+- Rebase without asking (except when explicit user intent)
+- Interrupt unrelated workflows with rebase suggestions
+
+</required>
+
+### Ask-First Default
+
+<required>
+
+**Default behavior**: ALWAYS ask before rebasing
+
+**Exceptions** (can auto-rebase without asking):
+1. User explicitly said "update PR" or "rebase PR"
+2. User said "request review" AND agent detects PR outdated AND no conflicts
+3. User said "merge stack" AND cascade rebasing is part of documented workflow
+
+**Verification before auto-rebase**:
+```sh
+# ALL must pass
+git status --porcelain | wc -l  # = 0 (clean)
+git merge-tree ... | grep -q "^+<<<<<<<"; [ $? -ne 0 ]  # no conflicts
+git log -5 --format='%ae' | sort -u | wc -l  # = 1 (single author)
+```
+
+</required>
+
+### Communication Standards
+
+<required>
+
+When informing about rebase needs:
+
+**Include**:
+- How far behind (commit count + time)
+- Why it matters (conflict risk, CI failures, stale code)
+- Options available (rebase, merge, continue as-is)
+- Trade-offs of each option
+
+**Template**:
+
+"This PR is `{N}` commits behind `{base}` (last updated {timeago}). This means:
+- Risk of merge conflicts: {high/medium/low}
+- CI may fail against old dependencies
+- Reviewers see code that may be outdated
+
+Options:
+1. Rebase now (clean history, I'll handle it)
+2. Merge `{base}` into PR (simple, creates merge commit)
+3. Continue as-is (handle at merge time)
+
+Recommend: {option} because {reason}"
+
+</required>
+
+### Stacked PR Intelligence
+
+<required>
+
+Agent MUST:
+- Parse PR bodies for "Depends on: #{number}" and "Blocks: #{number}"
+- Build dependency graph of open PRs
+- Detect when parent merges and trigger cascade workflow
+- Offer batch operations ("update all child PRs")
+
+**Dependency parsing**:
+```sh
+# Extract dependencies from PR body
+DEPENDS_ON=$(gh pr view 123 --json body -q .body | grep -oP 'Depends on:.*?#\K\d+')
+BLOCKS=$(gh pr view 123 --json body -q .body | grep -oP 'Blocks:.*?#\K\d+')
+```
+
+</required>
+
+### Error Recovery Patterns
+
+<required>
+
+**When rebase fails**:
+1. Immediately abort: `git rebase --abort`
+2. Explain failure cause with specifics (files, line numbers)
+3. Offer alternatives (manual resolution guidance, merge instead, abort)
+4. Never leave repository in unclean state
+
+**When force-push fails**:
+1. Check `git status` and remote state
+2. Inform user of likely causes
+3. Suggest safe recovery steps
+4. Ask before retrying
+
+</required>
+
+### Progressive Assistance
+
+<guiding_principles>
+
+**Escalation ladder**:
+
+Level 1 - Silent detection:
+- Check freshness during PR operations
+- Store state internally
+
+Level 2 - Passive notification:
+- If significantly outdated, mention casually
+- "By the way, this PR is a bit behind main"
+
+Level 3 - Active recommendation:
+- Before review request, block with recommendation
+- "Before I request review, should we update this PR?"
+
+Level 4 - Automated execution:
+- With explicit permission, execute rebase workflow
+- Provide detailed confirmation after completion
+
+**Never skip levels** - always start passive, escalate only if needed
+
+</guiding_principles>
+
 ## Structured Output Steering
 
 <context>

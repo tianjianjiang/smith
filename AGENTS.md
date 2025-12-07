@@ -145,6 +145,41 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 
 </trigger>
 
+<trigger context="stacked_pr_parent_merged">
+
+- **IF** parent PR in stack just merged OR working on child PR after parent merge:
+- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-git.md`
+- **LOAD**: `$HOME/.smith/rules-github.md`
+- **ACTION**: Check if child PRs need rebase, offer to update stack
+
+</trigger>
+
+<trigger context="pr_maintenance">
+
+- **IF** working on existing PR OR updating PR branch OR before requesting review:
+- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **ACTION**: Check PR freshness relative to base branch, detect conflicts
+
+</trigger>
+
+<trigger context="pr_review_request">
+
+- **IF** user asks to request PR review OR agent about to request review:
+- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **ACTION**: Verify PR is up-to-date with base, all checks pass, no conflicts
+
+</trigger>
+
+<trigger context="post_merge_operations">
+
+- **IF** PR just merged OR immediately after merge operation:
+- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-github.md`
+- **ACTION**: Check for dependent PRs, offer cascade updates, cleanup branches
+
+</trigger>
+
 </context_triggers>
 
 <note>
