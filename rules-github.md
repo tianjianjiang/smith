@@ -66,7 +66,7 @@ Parameters:
   - owner: {owner}
   - repo: {repo}
   - pullNumber: {PR}
-  - perPage: 50          # SAFE: 30-50 for verbose review comments
+  - perPage: 10          # SAFE: Bot reviews (CodeRabbitAI, Copilot) have massive HTML/analysis
   - page: 1
 ```
 
@@ -110,7 +110,7 @@ Parameters:
 **When you need data beyond page 1**:
 
 1. **Check if pagination needed**:
-   - Review comments: Bot-reviewed PRs can have 50-100+ comments
+   - Review comments: Bot-reviewed PRs can have 50-100+ comments (VERY verbose with analysis, code blocks, HTML)
    - Open PRs: Active repos may have 30+ open PRs
    - Changed files: Large refactors touch 50-200+ files
 
@@ -119,7 +119,7 @@ Parameters:
    Use MCP tool: mcp__github__pull_request_read
    Parameters:
      - method: "get_review_comments"
-     - perPage: 50
+     - perPage: 10      # ULTRA-conservative: CodeRabbitAI comments have massive HTML/analysis
      - page: 1
    ```
 
@@ -128,16 +128,16 @@ Parameters:
    Use MCP tool: mcp__github__pull_request_read
    Parameters:
      - method: "get_review_comments"
-     - perPage: 50
+     - perPage: 10
      - page: 2          # Increment for each page
    ```
 
 4. **Combine results** from all pages
 
-**Example: Handling 120 review comments**:
-- Page 1: Comments 1-50 (perPage: 50)
-- Page 2: Comments 51-100 (perPage: 50)
-- Page 3: Comments 101-120 (perPage: 50, only 20 returned)
+**Example: Handling 30 review comments**:
+- Page 1: Comments 1-10 (perPage: 10)
+- Page 2: Comments 11-20 (perPage: 10)
+- Page 3: Comments 21-30 (perPage: 10)
 
 </required>
 

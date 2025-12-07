@@ -128,13 +128,13 @@
      - owner: {owner}           # e.g., "octocat"
      - repo: {repo}             # e.g., "hello-world"
      - pullNumber: {PR}         # e.g., 21
-     - perPage: 50              # Balance: get most comments, avoid truncation
+     - perPage: 10              # ULTRA-conservative: CodeRabbitAI comments have massive HTML/analysis
      - page: 1
 
    Returns: List of inline review comment objects with id, path, line, body, user
    ```
 
-   **If PR has 50+ review comments** (response shows more pages available):
+   **If PR has 10+ review comments** (response shows more pages available):
    ```text
    # Fetch subsequent pages
    Use MCP tool: mcp__github__pull_request_read
@@ -143,7 +143,7 @@
      - owner: {owner}
      - repo: {repo}
      - pullNumber: {PR}
-     - perPage: 50
+     - perPage: 10            # ULTRA-conservative: CodeRabbitAI comments have massive HTML/analysis
      - page: 2                # Increment for each additional page
    ```
 
@@ -368,7 +368,7 @@ git push
      - owner: {owner}
      - repo: {repo}
      - pullNumber: {PR}
-     - perPage: 50              # Safe limit for verbose review comments
+     - perPage: 10              # ULTRA-conservative: CodeRabbitAI comments have massive HTML/analysis
      - page: 1
 
    Filter results for comments with in_reply_to_id == null (root comments without replies)
