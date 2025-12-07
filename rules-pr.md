@@ -1619,7 +1619,7 @@ git rebase --abort  # Always abort first
 ```sh
 git fetch origin
 BASE_BRANCH="main"  # or detect from branch config
-BEHIND=$(git rev-list HEAD "origin/$BASE_BRANCH" --count)
+BEHIND=$(git rev-list HEAD.."origin/$BASE_BRANCH" --count)
 DAYS_OLD=$(git log -1 --format=%cd --date=relative)
 
 # Optional: Check for potential conflicts (dry-run)
