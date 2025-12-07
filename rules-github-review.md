@@ -219,17 +219,39 @@ Fixed in commit ${COMMIT_SHA}."
 
    **Permission Required**: Repository Contents write access (not just PR write permissions - counterintuitive!)
 
-   **CRITICAL - Bot Comment Handling** ([GitHub Docs](https://docs.github.com/copilot/how-tos/agents/copilot-coding-agent/reviewing-a-pull-request-created-by-copilot)):
+   </final_instruction>
 
-   **DO NOT mention bots** when replying to review comments (Copilot, CodeRabbit, etc.):
-   - ❌ **Wrong**: `@copilot Thank you for the feedback!` → Triggers unwanted PR creation
-   - ✅ **Correct**: `Thank you for the feedback!` → Just acknowledges the comment
+   <forbidden>
 
-   **When to use @copilot**:
-   - ONLY when you want Copilot to create a new PR with changes
-   - Example: `@copilot Please implement this suggestion`
+   **NEVER mention bots when replying to review comments**:
 
-   **Since August 2025**: Copilot requires explicit @copilot mentions to respond. Comments on Copilot's code review are visible to humans but won't trigger Copilot unless @copilot is mentioned.
+   - `@copilot Thank you for the feedback!` → Triggers unwanted PR creation
+   - `@coderabbitai Thanks for the review!` → Unnecessary bot notification
+   - `@github-advanced-security[bot] Acknowledged` → Wrong bot entirely
+
+   **Rationale**: Since August 2025, Copilot requires explicit @copilot mentions to respond. Comments on bot reviews are visible to humans but won't trigger bots unless explicitly mentioned. Mentioning bots in acknowledgment replies triggers unwanted PR creation.
+
+   </forbidden>
+
+   <required>
+
+   **When replying to bot review comments**:
+
+   ```sh
+   # Just acknowledge without bot mention
+   gh api -X POST \
+     -H "Accept: application/vnd.github+json" \
+     /repos/{owner}/{repo}/pulls/23/comments/{comment_id}/replies \
+     -f body="Thank you for the feedback!"
+   ```
+
+   **When to use @copilot** (ONLY when requesting action):
+   - `@copilot Please implement this suggestion`
+   - `@copilot Fix the issue you identified`
+
+   </required>
+
+   <final_instruction>
 
    **Note**: The standard GitHub MCP server doesn't support review thread resolution. Earlier versions of this documentation referenced optional MCP tools (`reply_to_pull_request_comment`, `resolve_pull_request_review_thread`) from third-party extensions like wjessup/github-mcp-server-review-tools. These are not in the standard GitHub MCP server and not widely available, so we use gh CLI + GraphQL as the primary approach.
 
