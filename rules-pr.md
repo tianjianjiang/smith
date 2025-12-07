@@ -566,7 +566,8 @@ gh api repos/{owner}/{repo}/pulls/{PR}/comments
    - **Medium confidence (40-70%)**: Implement with explanation, ask for confirmation
    - **Low confidence (<40%)**: Ask user for clarification before implementing
    - **Track mapping**: Comment ID → Commit SHA that addresses it
-   - **Mark resolved**: Resolve comment thread after addressing
+   - **Reply to comment**: Use quote reply format with reviewer mention
+   - **Mark resolved**: Hide comment as resolved after addressing
 
 5. **Commit and push changes**:
 ```sh
@@ -598,6 +599,31 @@ git push
    If ALL criteria met: Proceed to merge (with user confirmation)
    If ANY criteria not met: Inform user what's blocking
 
+**Comment reply format**:
+
+When replying to review comments, use GitHub quote reply with reviewer mention:
+
+```markdown
+@reviewer-username
+
+> Original comment text here
+
+Response explaining what was done or asking for clarification.
+
+Fixed in commit abc1234.
+```
+
+**Marking resolved**:
+- Use `gh pr comment {PR} --body "..."` to reply to comments
+- Use `gh api` to mark threads as resolved after addressing:
+```sh
+# Mark review thread as resolved
+gh api -X PUT repos/{owner}/{repo}/pulls/comments/{comment_id}/replies/{reply_id} \
+  -f state=resolved
+```
+
+Or if using GitHub web UI automation, hide the conversation after confirming fix is implemented.
+
 </required>
 
 <scenario>
@@ -622,6 +648,19 @@ User: "Document both"
 Agent: [Implements all 3 changes]
 Agent: [Commits with message listing all addressed comments]
 Agent: [Pushes to PR branch]
+Agent: [Replies to each comment with quote format]
+
+# Reply to comment #1:
+"@reviewer
+
+> Extract timeout value to named constant
+
+Done! Extracted to `DEFAULT_REQUEST_TIMEOUT = 30` in constants.py.
+
+Fixed in commit abc1234."
+
+Agent: [Marks comment #1 as resolved]
+Agent: [Repeats for comments #2 and #3]
 Agent: "Pushed fixes addressing all 3 comments. Waiting for CI checks and re-review..."
 
 # ITERATION 2 (reviewer adds new comment after seeing changes)
@@ -633,6 +672,18 @@ Agent: "New comment from @reviewer:
 Implementing try-except wrapper for network operations..."
 
 Agent: [Makes change, commits, pushes]
+Agent: [Replies to comment #4]
+
+# Reply to comment #4:
+"@reviewer
+
+> Consider adding error handling for network timeouts
+
+Good catch! Added try-except wrapper with `requests.exceptions.Timeout` handling and exponential backoff retry logic.
+
+Fixed in commit def5678."
+
+Agent: [Marks comment #4 as resolved]
 Agent: "Addressed comment #4. CI passing. Waiting for re-review..."
 
 # ITERATION 3 (no new comments)
@@ -685,9 +736,32 @@ Agent: "Understood. Implementing LRU cache with TTL..."
 **Progressive escalation**:
 "Comments #1-3 implemented directly (high confidence). Comment #4 needs clarification (low confidence) - asking user before proceeding."
 
+**Comment reply with quote and mention** (proper format):
+```markdown
+@reviewer-name
+
+> Extract timeout to constant
+
+Done! Extracted to `DEFAULT_TIMEOUT = 30` in constants.py.
+
+Fixed in commit abc1234.
+```
+
+Then mark as resolved after confirming fix is correct.
+
 </examples>
 
 <forbidden>
+
+**Bad comment reply** (missing quote or mention):
+```markdown
+Fixed the timeout issue.
+```
+
+This doesn't quote the original comment, mention the reviewer, or reference the commit. Makes it hard for reviewers to track what was addressed.
+
+**Not marking resolved**:
+Addressing a comment but leaving the thread open/unresolved. Reviewers have to manually check all comments to see what's done.
 
 **Merging with unresolved comments**:
 Proceeding to merge when review comments still show "unresolved" status or reviewer explicitly requested changes.
