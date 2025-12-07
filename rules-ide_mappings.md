@@ -1,5 +1,7 @@
 # IDE Path Variable Mappings
 
+<context>
+
 ## Overview
 
 Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see [Naming Standards]($HOME/.smith/rules-naming.md#path-reference-standards).
@@ -10,6 +12,8 @@ Maps conceptual path variables to IDE-specific syntax. For variable definitions 
 - `$WORKSPACE_ROOT` - Current workspace directory
 - `$REPO_ROOT` - Monorepo root
 - `$HOME` - User home directory
+
+</context>
 
 ## IDE Syntax Mappings
 
@@ -55,6 +59,8 @@ $HOME            →  $USER_HOME$
 
 **Configuration**: File → Settings → Appearance & Behavior → Path Variables
 
+<required>
+
 ## Best Practices
 
 1. **Documentation**: Always use conceptual variables (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`)
@@ -62,8 +68,14 @@ $HOME            →  $USER_HOME$
 3. **Cross-IDE Compatibility**: Prefer environment variables when possible
 4. **Security**: Use variable references for sensitive values, never hardcode
 
+</required>
+
 ## Reference
+
+<related>
 
 - **VS Code Variables**: [Documentation](https://code.visualstudio.com/docs/editor/variables-reference)
 - **PyCharm Macros**: [Documentation](https://www.jetbrains.com/help/idea/absolute-path-variables.html)
 - **Path Standards**: `$HOME/.smith/rules-naming.md`
+
+</related>

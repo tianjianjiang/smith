@@ -8,6 +8,8 @@
 
 </metadata>
 
+<guiding_principles>
+
 ## Design Principles
 
 - [**DRY**](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself): Don't Repeat Yourself
@@ -27,6 +29,10 @@
 
 See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
+</guiding_principles>
+
+<context>
+
 ### Efficiency
 
 - Research with today's date for current information
@@ -36,6 +42,8 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 ### XML Tag Standards
 
 See `rules-xml_tags.md` for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
+
+</context>
 
 <context_triggers>
 

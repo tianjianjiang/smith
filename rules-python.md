@@ -16,7 +16,11 @@
 
 </dependencies>
 
-Python-specific coding standards. For personal rules, see `rules-core.md`.
+<context>
+
+For personal rules, see `rules-core.md`.
+
+</context>
 
 ## Import Rules
 
@@ -44,13 +48,16 @@ Python-specific coding standards. For personal rules, see `rules-core.md`.
 
 </required>
 
-**Example:**
+<examples>
+
 ```python
 from typing import Optional, List
 
 def process_documents(docs: List[str], max_count: Optional[int] = None) -> bool:
     pass
 ```
+
+</examples>
 
 ## Code Style
 
@@ -85,7 +92,9 @@ poetry run ruff format
 
 </required>
 
-**Example - Function-based tests:**
+<examples>
+
+**Function-based tests:**
 ```python
 def test_should_parse_pdf_when_valid_file_provided():
     result = parse_pdf("valid.pdf")
@@ -98,9 +107,15 @@ class TestDataBuilder:
         return {"key": "value"}
 ```
 
+</examples>
+
 ## Virtual Environment Execution
 
+<context>
+
 **Pattern**: Use package manager's virtual environment runner for all Python commands
+
+</context>
 
 <required>
 
@@ -130,6 +145,8 @@ uv run ruff check --fix
 
 ## Environment Variables
 
+<examples>
+
 **Reading environment variables:**
 ```python
 import os
@@ -155,10 +172,16 @@ os.environ["LIBRARY_CONFIG"] = "value"
 import library  # Now library sees the config
 ```
 
+</examples>
+
+<constraints>
+
 **Environment files:**
 - Store in `.env` files (NEVER commit to version control)
 - Use `.env.example` as template for required variables
 - Virtual env runners (poetry run/uv run) load .env automatically
+
+</constraints>
 
 ## Package Management
 
@@ -211,7 +234,11 @@ class Config:
 
 ## Related Standards
 
+<related>
+
 - **Personal Rules**: `$HOME/.smith/rules-core.md` - NEVER/ALWAYS for all languages
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
 - **Testing Standards**: `$HOME/.smith/rules-testing.md` - Test execution
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - File naming
+
+</related>

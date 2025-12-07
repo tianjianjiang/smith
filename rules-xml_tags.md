@@ -8,7 +8,11 @@
 
 </metadata>
 
+<context>
+
 ## Approved XML Tags
+
+</context>
 
 <required>
 
@@ -92,6 +96,12 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 
 ## Markdown Rendering with XML Tags
 
+<context>
+
+**Blank lines are required** for proper markdown rendering inside XML tags.
+
+</context>
+
 <required>
 
 **Blank lines are required** after opening XML tags and before closing XML tags for proper markdown rendering. Without blank lines, markdown inside XML tags renders as literal text.
@@ -134,6 +144,24 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 6. **Tables** (`|---|---|`)
 
 </examples>
+
+## Content Organization Rules
+
+<required>
+
+**Logical separation of examples**:
+- Good examples/correct patterns → ONLY in `<examples>` tags
+- Bad examples/anti-patterns → ONLY in `<forbidden>` tags
+- NEVER mix good and bad patterns in the same XML tag
+
+**Content format flexibility**:
+- Content inside XML tags doesn't have to be code blocks
+- Use bullet lists when more concise than code blocks
+- Use plain text with inline code (backticks) when appropriate
+- Use tables for structured comparisons
+- Choose the most readable format for each case
+
+</required>
 
 ## Placeholder Alternatives
 
@@ -182,6 +210,10 @@ Do NOT use XML-like placeholders:
 
 ## Related Standards
 
+<related>
+
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - General naming rules
 - **Git Standards**: `$HOME/.smith/rules-git.md` - Branch and commit naming
 - **AI Agent Guidelines**: `$HOME/.smith/rules-ai_agents.md` - Agent interaction patterns
+
+</related>

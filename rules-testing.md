@@ -16,7 +16,6 @@
 
 </dependencies>
 
-Testing requirements, standards, and best practices.
 
 ## Test Requirements
 
@@ -29,9 +28,13 @@ Testing requirements, standards, and best practices.
 
 </required>
 
+<context>
+
 **Test organization:**
 - Unit tests: Mock dependencies, fast execution
 - Integration tests: Real services, mark with `@pytest.mark.integration`
+
+</context>
 
 **For naming patterns**: See [Naming Standards]($HOME/.smith/rules-naming.md) for test file and JSON test data naming
 
@@ -72,6 +75,10 @@ poetry run pytest tests/integration/ -v
 
 ## Related Standards
 
+<related>
+
 - **Python Testing**: [Python Standards]($HOME/.smith/rules-python.md) - Pytest patterns
 - **Development Workflow**: [Development Standards]($HOME/.smith/rules-development.md) - Code quality
 - **Naming Conventions**: [Naming Standards]($HOME/.smith/rules-naming.md) - Test file naming
+
+</related>

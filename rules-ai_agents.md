@@ -18,6 +18,8 @@
 
 ## Exploration-Before-Implementation Pattern
 
+<context>
+
 **Foundation**: Anthropic Claude Code best practices, validated across production deployments
 
 **Workflow**:
@@ -26,6 +28,8 @@
 3. **Propose**: Agent MUST explain trade-offs when multiple approaches exist
 4. **Review**: Agent MUST analyze full context (not just latest commit)
 5. **Implement**: Agent executes approved approach with atomic commits
+
+</context>
 
 <forbidden>
 
@@ -45,18 +49,23 @@
 
 </required>
 
-**Anti-pattern**: Direct implementation without exploration
-```text
-Bad:
-User: "Add caching to the API"
-Agent: *immediately starts writing Redis code*
+<forbidden>
 
-Good:
-User: "Add caching to the API"
-Agent: *uses Task tool to explore existing caching patterns*
-Agent: *reads configuration files*
-Agent: "I found two caching approaches in the codebase. Should we use Redis (like user service) or in-memory (like session service)?"
-```
+**Anti-pattern - Bad**: Direct implementation without exploration
+- User: "Add caching to the API"
+- Agent: *immediately starts writing Redis code*
+
+</forbidden>
+
+<examples>
+
+**Good practice**: Explore before implementing
+- User: "Add caching to the API"
+- Agent: *uses Task tool to explore existing caching patterns*
+- Agent: *reads configuration files*
+- Agent: "I found two caching approaches in the codebase. Should we use Redis (like user service) or in-memory (like session service)?"
+
+</examples>
 
 ## Test-Driven Development with Agents
 
@@ -85,7 +94,10 @@ Agent: "I found two caching approaches in the codebase. Should we use Redis (lik
 - Tests are isolated and deterministic
 - Coverage meets or exceeds existing standards
 
+<examples>
+
 **Anti-pattern**: Implementation-first approach
+
 ```text
 Bad:
 Agent: *writes implementation code*
@@ -97,7 +109,11 @@ Agent: *implements minimal code to make tests pass*
 Agent: *refactors while keeping tests green*
 ```
 
+</examples>
+
 ## Extended Thinking Guidance
+
+<context>
 
 **Context**: Advanced reasoning models with extended internal reasoning
 
@@ -111,12 +127,18 @@ Agent: *refactors while keeping tests green*
 - Security analysis requiring threat modeling
 - Performance optimization requiring profiling analysis
 
+</context>
+
+<examples>
+
 **Steering approach**:
 ```markdown
 "Use extended thinking to analyze the authentication flow across all services,
 identify potential race conditions, and propose a comprehensive fix that maintains
 backward compatibility."
 ```
+
+</examples>
 
 <forbidden>
 
@@ -136,11 +158,19 @@ backward compatibility."
 - Focus on outcome specification, not process
 - Allow model to apply internal reasoning
 
+<forbidden>
+
 **Anti-pattern**:
-```text
-Bad: "Think step-by-step about how to implement authentication"
-Good: "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
-```
+- "Think step-by-step about how to implement authentication"
+
+</forbidden>
+
+<examples>
+
+**Good practice**:
+- "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
+
+</examples>
 
 ## Memory Management
 
@@ -159,6 +189,8 @@ Good: "Implement OAuth2 authentication that works with our existing user service
 
 </required>
 
+<scenario>
+
 **Example**:
 ```markdown
 User: "Fix the authentication bug and add rate limiting"
@@ -174,7 +206,11 @@ Agent: *investigates and finds issue*
 Agent: *marks #1 as completed, #2 as in_progress*
 ```
 
+</scenario>
+
 ### Long-term Memory (Multi-Session)
+
+<context>
 
 **Strategy**: Persistent documentation and structured context
 
@@ -197,6 +233,8 @@ Agent: *marks #1 as completed, #2 as in_progress*
 - Dynamic content (code examples, evolving documentation) goes after cache breakpoints
 - Reuse cached prefix across sessions (90% cost reduction)
 
+</context>
+
 ### Multi-Session Work Management
 
 **Pattern**: Commit early and often with descriptive messages
@@ -210,6 +248,8 @@ Agent: *marks #1 as completed, #2 as in_progress*
 
 </required>
 
+<scenario>
+
 **Context restoration**:
 ```markdown
 Session 1:
@@ -222,7 +262,11 @@ Agent: *reads committed code to understand current state*
 Agent: *proposes next logical step based on commit history*
 ```
 
+</scenario>
+
 ## Prompt Caching Awareness
+
+<context>
 
 **Context**: Anthropic prompt caching reduces costs by 90% and latency by 85%
 
@@ -231,6 +275,8 @@ Agent: *proposes next logical step based on commit history*
 2. Prefix (before breakpoint) must be identical for cache hit
 3. Cache lifetime: 5 minutes (active use), extended with each hit
 4. Applies to system messages, tools, and long contexts
+
+</context>
 
 **Agent behavior implications**:
 
@@ -243,18 +289,23 @@ Agent: *proposes next logical step based on commit history*
 
 </required>
 
-**Example - Cache-friendly pattern**:
-```text
-Good (cache hit):
-Call 1: System message (1500 tokens) + Tools (2000 tokens) + User query
-Call 2: Same system + Same tools + Different user query
-→ First ~3500 tokens cached, only new query processed
+<examples>
 
-Bad (cache miss):
-Call 1: System message + Tools in order [A, B, C]
-Call 2: System message + Tools in order [A, C, B]
-→ No cache hit due to reordering
-```
+**Cache-friendly pattern (good)**:
+- Call 1: System message (1500 tokens) + Tools (2000 tokens) + User query
+- Call 2: Same system + Same tools + Different user query
+- Result: First ~3500 tokens cached, only new query processed
+
+</examples>
+
+<forbidden>
+
+**Cache-unfriendly pattern (bad)**:
+- Call 1: System message + Tools in order [A, B, C]
+- Call 2: System message + Tools in order [A, C, B]
+- Result: No cache hit due to reordering
+
+</forbidden>
 
 **File organization for caching**:
 - AGENTS.md metadata section: Static, always cached
@@ -263,6 +314,8 @@ Call 2: System message + Tools in order [A, C, B]
 - Evolving documentation: Dynamic, placed last
 
 ## Prompt Caching Optimization
+
+<context>
 
 **Goal**: Maximize cache hit rate for 90% cost reduction and 85% latency reduction
 
@@ -275,6 +328,8 @@ Call 2: System message + Tools in order [A, C, B]
 2. **Tool definitions** (consistent order, complete schemas)
 3. **Project context** (AGENTS.md, architecture docs, static references)
 4. **Dynamic context** (recent code changes, session-specific data)
+
+</context>
 
 **Implementation**:
 ```markdown
@@ -363,13 +418,19 @@ Recent git commits, current file changes, session-specific todos
 
 ## Token Efficiency Techniques
 
+<context>
+
 **Goal**: Reduce token usage without sacrificing quality
 
 **Research sources**:
 - [Microsoft LLMLingua](https://github.com/microsoft/LLMLingua) - Token compression
 - [Anthropic Prompt Engineering](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering) - Efficiency patterns
 
+</context>
+
 ### Progressive Disclosure
+
+<context>
 
 **Principle**: Load information on-demand, not upfront
 
@@ -395,6 +456,8 @@ Level 3: Full details when accessed (1000+ tokens)
 - Start with metadata scanning (Glob/Grep for relevant files)
 - Load core concepts only when context matches
 - Read full documentation only when actively working on feature
+
+</context>
 
 ### Sparse Attention Patterns
 
@@ -473,6 +536,8 @@ Bad: Full path repetition: "/Users/name/project/src/auth/middleware.ts"
 </forbidden>
 
 ## Constitutional AI Principles
+
+<guiding_principles>
 
 **Foundation**: Anthropic's HHH framework (Helpful, Honest, Harmless)
 
@@ -639,7 +704,11 @@ for ~30 seconds on production (5M rows). Should we schedule during low-traffic
 window, or use online index creation?"
 ```
 
+</guiding_principles>
+
 ## Structured Output Steering
+
+<context>
 
 **Context**: Platforms offer different structured output mechanisms
 
@@ -647,6 +716,8 @@ window, or use online index creation?"
 - [OpenAI Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
 - [Anthropic Tool Use](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 - [Google Gemini responseSchema](https://ai.google.dev/gemini-api/docs/structured-output)
+
+</context>
 
 ### Platform Comparison
 
@@ -669,6 +740,8 @@ window, or use online index creation?"
 - **Best for**: Creative generation with structure constraints
 
 ### Agent Steering Patterns
+
+<scenario>
 
 **Code generation output**:
 ```markdown
@@ -716,6 +789,8 @@ Steering:
 Follow existing test structure in tests/auth/*.test.ts"
 ```
 
+</scenario>
+
 ### Schema Design Principles
 
 <required>
@@ -727,7 +802,9 @@ Follow existing test structure in tests/auth/*.test.ts"
 
 </required>
 
-**Example - Code review schema**:
+<examples>
+
+**Code review schema**:
 ```json
 {
   "type": "object",
@@ -759,6 +836,17 @@ Follow existing test structure in tests/auth/*.test.ts"
 }
 ```
 
+**Good schema** (appropriate complexity):
+```json
+{
+  "code": "string",
+  "classes": [{"name": "string", "methods": ["string"]}],
+  "tests": ["string"]
+}
+```
+
+</examples>
+
 ### Anti-patterns
 
 <forbidden>
@@ -768,9 +856,7 @@ Follow existing test structure in tests/auth/*.test.ts"
 - NEVER use structured outputs for free-form creative tasks
 - NEVER define schemas without examples
 
-</forbidden>
-
-**Bad schema** (too complex):
+**Bad schema example** (too complex, >3 nesting levels):
 ```json
 {
   "code": {
@@ -785,14 +871,7 @@ Follow existing test structure in tests/auth/*.test.ts"
 }
 ```
 
-**Good schema** (appropriate complexity):
-```json
-{
-  "code": "string",
-  "classes": [{"name": "string", "methods": ["string"]}],
-  "tests": ["string"]
-}
-```
+</forbidden>
 
 ## Agent Task Decomposition
 

@@ -1,6 +1,6 @@
 # Git Workflow Standards
 
-This document defines **local Git operations** and workflow standards.
+<context>
 
 ## Scope
 
@@ -8,13 +8,19 @@ This document defines **local Git operations** and workflow standards.
 - **PR workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for pull request workflows, code reviews, agent guidelines
 - **GitHub operations**: See [GitHub Standards]($HOME/.smith/rules-github.md) for GitHub CLI commands
 
+</context>
+
 ## Branch Strategy
+
+<context>
 
 **Branch Structure:**
 - `main` - Production-ready code
 - `develop` - Integration branch for features
 - `feature/*` - Feature branches from develop
 - `hotfix/*` - Emergency fixes from main
+
+</context>
 
 <forbidden>
 
@@ -108,7 +114,8 @@ Closes #123
 - `test`: Test additions or changes
 - `chore`: Build process, tooling changes
 
-**Example:**
+<examples>
+
 ```sh
 git commit -m "feat(rag): add semantic search filtering
 
@@ -118,9 +125,12 @@ Supports multiple filter conditions with AND/OR logic.
 Closes #123"
 ```
 
+</examples>
+
 ## File Operations
 
 **Renaming files:**
+
 <required>
 
 - MUST use `git mv` for renames (preserves Git history)
@@ -128,10 +138,14 @@ Closes #123"
 
 </required>
 
+<examples>
+
 ```sh
 git mv old_name.py new_name.py
 git commit -m "refactor: rename old_name to new_name"
 ```
+
+</examples>
 
 **Large file handling:**
 - Use `.gitignore` for build artifacts, debug outputs, `.venv`
@@ -140,12 +154,16 @@ git commit -m "refactor: rename old_name to new_name"
 
 ## Commit Workflow
 
+<examples>
+
 **Before committing:**
 ```sh
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
 ```
+
+</examples>
 
 <forbidden>
 
@@ -177,6 +195,8 @@ GPG should be pre-configured for automatic signing.
 
 ### Linear History
 
+<guiding_principles>
+
 <required>
 
 Maintain linear commit history for clarity and bisectability.
@@ -188,7 +208,11 @@ Maintain linear commit history for clarity and bisectability.
 
 </required>
 
+</guiding_principles>
+
 ### Atomic Commits
+
+<guiding_principles>
 
 <required>
 
@@ -218,6 +242,8 @@ git commit -m "feat(auth): add OAuth2 login, fix token bug, update docs"
 ```
 
 </forbidden>
+
+</guiding_principles>
 
 ### Atomic Workflow
 
@@ -320,7 +346,10 @@ git checkout main && git pull # Sync local main
 
 ## Stash Management
 
-**Save work in progress:**
+<scenario>
+
+<examples>
+
 ```sh
 git stash push -m "WIP: feature implementation"
 git stash list
@@ -328,7 +357,15 @@ git stash pop
 git stash apply stash@{0}
 ```
 
+</examples>
+
+</scenario>
+
 ## History Management
+
+<scenario>
+
+<examples>
 
 **View history:**
 ```sh
@@ -347,6 +384,10 @@ git rebase -i HEAD~3  # Last 3 commits
 git commit --amend --no-edit
 git commit --amend  # Edit message
 ```
+
+</examples>
+
+</scenario>
 
 ## Conflict Resolution
 
