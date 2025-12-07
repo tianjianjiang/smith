@@ -522,6 +522,190 @@ git push
 - **Request changes**: Issues must be addressed before merging
 - **Comment**: Suggestions or questions, but not blocking
 
+### Agent Review Cycle Automation
+
+<context>
+
+**Philosophy**: Automate the iterative review→fix→re-review cycle until all comments are resolved, then proceed to merge when approved.
+
+**Industry Best Practices**:
+- **CodeRabbitAI**: Incremental review tracking - only review changed files, not entire PR on each iteration, saving costs and reducing noise
+- **Qodo Merge**: `/implement` command directly applies reviewer suggestions with tracking of accepted changes
+- **Devin AI**: Confidence scoring (high/medium/low) determines whether to implement directly or ask user first (5-10 min review time)
+- **OpenHands**: Label-triggered workflows (e.g., "review-this" label auto-starts review cycle)
+- **Real-world impact**: 73.8% of automated review comments marked "Resolved", 30% reduction in review time
+
+</context>
+
+<required>
+
+**Iterative review cycle workflow**:
+
+1. **Trigger points** (any of these):
+   - User: "address comments on PR #123" or "@agent address comments"
+   - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
+   - Auto: After reviewer requests changes
+
+2. **Fetch all review comments**:
+```sh
+# Get review comments with requested changes
+gh api repos/{owner}/{repo}/pulls/{PR}/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED")'
+
+# Get inline comment threads
+gh api repos/{owner}/{repo}/pulls/{PR}/comments
+```
+
+3. **Categorize comments**:
+   - **Actionable**: Specific code changes requested (can be implemented)
+   - **Clarification**: Questions needing answers (respond in comment thread)
+   - **Discussion**: Architectural/subjective decisions (needs human input)
+
+4. **For each actionable comment** (Qodo Merge pattern):
+   - **Analyze confidence**: Determine if request is clear and unambiguous
+   - **High confidence (>70%)**: Implement directly and explain what was done
+   - **Medium confidence (40-70%)**: Implement with explanation, ask for confirmation
+   - **Low confidence (<40%)**: Ask user for clarification before implementing
+   - **Track mapping**: Comment ID → Commit SHA that addresses it
+   - **Mark resolved**: Resolve comment thread after addressing
+
+5. **Commit and push changes**:
+```sh
+git add .
+git commit -m "fix: address review comments from @reviewer
+
+- Extract timeout value to constant (comment #123)
+- Add test for token expiration (comment #124)
+- Update docs with rate limit info (comment #125)
+
+Addresses review feedback from PR review."
+git push
+```
+
+6. **Incremental re-review check** (CodeRabbitAI pattern):
+   - Wait for PR checks to complete
+   - Check if NEW review comments were posted
+   - **If new comments exist**: Return to step 2 (repeat cycle)
+   - **If no new comments AND all resolved**: Proceed to step 7
+
+7. **Auto-merge criteria check**:
+   - All review comments addressed OR marked as resolved
+   - No new comments in last check (reviewers had chance to re-review)
+   - All CI/CD checks passing
+   - Required number of approvals met
+   - Branch is fresh (not stale - see Proactive Branch Freshness Monitoring)
+   - No merge conflicts with base branch
+
+   If ALL criteria met: Proceed to merge (with user confirmation)
+   If ANY criteria not met: Inform user what's blocking
+
+</required>
+
+<scenario>
+
+**Full iterative cycle example**:
+
+```
+User: "@agent address review comments on PR #123"
+
+# ITERATION 1
+Agent: [Fetches review comments via gh API]
+Agent: "Found 3 actionable review comments from @reviewer:
+
+1. auth.py:45 - 'Extract timeout value to named constant' [Confidence: 95%]
+2. tests/auth_test.py:12 - 'Add test case for expired tokens' [Confidence: 85%]
+3. README.md:100 - 'Update docs with new rate limiting behavior' [Confidence: 60%]
+
+Comments #1 and #2 are clear. For #3, should I document both the 10 req/min limit AND the exponential backoff strategy, or just the limit?"
+
+User: "Document both"
+
+Agent: [Implements all 3 changes]
+Agent: [Commits with message listing all addressed comments]
+Agent: [Pushes to PR branch]
+Agent: "Pushed fixes addressing all 3 comments. Waiting for CI checks and re-review..."
+
+# ITERATION 2 (reviewer adds new comment after seeing changes)
+Agent: [Checks for new comments after CI passes]
+Agent: "New comment from @reviewer:
+
+4. auth.py:52 - 'Consider adding error handling for network timeouts' [Confidence: 90%]
+
+Implementing try-except wrapper for network operations..."
+
+Agent: [Makes change, commits, pushes]
+Agent: "Addressed comment #4. CI passing. Waiting for re-review..."
+
+# ITERATION 3 (no new comments)
+Agent: [Checks again after CI passes]
+Agent: "No new review comments. All 4 comments addressed and marked resolved. CI checks passing.
+
+Auto-merge readiness:
+✓ All comments addressed
+✓ No new comments from reviewers
+✓ CI checks passing (all 5 checks green)
+✓ 2 approvals received (requirement: 1)
+✓ Branch is fresh (rebased 10 minutes ago)
+✓ No merge conflicts
+
+Ready to merge. Proceed with squash and merge?"
+
+User: "Yes"
+Agent: [Executes: gh pr merge 123 --squash --delete-branch]
+Agent: "PR #123 merged successfully. Branch deleted."
+```
+
+**Confidence scoring example** (Devin pattern):
+
+```
+Agent: "Review comment: 'Refactor for better performance' [Confidence: 35%]
+
+This request is ambiguous. Multiple approaches possible:
+1. Add caching (if called frequently)
+2. Optimize algorithm complexity (if computationally expensive)
+3. Implement async/parallel execution (if I/O bound)
+4. Use memoization (if same inputs repeated)
+
+Which approach aligns with the performance issue you're seeing?"
+
+User: "The function is called in a tight loop, go with caching"
+
+Agent: "Understood. Implementing LRU cache with TTL..."
+```
+
+</scenario>
+
+<examples>
+
+**Incremental tracking** (CodeRabbitAI pattern):
+"Detected changes in auth.py and README.md since last review. Only analyzing those 2 files for new comments, not re-reviewing entire PR (10 other files unchanged)."
+
+**Accepted suggestion tracking** (Qodo Merge pattern):
+"Tracked 5 accepted review suggestions to wiki page. Pattern analysis shows reviewer frequently requests error handling additions - proactively including in future PRs."
+
+**Progressive escalation**:
+"Comments #1-3 implemented directly (high confidence). Comment #4 needs clarification (low confidence) - asking user before proceeding."
+
+</examples>
+
+<forbidden>
+
+**Merging with unresolved comments**:
+Proceeding to merge when review comments still show "unresolved" status or reviewer explicitly requested changes.
+
+**Ignoring new comments**:
+Merging after addressing initial comments without checking if reviewer added new comments after seeing your changes.
+
+**Force-pushing during active review**:
+Using `git push --force` while review is ongoing, which can lose review comment context and confuse reviewers.
+
+**Bypassing CI or approval requirements**:
+Attempting to merge when CI checks are failing or required approvals not met.
+
+**Auto-implementing low-confidence requests**:
+Implementing ambiguous review comments without asking for clarification first.
+
+</forbidden>
+
 ## Merging Pull Requests
 
 ### Pre-Merge Checklist
