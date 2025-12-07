@@ -548,11 +548,13 @@ git push
 
 2. **Fetch all review comments**:
 ```sh
+PR_NUMBER=123  # Set your PR number
+
 # Get review comments with requested changes
-gh api repos/{owner}/{repo}/pulls/{PR}/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED")'
+gh pr view $PR_NUMBER --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED")'
 
 # Get inline comment threads
-gh api repos/{owner}/{repo}/pulls/{PR}/comments
+gh pr view $PR_NUMBER --json comments --jq '.comments[]'
 ```
 
 3. **Categorize comments**:
@@ -888,7 +890,7 @@ Agent: "PR #123 (feature/auth_base) merged. Found stack:
   main
    └─ PR #123 (merged) ← feature/auth_base
        ├─ PR #124 ← feature/auth_login (child, 245 lines)
-       └─ PR #125 ← feature/auth_session (grandchild, 180 lines)
+       └─ PR #125 ← feature/auth_session (child, 180 lines)
 
 Auto-updating stack..."
 Agent: [Updates #124 base to main, rebases onto origin/main]
@@ -929,7 +931,7 @@ Agent: "Stack updated. All PRs ready for continued review."
 # Before creating PR
 git fetch origin
 BASE_BRANCH="main"  # or detect from git config
-BEHIND=$(git rev-list HEAD..origin/$BASE_BRANCH --count)
+BEHIND=$(git rev-list HEAD.."origin/$BASE_BRANCH" --count)
 
 if [ "$BEHIND" -gt 0 ]; then
   # Agent: "Your branch is {N} commits behind {base}. Rebase before creating PR?"
@@ -1139,7 +1141,7 @@ git fetch origin
 git rev-list HEAD..origin/main --count  # > 0 means behind
 
 # Check for merge conflicts without merging
-git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main | grep -q "^+<<<<<<<" && echo "conflicts" || echo "clean"
+git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main | grep -q "^<<<<<<<" && echo "conflicts" || echo "clean"
 ```
 
 </required>
@@ -1182,7 +1184,7 @@ BASE=$(gh pr view 123 --json baseRefName -q .baseRefName)
 
 # 2. Check if behind
 git fetch origin
-BEHIND=$(git rev-list origin/$BRANCH..origin/$BASE --count)
+BEHIND=$(git rev-list "origin/$BRANCH".."origin/$BASE" --count)
 
 # 3. Decision
 if [ "$BEHIND" -gt 0 ]; then
@@ -1268,7 +1270,7 @@ BASE=$(gh pr view 123 --json baseRefName -q .baseRefName)
 
 # 2. Silent freshness check
 git fetch origin
-BEHIND=$(git rev-list origin/$BRANCH..origin/$BASE --count)
+BEHIND=$(git rev-list "origin/$BRANCH".."origin/$BASE" --count)
 
 # 3. Inform if significantly behind (> 5 commits or > 1 day old)
 if [ "$BEHIND" -gt 5 ]; then
@@ -1308,7 +1310,7 @@ git branch -vv | grep "$BRANCH"
 # If not tracking remote correctly, ABORT
 
 # 4. Check for conflicts (dry-run)
-git merge-tree $(git merge-base HEAD origin/$BASE) HEAD origin/$BASE
+git merge-tree "$(git merge-base HEAD "origin/$BASE")" HEAD "origin/$BASE"
 # If conflicts detected, INFORM + ASK
 
 # 5. Check if force-push is safe
@@ -1405,11 +1407,11 @@ git rebase --abort  # Always abort first
 ```sh
 git fetch origin
 BASE_BRANCH="main"  # or detect from branch config
-BEHIND=$(git rev-list HEAD..origin/$BASE_BRANCH --count)
+BEHIND=$(git rev-list HEAD "origin/$BASE_BRANCH" --count)
 DAYS_OLD=$(git log -1 --format=%cd --date=relative)
 
 # Optional: Check for potential conflicts (dry-run)
-CONFLICTS=$(git merge-tree $(git merge-base HEAD origin/$BASE_BRANCH) HEAD origin/$BASE_BRANCH | grep -c "^@@" || echo 0)
+CONFLICTS=$(git merge-tree "$(git merge-base HEAD "origin/$BASE_BRANCH")" HEAD "origin/$BASE_BRANCH" | grep -c "^<<<<<<<" || echo 0)
 ```
 
 **Thresholds for action**:
