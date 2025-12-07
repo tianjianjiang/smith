@@ -722,12 +722,16 @@ window, or use online index creation?"
 
 Agent MUST:
 - Silently check PR freshness during any PR operation
-- Only inform user if issue is significant (> 5 commits behind OR > 3 days old)
-- Provide context in notifications (not just "PR outdated")
+- Use multi-tier notification thresholds (aligned with rules-pr.md):
+  - < 5 commits behind: No action (silent check only)
+  - 5-10 commits behind: Passive notification
+  - > 10 commits OR > 3 days old: Active recommendation
+  - > 20 commits OR > 7 days old: Strong recommendation
+- Provide context in notifications (commit count, age, potential conflicts)
 - Explain impact of rebasing vs not rebasing
 
 Agent MUST NOT:
-- Constantly nag about minor staleness (1-2 commits)
+- Constantly nag about minor staleness (< 5 commits)
 - Rebase without asking (except when explicit user intent)
 - Interrupt unrelated workflows with rebase suggestions
 
@@ -748,7 +752,7 @@ Agent MUST NOT:
 ```sh
 # ALL must pass
 git status --porcelain | wc -l  # = 0 (clean)
-git merge-tree ... | grep -q "^+<<<<<<<"; [ $? -ne 0 ]  # no conflicts
+git merge-tree ... | grep -q "^<<<<<<<"; [ $? -ne 0 ]  # no conflicts
 git log -5 --format='%ae' | sort -u | wc -l  # = 1 (single author)
 ```
 
