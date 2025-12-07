@@ -548,16 +548,75 @@ git push
    - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
    - Auto: After reviewer requests changes
 
-2. **Fetch all review comments**:
-```sh
-PR_NUMBER=123  # Set your PR number
+<context>
 
-# Get review comments with requested changes
-gh pr view $PR_NUMBER --json reviews --jq '.reviews[] | select(.state == "CHANGES_REQUESTED")'
+**CRITICAL: GitHub has TWO types of comments**:
 
-# Get inline comment threads
-gh pr view $PR_NUMBER --json comments --jq '.comments[]'
-```
+**Type 1: General PR comments** (conversation timeline):
+- Posted via `gh pr comment {PR} --body "..."`
+- Show up in main PR conversation
+- Fetched via `gh pr view {PR} --json comments`
+- Cannot be marked "resolved"
+- IDs start with IC_ (e.g., IC_kwDOQckce87X60Z1)
+
+**Type 2: Inline review thread comments** (code review):
+- Posted on specific code lines during review
+- Fetched via REST API: `gh api repos/{owner}/{repo}/pulls/{PR}/comments`
+- Can be marked "resolved"
+- Numeric IDs (e.g., 2596414027)
+- **THIS IS WHAT CodeRabbitAI, GitHub Copilot, and human reviewers post**
+
+**Two approaches for handling inline review comments**:
+
+**Preferred: GitHub MCP Server** (when available):
+- Clearer tool names: `reply_to_pull_request_comment`, `resolve_pull_request_review_thread`
+- Built-in validation and error handling
+- Simpler syntax, less error-prone
+- Install: [github-mcp-server-review-tools](https://github.com/wjessup/github-mcp-server-review-tools)
+
+**Fallback: gh CLI + GitHub REST API** (when MCP not available):
+- Works without MCP installation
+- Requires understanding GitHub API nuances
+- More verbose commands
+- Manual error handling
+
+**Agent decision logic**: Try MCP tools first. If MCP not available or tool call fails, fall back to gh CLI + REST API.
+
+</context>
+
+2. **Fetch inline review thread comments** (not general PR comments):
+
+   **Option A: Using GitHub MCP** (preferred):
+   ```
+   Use MCP tool: get_pull_request_review_threads
+   Parameters:
+     - owner: {owner}           # e.g., "tianjianjiang"
+     - repo: {repo}             # e.g., "smith"
+     - pull_number: {PR}        # e.g., 21
+
+   Returns: List of inline review comment objects with id, path, line, body, user
+   ```
+
+   **Option B: Using gh CLI** (fallback):
+   ```sh
+   PR_NUMBER=123
+   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+
+   # CRITICAL: Fetch INLINE review comments (not general PR comments)
+   # This fetches comments on specific code lines, not conversation comments
+   gh api repos/$OWNER_REPO/pulls/$PR_NUMBER/comments > /tmp/inline_comments.json
+
+   # Parse actionable comments
+   cat /tmp/inline_comments.json | jq '.[] | {
+     id: .id,
+     path: .path,
+     line: .line,
+     body: .body,
+     user: .user.login
+   }'
+   ```
+
+   **Why this matters**: `gh pr view --json comments` fetches GENERAL PR comments (Type 1), not inline review threads (Type 2). You MUST use the REST API or MCP tool to get inline review comments.
 
 3. **Categorize comments**:
 
@@ -581,8 +640,72 @@ gh pr view $PR_NUMBER --json comments --jq '.comments[]'
    </planning_process>
 
    - **Track mapping**: Comment ID → Commit SHA that addresses it
-   - **Reply to comment**: Use quote reply format with reviewer mention
-   - **Mark resolved**: Hide comment as resolved after addressing
+
+   <final_instruction>
+
+   **Reply to INLINE review thread comment**:
+
+   **Option A: Using GitHub MCP** (preferred):
+   ```
+   Use MCP tool: reply_to_pull_request_comment
+   Parameters:
+     - owner: {owner}
+     - repo: {repo}
+     - pull_number: {PR}
+     - comment_id: {comment_id}      # The inline review comment ID (numeric)
+     - body: "@{reviewer}\n\n> {quoted_comment}\n\nFixed in commit {sha}"
+   ```
+
+   **Option B: Using gh CLI** (fallback):
+   ```sh
+   COMMENT_ID=2596414027  # The inline review comment ID
+   COMMIT_SHA="abc1234"
+   REVIEWER="coderabbitai"
+   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   PR_NUMBER=21
+
+   # Create reply in the inline review thread
+   gh api repos/$OWNER_REPO/pulls/$PR_NUMBER/comments \
+     -f body="@${REVIEWER}
+
+> [Quote the original review comment here]
+
+Fixed in commit ${COMMIT_SHA}." \
+     -f in_reply_to=$COMMENT_ID
+   ```
+
+   **Mark thread as resolved**:
+
+   **Option A: Using GitHub MCP** (preferred):
+   ```
+   Use MCP tool: resolve_pull_request_review_thread
+   Parameters:
+     - owner: {owner}
+     - repo: {repo}
+     - pull_number: {PR}
+     - comment_id: {comment_id}      # The root comment ID of the thread
+   ```
+
+   **Option B: Using gh CLI** (fallback):
+   ```sh
+   # Get the review thread ID
+   THREAD_ID=$(gh api repos/$OWNER_REPO/pulls/comments/$COMMENT_ID --jq '.pull_request_review_id')
+
+   # Mark thread as resolved via GraphQL API
+   gh api graphql -f query='
+   mutation {
+     resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) {
+       thread {
+         id
+         isResolved
+       }
+     }
+   }'
+   ```
+
+   </final_instruction>
+
+   - **Verify resolution**: Check that thread shows as "Resolved" in GitHub UI
 
 5. **Commit and push changes**:
 ```sh
@@ -624,34 +747,57 @@ git push
    If ALL criteria met: Proceed to merge (with user confirmation)
    If ANY criteria not met: Inform user what's blocking
 
+8. **Verify all review threads resolved**:
+
+   <verification>
+
+   **Option A: Using GitHub MCP** (preferred):
+   ```
+   Use MCP tool: check_pull_request_review_resolution
+   Parameters:
+     - owner: {owner}
+     - repo: {repo}
+     - pull_number: {PR}
+
+   Returns: {
+     all_resolved: true/false,
+     unresolved_count: N,
+     unresolved_threads: [...]  # List of unresolved comment IDs
+   }
+   ```
+
+   If `all_resolved: false`, review and address remaining threads before proceeding to merge.
+
+   **Option B: Using gh CLI** (fallback):
+   ```sh
+   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   PR_NUMBER=21
+
+   # List unresolved threads (threads without replies or not marked resolved)
+   # Root comments (in_reply_to_id == null) that haven't been replied to
+   UNRESOLVED=$(gh api repos/$OWNER_REPO/pulls/$PR_NUMBER/comments | \
+     jq '[.[] | select(.in_reply_to_id == null)] | length')
+
+   if [ "$UNRESOLVED" -gt 0 ]; then
+     echo "Warning: $UNRESOLVED review threads not yet addressed"
+     echo "Review and reply to all inline comments before merging"
+     exit 1
+   else
+     echo "All review threads have been addressed"
+   fi
+   ```
+
+   </verification>
+
 </instructions>
 
 <final_instruction>
 
-**Comment reply format**:
+**CRITICAL: See step 4 above for correct inline review comment reply and resolution procedures.**
 
-When replying to review comments, use GitHub quote reply with reviewer mention:
+Use GitHub MCP tools (preferred) or gh CLI + REST API (fallback) as documented in step 4.
 
-```markdown
-@reviewer-username
-
-> Original comment text here
-
-Response explaining what was done or asking for clarification.
-
-Fixed in commit abc1234.
-```
-
-**Marking resolved**:
-- Use `gh pr comment {PR} --body "..."` to reply to comments
-- Use `gh api` to mark threads as resolved after addressing:
-```sh
-# Mark review thread as resolved
-gh api -X PUT repos/{owner}/{repo}/pulls/comments/{comment_id}/replies/{reply_id} \
-  -f state=resolved
-```
-
-Or if using GitHub web UI automation, hide the conversation after confirming fix is implemented.
+**DO NOT** use `gh pr comment` for inline review threads - it only works for general PR comments.
 
 </final_instruction>
 
@@ -659,14 +805,21 @@ Or if using GitHub web UI automation, hide the conversation after confirming fix
 
 <scenario>
 
-**Full iterative cycle example**:
+**Full iterative cycle example** (showing both MCP and gh CLI approaches):
 
 ```
 User: "@agent address review comments on PR #123"
 
-# ITERATION 1
-Agent: [Fetches review comments via gh API]
-Agent: "Found 3 actionable review comments from @reviewer:
+# ITERATION 1: Fetch and address comments
+Agent: [Fetches inline review thread comments]
+
+# Using GitHub MCP (preferred):
+# get_pull_request_review_threads(owner="tianjianjiang", repo="smith", pull_number=123)
+
+# OR gh CLI fallback:
+# gh api repos/tianjianjiang/smith/pulls/123/comments
+
+Agent: "Found 3 actionable inline review thread comments from @reviewer:
 
 1. auth.py:45 - 'Extract timeout value to named constant' [Confidence: 95%]
 2. tests/auth_test.py:12 - 'Add test case for expired tokens' [Confidence: 85%]
@@ -676,58 +829,84 @@ Comments #1 and #2 are clear. For #3, should I document both the 10 req/min limi
 
 User: "Document both"
 
-Agent: [Implements all 3 changes]
-Agent: [Commits with message listing all addressed comments]
+Agent: [Implements all 3 changes in separate atomic commits]
+Agent: [Commits: feat(auth): extract timeout to named constant (abc1234)]
+Agent: [Commits: test(auth): add expired token test case (bcd2345)]
+Agent: [Commits: docs: update rate limiting documentation (cde3456)]
 Agent: [Pushes to PR branch]
-Agent: [Replies to each comment with quote format]
+Agent: [Replies to each inline review thread comment]
 
-# Reply to comment #1:
-"@reviewer
+# Reply to comment #1 (ID: 2596414027):
+# Using GitHub MCP (preferred):
+# reply_to_pull_request_comment(
+#   owner="tianjianjiang",
+#   repo="smith",
+#   pull_number=123,
+#   comment_id=2596414027,
+#   body="@reviewer\n\n> Extract timeout value to named constant\n\nDone! Extracted to `DEFAULT_REQUEST_TIMEOUT = 30` in constants.py.\n\nFixed in commit abc1234."
+# )
 
-> Extract timeout value to named constant
+# OR gh CLI fallback:
+# gh api repos/tianjianjiang/smith/pulls/123/comments \
+#   -f body="@reviewer..." \
+#   -f in_reply_to=2596414027
 
-Done! Extracted to `DEFAULT_REQUEST_TIMEOUT = 30` in constants.py.
+Agent: [Marks comment thread #1 as resolved]
 
-Fixed in commit abc1234."
+# Using GitHub MCP (preferred):
+# resolve_pull_request_review_thread(
+#   owner="tianjianjiang",
+#   repo="smith",
+#   pull_number=123,
+#   comment_id=2596414027
+# )
 
-Agent: [Marks comment #1 as resolved]
-Agent: [Repeats for comments #2 and #3]
-Agent: "Pushed fixes addressing all 3 comments. Waiting for CI checks and re-review..."
+# OR gh CLI fallback:
+# THREAD_ID=$(gh api repos/tianjianjiang/smith/pulls/comments/2596414027 --jq '.pull_request_review_id')
+# gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) { thread { id isResolved } } }'
 
-# ITERATION 2 (reviewer adds new comment after seeing changes)
+Agent: [Repeats reply and resolve for comments #2 (2596414028) and #3 (2596414029)]
+Agent: "Pushed 3 atomic commits addressing all review comments. Waiting for CI checks and re-review..."
+
+# ITERATION 2: New comment after changes
 Agent: [Checks for new comments after CI passes]
-Agent: "New comment from @reviewer:
+
+# Using GitHub MCP (preferred):
+# get_pull_request_review_threads(owner="tianjianjiang", repo="smith", pull_number=123)
+
+Agent: "New inline review comment from @reviewer:
 
 4. auth.py:52 - 'Consider adding error handling for network timeouts' [Confidence: 90%]
 
 Implementing try-except wrapper for network operations..."
 
-Agent: [Makes change, commits, pushes]
-Agent: [Replies to comment #4]
-
-# Reply to comment #4:
-"@reviewer
-
-> Consider adding error handling for network timeouts
-
-Good catch! Added try-except wrapper with `requests.exceptions.Timeout` handling and exponential backoff retry logic.
-
-Fixed in commit def5678."
-
-Agent: [Marks comment #4 as resolved]
+Agent: [Makes change, commits: fix(auth): add timeout error handling (def5678)]
+Agent: [Pushes to PR branch]
+Agent: [Replies to comment thread #4 (ID: 2596414030)]
+Agent: [Marks comment thread #4 as resolved]
 Agent: "Addressed comment #4. CI passing. Waiting for re-review..."
 
-# ITERATION 3 (no new comments)
-Agent: [Checks again after CI passes]
-Agent: "No new review comments. All 4 comments addressed and marked resolved. CI checks passing.
+# ITERATION 3: Verification and merge
+Agent: [Checks for new comments after CI passes]
+Agent: [Verifies all review threads resolved]
+
+# Using GitHub MCP (preferred):
+# check_pull_request_review_resolution(owner="tianjianjiang", repo="smith", pull_number=123)
+# Returns: {all_resolved: true, unresolved_count: 0}
+
+# OR gh CLI fallback:
+# UNRESOLVED=$(gh api repos/tianjianjiang/smith/pulls/123/comments | jq '[.[] | select(.in_reply_to_id == null)] | length')
+# if [ "$UNRESOLVED" -eq 0 ]; then echo "All resolved"; fi
+
+Agent: "No new review comments. All 4 inline review threads addressed and marked resolved. CI checks passing.
 
 Auto-merge readiness:
-✓ All comments addressed
-✓ No new comments from reviewers
-✓ CI checks passing (all 5 checks green)
-✓ 2 approvals received (requirement: 1)
-✓ Branch is fresh (rebased 10 minutes ago)
-✓ No merge conflicts
+- All review threads resolved (4/4)
+- No new comments from reviewers
+- CI checks passing (all 5 checks green)
+- 2 approvals received (requirement: 1)
+- Branch is fresh (rebased 10 minutes ago)
+- No merge conflicts
 
 Ready to merge. Proceed with squash and merge?"
 
