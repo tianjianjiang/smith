@@ -123,7 +123,8 @@ For daily workflow, code quality checks, and tool usage:
 
 For Git and GitHub workflows:
 - [Git Standards]($HOME/.smith/rules-git.md)
-- [PR Workflows]($HOME/.smith/rules-pr.md)
+- [PR Concepts]($HOME/.smith/rules-pr-concepts.md) - Platform-neutral concepts
+- [GitHub PR Operations]($HOME/.smith/rules-github-pr.md)
 - [GitHub Workflows]($HOME/.smith/rules-github.md)
 
 </related>

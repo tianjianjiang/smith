@@ -49,7 +49,7 @@ Before creating a pull request:
 
 </required>
 
-**See**: `$HOME/.smith/rules-pr.md` - Pull request creation workflow
+**See**: `$HOME/.smith/rules-pr-concepts.md` - Pull request creation workflow
 **See**: `$HOME/.smith/rules-github.md` - GitHub-specific PR commands
 
 ## Package Management
