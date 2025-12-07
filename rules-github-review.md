@@ -59,21 +59,20 @@
 - Numeric IDs (e.g., 2596414027)
 - **THIS IS WHAT CodeRabbitAI, GitHub Copilot, and human reviewers post**
 
-**Two approaches for handling inline review comments**:
+**Dual-Approach Pattern**:
 
-**Preferred: GitHub MCP Server** (when available):
-- Clearer tool names: `reply_to_pull_request_comment`, `resolve_pull_request_review_thread`
-- Built-in validation and error handling
-- Simpler syntax, less error-prone
-- Install: [github-mcp-server-review-tools](https://github.com/wjessup/github-mcp-server-review-tools)
+**GitHub MCP Server** (for fetching review comments):
+- Use `mcp__github__pull_request_read` with method="get_review_comments"
+- Built-in validation and structured response
+- Clearer than parsing JSON manually
 
-**Fallback: gh CLI + GitHub REST API** (when MCP not available):
-- Works without MCP installation
-- Requires understanding GitHub API nuances
-- More verbose commands
-- Manual error handling
+**gh CLI + GitHub REST API** (for replying and resolving):
+- **Replying to review comments**: Requires `/replies` endpoint (not supported by standard GitHub MCP)
+- **Resolving threads**: Requires GraphQL API (not supported by standard GitHub MCP)
+- Works without additional MCP extensions
+- Standard GitHub REST API and GraphQL
 
-**Decision logic**: Try MCP tools first. If MCP not available or tool call fails, fall back to gh CLI + REST API.
+**Decision logic**: Use MCP for fetching, gh CLI/API for replying and resolving.
 
 </context>
 
@@ -81,11 +80,12 @@
 
    **Option A: Using GitHub MCP** (preferred):
    ```
-   Use MCP tool: get_pull_request_review_threads
+   Use MCP tool: mcp__github__pull_request_read
    Parameters:
-     - owner: {owner}           # e.g., "tianjianjiang"
-     - repo: {repo}             # e.g., "smith"
-     - pull_number: {PR}        # e.g., 21
+     - method: "get_review_comments"
+     - owner: {owner}           # e.g., "octocat"
+     - repo: {repo}             # e.g., "hello-world"
+     - pullNumber: {PR}         # e.g., 21
 
    Returns: List of inline review comment objects with id, path, line, body, user
    ```
@@ -135,53 +135,44 @@
 
    **Reply to INLINE review thread comment**:
 
-   **Option A: Using GitHub MCP** (preferred):
-   ```
-   Use MCP tool: reply_to_pull_request_comment
-   Parameters:
-     - owner: {owner}
-     - repo: {repo}
-     - pull_number: {PR}
-     - comment_id: {comment_id}      # The inline review comment ID (numeric)
-     - body: "@{reviewer}\n\n> {quoted_comment}\n\nFixed in commit {sha}"
-   ```
-
-   **Option B: Using gh CLI** (fallback):
+   **Using gh CLI + REST API** (only option - MCP doesn't support this):
    ```sh
    COMMENT_ID=2596414027
    COMMIT_SHA="abc1234"
    REVIEWER="coderabbitai"
-   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   OWNER="{owner}"
+   REPO="{repo}"
    PR_NUMBER=21
 
-   gh api "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments" \
+   gh api \
+     -X POST \
+     -H "Accept: application/vnd.github+json" \
+     -H "X-GitHub-Api-Version: 2022-11-28" \
+     "/repos/$OWNER/$REPO/pulls/$PR_NUMBER/comments/$COMMENT_ID/replies" \
      -f body="@${REVIEWER}
 
 > [Quote the original review comment here]
 
-Fixed in commit ${COMMIT_SHA}." \
-     -f in_reply_to=$COMMENT_ID
+Fixed in commit ${COMMIT_SHA}."
    ```
+
+   **IMPORTANT**: Use the `/replies` endpoint, NOT the base `/comments` endpoint. The `in_reply_to` parameter does NOT work.
 
    **Mark thread as resolved**:
 
-   **Option A: Using GitHub MCP** (preferred):
-   ```
-   Use MCP tool: resolve_pull_request_review_thread
-   Parameters:
-     - owner: {owner}
-     - repo: {repo}
-     - pull_number: {PR}
-     - comment_id: {comment_id}      # The root comment ID of the thread
-   ```
-
-   **Option B: Using gh CLI** (fallback):
+   **Using gh CLI + GraphQL API** (only option - MCP doesn't support this):
    ```sh
-   THREAD_ID=$(gh api "repos/$OWNER_REPO/pulls/comments/$COMMENT_ID" --jq '.pull_request_review_id')
+   COMMENT_ID=2596414027
+   OWNER="{owner}"
+   REPO="{repo}"
 
+   # Get the GraphQL thread node ID from the review comment
+   THREAD_NODE_ID=$(gh api "repos/$OWNER/$REPO/pulls/comments/$COMMENT_ID" --jq '.node_id')
+
+   # Resolve the thread using GraphQL
    gh api graphql -f query='
    mutation {
-     resolveReviewThread(input: {threadId: "'"$THREAD_ID"'"}) {
+     resolveReviewThread(input: {threadId: "'"$THREAD_NODE_ID"'"}) {
        thread {
          id
          isResolved
@@ -189,6 +180,8 @@ Fixed in commit ${COMMIT_SHA}." \
      }
    }'
    ```
+
+   **Note**: Resolving threads requires GraphQL API. The standard GitHub MCP server doesn't support this operation yet.
 
    </final_instruction>
 
@@ -238,39 +231,47 @@ git push
 
    <verification>
 
-   **Option A: Using GitHub MCP** (preferred):
+   **Using GitHub MCP** (check for unanswered comments):
    ```
-   Use MCP tool: check_pull_request_review_resolution
+   Use MCP tool: mcp__github__pull_request_read
    Parameters:
+     - method: "get_review_comments"
      - owner: {owner}
      - repo: {repo}
-     - pull_number: {PR}
+     - pullNumber: {PR}
 
-   Returns: {
-     all_resolved: true/false,
-     unresolved_count: N,
-     unresolved_threads: [...]
-   }
+   Filter results for comments with in_reply_to_id == null (root comments without replies)
+   If any exist, review and address them before merging.
    ```
 
-   If `all_resolved: false`, review and address remaining threads before proceeding to merge.
-
-   **Option B: Using gh CLI** (fallback):
+   **Alternative: Using gh CLI + GraphQL** (check for unresolved threads):
    ```sh
-   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   OWNER="{owner}"
+   REPO="{repo}"
    PR_NUMBER=21
 
-   UNRESOLVED=$(gh api "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments" | \
-     jq '[.[] | select(.in_reply_to_id == null)] | length')
-
-   if [ "$UNRESOLVED" -gt 0 ]; then
-     echo "Warning: $UNRESOLVED review threads not yet addressed"
-     echo "Review and reply to all inline comments before merging"
-     exit 1
-   else
-     echo "All review threads have been addressed"
-   fi
+   # Query for unresolved review threads using GraphQL
+   gh api graphql -f query='
+   query {
+     repository(owner: "'"$OWNER"'", name: "'"$REPO"'") {
+       pullRequest(number: '"$PR_NUMBER"') {
+         reviewThreads(first: 100) {
+           nodes {
+             isResolved
+             comments(first: 1) {
+               nodes {
+                 id
+                 body
+               }
+             }
+           }
+         }
+       }
+     }
+   }' | jq '.data.repository.pullRequest.reviewThreads.nodes | map(select(.isResolved == false)) | length'
    ```
+
+   If count > 0, review and resolve remaining threads before proceeding to merge.
 
    </verification>
 
@@ -278,11 +279,14 @@ git push
 
 <final_instruction>
 
-**CRITICAL: See step 4 above for correct inline review comment reply and resolution procedures.**
+**CRITICAL: Inline review comment operations**
 
-Use GitHub MCP tools (preferred) or gh CLI + REST API (fallback) as documented in step 4.
+- **Fetch review comments**: Use GitHub MCP (`mcp__github__pull_request_read` with method="get_review_comments") OR gh CLI REST API
+- **Reply to review comments**: Use gh CLI `/replies` endpoint (MCP doesn't support this)
+- **Resolve review threads**: Use gh CLI GraphQL API (MCP doesn't support this)
 
 **DO NOT** use `gh pr comment` for inline review threads - it only works for general PR comments.
+**DO NOT** use `-f in_reply_to` parameter - it doesn't work. Use the `/replies` endpoint instead.
 
 </final_instruction>
 
