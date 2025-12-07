@@ -35,17 +35,10 @@
 
 **Pre-PR checklist:**
 ```sh
-# Run formatters and linters
 poetry run ruff format . && poetry run ruff check --fix .
-
-# Run all tests
 poetry run pytest
-
-# Update from base branch
 git fetch origin
-git rebase origin/main  # or merge, depending on project
-
-# Push your changes
+git rebase origin/main
 git push -u origin feature/my_feature
 ```
 
@@ -431,18 +424,10 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
 **ALWAYS get and use the actual PR branch name:**
 
 ```sh
-# 1. Get actual branch name from your platform
-# (Use your platform's CLI or UI to find the branch name)
-
-# 2. Fetch and checkout from origin
 git fetch origin
 git checkout -b "<actual-branch-name>" "origin/<actual-branch-name>"
-
-# 3. VERIFY you're on the correct branch
-git branch --show-current  # MUST match the PR's actual branch name
-
-# 4. Before making ANY changes, verify again
-git status  # Should show "On branch <actual-branch-name>"
+git branch --show-current
+git status
 ```
 
 </required>
@@ -467,15 +452,8 @@ git status  # Should show "On branch <actual-branch-name>"
 If you already made changes to the wrong branch:
 
 ```sh
-# 1. Get the actual branch name from your platform
-
-# 2. Checkout the correct branch
 git checkout "<actual-branch-name>"
-
-# 3. Cherry-pick your commits from the wrong branch
 git cherry-pick <commit-sha-from-wrong-branch>
-
-# 4. Delete the wrong branch
 git branch -D <wrong-branch-name>
 ```
 
@@ -523,15 +501,9 @@ After pushing changes to a PR:
 
 **Workflow:**
 ```sh
-# Make changes based on review feedback
 git add .
 git commit -m "refactor: address review comments"
-
-# Push changes
 git push
-
-# Respond to review comments in your platform's UI
-# Re-request review through your platform
 ```
 
 ### Giving Reviews
@@ -694,27 +666,10 @@ fi
 
 **Workflow**:
 ```sh
-# 1. Understand full scope of changes
-git diff base...HEAD  # See all cumulative changes
-git log base..HEAD    # Review all commits that will be included
-
-# 2. Analyze cumulative impact (not just latest commit)
-# Read all modified files
-# Understand how commits work together
-
-# 3. Draft summary covering ALL changes
-# NOT just latest commit - entire PR scope
-# 1-3 bullets covering cumulative impact
-
-# 4. Create test plan
-# Based on all changes, not just latest
-
-# 5. Run pre-PR checks
+git diff base...HEAD
+git log base..HEAD
 poetry run ruff format . && poetry run ruff check --fix .
 poetry run pytest
-
-# 6. Create PR with structured body
-# Use platform CLI or API
 ```
 
 </examples>
@@ -1049,24 +1004,12 @@ git rebase --abort  # Always abort first
 **Workflow for hook modifications:**
 
 ```sh
-# 1. Make your changes
 git add .
 git commit -m "feat: add feature"
-
-# 2. If pre-commit modifies files, commit fails
-# Files are now staged with hook's modifications
-
-# 3. VERIFY what changed
 git diff --cached
-
-# 4. VERIFY commit safety before amending
-git log -1 --format='%an %ae'  # Check author is you
-git status  # Check not pushed yet
-
-# 5. IF SAFE: Amend to include hook changes
+git log -1 --format='%an %ae'
+git status
 git commit --amend --no-edit
-
-# 6. IF UNSAFE: Create new commit instead
 git commit -m "style: apply pre-commit hook fixes"
 ```
 
@@ -1093,18 +1036,7 @@ git commit -m "style: apply pre-commit hook fixes"
 **Monitor CI status before and after changes:**
 
 ```sh
-# 1. Check current CI status in your platform's UI
-
-# 2. After making changes and pushing
 git push
-
-# 3. Monitor CI checks in your platform's UI
-# Wait for all checks to complete
-
-# 4. If checks fail, investigate
-# View logs in your platform's UI
-
-# 5. Fix issues and push again
 git add .
 git commit -m "fix: resolve CI check failures"
 git push
@@ -1145,21 +1077,16 @@ git push
 **Verification checklist before amending:**
 
 ```sh
-# 1. Check commit authorship
 AUTHOR=$(git log -1 --format='%ae')
 if [ "$AUTHOR" != "your-email@example.com" ]; then
   echo "Not your commit - create new commit instead"
   exit 1
 fi
-
-# 2. Check if commit is pushed
 if git log @{upstream}.. | grep -q $(git rev-parse HEAD); then
   echo "Commit not pushed yet - safe to amend"
 else
   echo "Commit already pushed - avoid amending"
 fi
-
-# 3. Check branch protection
 BRANCH=$(git branch --show-current)
 if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
   echo "Protected branch - DO NOT AMEND"
@@ -1188,20 +1115,12 @@ fi
 
 **Diagnosis:**
 ```sh
-# Check which branch you're on
 git branch --show-current
-
-# Check if branch tracks remote correctly
 git branch -vv
-
-# Verify the PR's actual branch name in your platform
 ```
 
 **Solution:**
 ```sh
-# If on wrong branch, see "Recovery if You Made This Mistake" above
-
-# If branch doesn't track remote
 git branch --set-upstream-to=origin/<branch-name>
 git push
 ```
@@ -1212,26 +1131,17 @@ git push
 
 **Diagnosis:**
 ```sh
-# Check if base branch updated
 git fetch origin
-git log HEAD..origin/main  # Check what changed in main
+git log HEAD..origin/main
 ```
 
 **Solution:**
 ```sh
-# Update local main
 git fetch origin main:main
-
-# Rebase your branch
 git rebase main
-
-# Resolve conflicts if any
-git status  # See conflicting files
-# Edit files to resolve conflicts
+git status
 git add .
 git rebase --continue
-
-# Force push (safe because it's your PR branch)
 git push --force-with-lease
 ```
 
@@ -1241,10 +1151,6 @@ git push --force-with-lease
 
 **Solution:**
 ```sh
-# CI may have different tool versions
-# Check CI config to match versions locally
-
-# Run checks exactly as CI does
 poetry run ruff check . --config=<same-as-ci>
 poetry run pytest --cov=<same-as-ci>
 ```
@@ -1263,16 +1169,9 @@ poetry run pytest --cov=<same-as-ci>
 
 **Solution:**
 ```sh
-# 1. Check remotes
 git remote -v
-
-# 2. Remove wrong remote
 git remote remove wrong-remote
-
-# 3. Add correct remote if needed
 git remote add origin <correct-repo-url>
-
-# 4. Push to correct remote
 git push -u origin <branch-name>
 ```
 
@@ -1282,13 +1181,8 @@ git push -u origin <branch-name>
 
 **Solution:**
 ```sh
-# Undo commit but keep changes staged
 git reset --soft HEAD~1
-
-# Or: Undo commit and unstage changes
 git reset HEAD~1
-
-# Make new commit with changes
 git add .
 git commit -m "better commit message"
 ```
@@ -1299,14 +1193,9 @@ git commit -m "better commit message"
 
 **Solution:**
 ```sh
-# Fetch latest
 git fetch origin
-
-# Option 1: Rebase (clean history)
 git rebase origin/main
 git push --force-with-lease
-
-# Option 2: Merge (preserve history)
 git merge origin/main
 git push
 ```
