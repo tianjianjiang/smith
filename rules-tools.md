@@ -20,7 +20,11 @@ This document defines configuration standards for development tools, IDEs, and e
 
 ## Claude Code Patterns
 
+<context>
+
 **Context**: Project-level Claude Code configuration
+
+</context>
 
 ### Slash Commands
 
@@ -72,7 +76,11 @@ Follow standards in $HOME/.smith/rules-*.md
 
 ## Structured Output Patterns
 
+<context>
+
 **Context**: Agent-generated structured content
+
+</context>
 
 ### Code Generation Schema
 

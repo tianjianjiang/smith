@@ -8,7 +8,7 @@
 
 </metadata>
 
-This document defines **GitHub-specific operations** using the `gh` CLI and GitHub platform features.
+<context>
 
 ## Scope
 
@@ -16,7 +16,11 @@ This document defines **GitHub-specific operations** using the `gh` CLI and GitH
 - **Platform-neutral workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for concepts, agent guidelines, best practices
 - **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
 
+</context>
+
 ## GitHub CLI Installation
+
+<examples>
 
 ```sh
 # macOS
@@ -26,9 +30,13 @@ brew install gh
 gh auth login
 ```
 
+</examples>
+
 ## Pull Request Operations
 
 ### Creating PRs
+
+<examples>
 
 ```sh
 # Basic PR creation
@@ -62,6 +70,8 @@ gh pr create --title "feat: feature" --body "Description" --reviewer @user1,@use
 gh pr create --base develop --title "feat: feature" --body "Description"
 ```
 
+</examples>
+
 ### PR Self-Assignment
 
 <required>
@@ -79,6 +89,8 @@ gh pr edit <pr-number> --add-assignee @me
 </required>
 
 ### Viewing PRs
+
+<examples>
 
 ```sh
 # List all open PRs
@@ -112,7 +124,11 @@ gh pr view 123 --json commits
 gh pr view 123 --comments
 ```
 
+</examples>
+
 ### Checking Out PRs
+
+<examples>
 
 ```sh
 # Get the actual branch name first (CRITICAL)
@@ -126,7 +142,11 @@ git checkout -b "$BRANCH" "origin/$BRANCH"
 git branch --show-current  # Must match $BRANCH
 ```
 
+</examples>
+
 ### PR Status and Checks
+
+<examples>
 
 ```sh
 # View CI check status
@@ -148,7 +168,11 @@ gh run rerun <run-id>
 gh pr checks 123 --rerun
 ```
 
+</examples>
+
 ### Merging PRs
+
+<examples>
 
 ```sh
 # Merge commit
@@ -167,9 +191,13 @@ gh pr merge 123 --auto --squash
 gh pr merge 123 --squash --delete-branch
 ```
 
+</examples>
+
 ## Code Review Operations
 
 ### Requesting Reviews
+
+<examples>
 
 ```sh
 # Request review from user
@@ -181,6 +209,8 @@ gh pr edit 123 --add-reviewer @org/team
 # Remove reviewer
 gh pr edit 123 --remove-reviewer @username
 ```
+
+</examples>
 
 ### Giving Reviews
 
@@ -447,6 +477,8 @@ BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
 git checkout "$BRANCH"
 ```
 
+<scenario>
+
 ### Complete review response workflow
 
 ```sh
@@ -465,6 +497,8 @@ gh pr comment 123 --body "Addressed all feedback, ready for re-review"
 gh pr edit 123 --add-reviewer @reviewer
 ```
 
+</scenario>
+
 ### Monitor CI and merge
 
 ```sh
@@ -477,6 +511,10 @@ gh pr merge 123 --squash --delete-branch
 
 ## Related Standards
 
+<related>
+
 - **PR Workflows**: `$HOME/.smith/rules-pr.md` - Platform-neutral concepts, agent guidelines, best practices
 - **Git Operations**: `$HOME/.smith/rules-git.md` - Commits, branches, merges
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Quality gates, pre-PR checks
+
+</related>

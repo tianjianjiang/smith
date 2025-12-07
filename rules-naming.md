@@ -2,6 +2,8 @@
 
 Standardized naming patterns and path reference conventions.
 
+<context>
+
 ## Core Naming Principles
 
 ### Non-Python Files
@@ -12,6 +14,8 @@ Standardized naming patterns and path reference conventions.
 - **snake_case**: Modules, functions, variables
 - **PascalCase**: Classes
 - **UPPER_SNAKE_CASE**: Constants
+
+</context>
 
 ## File Categories
 
@@ -34,20 +38,30 @@ Standard names: `.env`, `.env.sample`, `Dockerfile`, `docker-compose.yml`, `pypr
 
 ## Naming Examples
 
-**Correct:**
-```
+<examples>
+
+**Correct naming patterns**:
+
+```text
 rules-core.md, rules-semantic_integrity.md
 test_processor_analyze_text_intg.py
 cast_lucene_query_processor_cases.json
 prompt_engineering_session-2025-09-26
 ```
 
-**Incorrect:**
-```
+</examples>
+
+<forbidden>
+
+**Incorrect naming patterns**:
+
+```text
 rules_validation.md (underscore in subset)
 semantic-integrity (hyphen in phrasal concept)
 test_selective_expansion.py (missing module name)
 ```
+
+</forbidden>
 
 ## When to Use Each Separator
 
@@ -187,6 +201,10 @@ feat: Add new feature  # capitalized description
 
 ## Related Standards
 
+<related>
+
 - **Python Naming**: [Python Standards](rules-python.md) - Python-specific conventions
 - **IDE Mappings**: [IDE Mappings](rules-ide_mappings.md) - IDE variable syntax
 - **Git Conventions**: [Git Standards](rules-git.md) - Branch and commit naming
+
+</related>

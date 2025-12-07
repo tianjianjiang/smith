@@ -30,86 +30,11 @@ pnpm lint:fix && pnpm test
 
 ## Agent-Assisted Development
 
-**Context**: Working with Claude Code or AI pair programming tools
-
-### Exploration Workflow
-
-**Pattern**: Read → Ask → Propose → Review → Implement
-
-<required>
-
-- Agent MUST read relevant files before proposing changes
-- Agent MUST use Task tool with subagent_type=Explore for codebase discovery
-- Agent MUST clarify ambiguities before implementation
-- Agent MUST explain trade-offs when multiple approaches exist
-
-</required>
-
-**Example workflow**:
-```markdown
-User: "Add caching to the API"
-
-Agent exploration:
-1. Uses Task(subagent_type=Explore) to find existing caching patterns
-2. Reads configuration files and caching implementations
-3. Asks: "Found Redis (user-service) and in-memory (session-service) patterns. Which should we use?"
-4. Proposes approach with trade-offs
-5. Implements after approval
-```
-
-### Debugging Workflow
-
-**Pattern**: Reproduce → Analyze → Hypothesize → Test → Verify
-
-<required>
-
-- Agent MUST reproduce the issue before proposing fixes
-- Agent MUST analyze logs and error messages
-- Agent MUST read relevant code sections (not entire files)
-- Agent MUST propose hypothesis with supporting evidence
-- Agent MUST verify fix with tests
-
-</required>
-
-**Example workflow**:
-```markdown
-User: "Fix authentication timeout bug"
-
-Agent debugging:
-1. Reads error logs and stack traces
-2. Uses Grep to locate timeout configuration
-3. Reads auth/middleware.ts focusing on timeout logic
-4. Hypothesizes: "Token validation making synchronous DB call (auth.ts:67)"
-5. Proposes: "Cache token validation results (5min TTL)"
-6. Implements fix + test
-7. Verifies timeout no longer occurs
-```
-
-### CLAUDE.md Optimization for Prompt Caching
-
-**Location**: Project root `.claude/CLAUDE.md` or `CLAUDE.md`
-
-**Structure** (cache-friendly):
-```markdown
-<!-- Section 1: Project metadata (STATIC - cached) -->
-Project: [name]
-Tech stack: [primary technologies]
-Standards: See $HOME/.smith/rules-*.md
-
-<!-- Section 2: Architecture overview (STATIC - cached) -->
-Architecture: [brief system design]
-Key patterns: [established conventions]
-
-<!-- CACHE BREAKPOINT (~1024 tokens) -->
-
-<!-- Section 3: Current work context (DYNAMIC - not cached) -->
-Active tasks: [current sprint/focus areas]
-Recent changes: [last few commits]
-```
-
-**Optimization principle**: Keep first ~1024 tokens static for 90% cache hit rate
-
-**See**: `$HOME/.smith/rules-ai_agents.md` - Complete agent interaction standards
+**For AI agent workflows**: See `$HOME/.smith/rules-ai_agents.md` for comprehensive patterns:
+- Exploration workflow (Read → Ask → Propose → Review → Implement)
+- Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
+- AGENTS.md optimization for prompt caching
+- Constitutional AI principles (HHH framework)
 
 ## Pre-PR Quality Gates
 

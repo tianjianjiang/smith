@@ -4,7 +4,11 @@ This document describes **OPTIONAL** MCP tool integrations. These tools are NOT 
 
 ## Overview
 
+<context>
+
 MCP (Model Context Protocol) tools provide enhanced capabilities for specific scenarios. Use them conditionally when their specific functionality is needed.
+
+</context>
 
 ## Available Tools
 
@@ -130,6 +134,10 @@ For MCP tool setup and configuration, see:
 
 ## Related Standards
 
+<related>
+
 - IDE Integration: `$HOME/.smith/rules-ide_mappings.md`
 - Tool Configuration: `$HOME/.smith/rules-tools.md`
 - Development Workflow: `$HOME/.smith/rules-development.md`
+
+</related>
