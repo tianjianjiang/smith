@@ -38,16 +38,48 @@ gh auth login
 
 ### Pagination Parameters
 
-For all `list_*` operations:
+**CRITICAL: Always use pagination to prevent token truncation**
 
+GitHub MCP returns up to 25,000 tokens. Exceeding this causes:
+- "OUTPUT TRUNCATED - exceeded 25000 token limit" errors
+- Incomplete data (missing reviews, comments, PRs)
+- Workflow failures
+
+**Safe perPage limits by method**:
+
+For `list_pull_requests`:
 ```text
 Use MCP tool: mcp__github__list_pull_requests
 Parameters:
   - owner: {owner}
   - repo: {repo}
   - state: "open"
-  - perPage: 20          # Use 10-20 for recent items, 100 for bulk
-  - page: 1              # Explicit pagination
+  - perPage: 20          # SAFE: 20-30 for full PR objects
+  - page: 1              # Always specify starting page
+```
+
+For `pull_request_read` with `get_review_comments`:
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get_review_comments"
+  - owner: {owner}
+  - repo: {repo}
+  - pullNumber: {PR}
+  - perPage: 50          # SAFE: 30-50 for verbose review comments
+  - page: 1
+```
+
+For `pull_request_read` with `get_files`:
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get_files"
+  - owner: {owner}
+  - repo: {repo}
+  - pullNumber: {PR}
+  - perPage: 30          # SAFE: Large refactors have 100+ files
+  - page: 1
 ```
 
 ### Minimal Output
@@ -72,6 +104,40 @@ Parameters:
   - method: "get"        # Basic info only
   # Don't use get_files, get_reviews unless needed
 ```
+
+### Multi-Page Data Fetching
+
+**When you need data beyond page 1**:
+
+1. **Check if pagination needed**:
+   - Review comments: Bot-reviewed PRs can have 50-100+ comments
+   - Open PRs: Active repos may have 30+ open PRs
+   - Changed files: Large refactors touch 50-200+ files
+
+2. **Fetch first page with safe limit**:
+   ```text
+   Use MCP tool: mcp__github__pull_request_read
+   Parameters:
+     - method: "get_review_comments"
+     - perPage: 50
+     - page: 1
+   ```
+
+3. **If more data exists, fetch subsequent pages**:
+   ```text
+   Use MCP tool: mcp__github__pull_request_read
+   Parameters:
+     - method: "get_review_comments"
+     - perPage: 50
+     - page: 2          # Increment for each page
+   ```
+
+4. **Combine results** from all pages
+
+**Example: Handling 120 review comments**:
+- Page 1: Comments 1-50 (perPage: 50)
+- Page 2: Comments 51-100 (perPage: 50)
+- Page 3: Comments 101-120 (perPage: 50, only 20 returned)
 
 </required>
 

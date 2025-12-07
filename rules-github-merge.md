@@ -59,8 +59,8 @@ Parameters:
   - owner: {owner}
   - repo: {repo}
   - state: "open"
-  - perPage: 20          # Limit to 20 most recent
-  - page: 1
+  - perPage: 20          # Safe limit for full PR objects with bodies
+  - page: 1              # If >20 open PRs, check page 2 for older dependencies
 
 CHILD_PRS = filter PRs where body contains "Depends on: #123"
 

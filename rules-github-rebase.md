@@ -169,12 +169,14 @@ Parameters:
 PARENT_BRANCH = response.headRefName
 
 # List all open PRs to find children
+# NOTE: If repo has >30 open PRs, may need page 2 to find all dependencies
 Use MCP tool: mcp__github__list_pull_requests
 Parameters:
   - owner: {owner}
   - repo: {repo}
   - state: "open"
-  - perPage: 50          # Balance: catch dependencies, not wasteful
+  - perPage: 30          # Safe limit for PR list with full bodies
+  - page: 1
 
 # Filter for PRs with "Depends on: #123" in body
 CHILD_PRS = filter PRs where body contains "Depends on: #123"
