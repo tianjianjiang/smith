@@ -333,6 +333,9 @@ git checkout main && git pull # Sync local main
 - `git fetch`: Updates `origin/main` reference without modifying working directory
 - `git pull`: Fast-forwards local `main` to match remote
 
+**Agent proactive cleanup**:
+After sync, agents should detect stale merged branches and offer batch cleanup of branches merged >30 days ago.
+
 </required>
 
 <forbidden>

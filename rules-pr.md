@@ -795,7 +795,7 @@ CHILD_PRS=$(gh pr list --json number,body --jq '.[] | select(.body | contains("D
 
 if [ -n "$CHILD_PRS" ]; then
   # Agent: "I found {N} child PR(s). Shall I update them now?"
-  # Trigger "Workflow 2: Post-Parent-Merge Cascade"
+  # Trigger cascade update workflow (see Proactive Branch Freshness Monitoring)
 else
   # Standard cleanup
   git checkout main
@@ -805,6 +805,24 @@ else
   git ls-remote --exit-code --heads origin "$MERGED_BRANCH" >/dev/null 2>&1 && \
     git push origin --delete "$MERGED_BRANCH"
 fi
+```
+
+**Stacked PR cascade example**:
+```
+User: "PR #123 merged"
+Agent: "PR #123 (feature/auth_base) merged. Found stack:
+  main
+   └─ PR #123 (merged) ← feature/auth_base
+       ├─ PR #124 ← feature/auth_login (child, 245 lines)
+       └─ PR #125 ← feature/auth_session (grandchild, 180 lines)
+
+Auto-updating stack..."
+Agent: [Updates #124 base to main, rebases onto origin/main]
+Agent: "✓ PR #124 rebased successfully. No conflicts."
+Agent: [Updates #125 base, rebases]
+Agent: "✓ PR #125 rebased successfully. No conflicts."
+Agent: [Deletes local and remote feature/auth_base]
+Agent: "Stack updated. All PRs ready for continued review."
 ```
 
 </scenario>
