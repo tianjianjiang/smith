@@ -4,7 +4,7 @@
 
 - **Scope**: GitHub platform-specific operations (gh CLI only)
 - **Load if**: Using GitHub CLI commands, GitHub-specific features
-- **Prerequisites**: [Git Standards](./rules-git.md), [PR Workflows](./rules-pr.md)
+- **Prerequisites**: `$HOME/.smith/rules-git.md`, `$HOME/.smith/rules-pr-concepts.md`, `$HOME/.smith/rules-github-pr.md`
 
 </metadata>
 
@@ -13,8 +13,9 @@
 ## Scope
 
 - **This document**: GitHub CLI commands, GitHub-specific features
-- **Platform-neutral workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for concepts, agent guidelines, best practices
-- **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
+- **Platform-neutral workflows**: `$HOME/.smith/rules-pr-concepts.md` for platform-neutral concepts
+- **Agent automation**: `$HOME/.smith/rules-github-*.md` for agent workflows
+- **Local git operations**: `$HOME/.smith/rules-git.md` for commits, branches, merges
 
 </context>
 
@@ -28,6 +29,131 @@ gh auth login
 ```
 
 </examples>
+
+## Token Efficiency for GitHub MCP
+
+<required>
+
+**ALWAYS use pagination and filtering parameters** to minimize token usage:
+
+### Pagination Parameters
+
+**CRITICAL: Always use pagination to prevent token truncation**
+
+GitHub MCP returns up to 25,000 tokens. Exceeding this causes:
+- "OUTPUT TRUNCATED - exceeded 25000 token limit" errors
+- Incomplete data (missing reviews, comments, PRs)
+- Workflow failures
+
+**Safe perPage limits by method**:
+
+For `list_pull_requests`:
+```text
+Use MCP tool: mcp__github__list_pull_requests
+Parameters:
+  - owner: {owner}
+  - repo: {repo}
+  - state: "open"
+  - perPage: 20          # SAFE: 20-30 for full PR objects
+  - page: 1              # Always specify starting page
+```
+
+For `pull_request_read` with `get_review_comments`:
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get_review_comments"
+  - owner: {owner}
+  - repo: {repo}
+  - pullNumber: {PR}
+  - perPage: 10          # SAFE: Bot reviews (CodeRabbitAI, Copilot) have massive HTML/analysis
+  - page: 1
+```
+
+For `pull_request_read` with `get_files`:
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get_files"
+  - owner: {owner}
+  - repo: {repo}
+  - pullNumber: {PR}
+  - perPage: 30          # SAFE: Large refactors have 100+ files
+  - page: 1
+```
+
+### Minimal Output
+
+For search operations:
+
+```text
+Use MCP tool: mcp__github__search_repositories
+Parameters:
+  - query: "topic:react"
+  - minimal_output: true # ALWAYS true unless you need full objects
+  - perPage: 20
+```
+
+### Request Only What You Need
+
+For PR details, use specific methods:
+
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get"        # Basic info only
+  # Don't use get_files, get_reviews unless needed
+```
+
+### Multi-Page Data Fetching
+
+**When you need data beyond page 1**:
+
+1. **Check if pagination needed**:
+   - Review comments: Bot-reviewed PRs can have 50-100+ comments (VERY verbose with analysis, code blocks, HTML)
+   - Open PRs: Active repos may have 30+ open PRs
+   - Changed files: Large refactors touch 50-200+ files
+
+2. **Fetch first page with safe limit**:
+   ```text
+   Use MCP tool: mcp__github__pull_request_read
+   Parameters:
+     - method: "get_review_comments"
+     - perPage: 10      # ULTRA-conservative: CodeRabbitAI comments have massive HTML/analysis
+     - page: 1
+   ```
+
+3. **If more data exists, fetch subsequent pages**:
+   ```text
+   Use MCP tool: mcp__github__pull_request_read
+   Parameters:
+     - method: "get_review_comments"
+     - perPage: 10
+     - page: 2          # Increment for each page
+   ```
+
+4. **Combine results** from all pages
+
+**Example: Handling 30 review comments**:
+- Page 1: Comments 1-10 (perPage: 10)
+- Page 2: Comments 11-20 (perPage: 10)
+- Page 3: Comments 21-30 (perPage: 10)
+
+</required>
+
+<context>
+
+**Token Savings**:
+- Default `list_pull_requests` returns 30 items
+- With `perPage: 10`, saves ~66% tokens when you only need recent PRs
+- `minimal_output: true` for repositories saves ~80% tokens
+
+**Sources**:
+- [GitHub MCP Pagination Best Practices](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api)
+- [MCP Optimizer for Token Reduction](https://dev.to/stacklok/cut-token-waste-from-your-ai-workflow-with-the-toolhive-mcp-optimizer-3oo6)
+- [Dynamic Toolset Selection](https://www.speakeasy.com/blog/how-we-reduced-token-usage-by-100x-dynamic-toolsets-v2)
+
+</context>
 
 ## Pull Request Operations
 
@@ -373,7 +499,9 @@ gh pr merge 123 --squash --delete-branch
 
 <related>
 
-- **PR Workflows**: `$HOME/.smith/rules-pr.md` - Platform-neutral concepts, agent guidelines, best practices
+- **PR Workflows**: `$HOME/.smith/rules-pr-concepts.md` - Platform-neutral PR concepts
+- **GitHub PR Operations**: `$HOME/.smith/rules-github-pr.md` - GitHub PR workflows
+- **GitHub Workflows**: `$HOME/.smith/rules-github-*.md` - GitHub automation workflows
 - **Git Operations**: `$HOME/.smith/rules-git.md` - Commits, branches, merges
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Quality gates, pre-PR checks
 
