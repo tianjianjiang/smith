@@ -5,7 +5,8 @@
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **PR workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for pull request workflows, code reviews, agent guidelines
+- **PR workflows**: See [PR Concepts]($HOME/.smith/rules-pr-concepts.md) for platform-neutral pull request workflows
+- **GitHub PR operations**: See [GitHub PR Operations]($HOME/.smith/rules-github-pr.md) for GitHub PR workflows
 - **GitHub operations**: See [GitHub Standards]($HOME/.smith/rules-github.md) for GitHub CLI commands
 
 </context>
@@ -407,7 +408,8 @@ git merge --abort
 
 ## Related Standards
 
-- **PR Workflows**: `$HOME/.smith/rules-pr.md` - Pull request workflows, agent guidelines
+- **PR Workflows**: `$HOME/.smith/rules-pr-concepts.md` - Platform-neutral PR concepts
+- **GitHub PR Operations**: `$HOME/.smith/rules-github-pr.md` - GitHub PR workflows
 - **GitHub Workflows**: `$HOME/.smith/rules-github.md` - GitHub CLI operations
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
 - **Naming Conventions**: `$HOME/.smith/rules-naming.md` - Branch naming

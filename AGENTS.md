@@ -67,7 +67,8 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="pull_request_workflows">
 
 - **IF** creating pull requests OR reviewing code OR merging PRs:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-pr.md` (if using GitHub)
 - **LOAD**: `$HOME/.smith/rules-github.md`
 - **LOAD**: `$HOME/.smith/rules-naming.md`
 
@@ -83,21 +84,23 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="modifying_existing_pr">
 
 - **IF** working on existing PR OR addressing review comments:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-pr.md` (if using GitHub)
 
 </trigger>
 
 <trigger context="pr_review_response">
 
 - **IF** responding to PR review feedback OR resolving review comments:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-agent-review.md` (review automation)
 
 </trigger>
 
 <trigger context="pre_commit_hooks">
 
 - **IF** pre-commit hooks modify files OR need to amend commits:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-github-agent-utils.md` (hook coordination)
 - **LOAD**: `$HOME/.smith/rules-git.md`
 
 </trigger>
@@ -148,7 +151,9 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="stacked_pr_parent_merged">
 
 - **IF** parent PR in stack just merged OR working on child PR after parent merge:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-agent-rebase.md` (rebase automation)
+- **LOAD**: `$HOME/.smith/rules-github-agent-merge.md` (post-merge workflows)
 - **LOAD**: `$HOME/.smith/rules-git.md`
 - **LOAD**: `$HOME/.smith/rules-github.md`
 - **ACTION**: Check if child PRs need rebase, offer to update stack
@@ -158,7 +163,8 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="pr_maintenance">
 
 - **IF** working on existing PR OR updating PR branch OR before requesting review:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-agent-rebase.md` (freshness monitoring + rebase)
 - **ACTION**: Check PR freshness relative to base branch, detect conflicts
 
 </trigger>
@@ -166,7 +172,8 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="pr_review_request">
 
 - **IF** user asks to request PR review OR agent about to request review:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-agent-rebase.md` (pre-review freshness check)
 - **ACTION**: Verify PR is up-to-date with base, all checks pass, no conflicts
 
 </trigger>
@@ -174,9 +181,17 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="post_merge_operations">
 
 - **IF** PR just merged OR immediately after merge operation:
-- **LOAD**: `$HOME/.smith/rules-pr.md`
+- **LOAD**: `$HOME/.smith/rules-github-agent-merge.md` (post-merge workflows)
 - **LOAD**: `$HOME/.smith/rules-github.md`
 - **ACTION**: Check for dependent PRs, offer cascade updates, cleanup branches
+
+</trigger>
+
+<trigger context="agent_pr_creation">
+
+- **IF** agent about to create PR OR agent analyzing commits for PR:
+- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
+- **LOAD**: `$HOME/.smith/rules-github-agent-create.md` (PR description generation)
 
 </trigger>
 
