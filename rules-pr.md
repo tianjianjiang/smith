@@ -567,18 +567,31 @@ git push
 ### Post-Merge Cleanup
 
 ```sh
-# Switch to main branch
 git checkout main
-
-# Pull latest changes
-git pull origin main
-
-# Delete local feature branch
 git branch -d feature/my_feature
-
-# Delete remote feature branch (if not auto-deleted)
-git push origin --delete feature/my_feature
+git fetch --prune origin
+git pull origin main
+git ls-remote --exit-code --heads origin feature/my_feature >/dev/null 2>&1 || git push origin --delete feature/my_feature
 ```
+
+<context>
+
+**Command explanation:**
+
+- `git branch -d`: Safe delete (fails if branch not merged to main)
+- `git fetch --prune`: Update remote refs and remove stale tracking branches
+- `git ls-remote --exit-code`: Check if remote branch exists before attempting deletion
+- Works whether GitHub auto-delete is enabled or disabled
+
+</context>
+
+<forbidden>
+
+- NEVER use `git branch -D` (force delete) unless certain branch should be abandoned
+- NEVER delete local branch before PR is merged
+- NEVER skip `git fetch --prune` (leaves stale remote-tracking refs)
+
+</forbidden>
 
 ## Agent-Created Pull Requests
 
