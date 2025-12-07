@@ -4,7 +4,7 @@
 
 - **Scope**: GitHub platform-specific operations (gh CLI only)
 - **Load if**: Using GitHub CLI commands, GitHub-specific features
-- **Prerequisites**: [Git Standards](./rules-git.md), [PR Workflows](./rules-pr.md)
+- **Prerequisites**: [Git Standards](./rules-git.md), [PR Concepts](./rules-pr-concepts.md), [GitHub PR Operations](./rules-github-pr.md)
 
 </metadata>
 
@@ -13,7 +13,8 @@
 ## Scope
 
 - **This document**: GitHub CLI commands, GitHub-specific features
-- **Platform-neutral workflows**: See [PR Workflows]($HOME/.smith/rules-pr.md) for concepts, agent guidelines, best practices
+- **Platform-neutral workflows**: See [PR Concepts]($HOME/.smith/rules-pr-concepts.md) for platform-neutral concepts
+- **Agent automation**: See `$HOME/.smith/rules-github-agent-*.md` for agent workflows
 - **Local git operations**: See [Git Standards]($HOME/.smith/rules-git.md) for commits, branches, merges
 
 </context>
@@ -373,7 +374,9 @@ gh pr merge 123 --squash --delete-branch
 
 <related>
 
-- **PR Workflows**: `$HOME/.smith/rules-pr.md` - Platform-neutral concepts, agent guidelines, best practices
+- **PR Workflows**: `$HOME/.smith/rules-pr-concepts.md` - Platform-neutral PR concepts
+- **GitHub PR Operations**: `$HOME/.smith/rules-github-pr.md` - GitHub PR workflows
+- **GitHub Agent Workflows**: `$HOME/.smith/rules-github-agent-*.md` - Agent automation
 - **Git Operations**: `$HOME/.smith/rules-git.md` - Commits, branches, merges
 - **Development Workflow**: `$HOME/.smith/rules-development.md` - Quality gates, pre-PR checks
 

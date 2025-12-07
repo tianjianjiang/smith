@@ -1180,7 +1180,7 @@ Agent workflow:
 <related>
 
 - **Foundation**: `$HOME/.smith/rules-core.md` (core principles), `$HOME/.smith/rules-development.md` (workflow)
-- **Practices**: `$HOME/.smith/rules-pr.md` (pull requests), `$HOME/.smith/rules-tools.md` (tool configuration)
+- **Practices**: `$HOME/.smith/rules-pr-concepts.md` (PR concepts), `$HOME/.smith/rules-github-agent-*.md` (agent PR workflows), `$HOME/.smith/rules-tools.md` (tool configuration)
 - **Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
 
 </related>
