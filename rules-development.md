@@ -33,7 +33,7 @@ pnpm lint:fix && pnpm test
 **For AI agent workflows**: See `$HOME/.smith/rules-ai_agents.md` for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
-- CLAUDE.md optimization for prompt caching
+- AGENTS.md optimization for prompt caching
 - Constitutional AI principles (HHH framework)
 
 ## Pre-PR Quality Gates

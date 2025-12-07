@@ -761,10 +761,10 @@ git push
 
 **Best practices:**
 - Wait for all checks to pass before requesting review
-
-</scenario>
 - If checks fail, fix immediately before other work
 - Monitor checks continuously to catch failures early
+
+</scenario>
 
 ### Amend Operations Safety
 
