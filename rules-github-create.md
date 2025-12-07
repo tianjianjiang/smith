@@ -5,6 +5,7 @@
 - **Scope**: Automation for creating PRs with auto-generated comprehensive descriptions
 - **Load if**: About to create PR, analyzing commits for PR description
 - **Prerequisites**: rules-pr-concepts.md, rules-github.md, rules-ai_agents.md
+- **Token efficiency**: Use perPage, minimal_output parameters (see rules-github.md)
 
 </metadata>
 

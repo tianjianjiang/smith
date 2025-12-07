@@ -5,6 +5,7 @@
 - **Scope**: Automation for rebase workflows and proactive branch freshness monitoring
 - **Load if**: Working on PR, before requesting review, parent PR merged, periodic PR maintenance
 - **Prerequisites**: rules-pr-concepts.md, rules-git.md, rules-ai_agents.md
+- **Token efficiency**: Use perPage, minimal_output parameters (see rules-github.md)
 
 </metadata>
 
@@ -173,6 +174,7 @@ Parameters:
   - owner: {owner}
   - repo: {repo}
   - state: "open"
+  - perPage: 50          # Balance: catch dependencies, not wasteful
 
 # Filter for PRs with "Depends on: #123" in body
 CHILD_PRS = filter PRs where body contains "Depends on: #123"

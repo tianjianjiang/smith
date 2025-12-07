@@ -418,6 +418,25 @@ After pushing changes to a PR:
 
 </forbidden>
 
+### Pre-Work Requirements
+
+<required>
+
+Before making changes to an existing PR:
+
+1. **Check for review comments**: Fetch all inline review comments
+2. **Verify comment types**: Check for CHANGES_REQUESTED AND COMMENT reviews
+3. **Alert on pending feedback**: Inform user of unaddressed comments
+4. **Confirm approach**: Ask if user wants to address comments first
+
+</required>
+
+<context>
+
+**Rationale**: Bot reviewers (CodeRabbitAI, Copilot) often post informational COMMENT reviews that don't change PR state. Without proactive checking, these are easily missed.
+
+</context>
+
 ## Code Review Process
 
 ### Requesting Review

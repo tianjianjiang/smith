@@ -5,6 +5,7 @@
 - **Scope**: Automation for post-merge operations and cascade updates
 - **Load if**: PR just merged, immediately after merge operation
 - **Prerequisites**: rules-pr-concepts.md, rules-github.md, rules-ai_agents.md
+- **Token efficiency**: Use perPage, minimal_output parameters (see rules-github.md)
 
 </metadata>
 
@@ -58,6 +59,8 @@ Parameters:
   - owner: {owner}
   - repo: {repo}
   - state: "open"
+  - perPage: 20          # Limit to 20 most recent
+  - page: 1
 
 CHILD_PRS = filter PRs where body contains "Depends on: #123"
 

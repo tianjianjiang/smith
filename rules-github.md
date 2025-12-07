@@ -30,6 +30,65 @@ gh auth login
 
 </examples>
 
+## Token Efficiency for GitHub MCP
+
+<required>
+
+**ALWAYS use pagination and filtering parameters** to minimize token usage:
+
+### Pagination Parameters
+
+For all `list_*` operations:
+
+```text
+Use MCP tool: mcp__github__list_pull_requests
+Parameters:
+  - owner: {owner}
+  - repo: {repo}
+  - state: "open"
+  - perPage: 20          # Use 10-20 for recent items, 100 for bulk
+  - page: 1              # Explicit pagination
+```
+
+### Minimal Output
+
+For search operations:
+
+```text
+Use MCP tool: mcp__github__search_repositories
+Parameters:
+  - query: "topic:react"
+  - minimal_output: true # ALWAYS true unless you need full objects
+  - perPage: 20
+```
+
+### Request Only What You Need
+
+For PR details, use specific methods:
+
+```text
+Use MCP tool: mcp__github__pull_request_read
+Parameters:
+  - method: "get"        # Basic info only
+  # Don't use get_files, get_reviews unless needed
+```
+
+</required>
+
+<context>
+
+**Token Savings**:
+- Default `list_pull_requests` returns 30 items
+- With `perPage: 10`, saves ~66% tokens when you only need recent PRs
+- `minimal_output: true` for repositories saves ~80% tokens
+
+**Sources**:
+- [GitHub MCP Pagination Best Practices](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api)
+- [MCP Optimizer for Token Reduction](https://dev.to/stacklok/cut-token-waste-from-your-ai-workflow-with-the-toolhive-mcp-optimizer-3oo6)
+- [Dynamic Toolset Selection](https://www.speakeasy.com/blog/how-we-reduced-token-usage-by-100x-dynamic-toolsets-v2)
+
+</context>
+
 ## Pull Request Operations
 
 ### Creating PRs

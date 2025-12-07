@@ -84,8 +84,10 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="modifying_existing_pr">
 
 - **IF** working on existing PR OR addressing review comments:
+- **ACTION**: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
 - **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
 - **LOAD**: `$HOME/.smith/rules-github-pr.md` (if using GitHub)
+- **LOAD**: `$HOME/.smith/rules-github-review.md` (review automation)
 
 </trigger>
 

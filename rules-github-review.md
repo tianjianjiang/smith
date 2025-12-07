@@ -5,6 +5,7 @@
 - **Scope**: Automation for iterative PR review cycles on GitHub
 - **Load if**: Responding to PR review feedback, automated review comment handling
 - **Prerequisites**: rules-pr-concepts.md, rules-github.md, rules-ai_agents.md
+- **Token efficiency**: Use perPage, minimal_output parameters (see rules-github.md)
 
 </metadata>
 
@@ -40,6 +41,11 @@
    - User: "address comments on PR #123" or "@agent address comments"
    - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
    - Auto: After reviewer requests changes
+   - **Proactive check**: When starting work on existing PR
+     - ALWAYS fetch review comments before making changes
+     - Check for both CHANGES_REQUESTED reviews AND COMMENT reviews
+     - Alert user if unaddressed comments exist
+     - Ask: "Address comments first or proceed with new changes?"
 
 <context>
 
@@ -76,6 +82,42 @@
 
 </context>
 
+### Pre-Work Review Comment Check
+
+<required>
+
+**When starting work on ANY existing PR** (before making changes):
+
+1. **Fetch review comments**:
+   ```sh
+   gh api /repos/{owner}/{repo}/pulls/{PR}/comments | jq -r '.[] |
+     select(.user.type == "Bot" and .in_reply_to_id == null) |
+     "\(.id): \(.user.login) - \(.body[:100])"'
+   ```
+
+2. **Check comment threads**:
+   - Look for unresolved threads from CodeRabbitAI, Copilot, human reviewers
+   - Filter for top-level comments (in_reply_to_id == null)
+   - Identify nitpick, suggestion, and issue comments
+
+3. **Alert user**:
+   - "Found X unaddressed review comments from [bots/reviewers]"
+   - Show comment IDs and first 100 chars of each
+   - Ask: "Address these comments first or proceed with planned changes?"
+
+4. **Only if user chooses to address**: Enter review cycle automation workflow
+
+</required>
+
+<context>
+
+**Why This Matters**:
+- CodeRabbitAI posts COMMENT reviews (not CHANGES_REQUESTED)
+- COMMENT reviews don't change PR state
+- Without proactive checking, informational feedback is missed
+
+</context>
+
 2. **Fetch inline review thread comments** (not general PR comments):
 
    **Option A: Using GitHub MCP** (preferred):
@@ -86,6 +128,8 @@
      - owner: {owner}           # e.g., "octocat"
      - repo: {repo}             # e.g., "hello-world"
      - pullNumber: {PR}         # e.g., 21
+     - perPage: 100             # Max out to minimize API calls
+     - page: 1
 
    Returns: List of inline review comment objects with id, path, line, body, user
    ```
