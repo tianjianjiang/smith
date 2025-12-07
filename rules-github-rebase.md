@@ -56,7 +56,7 @@ MUST check for rebase needs in these scenarios:
 git fetch origin
 git rev-list HEAD..origin/main --count
 
-git merge-tree "$(git merge-base HEAD origin/main)" HEAD origin/main | grep -q "^<<<<<<< " && echo "conflicts" || echo "clean"
+git merge-tree "$(git merge-base HEAD origin/main)" HEAD origin/main | grep -q "^<<<<<<<" && echo "conflicts" || echo "clean"
 ```
 
 </required>
@@ -344,7 +344,7 @@ BASE_BRANCH="main"
 BEHIND=$(git rev-list HEAD.."origin/$BASE_BRANCH" --count)
 DAYS_OLD=$(git log -1 --format=%cd --date=relative)
 
-CONFLICTS=$(git merge-tree "$(git merge-base HEAD "origin/$BASE_BRANCH")" HEAD "origin/$BASE_BRANCH" | grep -c "^<<<<<<< " || echo 0)
+CONFLICTS=$(git merge-tree "$(git merge-base HEAD "origin/$BASE_BRANCH")" HEAD "origin/$BASE_BRANCH" | grep -c "^<<<<<<<" || echo 0)
 ```
 
 **Thresholds for action**:
