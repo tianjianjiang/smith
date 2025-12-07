@@ -541,6 +541,8 @@ git push
 
 **Iterative review cycle workflow**:
 
+<instructions>
+
 1. **Trigger points** (any of these):
    - User: "address comments on PR #123" or "@agent address comments"
    - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
@@ -558,15 +560,26 @@ gh pr view $PR_NUMBER --json comments --jq '.comments[]'
 ```
 
 3. **Categorize comments**:
+
+   <planning_process>
+
    - **Actionable**: Specific code changes requested (can be implemented)
    - **Clarification**: Questions needing answers (respond in comment thread)
    - **Discussion**: Architectural/subjective decisions (needs human input)
 
+   </planning_process>
+
 4. **For each actionable comment** (Qodo Merge pattern):
+
+   <planning_process>
+
    - **Analyze confidence**: Determine if request is clear and unambiguous
    - **High confidence (>70%)**: Implement directly and explain what was done
    - **Medium confidence (40-70%)**: Implement with explanation, ask for confirmation
    - **Low confidence (<40%)**: Ask user for clarification before implementing
+
+   </planning_process>
+
    - **Track mapping**: Comment ID → Commit SHA that addresses it
    - **Reply to comment**: Use quote reply format with reviewer mention
    - **Mark resolved**: Hide comment as resolved after addressing
@@ -585,12 +598,20 @@ git push
 ```
 
 6. **Incremental re-review check** (CodeRabbitAI pattern):
+
+   <persistence>
+
    - Wait for PR checks to complete
    - Check if NEW review comments were posted
    - **If new comments exist**: Return to step 2 (repeat cycle)
    - **If no new comments AND all resolved**: Proceed to step 7
 
+   </persistence>
+
 7. **Auto-merge criteria check**:
+
+   <verification>
+
    - All review comments addressed OR marked as resolved
    - No new comments in last check (reviewers had chance to re-review)
    - All CI/CD checks passing
@@ -598,8 +619,14 @@ git push
    - Branch is fresh (not stale - see Proactive Branch Freshness Monitoring)
    - No merge conflicts with base branch
 
+   </verification>
+
    If ALL criteria met: Proceed to merge (with user confirmation)
    If ANY criteria not met: Inform user what's blocking
+
+</instructions>
+
+<final_instruction>
 
 **Comment reply format**:
 
@@ -625,6 +652,8 @@ gh api -X PUT repos/{owner}/{repo}/pulls/comments/{comment_id}/replies/{reply_id
 ```
 
 Or if using GitHub web UI automation, hide the conversation after confirming fix is implemented.
+
+</final_instruction>
 
 </required>
 
@@ -1324,6 +1353,8 @@ git log @{upstream}.. --oneline
 
 <required>
 
+<error_handling>
+
 **If rebase fails**:
 
 ```sh
@@ -1352,6 +1383,8 @@ git rebase --abort  # Always abort first
 #
 # Check git status and let me know what you'd like to do."
 ```
+
+</error_handling>
 
 </required>
 
