@@ -150,19 +150,24 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 
 <formatting>
 
-**Pattern**: `type/descriptive_name` (e.g., `feat/user_authentication`, `fix/JIRA-1234-query_processor`)
+**Pattern**: `type/descriptive_name`
+
+**Examples:**
+- `feat/user_authentication` (underscore: single concept)
+- `feat/auth-login` (hyphen: login is part of auth)
+- `fix/JIRA-1234-query_processor` (hyphen for ticket ID, underscore for concept)
 
 **Branch Type Prefixes** (MUST match conventional commit type):
 
-| Commit Type | Branch Prefix | Example                         |
-| ----------- | ------------- | ------------------------------- |
-| `feat`      | `feat/`       | `feat/user_authentication`      |
-| `fix`       | `fix/`        | `fix/JIRA-1234-query_processor` |
-| `docs`      | `docs/`       | `docs/enhance_agents_md`        |
-| `refactor`  | `refactor/`   | `refactor/api-rest`             |
-| `test`      | `test/`       | `test/integration_auth`         |
-| `chore`     | `chore/`      | `chore/update_dependencies`     |
-| `style`     | `style/`      | `style/format_code`             |
+| Commit Type | Branch Prefix | Example                         | Separator Note                            |
+| ----------- | ------------- | ------------------------------- | ----------------------------------------- |
+| `feat`      | `feat/`       | `feat/user_authentication`      | underscore: single concept                |
+| `fix`       | `fix/`        | `fix/JIRA-1234-query_processor` | hyphen for ticket, underscore for concept |
+| `docs`      | `docs/`       | `docs/enhance_agents_md`        | underscore: single concept                |
+| `refactor`  | `refactor/`   | `refactor/api-rest`             | hyphen: rest is variant of api            |
+| `test`      | `test/`       | `test/integration_auth`         | underscore: single concept                |
+| `chore`     | `chore/`      | `chore/update_dependencies`     | underscore: single concept                |
+| `style`     | `style/`      | `style/format_code`             | underscore: single concept                |
 
 <required>
 
@@ -170,16 +175,62 @@ Branch type prefix MUST match the conventional commit type used in commits.
 
 </required>
 
-| Separator      | Use Case                    | Example                               |
-| -------------- | --------------------------- | ------------------------------------- |
-| Underscore (_) | Multi-word phrases/concepts | `feat/user_authentication`            |
-| Hyphen (-)     | Parts/subsets of a whole    | `feat/auth-login`                     |
-| Hyphen (-)     | Co-existing/differentiation | `feat/api-rest` vs `feat/api-graphql` |
-| Hyphen (-)     | ISO dates                   | `2025-01-15`                          |
-| Hyphen (-)     | Ticket IDs                  | `JIRA-1234`, `GH-567`                 |
-| Slash (/)      | Type delimiter only         | `docs/`, `feat/`, `fix/`              |
+<required>
+
+**Separator Rules** (CRITICAL: Use correct separator based on relationship):
+
+</required>
+
+| Separator      | Use Case                    | Decision Rule                                                            | Example                                   |
+| -------------- | --------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| Underscore (_) | Multi-word phrases/concepts | Words form a SINGLE concept/phrase (think: compound noun)                | `feat/user_authentication`                |
+| Hyphen (-)     | Parts/subsets of a whole    | Second word is a PART or SUBSET of the first (hierarchical relationship) | `feat/auth-login` (login is part of auth) |
+| Hyphen (-)     | Co-existing/differentiation | Different variants/types of the same thing (parallel relationship)       | `feat/api-rest` vs `feat/api-graphql`     |
+| Hyphen (-)     | ISO dates                   | Standard date format                                                     | `2025-01-15`                              |
+| Hyphen (-)     | Ticket IDs                  | Standard ticket format                                                   | `JIRA-1234`, `GH-567`                     |
+| Slash (/)      | Type delimiter only         | Separates branch type from description                                   | `docs/`, `feat/`, `fix/`                  |
 
 **Complex Pattern**: `type/TICKET-number-topic_clause-another_topic-YYYY-MM-DD`
+
+<required>
+
+**Decision Guide for Underscore vs Hyphen:**
+
+1. **Use Underscore (_)** when words form a single concept:
+   - `user_authentication` (authentication is the type of user concept)
+   - `query_processor` (processor is the type of query concept)
+   - `semantic_search` (search is the type of semantic concept)
+   - Think: "What kind of X?" → single concept → underscore
+
+2. **Use Hyphen (-)** when there's a hierarchical or parallel relationship:
+   - `auth-login` (login is a subset/part of auth module)
+   - `auth-password` (password is a subset/part of auth module)
+   - `api-rest` (REST is a variant/type of API, parallel to api-graphql)
+   - Think: "X has parts Y and Z" or "X comes in variants Y and Z" → hyphen
+
+</required>
+
+<examples>
+
+**Correct usage:**
+
+- `feat/user_authentication` → underscore: "user authentication" is a single concept
+- `feat/auth-login` → hyphen: "login" is a part/subset of "auth"
+- `feat/api-rest` → hyphen: "rest" is a variant/type of "api"
+- `fix/JIRA-1234-query_processor` → hyphen for ticket, underscore for concept
+- `feat/user_profile-settings` → hyphen: "settings" is a subset of "user_profile" (which uses underscore as single concept)
+
+</examples>
+
+<forbidden>
+
+**Incorrect usage:**
+
+- `feat/user-authentication` → WRONG: should be underscore (single concept)
+- `feat/auth_login` → WRONG: should be hyphen (login is part of auth)
+- `feat/api_rest` → WRONG: should be hyphen (rest is variant of api)
+
+</forbidden>
 
 </formatting>
 
