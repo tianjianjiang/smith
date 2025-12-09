@@ -91,10 +91,6 @@ See @rules-ai_agents.md for Helpful, Honest, Harmless principles.
 
 See @rules-xml_tags.md for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
 
-</context>
-
-<context>
-
 ## Context-Aware Rule Loading
 
 <plan_tool_usage>
