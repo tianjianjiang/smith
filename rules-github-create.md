@@ -37,7 +37,7 @@ Parameters:
   - repo: {repo}
   - title: "feat: add user authentication"
   - body: "[Generated description from PR template]"
-  - head: "feature/auth"
+  - head: "feat/auth"
   - base: "main"
   - draft: false
 ```
@@ -48,7 +48,7 @@ gh pr create \
   --title "feat: add user authentication" \
   --body "[Generated description from PR template]" \
   --base main \
-  --head feature/auth
+  --head feat/auth
 ```
 
 </context>
