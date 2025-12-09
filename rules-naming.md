@@ -166,9 +166,7 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 
 <required>
 
-**For conventional commit type `feat`**: Branch prefix MUST be `feat/` (NOT `feature/`)
-
-**Branch type prefix MUST match the conventional commit type used in commits**
+Branch type prefix MUST match the conventional commit type used in commits.
 
 </required>
 
@@ -190,18 +188,12 @@ See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable sy
 **Naming Convention Enforcement:**
 
 - Branch names MUST follow the `type/descriptive_name` pattern
-- Branch type prefix MUST match the conventional commit type used in commits (see table above)
-- Always verify branch naming before creating branches
+- Branch type prefix MUST match the conventional commit type used in commits
 
-**Examples of correct branch-to-commit alignment:**
-- Branch `feat/user_auth` → Commits: `feat: add user authentication`, `feat(auth): implement login`
-- Branch `fix/bug-123` → Commits: `fix: resolve bug 123`, `fix(api): handle null pointer`
-- Branch `docs/readme` → Commits: `docs: update README`, `docs(readme): add examples`
-
-**Examples of incorrect branch-to-commit alignment:**
-- Branch `feature/user_auth` → WRONG: use `feat/` prefix, not `feature/`
+**Examples:**
+- Branch `feat/user_auth` → Commits: `feat: add user authentication`
+- Branch `fix/bug-123` → Commits: `fix: resolve bug 123`
 - Branch `feat/user_auth` → Commits: `fix: add user auth` → WRONG: branch type doesn't match commit type
-- Branch `feat/user_auth` → Commits: `feature: add user auth` → WRONG: commit type should be `feat`, not `feature`
 
 </required>
 

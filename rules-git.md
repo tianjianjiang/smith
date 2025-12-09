@@ -41,81 +41,23 @@
 
 ### Branch Naming Conventions
 
-<formatting>
-
-**Pattern**: `type/descriptive_name` (e.g., `feat/user_authentication`, `fix/JIRA-1234-query_processor`)
-
-**Branch Type Prefixes** (MUST match conventional commit type):
-
-| Commit Type | Branch Prefix | Example                         |
-| ----------- | ------------- | ------------------------------- |
-| `feat`      | `feat/`       | `feat/user_authentication`      |
-| `fix`       | `fix/`        | `fix/JIRA-1234-query_processor` |
-| `docs`      | `docs/`       | `docs/enhance_agents_md`        |
-| `refactor`  | `refactor/`   | `refactor/api-rest`             |
-| `test`      | `test/`       | `test/integration_auth`         |
-| `chore`     | `chore/`      | `chore/update_dependencies`     |
-| `style`     | `style/`      | `style/format_code`             |
-
 <required>
 
-**For conventional commit type `feat`**: Branch prefix MUST be `feat/` (NOT `feature/`)
+Branch names MUST follow `type/descriptive_name` pattern where `type` matches conventional commit type.
 
-**Branch type prefix MUST match the conventional commit type used in commits**
+Branch type prefix MUST match the conventional commit type used in commits.
 
 </required>
-
-**Separator Rules** (see [Dash on Wikipedia](https://en.wikipedia.org/wiki/Dash)):
-
-| Separator      | Use Case                    | Example                                                                    |
-| -------------- | --------------------------- | -------------------------------------------------------------------------- |
-| Underscore (_) | Multi-word phrases/concepts | `feat/user_authentication`, `feat/semantic_search`                         |
-| Hyphen (-)     | Parts/subsets of a whole    | `feat/auth-login`, `feat/auth-password` (login/password are parts of auth) |
-| Hyphen (-)     | Co-existing/differentiation | `feat/api-rest`, `feat/api-graphql`                                        |
-| Hyphen (-)     | ISO dates                   | `2025-01-15`                                                               |
-| Hyphen (-)     | Ticket IDs                  | `JIRA-1234`, `GH-567`                                                      |
-
-</formatting>
 
 <examples>
 
-- `docs/enhance_agents_md` (multi-word concept)
-- `feat/user_authentication` (multi-word concept - MUST use `feat/` for feature branches)
-- `feat/auth-login` (login is subset of auth module)
-- `feat/api-rest` (rest is a variant/type of api)
-- `fix/JIRA-1234-query_processor` (ticket ID + concept)
-- `feat/GH-123-semantic_search-2025-01-15` (ticket + concept + date)
+- `feat/user_authentication`
+- `fix/JIRA-1234-query_processor`
+- `docs/enhance_agents_md`
 
 </examples>
 
-<forbidden>
-
-- `docs/enhance-agents-md` (hyphen for multi-word phrase - should be underscore)
-- `feature/add-semantic-search` (WRONG: use `feat/` prefix, not `feature/`)
-- `feat/add-semantic-search` (hyphens joining words in a phrase - should use underscores)
-- `fix/query-processor-null-check` (excessive hyphens for simple phrase)
-
-</forbidden>
-
-<required>
-
-**Naming Convention Enforcement:**
-
-- Branch names MUST follow the `type/descriptive_name` pattern
-- Branch type prefix MUST match the conventional commit type used in commits (see table above)
-- Always verify branch naming before creating branches
-
-**Examples of correct branch-to-commit alignment:**
-- Branch `feat/user_auth` → Commits: `feat: add user authentication`, `feat(auth): implement login`
-- Branch `fix/bug-123` → Commits: `fix: resolve bug 123`, `fix(api): handle null pointer`
-- Branch `docs/readme` → Commits: `docs: update README`, `docs(readme): add examples`
-
-**Examples of incorrect branch-to-commit alignment:**
-- Branch `feature/user_auth` → WRONG: use `feat/` prefix, not `feature/`
-- Branch `feat/user_auth` → Commits: `fix: add user auth` → WRONG: branch type doesn't match commit type
-- Branch `feat/user_auth` → Commits: `feature: add user auth` → WRONG: commit type should be `feat`, not `feature`
-
-</required>
+See [Naming Standards]($HOME/.smith/rules-naming.md) for complete branch naming conventions including type prefixes, separator rules, and examples.
 
 ## Commit Standards
 
