@@ -182,6 +182,17 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 
 </trigger>
 
+<trigger context="context_management">
+
+- **IF** context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues:
+- **LOAD**: `$HOME/.smith/rules-context-principles.md` (universal strategies)
+- **LOAD**: `$HOME/.smith/rules-context-claude_code.md` (if using Claude Code)
+- **LOAD**: `$HOME/.smith/rules-context-cursor.md` (if using Cursor)
+- **LOAD**: `$HOME/.smith/rules-context-kiro.md` (if using Kiro OR creating steering files)
+- **ACTION**: Monitor context usage, apply selective retention strategies
+
+</trigger>
+
 <trigger context="prompt_engineering">
 
 - **IF** writing or reviewing AI prompts, AGENTS.md files, or rules documentation:
