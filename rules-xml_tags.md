@@ -12,6 +12,8 @@
 
 ## Approved XML Tags
 
+**Cross-Model Compatibility**: Many tags work across different models. Common tags like `<instructions>`, `<task>`, `<context>`, `<examples>`, and `<constraints>` are widely supported across Claude, GPT-5/5.1, Codex, and Gemini models. However, model-specific tags (e.g., `<plan_tool_usage>` for GPT-5/5.1, `<thinking>` for Claude) should only be used with their intended models. When in doubt, use generic tags that are documented for your target model.
+
 </context>
 
 <required>
@@ -20,12 +22,6 @@ Only use XML tags that are well-established in AI prompt engineering literature.
 Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>`.
 
 </required>
-
-<context>
-
-**Cross-Model Compatibility**: Many tags work across different models. Common tags like `<instructions>`, `<task>`, `<context>`, `<examples>`, and `<constraints>` are widely supported across Claude, GPT-5/5.1, Codex, and Gemini models. However, model-specific tags (e.g., `<plan_tool_usage>` for GPT-5/5.1, `<thinking>` for Claude) should only be used with their intended models. When in doubt, use generic tags that are documented for your target model.
-
-</context>
 
 ### Anthropic Claude Tags
 
@@ -124,7 +120,7 @@ Tags can be nested to create hierarchical structures. Common nesting patterns:
 
 - [GPT-5.1-Codex-Max Prompting Guide](https://cookbook.openai.com/examples/gpt-5/gpt-5-1-codex-max_prompting_guide)
 
-**Note**: GPT-5.1-Codex and GPT-5.1-Codex-Max do not have specific XML tag documentation. The prompting guides focus on general best practices for code formatting, structure, tone, and file references. For structured prompts, you may use XML tags similar to GPT-5/5.1 models, organizing content hierarchically as needed.
+**Note**: GPT-5.1-Codex and GPT-5.1-Codex-Max share the same prompting guide and do not have specific XML tag documentation. The prompting guides focus on general best practices for code formatting, structure, tone, and file references. For structured prompts, you may use XML tags similar to GPT-5/5.1 models, organizing content hierarchically as needed.
 
 **Recommended Approach**: Use XML tags to structure prompts following GPT-5/5.1 patterns, organizing sections such as:
 - `<instructions>` for coding guidelines
@@ -216,7 +212,7 @@ Analyze the attached financial report and identify the most important metrics.
 | `<constraints>`       | Behavioral limitations       | Verbosity, tone            |
 | `<context>`           | Background information       | Data, situation            |
 | `<task>`              | Specific user request        | The actual question        |
-| `<output_format>`     | Response structure           | JSON, markdown, etc.       |
+| `<output_format>`     | Response structure           | JSON, markdown, etc.        |
 | `<rules>`             | Behavioral guidelines        | Cite sources, be objective |
 | `<planning_process>`  | Analysis steps               | Decomposition, strategy    |
 | `<error_handling>`    | Edge case responses          | Missing data handling      |
