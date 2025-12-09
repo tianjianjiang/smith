@@ -5,16 +5,11 @@
 - **Scope**: Personal coding rules for all languages and outputs
 - **Load if**: Starting any development task, file creation, code writing
 - **Prerequisites**: None (foundation for all other rules)
-
-</metadata>
-
-<dependencies>
-
 - **Requires**: None (foundation document)
 - **Referenced by**: All rules*.md files, all AGENTS.md files
 - **Optional**: None (personal foundation)
 
-</dependencies>
+</metadata>
 
 <context>
 

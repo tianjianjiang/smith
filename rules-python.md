@@ -5,16 +5,11 @@
 - **Scope**: Python-specific coding standards
 - **Load if**: Writing Python code, pytest tests, virtual env configuration
 - **Prerequisites**: @rules-core.md
+- **Requires**: @rules-core.md (Personal formatting, NEVER/ALWAYS)
+- **Referenced by**: Testing, Development workflows
+- **Optional**: @rules-naming.md (File naming patterns)
 
 </metadata>
-
-<dependencies>
-
-- **Requires**: @rules-core.md - Personal formatting, NEVER/ALWAYS
-- **Referenced by**: Testing, Development workflows
-- **Optional**: @rules-naming.md - File naming patterns
-
-</dependencies>
 
 <context>
 

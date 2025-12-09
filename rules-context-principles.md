@@ -5,16 +5,11 @@
 - **Scope**: Universal context management strategies for AI coding agents
 - **Load if**: Context management OR optimizing context usage OR context window approaching capacity
 - **Prerequisites**: @rules-ai_agents.md
-
-</metadata>
-
-<dependencies>
-
 - **Requires**: Understanding of context windows, token limits, and prompt engineering
 - **Provides**: Universal context optimization strategies, selective retention patterns, progressive disclosure techniques
 - **Research**: Anthropic (Claude Code, Prompt Caching), Cursor documentation, Kiro steering files, LLMLingua (Microsoft Research)
 
-</dependencies>
+</metadata>
 
 <context>
 

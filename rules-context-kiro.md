@@ -5,16 +5,11 @@
 - **Scope**: Kiro steering file patterns and context management strategies
 - **Load if**: Using Kiro OR creating steering files for AI agent guidance
 - **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
-
-</metadata>
-
-<dependencies>
-
 - **Requires**: Understanding of Kiro steering files, context triggers, MCP integration, VS Code extension system
 - **Provides**: Steering file creation patterns, persistent context strategies, custom agent specialization, context-efficient workflows
 - **Research**: Kiro documentation (2025-12), MCP protocol specification, VS Code OSS architecture
 
-</dependencies>
+</metadata>
 
 <context>
 
@@ -53,7 +48,7 @@
 
 ### Steering File Structure
 
-Based on @AGENTS.md canonical example:
+Based on @AGENTS.md canonical example (using only documented XML tags):
 
 ```xml
 # Project Standards (AGENTS.md)
@@ -62,7 +57,7 @@ Based on @AGENTS.md canonical example:
 
 - **Scope**: Entry point for project coding standards
 - **Load if**: Starting any development task
-- **Prerequisites**: None (or list dependencies)
+- **Prerequisites**: None
 
 </metadata>
 
@@ -89,39 +84,54 @@ Agent MUST follow these rules at all times:
 
 <context>
 
-## Project Context
+## Context-Aware Rule Loading
 
-Background information about project architecture, tech stack, conventions.
+<plan_tool_usage>
+
+### Workflow
+
+1. Detect context from user request or file type
+2. Match context to applicable rules
+3. Report active rules to user
+4. Execute task following those rules
+
+<constraints>
+
+- MUST report which rules are loaded
+- MUST match context to appropriate rule sets
+- MUST gracefully skip if rule file not found
+
+</constraints>
+
+<rules>
+
+**python_development:**
+- Condition: Writing/modifying Python code OR running Python tests
+- Load: `rules-python.md`
+
+**git_operations:**
+- Condition: Creating commits OR managing branches
+- Load: `rules-git.md`, `rules-naming.md`
+
+**testing:**
+- Condition: Writing or running tests
+- Load: `rules-testing.md`
+
+</rules>
+
+</plan_tool_usage>
 
 </context>
 
-<context_triggers>
+<instructions>
 
-<!-- Load these files ONLY if the specific context applies -->
+## Rule Loading Notification
 
-<trigger context="python_development">
+1. At session start: Report baseline rules
+2. Before each task: Report applicable rules
+3. When context changes: Report rule loading/unloading
 
-- **IF** writing/modifying Python code OR running Python tests:
-- **LOAD**: `rules-python.md`
-
-</trigger>
-
-<trigger context="git_operations">
-
-- **IF** creating commits OR managing branches OR using git:
-- **LOAD**: `rules-git.md`
-- **LOAD**: `rules-naming.md`
-
-</trigger>
-
-<trigger context="testing">
-
-- **IF** writing tests OR running test suite:
-- **LOAD**: `rules-testing.md`
-
-</trigger>
-
-</context_triggers>
+</instructions>
 ```
 
 ### Key Sections Explained
@@ -141,10 +151,16 @@ Background information about project architecture, tech stack, conventions.
 - DRY, KISS, YAGNI
 - Project-specific principles
 
-**`<context_triggers>`** - Dynamic context-based loading:
-- Loads additional rules based on what agent is doing
+**`<context>`** with nested tags - Dynamic context-based loading:
+- `<plan_tool_usage>`: Workflow for detecting and matching contexts
+- `<constraints>`: Requirements for rule loading
+- `<rules>`: Context-to-rules mapping
 - Enables efficient context management (load only relevant rules)
 - Prevents context bloat (don't load Python rules when working on git)
+
+**`<instructions>`** - Rule loading notification protocol:
+- Defines when and how to report loaded rules
+- Session start, task execution, context changes
 
 </required>
 
@@ -168,14 +184,27 @@ Background information about project architecture, tech stack, conventions.
 
 </required>
 
-<context_triggers>
+<context>
 
-<trigger context="testing">
-- IF running tests:
-- LOAD: rules-testing.md
-</trigger>
+<plan_tool_usage>
 
-</context_triggers>
+<rules>
+
+**testing:**
+- Condition: Running tests
+- Load: rules-testing.md
+
+</rules>
+
+</plan_tool_usage>
+
+</context>
+
+<instructions>
+
+Report active rules before executing tasks.
+
+</instructions>
 ```
 
 **Comprehensive steering file** (large project):
@@ -213,33 +242,46 @@ Background information about project architecture, tech stack, conventions.
 
 </guiding_principles>
 
-<context_triggers>
+<context>
 
-<trigger context="python_development">
-- IF working with Python:
-- LOAD: rules-python.md
-- LOAD: rules-testing.md
-</trigger>
+<plan_tool_usage>
 
-<trigger context="javascript_development">
-- IF working with JavaScript/TypeScript:
-- LOAD: rules-typescript.md
-- LOAD: rules-react.md (if React detected)
-</trigger>
+<constraints>
 
-<trigger context="database_operations">
-- IF modifying database schema OR writing migrations:
-- LOAD: rules-database.md
-- LOAD: rules-migrations.md
-</trigger>
+- MUST report loaded rules before task execution
+- MUST gracefully skip non-existent rule files
 
-<trigger context="api_development">
-- IF creating/modifying API endpoints:
-- LOAD: rules-api.md
-- LOAD: rules-security.md
-</trigger>
+</constraints>
 
-</context_triggers>
+<rules>
+
+**python_development:**
+- Condition: Working with Python
+- Load: rules-python.md, rules-testing.md
+
+**javascript_development:**
+- Condition: Working with JavaScript/TypeScript
+- Load: rules-typescript.md, rules-react.md (if React detected)
+
+**database_operations:**
+- Condition: Modifying database schema OR writing migrations
+- Load: rules-database.md, rules-migrations.md
+
+**api_development:**
+- Condition: Creating/modifying API endpoints
+- Load: rules-api.md, rules-security.md
+
+</rules>
+
+</plan_tool_usage>
+
+</context>
+
+<instructions>
+
+Report which rules are loaded for each context before executing tasks.
+
+</instructions>
 ```
 
 </examples>
@@ -249,7 +291,7 @@ Background information about project architecture, tech stack, conventions.
 - NEVER hardcode file contents in steering file (use file references or separate rule files)
 - NEVER create circular dependencies (fileA loads fileB loads fileA)
 - NEVER duplicate rules across multiple files (use references)
-- NEVER load all rules by default (defeats purpose of context triggers)
+- NEVER load all rules by default (defeats purpose of context-aware loading)
 
 </forbidden>
 
@@ -639,14 +681,21 @@ Follow global standards: #[[file:~/.kiro/steering/global.md]]
 
 </required>
 
-<context_triggers>
+<context>
 
-<trigger context="security_review">
-- IF reviewing authentication/authorization code:
-- LOAD: rules-security.md
-</trigger>
+<plan_tool_usage>
 
-</context_triggers>
+<rules>
+
+**security_review:**
+- Condition: Reviewing authentication/authorization code
+- Load: rules-security.md
+
+</rules>
+
+</plan_tool_usage>
+
+</context>
 ```
 
 **Implementation Agent**:
@@ -673,15 +722,22 @@ Follow global standards: #[[file:~/.kiro/steering/global.md]]
 
 </required>
 
-<context_triggers>
+<context>
 
-<trigger context="feature_implementation">
-- LOAD: docs/architecture.md
-- LOAD: rules-testing.md
-- LOAD: rules-development.md
-</trigger>
+<plan_tool_usage>
 
-</context_triggers>
+<rules>
+
+**feature_implementation:**
+- Load: docs/architecture.md
+- Load: rules-testing.md
+- Load: rules-development.md
+
+</rules>
+
+</plan_tool_usage>
+
+</context>
 ```
 
 **Documentation Agent**:
@@ -861,15 +917,22 @@ Total context: 33 lines (99.6% reduction)
 
 </context>
 
-<context_triggers>
+<context>
 
-<trigger context="authentication">
-- IF working with authentication:
-- LOAD: rules-auth.md
+<plan_tool_usage>
+
+<rules>
+
+**authentication:**
+- Condition: Working with authentication
+- Load: rules-auth.md
 - NOTE: Using JWT pattern from auth.service.ts:100-150
-</trigger>
 
-</context_triggers>
+</rules>
+
+</plan_tool_usage>
+
+</context>
 ```
 
 **Commit messages as persistent memory**:
@@ -989,9 +1052,17 @@ Session 2 start:
 [Mandatory rules that rarely change]
 </required>
 
-<context_triggers>
-[Trigger definitions - structure is static]
-</context_triggers>
+<context>
+
+<plan_tool_usage>
+
+<rules>
+[Context-to-rules mapping - structure is static]
+</rules>
+
+</plan_tool_usage>
+
+</context>
 
 <!-- DYNAMIC CONTENT (not cached) -->
 

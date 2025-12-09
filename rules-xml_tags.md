@@ -30,7 +30,6 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 | Tag                        | Purpose                 | Example                       |
 | -------------------------- | ----------------------- | ----------------------------- |
 | `<metadata>`               | File/component metadata | Load conditions, scope        |
-| `<dependencies>`           | Dependency information  | Required files, prerequisites |
 | `<instructions>`           | Direct commands to AI   | Step-by-step guidance         |
 | `<background_information>` | Context setting         | Domain knowledge              |
 | `<examples>`               | Few-shot examples       | Correct patterns              |
@@ -38,7 +37,6 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 | `<answer>`                 | Final output            | Clean result after thinking   |
 | `<context>`                | Contextual information  | Surrounding details           |
 | `<formatting>`             | Output format specs     | Patterns, templates           |
-| `<trigger>`                | Conditional loading     | Context-based file loading    |
 | `<forbidden>`              | Prohibited actions      | Anti-patterns, mistakes       |
 | `<required>`               | Mandatory requirements  | Must-do rules                 |
 | `<related>`                | Cross-references        | Links to other files          |
@@ -236,7 +234,7 @@ Analyze the attached financial report and identify the most important metrics.
 
 **Model-Specific Tags**: Use these only with their intended models:
 
-- **Claude**: `<metadata>`, `<dependencies>`, `<background_information>`, `<trigger>`, `<forbidden>`, `<required>`, `<related>`
+- **Claude**: `<metadata>`, `<background_information>`, `<forbidden>`, `<required>`, `<related>`
 - **GPT-5/5.1**: `<plan_tool_usage>`, `<context_gathering>`, `<exploration>`, `<verification>`, `<persistence>`, `<self_reflection>`, `<code_editing_rules>`, `<guiding_principles>`, `<tool_preambles>`, `<efficiency>`, `<apply_patch>`, `<final_instructions>`
 - **Gemini**: `<output_format>`, `<rules>`, `<planning_process>`, `<error_handling>`, `<final_instruction>`
 
