@@ -40,6 +40,7 @@ Parameters:
   - head: "feat/auth"
   - base: "main"
   - draft: false
+  - assignees: ["@me"]
 ```
 
 **Option B: Using gh CLI** (fallback):
@@ -48,7 +49,8 @@ gh pr create \
   --title "feat: add user authentication" \
   --body "[Generated description from PR template]" \
   --base main \
-  --head feat/auth
+  --head feat/auth \
+  --assignee @me
 ```
 
 </context>

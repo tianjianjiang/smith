@@ -246,7 +246,7 @@ git checkout -b "feat/user_authentication"
 git add .
 git commit -S -m "feat: add user authentication"
 git push -u origin "feat/user_authentication"
-gh pr create --title "feat: add user authentication" --body "..."
+gh pr create --title "feat: add user authentication" --body "..." --assignee @me
 ```
 
 </required>
