@@ -14,7 +14,7 @@ This document defines configuration standards for development tools, IDEs, and e
 - **Exception**: Use DEBUG level only when actively debugging specific issues
 
 ## MCP & Steering (Optional)
-- **MCP Tools**: See `$HOME/.smith/rules-tools-mcp.md` for optional MCP tool usage
+- **MCP Tools**: See @rules-tools-mcp.md for optional MCP tool usage
 - **Kiro Steering**: `.kiro/steering/` with `#[[file:<relative_file_name>]]` pattern
 - **Standards**: Follow personal coding standards, auto-approve common operations
 
@@ -39,13 +39,13 @@ Review the code changes in the current branch and provide feedback on:
 - Performance considerations
 - Test coverage
 
-Follow standards in $HOME/.smith/rules-*.md
+Follow standards in @rules-*.md
 ```
 
 **Usage**: `/review` in Claude Code
 
 **Best practices**:
-- Reference personal standards with `$HOME/.smith/`
+- Reference personal standards with @rules-*.md
 - Keep commands focused and single-purpose
 - Include context about what to analyze
 - Specify output format if needed
@@ -72,7 +72,7 @@ Follow standards in $HOME/.smith/rules-*.md
 - **git**: Git repository operations
 - **web**: Web search and fetch capabilities
 
-**See**: `$HOME/.smith/rules-tools-mcp.md` for detailed MCP configuration
+**See**: @rules-tools-mcp.md for detailed MCP configuration
 
 ## Structured Output Patterns
 
@@ -130,11 +130,11 @@ Follow test patterns in tests/unit/ and tests/integration/.
 - Anthropic: Best-effort compliance (very high accuracy)
 - Google Gemini: Use responseSchema for guided generation
 
-**See**: `$HOME/.smith/rules-ai_agents.md` - Structured output steering section
+**See**: @rules-ai_agents.md - Structured output steering section
 
 ## Configuration Hierarchy
-```
-$HOME/.smith/ (Personal Standards)
+```text
+.smith/ (Personal Standards - @-prefixed files auto-load from project context)
 ├── Project-Level Configurations
 │   ├── AGENTS.md (Project overview + references)
 │   └── Component-Specific AGENTS.md files (Component details + references)

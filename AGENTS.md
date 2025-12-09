@@ -35,20 +35,20 @@ This notification is always active.
 
 ```text
 Rules loaded:
-- rules-python.md (triggered by: python_development context)
-- rules-core.md (triggered by: always_active context)
+- @rules-python.md (triggered by: python_development context)
+- @rules-core.md (triggered by: always_active context)
 
 Rules unloaded:
-- rules-git.md (triggered by: git_operations context no longer active)
+- @rules-git.md (triggered by: git_operations context no longer active)
 ```
 
 **Example at session start:**
 
 ```text
 Rules loaded:
-- AGENTS.md (entry point)
-- rules-core.md (triggered by: always_active context)
-- rules-python.md (triggered by: python_development context)
+- @AGENTS.md (entry point)
+- @rules-core.md (triggered by: always_active context)
+- @rules-python.md (triggered by: python_development context)
 ```
 
 </examples>
@@ -72,7 +72,7 @@ Rules loaded:
 
 ### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
 
-See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
+See @rules-ai_agents.md for Helpful, Honest, Harmless principles.
 
 </guiding_principles>
 
@@ -86,7 +86,7 @@ See `rules-ai_agents.md` for Helpful, Honest, Harmless principles.
 
 ### XML Tag Standards
 
-See `rules-xml_tags.md` for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
+See @rules-xml_tags.md for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
 
 </context>
 
@@ -97,32 +97,32 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="python_development">
 
 - **IF** writing/modifying Python code OR running python tests:
-- **LOAD**: `$HOME/.smith/rules-python.md`
+- **LOAD**: @rules-python.md
 
 </trigger>
 
 <trigger context="git_operations">
 
 - **IF** performing git commits, merges, or branch management:
-- **LOAD**: `$HOME/.smith/rules-git.md`
-- **LOAD**: `$HOME/.smith/rules-naming.md`
+- **LOAD**: @rules-git.md
+- **LOAD**: @rules-naming.md
 
 </trigger>
 
 <trigger context="pull_request_workflows">
 
 - **IF** creating pull requests OR reviewing code OR merging PRs:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-pr.md` (if using GitHub)
-- **LOAD**: `$HOME/.smith/rules-github.md`
-- **LOAD**: `$HOME/.smith/rules-naming.md`
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-pr.md (if using GitHub)
+- **LOAD**: @rules-github.md
+- **LOAD**: @rules-naming.md
 
 </trigger>
 
 <trigger context="github_workflows">
 
 - **IF** using GitHub CLI OR creating PRs OR managing GitHub features:
-- **LOAD**: `$HOME/.smith/rules-github.md`
+- **LOAD**: @rules-github.md
 
 </trigger>
 
@@ -130,65 +130,65 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 
 - **IF** working on existing PR OR addressing review comments:
 - **ACTION**: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-pr.md` (if using GitHub)
-- **LOAD**: `$HOME/.smith/rules-github-review.md` (review automation)
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-pr.md (if using GitHub)
+- **LOAD**: @rules-github-review.md (review automation)
 
 </trigger>
 
 <trigger context="pr_review_response">
 
 - **IF** responding to PR review feedback OR resolving review comments:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-review.md` (review automation)
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-review.md (review automation)
 
 </trigger>
 
 <trigger context="pre_commit_hooks">
 
 - **IF** pre-commit hooks modify files OR need to amend commits:
-- **LOAD**: `$HOME/.smith/rules-github-utils.md` (hook coordination)
-- **LOAD**: `$HOME/.smith/rules-git.md`
+- **LOAD**: @rules-github-utils.md (hook coordination)
+- **LOAD**: @rules-git.md
 
 </trigger>
 
 <trigger context="testing">
 
 - **IF** writing or running tests (any language):
-- **LOAD**: `$HOME/.smith/rules-testing.md`
+- **LOAD**: @rules-testing.md
 
 </trigger>
 
 <trigger context="new_project">
 
 - **IF** initializing a new project:
-- **LOAD**: `$HOME/.smith/rules-development.md`
-- **LOAD**: `$HOME/.smith/rules-naming.md`
+- **LOAD**: @rules-development.md
+- **LOAD**: @rules-naming.md
 
 </trigger>
 
 <trigger context="ide_configuration">
 
 - **IF** configuring editor/IDE settings:
-- **LOAD**: `$HOME/.smith/rules-tools.md`
-- **LOAD**: `$HOME/.smith/rules-ide_mappings.md`
+- **LOAD**: @rules-tools.md
+- **LOAD**: @rules-ide_mappings.md
 
 </trigger>
 
 <trigger context="ai_agent_interaction">
 
 - **IF** using Claude Code OR GitHub Copilot OR AI pair programming:
-- **LOAD**: `$HOME/.smith/rules-ai_agents.md`
+- **LOAD**: @rules-ai_agents.md
 
 </trigger>
 
 <trigger context="context_management">
 
 - **IF** context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues:
-- **LOAD**: `$HOME/.smith/rules-context-principles.md` (universal strategies)
-- **LOAD**: `$HOME/.smith/rules-context-claude_code.md` (if using Claude Code)
-- **LOAD**: `$HOME/.smith/rules-context-cursor.md` (if using Cursor)
-- **LOAD**: `$HOME/.smith/rules-context-kiro.md` (if using Kiro OR creating steering files)
+- **LOAD**: @rules-context-principles.md (universal strategies)
+- **LOAD**: @rules-context-claude_code.md (if using Claude Code)
+- **LOAD**: @rules-context-cursor.md (if using Cursor)
+- **LOAD**: @rules-context-kiro.md (if using Kiro OR creating steering files)
 - **ACTION**: Monitor context usage, apply selective retention strategies
 
 </trigger>
@@ -196,24 +196,24 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="prompt_engineering">
 
 - **IF** writing or reviewing AI prompts, AGENTS.md files, or rules documentation:
-- **LOAD**: `$HOME/.smith/rules-xml_tags.md`
+- **LOAD**: @rules-xml_tags.md
 
 </trigger>
 
 <trigger context="always_active">
 
-- **ALWAYS LOAD**: `$HOME/.smith/rules-core.md` (Critical NEVER/ALWAYS rules)
+- **ALWAYS LOAD**: @rules-core.md (Critical NEVER/ALWAYS rules)
 
 </trigger>
 
 <trigger context="stacked_pr_parent_merged">
 
 - **IF** parent PR in stack just merged OR working on child PR after parent merge:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (stacked PRs)
-- **LOAD**: `$HOME/.smith/rules-github-rebase.md` (rebase workflows)
-- **LOAD**: `$HOME/.smith/rules-github-merge.md` (post-merge cascade)
-- **LOAD**: `$HOME/.smith/rules-git.md`
-- **LOAD**: `$HOME/.smith/rules-github.md`
+- **LOAD**: @rules-pr-concepts.md (stacked PRs)
+- **LOAD**: @rules-github-rebase.md (rebase workflows)
+- **LOAD**: @rules-github-merge.md (post-merge cascade)
+- **LOAD**: @rules-git.md
+- **LOAD**: @rules-github.md
 - **ACTION**: Check if child PRs need rebase, offer to update stack
 
 </trigger>
@@ -221,8 +221,8 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="pr_maintenance">
 
 - **IF** working on existing PR OR updating PR branch OR before requesting review:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-rebase.md` (freshness + rebase)
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-rebase.md (freshness + rebase)
 - **ACTION**: Check PR freshness relative to base branch, detect conflicts
 
 </trigger>
@@ -230,8 +230,8 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="pr_review_request">
 
 - **IF** user asks to request PR review OR agent about to request review:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-rebase.md` (pre-review freshness check)
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-rebase.md (pre-review freshness check)
 - **ACTION**: Verify PR is up-to-date with base, all checks pass, no conflicts
 
 </trigger>
@@ -239,16 +239,16 @@ See `rules-xml_tags.md` for approved XML tags with evidence-based references fro
 <trigger context="agent_pr_creation">
 
 - **IF** agent about to create PR OR agent analyzing commits for PR:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md` (platform-neutral concepts)
-- **LOAD**: `$HOME/.smith/rules-github-create.md` (PR description generation)
+- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
+- **LOAD**: @rules-github-create.md (PR description generation)
 
 </trigger>
 
 <trigger context="post_merge_operations">
 
 - **IF** PR just merged OR immediately after merge operation:
-- **LOAD**: `$HOME/.smith/rules-github-merge.md` (post-merge workflows)
-- **LOAD**: `$HOME/.smith/rules-github.md`
+- **LOAD**: @rules-github-merge.md (post-merge workflows)
+- **LOAD**: @rules-github.md
 - **ACTION**: Check for dependent PRs, offer cascade updates, cleanup branches
 
 </trigger>

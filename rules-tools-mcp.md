@@ -130,14 +130,14 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 
 For MCP tool setup and configuration, see:
 - Kiro: `$HOME/.kiro/settings/mcp.json` or `$WORKSPACE_ROOT/.kiro/settings/mcp.json`
-- IDE-specific: `$HOME/.smith/rules-ide_mappings.md`
+- IDE-specific: @rules-ide_mappings.md
 
 ## Related Standards
 
 <related>
 
-- IDE Integration: `$HOME/.smith/rules-ide_mappings.md`
-- Tool Configuration: `$HOME/.smith/rules-tools.md`
-- Development Workflow: `$HOME/.smith/rules-development.md`
+- IDE Integration: @rules-ide_mappings.md
+- Tool Configuration: @rules-tools.md
+- Development Workflow: @rules-development.md
 
 </related>

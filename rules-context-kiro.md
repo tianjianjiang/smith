@@ -4,7 +4,7 @@
 
 - **Scope**: Kiro steering file patterns and context management strategies
 - **Load if**: Using Kiro OR creating steering files for AI agent guidance
-- **Prerequisites**: `$HOME/.smith/rules-context-principles.md`, `$HOME/.smith/rules-ai_agents.md`
+- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
 
 </metadata>
 
@@ -30,7 +30,7 @@
 
 **Architecture**: Kiro inherits VS Code's extension system, configuration patterns, and workspace concepts.
 
-**Canonical example**: `$HOME/.smith/AGENTS.md` demonstrates production-grade steering file pattern.
+**Canonical example**: @AGENTS.md demonstrates production-grade steering file pattern.
 
 </context>
 
@@ -53,7 +53,7 @@
 
 ### Steering File Structure
 
-Based on `$HOME/.smith/AGENTS.md` canonical example:
+Based on @AGENTS.md canonical example:
 
 ```xml
 # Project Standards (AGENTS.md)
@@ -377,7 +377,7 @@ Better: Use file references for documentation, let agent discover code files as 
 **Benefit**: Prevents context bloat by loading only rules needed for current task.
 **Pattern**: IF [condition] → LOAD [file]
 
-**Canonical example**: `$HOME/.smith/AGENTS.md` defines 18 context triggers.
+**Canonical example**: @AGENTS.md defines 18 context triggers.
 
 </context>
 
@@ -437,30 +437,30 @@ ACTION: Run security checks before committing
 
 <examples>
 
-**Well-designed triggers** (from `$HOME/.smith/AGENTS.md`):
+**Well-designed triggers** (from @AGENTS.md):
 
 ```xml
 <trigger context="python_development">
 
 - **IF** writing/modifying Python code OR running Python tests:
-- **LOAD**: `$HOME/.smith/rules-python.md`
+- **LOAD**: @rules-python.md
 
 </trigger>
 
 <trigger context="pull_request_workflows">
 
 - **IF** creating pull requests OR reviewing code OR working with GitHub PRs:
-- **LOAD**: `$HOME/.smith/rules-pr-concepts.md`
-- **LOAD**: `$HOME/.smith/rules-github-pr.md`
-- **LOAD**: `$HOME/.smith/rules-github.md`
-- **LOAD**: `$HOME/.smith/rules-naming.md`
+- **LOAD**: @rules-pr-concepts.md
+- **LOAD**: @rules-github-pr.md
+- **LOAD**: @rules-github.md
+- **LOAD**: @rules-naming.md
 
 </trigger>
 
 <trigger context="always_active">
 
 - **IF** any development task (always active):
-- **LOAD**: `$HOME/.smith/rules-core.md`
+- **LOAD**: @rules-core.md
 
 </trigger>
 ```
@@ -492,6 +492,25 @@ ACTION: Run security checks before committing
 [...20 more files...]
 Result: Context bloat, defeats purpose of triggers
 </trigger>
+```
+
+**@ Reference Resolution**:
+
+When context triggers reference @rules-*.md files:
+
+1. **File Not Found**: Agent should report which file failed to load and continue gracefully without that rule file
+2. **Fallback Behavior**: Agent should proceed with available rules, not halt execution
+3. **Loading Report**: Agent MUST proactively report which rules were successfully loaded and which failed (see @AGENTS.md Rule Loading Notification)
+
+**Error Handling Example**:
+
+```text
+Rules loaded:
+- @rules-core.md (triggered by: always_active context)
+- @rules-python.md (triggered by: python_development context)
+
+Rules skipped:
+- @rules-nonexistent.md (file not found, gracefully skipped)
 ```
 
 </examples>
@@ -1019,12 +1038,12 @@ Features documented here are current as of the version noted above. Kiro is buil
 
 <related>
 
-- **Shared principles**: `$HOME/.smith/rules-context-principles.md` (universal strategies)
-- **Other platforms**: `$HOME/.smith/rules-context-claude_code.md`, `$HOME/.smith/rules-context-cursor.md`
-- **Canonical example**: `$HOME/.smith/AGENTS.md` (production steering file demonstrating all patterns)
-- **Parent**: `$HOME/.smith/rules-ai_agents.md` (AI agent interaction patterns, prompt caching)
-- **Foundation**: `$HOME/.smith/rules-core.md` (critical NEVER/ALWAYS rules)
-- **MCP integration**: `$HOME/.smith/rules-tools-mcp.md` (MCP server configuration)
+- **Shared principles**: @rules-context-principles.md (universal strategies)
+- **Other platforms**: @rules-context-claude_code.md, @rules-context-cursor.md
+- **Canonical example**: @AGENTS.md (production steering file demonstrating all patterns)
+- **Parent**: @rules-ai_agents.md (AI agent interaction patterns, prompt caching)
+- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
+- **MCP integration**: @rules-tools-mcp.md (MCP server configuration)
 - **Research**: Kiro documentation, VS Code extension API, MCP protocol specification
 
 </related>

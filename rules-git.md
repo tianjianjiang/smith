@@ -5,9 +5,9 @@
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **PR workflows**: See [PR Concepts]($HOME/.smith/rules-pr-concepts.md) for platform-neutral pull request workflows, code reviews
-- **GitHub PR operations**: See [GitHub PR Operations]($HOME/.smith/rules-github-pr.md) for GitHub PR workflows
-- **GitHub operations**: See [GitHub Standards]($HOME/.smith/rules-github.md) for GitHub CLI commands
+- **PR workflows**: See @rules-pr-concepts.md for platform-neutral pull request workflows, code reviews
+- **GitHub PR operations**: See @rules-github-pr.md for GitHub PR workflows
+- **GitHub operations**: See @rules-github.md for GitHub CLI commands
 
 </context>
 
@@ -60,7 +60,7 @@ Branch type prefix MUST match the conventional commit type used in commits.
 
 </examples>
 
-See [Naming Standards]($HOME/.smith/rules-naming.md) for complete branch naming conventions including type prefixes, separator rules, and examples.
+See @rules-naming.md for complete branch naming conventions including type prefixes, separator rules, and examples.
 
 ## Commit Standards
 
@@ -391,9 +391,9 @@ git merge --abort
 
 ## Related Standards
 
-- **PR Workflows**: `$HOME/.smith/rules-pr-concepts.md` - Platform-neutral PR concepts
-- **GitHub PR Operations**: `$HOME/.smith/rules-github-pr.md` - GitHub PR workflows
-- **GitHub Workflows**: `$HOME/.smith/rules-github.md` - GitHub CLI operations
-- **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
-- **Naming Conventions**: `$HOME/.smith/rules-naming.md` - Branch naming
-- **Personal Rules**: `$HOME/.smith/rules-core.md` - Core standards
+- **PR Workflows**: @rules-pr-concepts.md - Platform-neutral PR concepts
+- **GitHub PR Operations**: @rules-github-pr.md - GitHub PR workflows
+- **GitHub Workflows**: @rules-github.md - GitHub CLI operations
+- **Development Workflow**: @rules-development.md - Daily practices
+- **Naming Conventions**: @rules-naming.md - Branch naming
+- **Personal Rules**: @rules-core.md - Core standards

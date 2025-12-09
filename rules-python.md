@@ -4,15 +4,15 @@
 
 - **Scope**: Python-specific coding standards
 - **Load if**: Writing Python code, pytest tests, virtual env configuration
-- **Prerequisites**: [Core Standards](./rules-core.md)
+- **Prerequisites**: @rules-core.md
 
 </metadata>
 
 <dependencies>
 
-- **Requires**: [Core Standards](./rules-core.md) - Personal formatting, NEVER/ALWAYS
+- **Requires**: @rules-core.md - Personal formatting, NEVER/ALWAYS
 - **Referenced by**: Testing, Development workflows
-- **Optional**: [Naming](./rules-naming.md) - File naming patterns
+- **Optional**: @rules-naming.md - File naming patterns
 
 </dependencies>
 
@@ -61,7 +61,7 @@ def process_documents(docs: List[str], max_count: Optional[int] = None) -> bool:
 
 ## Code Style
 
-**Personal formatting**: See [Core Standards]($HOME/.smith/rules-core.md) for line length, indentation, string quotes
+**Personal formatting**: See @rules-core.md for line length, indentation, string quotes
 
 **Python-specific (enforced by ruff):**
 - Trailing commas: Use in multi-line structures
@@ -236,9 +236,9 @@ class Config:
 
 <related>
 
-- **Personal Rules**: `$HOME/.smith/rules-core.md` - NEVER/ALWAYS for all languages
-- **Development Workflow**: `$HOME/.smith/rules-development.md` - Daily practices
-- **Testing Standards**: `$HOME/.smith/rules-testing.md` - Test execution
-- **Naming Conventions**: `$HOME/.smith/rules-naming.md` - File naming
+- **Personal Rules**: @rules-core.md - NEVER/ALWAYS for all languages
+- **Development Workflow**: @rules-development.md - Daily practices
+- **Testing Standards**: @rules-testing.md - Test execution
+- **Naming Conventions**: @rules-naming.md - File naming
 
 </related>

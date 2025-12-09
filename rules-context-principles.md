@@ -4,7 +4,7 @@
 
 - **Scope**: Universal context management strategies for AI coding agents
 - **Load if**: Context management OR optimizing context usage OR context window approaching capacity
-- **Prerequisites**: `$HOME/.smith/rules-ai_agents.md`
+- **Prerequisites**: @rules-ai_agents.md
 
 </metadata>
 
@@ -490,9 +490,9 @@ Universal best practices:
 
 <related>
 
-- **Platform-specific**: See `$HOME/.smith/rules-context-claude_code.md`, `$HOME/.smith/rules-context-cursor.md`, `$HOME/.smith/rules-context-kiro.md`
-- **Parent**: `$HOME/.smith/rules-ai_agents.md` (AI agent interaction patterns)
-- **Foundation**: `$HOME/.smith/rules-core.md` (critical NEVER/ALWAYS rules)
+- **Platform-specific**: See @rules-context-claude_code.md, @rules-context-cursor.md, @rules-context-kiro.md
+- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
+- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Prompt Caching Guide, Microsoft LLMLingua paper
 
 </related>
