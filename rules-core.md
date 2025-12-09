@@ -125,8 +125,8 @@ For daily workflow, code quality checks, and tool usage:
 For Git and GitHub workflows:
 - @rules-git.md
 - @rules-pr-concepts.md - Platform-neutral concepts
-- @rules-github-pr.md
-- @rules-github.md
+- @rules-github-pr-automation.md - GitHub PR workflows
+- @rules-github-cli.md
 
 </related>
 

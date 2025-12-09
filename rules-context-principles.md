@@ -485,7 +485,7 @@ Universal best practices:
 
 <related>
 
-- **Platform-specific**: See @rules-context-claude_code.md, @rules-context-cursor.md, @rules-context-kiro.md
+- **Platform-specific**: See @rules-context-platforms.md (Claude Code, Cursor, Kiro)
 - **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
 - **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Prompt Caching Guide, Microsoft LLMLingua paper

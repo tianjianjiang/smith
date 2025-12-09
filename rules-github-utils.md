@@ -14,7 +14,7 @@
 
 - **This document**: Shared utilities and troubleshooting across all PR workflows
 - **Platform-neutral PR concepts**: rules-pr-concepts.md
-- **GitHub PR operations**: rules-github-pr.md
+- **GitHub PR operations**: rules-github-pr-automation.md
 - **Other workflows**: rules-github-*.md
 
 </context>
@@ -240,8 +240,6 @@ git push
 ## Related Standards
 
 - **PR Concepts**: rules-pr-concepts.md - Platform-neutral PR workflows
-- **GitHub PR Operations**: rules-github-pr.md - GitHub CLI commands
-- **Review Automation**: rules-github-review.md - Review cycle automation
-- **Rebase Workflows**: rules-github-rebase.md - Rebase safety checks
+- **GitHub PR Automation**: rules-github-pr-automation.md - PR creation, review, rebase, merge workflows
 - **Git Standards**: rules-git.md - Commit amending, conflict resolution
 - **Core Standards**: rules-core.md - PR restrictions, amend safety

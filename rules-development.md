@@ -50,7 +50,7 @@ Before creating a pull request:
 </required>
 
 **See**: @rules-pr-concepts.md - Pull request creation workflow
-**See**: @rules-github.md - GitHub-specific PR commands
+**See**: @rules-github-cli.md - GitHub-specific PR commands
 
 ## Package Management
 
@@ -121,5 +121,5 @@ Before creating a pull request:
 - **Python Standards**: @rules-python.md
 - **Testing**: @rules-testing.md
 - **Git Workflow**: @rules-git.md
-- **GitHub PRs**: @rules-github.md
+- **GitHub PRs**: @rules-github-cli.md
 - **Naming**: @rules-naming.md

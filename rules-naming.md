@@ -31,7 +31,7 @@ Standardized naming patterns and path reference conventions.
 
 ### Documentation Rules Files
 **Pattern**: `rules-[category].md` (underscore for multi-word categories)
-- Examples: `rules-semantic_integrity.md`, `rules-tools-mcp.md`
+- Examples: `rules-semantic_integrity.md`, `rules-github-pr-automation.md`
 
 ### Configuration Files
 Standard names: `.env`, `.env.sample`, `Dockerfile`, `docker-compose.yml`, `pyproject.toml`, `.gitignore`, `README.md`, `AGENTS.md`

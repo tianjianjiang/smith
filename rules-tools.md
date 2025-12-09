@@ -13,10 +13,62 @@ This document defines configuration standards for development tools, IDEs, and e
 - **Purpose**: Suppress INFO/DEBUG logs from external libraries during test execution
 - **Exception**: Use DEBUG level only when actively debugging specific issues
 
-## MCP & Steering (Optional)
-- **MCP Tools**: See @rules-tools-mcp.md for optional MCP tool usage
-- **Kiro Steering**: `.kiro/steering/` with `#[[file:<relative_file_name>]]` pattern
-- **Standards**: Follow personal coding standards, auto-approve common operations
+## MCP Tool Integration (Optional)
+
+<context>
+
+MCP (Model Context Protocol) tools provide enhanced capabilities for specific scenarios. Use them conditionally when their specific functionality is needed.
+
+**These tools are NOT required** for standard development work.
+
+</context>
+
+### Available MCP Tools
+
+**Serena MCP - Session Persistence**:
+- **Purpose**: Persist plans and context across sessions
+- **Use for**: Complex multi-session tasks, plan recovery, session restarts
+- **Configuration**: `.kiro/settings/mcp.json` or IDE settings
+- **Avoid**: Single-session tasks, simple bug fixes
+
+**Context7 - External Library Documentation**:
+- **Purpose**: Fetch documentation for external libraries
+- **Use for**: Unfamiliar NPM/PyPI packages, external API references
+- **Configuration**: MCP settings
+- **Avoid**: Libraries already in codebase, standard library usage
+
+**Fetch/WebFetch - Web Content Retrieval**:
+- **Purpose**: Retrieve web content from URLs
+- **Use for**: User-provided URLs, web documentation explicitly requested
+- **Configuration**: Use WebFetch tool if available
+- **Avoid**: Content available locally, speculative browsing
+
+### MCP Tool Reference
+
+| Tool | Purpose | When to Use | Configuration |
+|------|---------|-------------|---------------|
+| **Serena MCP** | Session persistence | Multi-session tasks, plan recovery | `.kiro/settings/mcp.json` |
+| **Context7** | External library docs | Unfamiliar libraries, API references | MCP settings |
+| **Fetch** | Web content retrieval | User-provided URLs, web documentation | Built-in or MCP |
+
+### MCP Best Practices
+
+<required>
+
+- MUST check codebase and local docs first before using MCP tools
+- MUST only use MCP tools when task specifically requires them or user requests
+- SHOULD activate tools conditionally based on task needs, not by default
+
+</required>
+
+<forbidden>
+
+- NEVER mandate Serena MCP for all plans (only for multi-session tasks)
+- NEVER require Context7 for all libraries (only for unfamiliar external ones)
+- NEVER load MCP tools unconditionally in every session
+- NEVER use MCP tools for simple single-session tasks
+
+</forbidden>
 
 ## Claude Code Patterns
 
@@ -72,7 +124,7 @@ Follow standards in @rules-*.md
 - **git**: Git repository operations
 - **web**: Web search and fetch capabilities
 
-**See**: @rules-tools-mcp.md for detailed MCP configuration
+**See**: MCP Tool Integration section above for MCP usage guidelines
 
 ## Structured Output Patterns
 
@@ -154,7 +206,7 @@ Follow test patterns in tests/unit/ and tests/integration/.
 ## Synchronization Points
 - **IDE Settings**: Automatically sync from master documents
 - **Project Files**: Reference personal standards instead of duplicating
-- **Optional Tools**: Configure MCP tools per `rules-tools-mcp.md` when needed
+- **Optional Tools**: Configure MCP tools conditionally based on task needs
 - **Tool Extensions**: Apply these standards in all generated content
 
 ## Update Workflow

@@ -6,8 +6,8 @@
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
 - **PR workflows**: See @rules-pr-concepts.md for platform-neutral pull request workflows, code reviews
-- **GitHub PR operations**: See @rules-github-pr.md for GitHub PR workflows
-- **GitHub operations**: See @rules-github.md for GitHub CLI commands
+- **GitHub PR operations**: See @rules-github-pr-automation.md for GitHub PR workflows
+- **GitHub operations**: See @rules-github-cli.md for GitHub CLI commands
 
 </context>
 
@@ -392,8 +392,8 @@ git merge --abort
 ## Related Standards
 
 - **PR Workflows**: @rules-pr-concepts.md - Platform-neutral PR concepts
-- **GitHub PR Operations**: @rules-github-pr.md - GitHub PR workflows
-- **GitHub Workflows**: @rules-github.md - GitHub CLI operations
+- **GitHub PR Operations**: @rules-github-pr-automation.md - GitHub PR workflows
+- **GitHub Workflows**: @rules-github-cli.md - GitHub CLI operations
 - **Development Workflow**: @rules-development.md - Daily practices
 - **Naming Conventions**: @rules-naming.md - Branch naming
 - **Personal Rules**: @rules-core.md - Core standards

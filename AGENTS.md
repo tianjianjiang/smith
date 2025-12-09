@@ -128,20 +128,20 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 
 **pull_request_workflows:**
 - Condition: Creating pull requests OR reviewing code OR merging PRs
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github.md, @rules-naming.md
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (if using GitHub), @rules-github-cli.md, @rules-naming.md
 
 **github_workflows:**
 - Condition: Using GitHub CLI OR creating PRs OR managing GitHub features
-- Load: @rules-github.md
+- Load: @rules-github-cli.md
 
 **modifying_existing_pr:**
 - Condition: Working on existing PR OR addressing review comments
-- Action: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github-review.md (review automation)
+- Action: Check for unaddressed review comments BEFORE making changes (see rules-github-pr-automation.md Pre-Work Check)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (if using GitHub)
 
 **pr_review_response:**
 - Condition: Responding to PR review feedback OR resolving review comments
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-review.md (review automation)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (review automation)
 
 **pre_commit_hooks:**
 - Condition: Pre-commit hooks modify files OR need to amend commits
@@ -165,7 +165,7 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 
 **context_management:**
 - Condition: Context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues
-- Load: @rules-context-principles.md (universal strategies), @rules-context-claude_code.md (if using Claude Code), @rules-context-cursor.md (if using Cursor), @rules-context-kiro.md (if using Kiro OR creating steering files)
+- Load: @rules-context-principles.md (universal strategies), @rules-context-platforms.md (platform-specific: Claude Code, Cursor, Kiro)
 - Action: Monitor context usage, apply selective retention strategies
 
 **prompt_engineering:**
@@ -174,26 +174,26 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 
 **stacked_pr_parent_merged:**
 - Condition: Parent PR in stack just merged OR working on child PR after parent merge
-- Load: @rules-pr-concepts.md (stacked PRs), @rules-github-rebase.md (rebase workflows), @rules-github-merge.md (post-merge cascade), @rules-git.md, @rules-github.md
+- Load: @rules-pr-stacked.md (stacked PR patterns), @rules-github-pr-automation.md (rebase + post-merge workflows), @rules-git.md, @rules-github-cli.md
 - Action: Check if child PRs need rebase, offer to update stack
 
 **pr_maintenance:**
 - Condition: Working on existing PR OR updating PR branch OR before requesting review
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (freshness + rebase)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (freshness + rebase)
 - Action: Check PR freshness relative to base branch, detect conflicts
 
 **pr_review_request:**
 - Condition: User asks to request PR review OR agent about to request review
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (pre-review freshness check)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (pre-review freshness check)
 - Action: Verify PR is up-to-date with base, all checks pass, no conflicts
 
 **agent_pr_creation:**
 - Condition: Agent about to create PR OR agent analyzing commits for PR
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-create.md (PR description generation)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr-automation.md (PR description generation)
 
 **post_merge_operations:**
 - Condition: PR just merged OR immediately after merge operation
-- Load: @rules-github-merge.md (post-merge workflows), @rules-github.md
+- Load: @rules-github-pr-automation.md (post-merge workflows), @rules-github-cli.md
 - Action: Check for dependent PRs, offer cascade updates, cleanup branches
 
 ### Reporting Format

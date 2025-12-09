@@ -4,7 +4,7 @@
 
 - **Scope**: GitHub platform-specific operations (gh CLI only)
 - **Load if**: Using GitHub CLI commands, GitHub-specific features
-- **Prerequisites**: @rules-git.md, @rules-pr-concepts.md, @rules-github-pr.md
+- **Prerequisites**: @rules-git.md, @rules-pr-concepts.md, @rules-github-pr-automation.md
 
 </metadata>
 
@@ -500,7 +500,7 @@ gh pr merge 123 --squash --delete-branch
 <related>
 
 - **PR Workflows**: @rules-pr-concepts.md - Platform-neutral PR concepts
-- **GitHub PR Operations**: @rules-github-pr.md - GitHub PR workflows
+- **GitHub PR Operations**: @rules-github-pr-automation.md - GitHub PR workflows
 - **GitHub Workflows**: @rules-github-*.md - GitHub automation workflows
 - **Git Operations**: @rules-git.md - Commits, branches, merges
 - **Development Workflow**: @rules-development.md - Quality gates, pre-PR checks
