@@ -54,11 +54,7 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 
 **Note**: OpenAI Cookbook provides examples of XML tag usage but does not maintain an official comprehensive list. The tags below are documented in cookbook examples and guides. Tags can be nested and customized based on specific use cases.
 
-<context>
-
 **Phrasal XML Tag Format**: GPT-5 family models use an implicit phrasal format for XML tags, where multi-word concepts are expressed as single tags with underscores connecting words (e.g., `<plan_tool_usage>`, `<context_gathering>`, `<code_editing_rules>`). This naming convention creates descriptive, self-documenting tag names that clearly indicate their purpose. While simple tags like `<task>` and `<instructions>` are also supported, the phrasal format is preferred for complex, domain-specific instructions in GPT-5/5.1 models.
-
-</context>
 
 | Tag                                      | Purpose                        | Example                                                |
 | ---------------------------------------- | ------------------------------ | ------------------------------------------------------ |
@@ -160,7 +156,7 @@ Analyze the attached financial report and identify the most important metrics.
 
 </required>
 
-**Note**: Harmony format uses special tokens like `<|start|>` and `<|end|>` which appear similar to XML but are actually single tokens in the tokenizer. In markdown tables, these are shown with escaped pipes (`<\|start\|>`) for display purposes, but in actual usage they appear as `<|start|>` without escaping.
+**Note**: Harmony format uses special tokens like `<|start|>` and `<|end|>` which appear similar to XML but are actually single tokens in the tokenizer. In Markdown tables, these are shown with escaped pipes (`<\|start\|>`) for display purposes, but in actual usage they appear as `<|start|>` without escaping.
 
 **Special Tokens**:
 
@@ -190,7 +186,7 @@ Analyze the attached financial report and identify the most important metrics.
 
 **Example Format**:
 
-```
+```text
 <|start|>user<|message|>What is 2 + 2?<|end|>
 <|start|>assistant<|channel|>analysis<|message|>User asks: "What is 2 + 2?" Simple arithmetic. Provide answer.<|end|>
 <|start|>assistant<|channel|>final<|message|>2 + 2 = 4.<|return|>
@@ -212,7 +208,7 @@ Analyze the attached financial report and identify the most important metrics.
 | `<constraints>`       | Behavioral limitations       | Verbosity, tone            |
 | `<context>`           | Background information       | Data, situation            |
 | `<task>`              | Specific user request        | The actual question        |
-| `<output_format>`     | Response structure           | JSON, markdown, etc.        |
+| `<output_format>`     | Response structure           | JSON, markdown, etc         |
 | `<rules>`             | Behavioral guidelines        | Cite sources, be objective |
 | `<planning_process>`  | Analysis steps               | Decomposition, strategy    |
 | `<error_handling>`    | Edge case responses          | Missing data handling      |
