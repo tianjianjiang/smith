@@ -18,12 +18,12 @@ Agent MUST proactively report to the user when rules are dynamically loaded or u
 - Report at the start of your response when rules are loaded/unloaded, before proceeding with the task
 - Include both the rule files and the context triggers that caused the load/unload
 - Format: List each rule file with its triggering context
-- If a referenced rule file does not exist, report that it was skipped gracefully (per AGENTS.md note)
+- If a referenced rule file does not exist, report that it was skipped gracefully
 
 **When to report:**
 - At session start: Report all initially loaded rules
 - During session: Report when context changes trigger new rule loads
-- During session: Report when context changes cause rule unloads (if agent explicitly unloads rules or detects they are no longer applicable)
+- During session: Report when context changes cause previously loaded rules to no longer apply (i.e., when rules are unloaded due to context changes)
 
 This notification is always active.
 
@@ -39,7 +39,7 @@ Rules loaded:
 - rules-core.md (triggered by: always_active context)
 
 Rules unloaded:
-- rules-git.md (context: git_operations no longer active)
+- rules-git.md (triggered by: git_operations context no longer active)
 ```
 
 **Example at session start:**
