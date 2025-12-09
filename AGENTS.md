@@ -199,7 +199,7 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 
 ### Reporting Format
 
-Active rules: [filename] (context: [context_name])
+Rules loaded: @[filename] (triggered by: [context_name] context)
 
 </rules>
 
