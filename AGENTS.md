@@ -8,24 +8,27 @@
 
 </metadata>
 
+<context>
+
+## About This File
+
+This file documents the AI agent's **context-aware capabilities** through dynamic rule loading. Rather than defining separate agent instances, the agent adapts its behavior by loading relevant rule sets based on the current context (file type, operation, task).
+
+**Key Concepts:**
+- **Contexts**: Operational modes (e.g., `python_development`, `git_operations`, `testing`)
+- **Rules**: Coding standards loaded for each context (e.g., @rules-python.md, @rules-git.md)
+- **Dynamic Loading**: Agent loads only relevant rules based on detected context
+- **Notifications**: Agent reports which rules are active before proceeding with tasks
+
+See the **Context-Aware Rule Loading** section below for the complete context-to-rules mapping.
+
+</context>
+
 <required>
 
 ## Rule Loading Notification
 
-Agent MUST proactively report to the user when rules are dynamically loaded or unloaded based on the context-to-rules mapping defined in the "Context-Aware Rule Loading" section below.
-
-**Notification requirements:**
-- Report at the start of your response when rules are loaded/unloaded, before proceeding with the task
-- Include both the rule files and the context triggers that caused the load/unload
-- Format: List each rule file with its triggering context
-- If a referenced rule file does not exist, report that it was skipped gracefully
-
-**When to report:**
-- At session start: Report all initially loaded rules
-- During session: Report when context changes trigger new rule loads
-- During session: Report when context changes cause previously loaded rules to no longer apply (i.e., when rules are unloaded due to context changes)
-
-This notification is always active.
+Agent MUST proactively report when rules are dynamically loaded or unloaded. See **Rule Loading Notification Protocol** in the `<instructions>` section below for complete requirements.
 
 </required>
 
@@ -211,11 +214,31 @@ Rules loaded: @[filename] (triggered by: [context_name] context)
 
 ## Rule Loading Notification Protocol
 
-1. **At session start**: Report baseline rules (@rules-core.md always active)
+Agent MUST proactively report to the user when rules are dynamically loaded or unloaded based on the context-to-rules mapping.
+
+### Notification Requirements
+
+- Report at the start of your response when rules are loaded/unloaded, before proceeding with the task
+- Include both the rule files and the context triggers that caused the load/unload
+- Format: List each rule file with its triggering context
+- If a referenced rule file does not exist, report that it was skipped gracefully
+
+### When to Report
+
+1. **At session start**: Report all initially loaded rules
 2. **Before EACH task**: Detect applicable contexts, report which rules are loaded
 3. **When context changes**: Report unloading old rules, loading new rules
-4. **Report format**: "Rules loaded: @[filename] (triggered by: [context_name] context)"
-5. **Then execute task** following those rules
+
+### Report Format
+
+"Rules loaded: @[filename] (triggered by: [context_name] context)"
+
+### Workflow
+
+1. **Detect context** from user request, file type, or current operation
+2. **Match context** to applicable rules using context-to-rules mapping
+3. **Report active rules** to user before proceeding with task
+4. **Execute task** following those rules
 
 </instructions>
 
