@@ -16,6 +16,9 @@
 <context>
 
 **Branch Structure:**
+
+This section outlines the branch *types* used in the workflow. See "Branch Naming Conventions" below for the *naming patterns* for each type.
+
 - `main` - Production-ready code
 - `develop` - Integration branch for features
 - `feat/*` - Feature branches from develop (MUST use `feat/` prefix for conventional commit type `feat`)
@@ -43,7 +46,7 @@
 
 <required>
 
-Branch names MUST follow `type/descriptive_name` pattern where `type` matches conventional commit type.
+Names MUST follow the `type/descriptive_name` pattern, where `type` matches the conventional commit type.
 
 Branch type prefix MUST match the conventional commit type used in commits.
 
