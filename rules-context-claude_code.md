@@ -5,16 +5,11 @@
 - **Scope**: Claude Code-specific context management commands and strategies
 - **Load if**: Using Claude Code AND (context window >70% OR optimizing context usage)
 - **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
-
-</metadata>
-
-<dependencies>
-
 - **Requires**: Understanding of Claude Code /compact and /clear commands
 - **Provides**: Selective retention patterns, context optimization strategies, persistent configuration patterns
 - **Research**: Anthropic Claude Code documentation (accessed 2025-12), Claude Code best practices, Tool Search Tool
 
-</dependencies>
+</metadata>
 
 <context>
 

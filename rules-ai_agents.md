@@ -5,16 +5,11 @@
 - **Scope**: Steering coding agents (Claude Code, GitHub Copilot, AI pair programming)
 - **Load if**: Working with AI agents for development tasks
 - **Prerequisites**: @rules-core.md, @rules-development.md
-
-</metadata>
-
-<dependencies>
-
 - **Requires**: Understanding of prompt engineering, Constitutional AI principles
 - **Provides**: Agent steering patterns, efficiency optimization, quality assurance
 - **Research**: Anthropic (Claude Code, Prompt Caching, Constitutional AI), OpenAI (o1/o3, Structured Outputs), Microsoft (LLMLingua)
 
-</dependencies>
+</metadata>
 
 ## Exploration-Before-Implementation Pattern
 
@@ -215,21 +210,32 @@ Agent: *marks #1 as completed, #2 as in_progress*
 **Strategy**: Persistent documentation and structured context
 
 **AGENTS.md pattern**:
-- Progressive disclosure with `<trigger>` contexts
+- Progressive disclosure with context-aware rule loading
 - Metadata section for scope and prerequisites
-- Dependencies section for requirements
+- Context-to-rules mapping for dynamic loading
 - Related section for navigation
 
 **Example structure**:
 ```markdown
-<trigger context="authentication">
-**IF** implementing auth OR session management OR user identity:
-**LOAD**: `$WORKSPACE_ROOT/docs/auth/AGENTS.md`
-</trigger>
+<context>
+
+<plan_tool_usage>
+
+<rules>
+
+**authentication:**
+- Condition: Implementing auth OR session management OR user identity
+- Load: `$WORKSPACE_ROOT/docs/auth/AGENTS.md`
+
+</rules>
+
+</plan_tool_usage>
+
+</context>
 ```
 
 **Prompt caching optimization**:
-- First ~1024 tokens MUST be static (metadata, trigger definitions)
+- First ~1024 tokens MUST be static (metadata, context-to-rules mapping)
 - Dynamic content (code examples, evolving documentation) goes after cache breakpoints
 - Reuse cached prefix across sessions (90% cost reduction)
 
@@ -352,42 +358,64 @@ Recent git commits, current file changes, session-specific todos
 
 ### AGENTS.md Structure for Caching
 
-**Cache-friendly template**:
+**Cache-friendly template** (using only documented XML tags):
 ```markdown
 <!-- Section 1: Metadata (STATIC - cached) -->
 <metadata>
 **Scope**: ...
 **Load if**: ...
 **Prerequisites**: ...
-</metadata>
-
-<!-- Section 2: Dependencies (STATIC - cached) -->
-<dependencies>
 **Requires**: ...
 **Provides**: ...
-</dependencies>
+</metadata>
 
-<!-- Section 3: Triggers (STATIC - cached) -->
-<trigger context="...">
-**IF** ... **LOAD**: ...
-</trigger>
+<!-- Section 2: Guiding Principles (STATIC - cached) -->
+<guiding_principles>
+Design principles (DRY, KISS, YAGNI, SOLID)
+</guiding_principles>
 
-<!-- Section 4: Core Concepts (STATIC - cached) -->
+<!-- Section 3: Context-Aware Rule Loading (STATIC - cached) -->
+<context>
+
+<plan_tool_usage>
+
+<constraints>
+Requirements for rule loading
+</constraints>
+
+<rules>
+Context-to-rules mapping
+</rules>
+
+</plan_tool_usage>
+
+</context>
+
+<!-- Section 4: Notification Protocol (STATIC - cached) -->
+<instructions>
+Rule loading notification protocol
+</instructions>
+
+<!-- Section 5: Core Concepts (STATIC - cached) -->
+<required>
 ## Validation Rules
-<forbidden>...</forbidden>
-<required>...</required>
+Critical NEVER/ALWAYS rules
+</required>
+
+<forbidden>
+Anti-patterns and prohibited actions
+</forbidden>
 
 <!-- CACHE BREAKPOINT (~1024 tokens) -->
 
-<!-- Section 5: Examples (DYNAMIC - not cached) -->
+<!-- Section 6: Examples (DYNAMIC - not cached) -->
+<examples>
 ## Common Patterns
 [Code examples that evolve with codebase]
+</examples>
 
-<!-- Section 6: Related (SEMI-STATIC - cached with longer TTL) -->
-<related>
-**Parent**: ...
-**Peers**: ...
-</related>
+<!-- Section 7: Related (included in examples or metadata) -->
+References to related files
 ```
 
 ### Optimization Checklist

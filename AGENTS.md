@@ -12,7 +12,7 @@
 
 ## Rule Loading Notification
 
-Agent MUST proactively report to the user when rules are dynamically loaded or unloaded based on context triggers defined in the `<context_triggers>` section below.
+Agent MUST proactively report to the user when rules are dynamically loaded or unloaded based on the context-to-rules mapping defined in the "Context-Aware Rule Loading" section below.
 
 **Notification requirements:**
 - Report at the start of your response when rules are loaded/unloaded, before proceeding with the task
@@ -90,170 +90,134 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 
 </context>
 
-<context_triggers>
+<context>
 
-<!-- Load these files ONLY if the specific context applies -->
+## Context-Aware Rule Loading
 
-<trigger context="python_development">
+<plan_tool_usage>
 
-- **IF** writing/modifying Python code OR running python tests:
-- **LOAD**: @rules-python.md
+### Workflow
 
-</trigger>
+1. **Detect context** from user request, file type, or current operation
+2. **Match context** to applicable rules using mappings below
+3. **Report active rules** to user before proceeding with task
+4. **Execute task** following those rules
 
-<trigger context="git_operations">
+<constraints>
 
-- **IF** performing git commits, merges, or branch management:
-- **LOAD**: @rules-git.md
-- **LOAD**: @rules-naming.md
+- **MUST** report which rules are loaded before executing any task
+- **MUST** match user context to appropriate rule sets
+- **MUST** report both loading and unloading when context changes
+- **MUST** gracefully skip if referenced rule file does not exist
 
-</trigger>
+</constraints>
 
-<trigger context="pull_request_workflows">
+<rules>
 
-- **IF** creating pull requests OR reviewing code OR merging PRs:
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-pr.md (if using GitHub)
-- **LOAD**: @rules-github.md
-- **LOAD**: @rules-naming.md
+### Context-to-Rules Mapping
 
-</trigger>
+**always_active:**
+- @rules-core.md (Critical NEVER/ALWAYS rules)
 
-<trigger context="github_workflows">
+**python_development:**
+- Condition: Writing/modifying Python code OR running Python tests
+- Load: @rules-python.md
 
-- **IF** using GitHub CLI OR creating PRs OR managing GitHub features:
-- **LOAD**: @rules-github.md
+**git_operations:**
+- Condition: Performing git commits, merges, or branch management
+- Load: @rules-git.md, @rules-naming.md
 
-</trigger>
+**pull_request_workflows:**
+- Condition: Creating pull requests OR reviewing code OR merging PRs
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github.md, @rules-naming.md
 
-<trigger context="modifying_existing_pr">
+**github_workflows:**
+- Condition: Using GitHub CLI OR creating PRs OR managing GitHub features
+- Load: @rules-github.md
 
-- **IF** working on existing PR OR addressing review comments:
-- **ACTION**: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-pr.md (if using GitHub)
-- **LOAD**: @rules-github-review.md (review automation)
+**modifying_existing_pr:**
+- Condition: Working on existing PR OR addressing review comments
+- Action: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github-review.md (review automation)
 
-</trigger>
+**pr_review_response:**
+- Condition: Responding to PR review feedback OR resolving review comments
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-review.md (review automation)
 
-<trigger context="pr_review_response">
+**pre_commit_hooks:**
+- Condition: Pre-commit hooks modify files OR need to amend commits
+- Load: @rules-github-utils.md (hook coordination), @rules-git.md
 
-- **IF** responding to PR review feedback OR resolving review comments:
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-review.md (review automation)
+**testing:**
+- Condition: Writing or running tests (any language)
+- Load: @rules-testing.md
 
-</trigger>
+**new_project:**
+- Condition: Initializing a new project
+- Load: @rules-development.md, @rules-naming.md
 
-<trigger context="pre_commit_hooks">
+**ide_configuration:**
+- Condition: Configuring editor/IDE settings
+- Load: @rules-tools.md, @rules-ide_mappings.md
 
-- **IF** pre-commit hooks modify files OR need to amend commits:
-- **LOAD**: @rules-github-utils.md (hook coordination)
-- **LOAD**: @rules-git.md
+**ai_agent_interaction:**
+- Condition: Using Claude Code OR GitHub Copilot OR AI pair programming
+- Load: @rules-ai_agents.md
 
-</trigger>
+**context_management:**
+- Condition: Context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues
+- Load: @rules-context-principles.md (universal strategies), @rules-context-claude_code.md (if using Claude Code), @rules-context-cursor.md (if using Cursor), @rules-context-kiro.md (if using Kiro OR creating steering files)
+- Action: Monitor context usage, apply selective retention strategies
 
-<trigger context="testing">
+**prompt_engineering:**
+- Condition: Writing or reviewing AI prompts, AGENTS.md files, or rules documentation
+- Load: @rules-xml_tags.md
 
-- **IF** writing or running tests (any language):
-- **LOAD**: @rules-testing.md
+**stacked_pr_parent_merged:**
+- Condition: Parent PR in stack just merged OR working on child PR after parent merge
+- Load: @rules-pr-concepts.md (stacked PRs), @rules-github-rebase.md (rebase workflows), @rules-github-merge.md (post-merge cascade), @rules-git.md, @rules-github.md
+- Action: Check if child PRs need rebase, offer to update stack
 
-</trigger>
+**pr_maintenance:**
+- Condition: Working on existing PR OR updating PR branch OR before requesting review
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (freshness + rebase)
+- Action: Check PR freshness relative to base branch, detect conflicts
 
-<trigger context="new_project">
+**pr_review_request:**
+- Condition: User asks to request PR review OR agent about to request review
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (pre-review freshness check)
+- Action: Verify PR is up-to-date with base, all checks pass, no conflicts
 
-- **IF** initializing a new project:
-- **LOAD**: @rules-development.md
-- **LOAD**: @rules-naming.md
+**agent_pr_creation:**
+- Condition: Agent about to create PR OR agent analyzing commits for PR
+- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-create.md (PR description generation)
 
-</trigger>
+**post_merge_operations:**
+- Condition: PR just merged OR immediately after merge operation
+- Load: @rules-github-merge.md (post-merge workflows), @rules-github.md
+- Action: Check for dependent PRs, offer cascade updates, cleanup branches
 
-<trigger context="ide_configuration">
+### Reporting Format
 
-- **IF** configuring editor/IDE settings:
-- **LOAD**: @rules-tools.md
-- **LOAD**: @rules-ide_mappings.md
+Active rules: [filename] (context: [context_name])
 
-</trigger>
+</rules>
 
-<trigger context="ai_agent_interaction">
+</plan_tool_usage>
 
-- **IF** using Claude Code OR GitHub Copilot OR AI pair programming:
-- **LOAD**: @rules-ai_agents.md
+</context>
 
-</trigger>
+<instructions>
 
-<trigger context="context_management">
+## Rule Loading Notification Protocol
 
-- **IF** context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues:
-- **LOAD**: @rules-context-principles.md (universal strategies)
-- **LOAD**: @rules-context-claude_code.md (if using Claude Code)
-- **LOAD**: @rules-context-cursor.md (if using Cursor)
-- **LOAD**: @rules-context-kiro.md (if using Kiro OR creating steering files)
-- **ACTION**: Monitor context usage, apply selective retention strategies
+1. **At session start**: Report baseline rules (@rules-core.md always active)
+2. **Before EACH task**: Detect applicable contexts, report which rules are loaded
+3. **When context changes**: Report unloading old rules, loading new rules
+4. **Report format**: "Rules loaded: @[filename] (triggered by: [context_name] context)"
+5. **Then execute task** following those rules
 
-</trigger>
-
-<trigger context="prompt_engineering">
-
-- **IF** writing or reviewing AI prompts, AGENTS.md files, or rules documentation:
-- **LOAD**: @rules-xml_tags.md
-
-</trigger>
-
-<trigger context="always_active">
-
-- **ALWAYS LOAD**: @rules-core.md (Critical NEVER/ALWAYS rules)
-
-</trigger>
-
-<trigger context="stacked_pr_parent_merged">
-
-- **IF** parent PR in stack just merged OR working on child PR after parent merge:
-- **LOAD**: @rules-pr-concepts.md (stacked PRs)
-- **LOAD**: @rules-github-rebase.md (rebase workflows)
-- **LOAD**: @rules-github-merge.md (post-merge cascade)
-- **LOAD**: @rules-git.md
-- **LOAD**: @rules-github.md
-- **ACTION**: Check if child PRs need rebase, offer to update stack
-
-</trigger>
-
-<trigger context="pr_maintenance">
-
-- **IF** working on existing PR OR updating PR branch OR before requesting review:
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-rebase.md (freshness + rebase)
-- **ACTION**: Check PR freshness relative to base branch, detect conflicts
-
-</trigger>
-
-<trigger context="pr_review_request">
-
-- **IF** user asks to request PR review OR agent about to request review:
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-rebase.md (pre-review freshness check)
-- **ACTION**: Verify PR is up-to-date with base, all checks pass, no conflicts
-
-</trigger>
-
-<trigger context="agent_pr_creation">
-
-- **IF** agent about to create PR OR agent analyzing commits for PR:
-- **LOAD**: @rules-pr-concepts.md (platform-neutral concepts)
-- **LOAD**: @rules-github-create.md (PR description generation)
-
-</trigger>
-
-<trigger context="post_merge_operations">
-
-- **IF** PR just merged OR immediately after merge operation:
-- **LOAD**: @rules-github-merge.md (post-merge workflows)
-- **LOAD**: @rules-github.md
-- **ACTION**: Check for dependent PRs, offer cascade updates, cleanup branches
-
-</trigger>
-
-</context_triggers>
+</instructions>
 
 <note>
 
