@@ -16,9 +16,12 @@
 <context>
 
 **Branch Structure:**
+
+This section outlines the branch *types* used in the workflow. See "Branch Naming Conventions" below for the *naming patterns* for each type.
+
 - `main` - Production-ready code
 - `develop` - Integration branch for features
-- `feature/*` - Feature branches from develop
+- `feat/*` - Feature branches from develop (MUST use `feat/` prefix for conventional commit type `feat`)
 - `hotfix/*` - Emergency fixes from main
 
 </context>
@@ -41,40 +44,23 @@
 
 ### Branch Naming Conventions
 
-<formatting>
+<required>
 
-**Pattern**: `type/descriptive_name` (e.g., `feature/user_authentication`, `fix/JIRA-1234-query_processor`)
+Names MUST follow the `type/descriptive_name` pattern, where `type` matches the conventional commit type.
 
-**Separator Rules** (see [Dash on Wikipedia](https://en.wikipedia.org/wiki/Dash)):
+Branch type prefix MUST match the conventional commit type used in commits.
 
-| Separator | Use Case | Example |
-|-----------|----------|---------|
-| Underscore (_) | Multi-word phrases/concepts | `user_authentication`, `semantic_search` |
-| Hyphen (-) | Parts/subsets of a whole | `auth-login`, `auth-password` (login/password are parts of auth) |
-| Hyphen (-) | Co-existing/differentiation | `api-rest`, `api-graphql` |
-| Hyphen (-) | ISO dates | `2025-01-15` |
-| Hyphen (-) | Ticket IDs | `JIRA-1234`, `GH-567` |
-
-</formatting>
+</required>
 
 <examples>
 
-- `docs/enhance_agents_md` (multi-word concept)
-- `feature/user_authentication` (multi-word concept)
-- `feature/auth-login` (login is subset of auth module)
-- `feature/api-rest` (rest is a variant/type of api)
-- `fix/JIRA-1234-query_processor` (ticket ID + concept)
-- `feature/GH-123-semantic_search-2025-01-15` (ticket + concept + date)
+- `feat/user_authentication`
+- `fix/JIRA-1234-query_processor`
+- `docs/enhance_agents_md`
 
 </examples>
 
-<forbidden>
-
-- `docs/enhance-agents-md` (hyphen for multi-word phrase - should be underscore)
-- `feature/add-semantic-search` (hyphens joining words in a phrase)
-- `fix/query-processor-null-check` (excessive hyphens for simple phrase)
-
-</forbidden>
+See [Naming Standards]($HOME/.smith/rules-naming.md) for complete branch naming conventions including type prefixes, separator rules, and examples.
 
 ## Commit Standards
 
@@ -256,11 +242,11 @@ Workflow for new work:
 4. Create PR (recommended)
 
 ```sh
-git checkout -b "type/descriptive_name"
+git checkout -b "feat/user_authentication"
 git add .
-git commit -S -m "type: description"
-git push -u origin "type/descriptive_name"
-gh pr create --title "type: description" --body "..."
+git commit -S -m "feat: add user authentication"
+git push -u origin "feat/user_authentication"
+gh pr create --title "feat: add user authentication" --body "..."
 ```
 
 </required>
@@ -271,7 +257,7 @@ gh pr create --title "type: description" --body "..."
 ```sh
 git checkout develop
 git pull origin develop
-git merge --no-ff feature/my_feature
+git merge --no-ff feat/my_feature
 git push origin develop
 ```
 
@@ -303,8 +289,8 @@ git pull origin develop
 
 **Push branches:**
 ```sh
-git push origin feature/my_feature
-git push -u origin feature/my_feature  # First push with tracking
+git push origin feat/my_feature
+git push -u origin feat/my_feature  # First push with tracking
 ```
 
 <forbidden>
@@ -316,7 +302,7 @@ git push -u origin feature/my_feature  # First push with tracking
 
 **Force push (only for personal feature branches):**
 ```sh
-git push --force-with-lease origin feature/my_feature
+git push --force-with-lease origin feat/my_feature
 ```
 
 ### Post-Merge Local Sync
@@ -370,7 +356,7 @@ git stash apply stash@{0}
 ```sh
 git log --oneline --graph --decorate
 git log --author="name" --since="2 weeks ago"
-git diff main...feature/branch  # Changes since branching
+git diff main...feat/branch  # Changes since branching
 ```
 
 **Interactive rebase (local only):**
