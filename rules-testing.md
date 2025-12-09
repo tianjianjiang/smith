@@ -22,8 +22,8 @@
 <required>
 
 - MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
-- MUST follow test file naming conventions - see [Naming Standards]($HOME/.smith/rules-naming.md#test-files)
-- MUST use pytest functions (not classes) - see [Python Standards]($HOME/.smith/rules-python.md)
+- MUST follow test file naming conventions - see [Naming Standards](@rules-naming.md#test-files)
+- MUST use pytest functions (not classes) - see @rules-python.md
 - MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
 
 </required>
@@ -36,7 +36,7 @@
 
 </context>
 
-**For naming patterns**: See [Naming Standards]($HOME/.smith/rules-naming.md) for test file and JSON test data naming
+**For naming patterns**: See @rules-naming.md for test file and JSON test data naming
 
 ## Test Execution
 
@@ -49,7 +49,7 @@ poetry run pytest tests/integration/ -v
 
 <required>
 
-- MUST use virtual env runner for pytest - see [Python Standards]($HOME/.smith/rules-python.md#virtual-environment-execution)
+- MUST use virtual env runner for pytest - see [Python Standards](@rules-python.md#virtual-environment-execution)
 - MUST run unit and integration tests separately if mirrored structure exists
 
 </required>
@@ -60,7 +60,7 @@ poetry run pytest tests/integration/ -v
 
 </forbidden>
 
-**For pytest execution patterns, .env loading**: See [Python Standards]($HOME/.smith/rules-python.md)
+**For pytest execution patterns, .env loading**: See @rules-python.md
 
 ## Environment Configuration
 
@@ -77,8 +77,8 @@ poetry run pytest tests/integration/ -v
 
 <related>
 
-- **Python Testing**: [Python Standards]($HOME/.smith/rules-python.md) - Pytest patterns
-- **Development Workflow**: [Development Standards]($HOME/.smith/rules-development.md) - Code quality
-- **Naming Conventions**: [Naming Standards]($HOME/.smith/rules-naming.md) - Test file naming
+- **Python Testing**: @rules-python.md - Pytest patterns
+- **Development Workflow**: @rules-development.md - Code quality
+- **Naming Conventions**: @rules-naming.md - Test file naming
 
 </related>

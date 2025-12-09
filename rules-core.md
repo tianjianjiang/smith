@@ -88,7 +88,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 ## AI Agent Output Standards
 
-**For AI agent workflows and principles**: See `$HOME/.smith/rules-ai_agents.md` for comprehensive coverage:
+**For AI agent workflows and principles**: See @rules-ai_agents.md for comprehensive coverage:
 - Constitutional AI principles (Helpful, Honest, Harmless framework)
 - Exploration-before-implementation patterns
 - Code quality and security requirements
@@ -98,7 +98,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 <required>
 
-**Rule Loading Notification**: Agent MUST proactively report when rules are dynamically loaded or unloaded, including both the rule files and the context triggers that caused the changes. See `$HOME/.smith/AGENTS.md` for detailed specification. This notification is always active.
+**Rule Loading Notification**: Agent MUST proactively report when rules are dynamically loaded or unloaded, including both the rule files and the context triggers that caused the changes. See @AGENTS.md for detailed specification. This notification is always active.
 
 </required>
 
@@ -109,29 +109,29 @@ Fundamental coding rules applying as personal standards across all languages, co
 - `$WORKSPACE_ROOT/` for workspace-relative paths
 - `$REPO_ROOT/` for repository-relative paths
 
-**See:** [Naming Conventions]($HOME/.smith/rules-naming.md) for detailed path standards
+**See:** @rules-naming.md for detailed path standards
 
 <related>
 
 ## Language-Specific Standards
 
 For language-specific rules, see:
-- **Python**: [Python Standards]($HOME/.smith/rules-python.md)
+- **Python**: @rules-python.md
 - **TypeScript/JavaScript**: (Create rules-typescript.md as needed)
 
 ## Development Workflow
 
 For daily workflow, code quality checks, and tool usage:
-- [Development Standards]($HOME/.smith/rules-development.md)
-- [Testing Standards]($HOME/.smith/rules-testing.md)
+- @rules-development.md
+- @rules-testing.md
 
 ## Version Control
 
 For Git and GitHub workflows:
-- [Git Standards]($HOME/.smith/rules-git.md)
-- [PR Concepts]($HOME/.smith/rules-pr-concepts.md) - Platform-neutral concepts
-- [GitHub PR Operations]($HOME/.smith/rules-github-pr.md)
-- [GitHub Workflows]($HOME/.smith/rules-github.md)
+- @rules-git.md
+- @rules-pr-concepts.md - Platform-neutral concepts
+- @rules-github-pr.md
+- @rules-github.md
 
 </related>
 

@@ -4,7 +4,7 @@
 
 - **Scope**: Cursor-specific context management commands and strategies
 - **Load if**: Using Cursor AND (context window approaching limit OR optimizing context usage)
-- **Prerequisites**: `$HOME/.smith/rules-context-principles.md`, `$HOME/.smith/rules-ai_agents.md`
+- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
 
 </metadata>
 
@@ -457,7 +457,7 @@ Better: Grep for "authentication" → get file:line → Read specific section
 - External API conventions
 - Reference to personal standards
 
-**What goes in $HOME/.smith/** (personal standards):
+**What goes in `@`-prefixed personal standards** (e.g., `@AGENTS.md`, `@rules-*.md`):
 - Universal coding principles (DRY, KISS, YAGNI)
 - Language-specific style (Python, TypeScript, etc.)
 - Git workflow preferences
@@ -470,8 +470,8 @@ Better: Grep for "authentication" → get file:line → Read specific section
 # Project: MyApp Cursor Rules
 
 Follow personal coding standards from:
-- $HOME/.smith/AGENTS.md (entry point for all personal standards)
-- $HOME/.smith/rules-core.md (critical NEVER/ALWAYS rules)
+- @AGENTS.md (entry point for all personal standards)
+- @rules-core.md (critical NEVER/ALWAYS rules)
 
 ## Project Stack
 
@@ -497,7 +497,7 @@ Follow personal coding standards from:
 
 ## Personal Standards (via .smith)
 
-Follow standards defined in $HOME/.smith/AGENTS.md
+Follow standards defined in @AGENTS.md
 
 This loads context-triggered rules:
 - TypeScript: rules-development.md (coding style, formatting)
@@ -576,7 +576,7 @@ async login(@Body() dto: LoginDto) {
 [Embeds git workflow - 300 lines]
 
 Result: High token usage every session, duplicates personal standards
-Better: Reference $HOME/.smith/AGENTS.md, add only project-specific patterns
+Better: Reference @AGENTS.md, add only project-specific patterns
 ```
 
 </examples>
@@ -585,7 +585,7 @@ Better: Reference $HOME/.smith/AGENTS.md, add only project-specific patterns
 
 - NEVER duplicate .smith rules in .cursorrules (reference instead)
 - NEVER put personal preferences in .cursorrules (use .smith)
-- NEVER forget to reference $HOME/.smith/AGENTS.md as entry point
+- NEVER forget to reference @AGENTS.md as entry point
 - NEVER put sensitive data in .cursorrules (it's version controlled)
 
 </forbidden>
@@ -748,10 +748,10 @@ Features documented here are current as of the version noted above. Cursor 2.0 i
 
 <related>
 
-- **Shared principles**: `$HOME/.smith/rules-context-principles.md` (universal strategies)
-- **Other platforms**: `$HOME/.smith/rules-context-claude_code.md`, `$HOME/.smith/rules-context-kiro.md`
-- **Parent**: `$HOME/.smith/rules-ai_agents.md` (AI agent interaction patterns)
-- **Foundation**: `$HOME/.smith/rules-core.md` (critical NEVER/ALWAYS rules)
+- **Shared principles**: @rules-context-principles.md (universal strategies)
+- **Other platforms**: @rules-context-claude_code.md, @rules-context-kiro.md
+- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
+- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
 - **Research**: Cursor documentation, Cursor community forum, Agent Mode capabilities
 
 </related>

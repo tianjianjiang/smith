@@ -94,7 +94,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 ```markdown
 **Label**: `$WORKSPACE_ROOT/path/to/file.md` - Description
 **Label**: `$REPO_ROOT/path/to/file.md` - Description
-**Label**: `$HOME/.smith/rules-core.md` - Description
+**Label**: @rules-core.md - Description
 ```
 
 **Why**: Coding agents parse file paths from code blocks reliably. Markdown links with path variables don't work (agents treat `$REPO_ROOT` as literal directory name).
@@ -102,7 +102,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 **Example**:
 ```markdown
 **Core Rules**: `$WORKSPACE_ROOT/docs/rules-core.md` - NEVER/ALWAYS standards
-**Python**: `$HOME/.smith/rules-python.md` - Imports, types, pytest
+**Python**: @rules-python.md - Imports, types, pytest
 ```
 
 ### Usage by Context
@@ -135,7 +135,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 
 ## IDE-Specific Mappings
 
-See [IDE Mappings](rules-ide_mappings.md) for VS Code, PyCharm, Kiro variable syntax.
+See @rules-ide_mappings.md for VS Code, PyCharm, Kiro variable syntax.
 
 ## Consistency Requirements
 
