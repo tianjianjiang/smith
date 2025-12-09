@@ -10,7 +10,7 @@ git clone https://github.com/tianjianjiang/smith.git $HOME/.smith
 
 See [AGENTS.md](AGENTS.md) for context-triggered loading rules and file organization.
 
-Point your AI coding tool to `$HOME/.smith/AGENTS.md`:
+Point your AI coding tool to @AGENTS.md (the `@` prefix is a shorthand notation for file imports that auto-loads relative to project context):
 
 | Tool | Global | Project |
 |------|--------|---------|
@@ -40,7 +40,7 @@ Point your AI coding tool to `$HOME/.smith/AGENTS.md`:
 ### Example
 
 ```sh
-mkdir -p ~/.claude && echo '**Standards**: $HOME/.smith/AGENTS.md' > ~/.claude/CLAUDE.md
+mkdir -p ~/.claude && echo '**Standards**: @AGENTS.md' > ~/.claude/CLAUDE.md
 ```
 
 ### XDG-Style Global Config

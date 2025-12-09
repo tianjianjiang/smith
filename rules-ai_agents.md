@@ -4,7 +4,7 @@
 
 - **Scope**: Steering coding agents (Claude Code, GitHub Copilot, AI pair programming)
 - **Load if**: Working with AI agents for development tasks
-- **Prerequisites**: `$HOME/.smith/rules-core.md`, `$HOME/.smith/rules-development.md`
+- **Prerequisites**: @rules-core.md, @rules-development.md
 
 </metadata>
 
@@ -1179,8 +1179,8 @@ Agent workflow:
 
 <related>
 
-- **Foundation**: `$HOME/.smith/rules-core.md` (core principles), `$HOME/.smith/rules-development.md` (workflow)
-- **Practices**: `$HOME/.smith/rules-pr-concepts.md` (PR concepts), `$HOME/.smith/rules-github-agent-*.md` (agent PR workflows), `$HOME/.smith/rules-tools.md` (tool configuration)
+- **Foundation**: @rules-core.md (core principles), @rules-development.md (workflow)
+- **Practices**: @rules-pr-concepts.md (PR concepts), @rules-github-agent-*.md (agent PR workflows), @rules-tools.md (tool configuration)
 - **Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
 
 </related>

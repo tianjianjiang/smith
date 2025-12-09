@@ -358,8 +358,8 @@ Do NOT use XML-like placeholders:
 
 <related>
 
-- **Naming Conventions**: `$HOME/.smith/rules-naming.md` - General naming rules
-- **Git Standards**: `$HOME/.smith/rules-git.md` - Branch and commit naming
-- **AI Agent Guidelines**: `$HOME/.smith/rules-ai_agents.md` - Agent interaction patterns
+- **Naming Conventions**: @rules-naming.md - General naming rules
+- **Git Standards**: @rules-git.md - Branch and commit naming
+- **AI Agent Guidelines**: @rules-ai_agents.md - Agent interaction patterns
 
 </related>

@@ -16,7 +16,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### Platform-Neutral PR Concepts
 
-**File**: `$HOME/.smith/rules-pr-concepts.md` (~580 lines)
+**File**: @rules-pr-concepts.md (~580 lines)
 
 **Contains**:
 - PR Creation (title format, body template, requirements)
@@ -28,7 +28,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### GitHub Operations
 
-**File**: `$HOME/.smith/rules-github-pr.md` (~112 lines)
+**File**: @rules-github-pr.md (~112 lines)
 
 **Contains**:
 - Branch deletion with stacked PRs
@@ -36,7 +36,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ### Automation Workflows
 
-**File**: `$HOME/.smith/rules-github-review.md` (~443 lines)
+**File**: @rules-github-review.md (~443 lines)
 
 **Contains**:
 - Review Cycle Automation
@@ -45,7 +45,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Inline review thread handling (MCP + gh CLI)
 - Auto-merge criteria verification
 
-**File**: `$HOME/.smith/rules-github-create.md` (~246 lines)
+**File**: @rules-github-create.md (~246 lines)
 
 **Contains**:
 - Creating Pull Requests
@@ -53,7 +53,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Full diff analysis and ticket integration
 - Common mistakes and PR analysis checklist
 
-**File**: `$HOME/.smith/rules-github-rebase.md` (~467 lines)
+**File**: @rules-github-rebase.md (~467 lines)
 
 **Contains**:
 - Proactive Rebase Workflows
@@ -63,14 +63,14 @@ This file has been split into multiple focused files for better lazy-loading eff
 - Multi-tier staleness thresholds
 - AI conflict resolution
 
-**File**: `$HOME/.smith/rules-github-merge.md` (~126 lines)
+**File**: @rules-github-merge.md (~126 lines)
 
 **Contains**:
 - Post-Merge Workflow
 - Child PR detection and cascade updates
 - Stacked PR cascade examples
 
-**File**: `$HOME/.smith/rules-github-utils.md` (~242 lines)
+**File**: @rules-github-utils.md (~242 lines)
 
 **Contains**:
 - Pre-Commit Hook Coordination
@@ -89,7 +89,7 @@ This file has been split into multiple focused files for better lazy-loading eff
 
 ## AGENTS.md Trigger Updates
 
-The following trigger contexts have been updated in `$HOME/.smith/AGENTS.md`:
+The following trigger contexts have been updated in @AGENTS.md:
 
 - `pull_request_workflows` → loads `rules-pr-concepts.md` + `rules-github-pr.md`
 - `modifying_existing_pr` → loads `rules-pr-concepts.md` + `rules-github-pr.md`

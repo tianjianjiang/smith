@@ -4,7 +4,7 @@
 
 - **Scope**: Claude Code-specific context management commands and strategies
 - **Load if**: Using Claude Code AND (context window >70% OR optimizing context usage)
-- **Prerequisites**: `$HOME/.smith/rules-context-principles.md`, `$HOME/.smith/rules-ai_agents.md`
+- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
 
 </metadata>
 
@@ -398,7 +398,7 @@ Agent SHOULD leverage Tool Search Tool:
 1. `$WORKSPACE_ROOT/.claude/CLAUDE.md` (project-specific, highest priority)
 2. `$HOME/.claude/CLAUDE.md` (user global, applies to all projects)
 
-**Relationship to .smith rules**: CLAUDE.md references rules from `$HOME/.smith/` for context-triggered detailed guidelines.
+**Relationship to .smith rules**: CLAUDE.md references rules from `@` for context-triggered detailed guidelines.
 
 </context>
 
@@ -408,7 +408,7 @@ Agent SHOULD leverage Tool Search Tool:
 
 **What goes in CLAUDE.md** (always active):
 - Critical guardrails (NEVER/ALWAYS rules)
-- Reference to $HOME/.smith/AGENTS.md for detailed standards
+- Reference to @AGENTS.md for detailed standards
 - Project-specific behavioral guidelines
 - Workflow preferences (TDD, commit frequency, etc.)
 
@@ -422,7 +422,7 @@ Agent SHOULD leverage Tool Search Tool:
 ```markdown
 # Claude Code Global Configuration
 
-**Standards**: $HOME/.smith/AGENTS.md
+**Standards**: @AGENTS.md
 
 ## Critical Guardrails (Always Active)
 
@@ -432,7 +432,7 @@ Agent SHOULD leverage Tool Search Tool:
 - Force push to shared branches
 
 ### ALWAYS
-- Load $HOME/.smith/AGENTS.md at session start
+- Load @AGENTS.md at session start
 - Read files before proposing changes
 - Run tests before commits
 ```
@@ -446,7 +446,7 @@ Agent SHOULD leverage Tool Search Tool:
 ```markdown
 # Project: MyApp
 
-**Standards**: $HOME/.smith/AGENTS.md
+**Standards**: @AGENTS.md
 
 ## Always Active
 
@@ -462,7 +462,7 @@ Agent SHOULD leverage Tool Search Tool:
 
 ## Context-Triggered Rules
 
-When working on specific tasks, rules from $HOME/.smith/ are loaded:
+When working on specific tasks, rules from @ are loaded:
 - Python code: rules-python.md
 - Git operations: rules-git.md
 - Testing: rules-testing.md
@@ -489,7 +489,7 @@ Result: 1200 lines loaded every session, high token usage
 - NEVER duplicate .smith rules in CLAUDE.md (reference instead)
 - NEVER embed detailed guidelines (use references)
 - NEVER put context-specific rules in CLAUDE.md (use AGENTS.md triggers)
-- NEVER forget to load $HOME/.smith/AGENTS.md at session start
+- NEVER forget to load @AGENTS.md at session start
 
 </forbidden>
 
@@ -628,10 +628,10 @@ Features documented here are current as of the version noted above. For newer ve
 
 <related>
 
-- **Shared principles**: `$HOME/.smith/rules-context-principles.md` (universal strategies)
-- **Other platforms**: `$HOME/.smith/rules-context-cursor.md`, `$HOME/.smith/rules-context-kiro.md`
-- **Parent**: `$HOME/.smith/rules-ai_agents.md` (AI agent interaction patterns)
-- **Foundation**: `$HOME/.smith/rules-core.md` (critical NEVER/ALWAYS rules)
+- **Shared principles**: @rules-context-principles.md (universal strategies)
+- **Other platforms**: @rules-context-cursor.md, @rules-context-kiro.md
+- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
+- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Claude Code documentation, Prompt Caching Guide
 
 </related>
