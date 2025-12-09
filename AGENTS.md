@@ -33,7 +33,7 @@ This notification is always active.
 
 **Notification format:**
 
-```
+```text
 Rules loaded:
 - rules-python.md (triggered by: python_development context)
 - rules-core.md (triggered by: always_active context)
@@ -44,7 +44,7 @@ Rules unloaded:
 
 **Example at session start:**
 
-```
+```text
 Rules loaded:
 - AGENTS.md (entry point)
 - rules-core.md (triggered by: always_active context)
