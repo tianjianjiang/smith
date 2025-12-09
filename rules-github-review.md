@@ -286,16 +286,18 @@ Fixed in commit ${COMMIT_SHA}."
    - `@coderabbitai Thanks for the review!` → Unnecessary bot notification
    - `@github-advanced-security[bot] Acknowledged` → Wrong bot entirely
 
-   **Rationale**: Since August 2025, Copilot requires explicit @copilot mentions to respond. Comments on bot reviews are visible to humans but won't trigger bots unless explicitly mentioned. Mentioning bots in acknowledgment replies triggers unwanted PR creation.
+   **CRITICAL: When replying to Copilot's inline review comments, NEVER mention `@copilot`.**
+
+   **Rationale**: Since August 2025, Copilot requires explicit @copilot mentions to respond. **Copilot is designed to open sub-PRs when mentioned, not to receive acknowledgment replies.** Comments on bot reviews are visible to humans but won't trigger bots unless explicitly mentioned. Mentioning `@copilot` in acknowledgment replies triggers unwanted sub-PR creation.
 
    </forbidden>
 
    <required>
 
-   **When replying to bot review comments**:
+   **When replying to bot review comments** (especially Copilot):
 
    ```sh
-   # Just acknowledge without bot mention
+   # Just acknowledge without bot mention - NEVER mention @copilot
    gh api -X POST \
      -H "Accept: application/vnd.github+json" \
      /repos/{owner}/{repo}/pulls/23/comments/{comment_id}/replies \
@@ -305,6 +307,8 @@ Fixed in commit ${COMMIT_SHA}."
    **When to use @copilot** (ONLY when requesting action):
    - `@copilot Please implement this suggestion`
    - `@copilot Fix the issue you identified`
+
+   **Remember**: When replying to Copilot's inline review comments, acknowledge without mentioning `@copilot` to avoid triggering unwanted sub-PR creation.
 
    </required>
 
