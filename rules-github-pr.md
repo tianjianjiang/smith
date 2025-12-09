@@ -71,8 +71,8 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
      - base: "main"
 
    git fetch origin
-   git checkout feature/child_branch
-   git rebase --onto origin/main feature/parent_branch
+   git checkout feat/child_branch
+   git rebase --onto origin/main feat/parent_branch
    git push --force-with-lease
    ```
 
@@ -80,14 +80,14 @@ The GitHub API immediately deletes the branch, closing all child PRs before thei
    ```sh
    gh pr edit 124 --base main
    git fetch origin
-   git checkout feature/child_branch
-   git rebase --onto origin/main feature/parent_branch
+   git checkout feat/child_branch
+   git rebase --onto origin/main feat/parent_branch
    git push --force-with-lease
    ```
 
 3. Delete parent branch AFTER child is updated:
    ```sh
-   git push origin --delete feature/parent_branch
+   git push origin --delete feat/parent_branch
    ```
 
 </required>

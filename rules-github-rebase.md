@@ -417,8 +417,8 @@ Agent: [Applies resolution, completes rebase] "Rebase completed successfully. Re
 **Stacked PR cascade rebase**:
 ```text
 Agent: "PR #123 was just updated in main. Detected stack:
-- PR #124: feature/auth_login (child of #123)
-- PR #125: feature/auth_session (child of #124)
+- PR #124: feat/auth-login (child of #123)
+- PR #125: feat/auth-session (child of #124)
 
 Auto-rebasing entire stack to stay synchronized?"
 

@@ -96,18 +96,18 @@ fi
 **Stacked PR cascade example**:
 ```text
 User: "PR #123 merged"
-Agent: "PR #123 (feature/parent_feature) merged. Found stack:
+Agent: "PR #123 (feat/parent_feature) merged. Found stack:
   main
-   └─ PR #123 (merged) ← feature/parent_feature
-       ├─ PR #124 ← feature/child_feature_1 (child, 245 lines)
-       └─ PR #125 ← feature/child_feature_2 (child, 180 lines)
+   └─ PR #123 (merged) ← feat/parent_feature
+       ├─ PR #124 ← feat/child_feature_1 (child, 245 lines)
+       └─ PR #125 ← feat/child_feature_2 (child, 180 lines)
 
 Auto-updating stack..."
 Agent: [Updates #124 base to main, rebases onto origin/main]
 Agent: "PR #124 rebased successfully. No conflicts."
 Agent: [Updates #125 base, rebases]
 Agent: "PR #125 rebased successfully. No conflicts."
-Agent: [Deletes local and remote feature/parent_feature]
+Agent: [Deletes local and remote feat/parent_feature]
 Agent: "Stack updated. All PRs ready for continued review."
 ```
 

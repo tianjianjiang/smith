@@ -40,7 +40,7 @@ poetry run ruff format . && poetry run ruff check --fix .
 poetry run pytest
 git fetch origin
 git rebase origin/main
-git push -u origin feature/my_feature
+git push -u origin feat/my_feature
 ```
 
 </constraints>
@@ -160,8 +160,8 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 <required>
 
 **How to stack**:
-1. Create base PR with foundation (e.g., `feature/auth-base`)
-2. Create child PR branching from base (e.g., `feature/auth-login` from `feature/auth-base`)
+1. Create base PR with foundation (e.g., `feat/auth-base`)
+2. Create child PR branching from base (e.g., `feat/auth-login` from `feat/auth-base`)
 3. Each PR should be independently reviewable and mergeable
 4. Merge bottom-up: base first, then children
 
@@ -172,16 +172,16 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 **Stack structure**:
 ```text
 main
- └── feature/auth-base (PR #1: models, migrations)
-      └── feature/auth-login (PR #2: login endpoint)
-           └── feature/auth-oauth (PR #3: OAuth integration)
+ └── feat/auth-base (PR #1: models, migrations)
+      └── feat/auth-login (PR #2: login endpoint)
+           └── feat/auth-oauth (PR #3: OAuth integration)
 ```
 
 **PR description for stacked PRs**:
 ```markdown
 ## Stack
-- **Depends on**: #123 (feature/auth-base) ← This PR requires #123 to be merged first
-- **Blocks**: #125 (feature/auth-oauth) ← PR #125 depends on this PR
+- **Depends on**: #123 (feat/auth-base) ← This PR requires #123 to be merged first
+- **Blocks**: #125 (feat/auth-oauth) ← PR #125 depends on this PR
 ```
 
 **Field meanings**:
@@ -215,10 +215,10 @@ main
 
 **Correct merge sequence**:
 ```text
-1. Merge PR #1 (feature/auth-base) → main
-2. Rebase PR #2 (feature/auth-login) onto main
+1. Merge PR #1 (feat/auth-base) → main
+2. Rebase PR #2 (feat/auth-login) onto main
 3. Merge PR #2 → main
-4. Rebase PR #3 (feature/auth-oauth) onto main
+4. Rebase PR #3 (feat/auth-oauth) onto main
 5. Merge PR #3 → main (can squash this one)
 ```
 
@@ -237,8 +237,8 @@ When a parent PR merges, child PRs must be rebased:
 
 ```sh
 git fetch origin
-git checkout feature/auth-login
-git rebase --onto origin/main feature/auth-base
+git checkout feat/auth-login
+git rebase --onto origin/main feat/auth-base
 git push --force-with-lease
 ```
 
@@ -252,14 +252,14 @@ git push --force-with-lease
 ```text
 main ──●──●──●──M (parent merged as M)
                  \
-feature/auth-login ──A──B──C (still based on old parent)
+feat/auth-login ──A──B──C (still based on old parent)
 ```
 
-**After `git rebase --onto origin/main feature/auth-base`**:
+**After `git rebase --onto origin/main feat/auth-base`**:
 ```text
 main ──●──●──●──M
                  \
-                  └──A'──B'──C' (feature/auth-login rebased)
+                  └──A'──B'──C' (feat/auth-login rebased)
 ```
 
 </examples>
@@ -272,11 +272,11 @@ main ──●──●──●──M
 
 **Merge strategy by position**:
 
-| PR Position | Squash Merge | Branch Deletion Timing |
-|-------------|--------------|-----------------|
+| PR Position           | Squash Merge    | Branch Deletion Timing   |
+| --------------------- | --------------- | ------------------------ |
 | Parent (has children) | OK with process | After child base updated |
-| Middle | OK with process | After child base updated |
-| Final (leaf) | OK | Immediate OK |
+| Middle                | OK with process | After child base updated |
+| Final (leaf)          | OK              | Immediate OK             |
 
 </required>
 
@@ -294,15 +294,15 @@ Squash merge creates a single commit, destroying commit ancestry. Child branches
 Option 1 - Rebase with `--fork-point`:
 ```sh
 git fetch origin
-git checkout feature/auth-login
-git rebase --onto origin/main --fork-point origin/feature/auth-base
+git checkout feat/auth-login
+git rebase --onto origin/main --fork-point origin/feat/auth-base
 git push --force-with-lease
 ```
 
 Option 2 - Interactive rebase to drop parent's commits:
 ```sh
 git checkout main && git pull
-git checkout feature/auth-login
+git checkout feat/auth-login
 git rebase -i main
 ```
 In the interactive editor, mark all commits from the parent branch as `drop`.
@@ -316,12 +316,12 @@ In the interactive editor, mark all commits from the parent branch as `drop`.
 When pulling changes from main into a stack, cascade updates through the stack sequentially:
 
 ```sh
-git checkout feature/auth-base
+git checkout feat/auth-base
 git merge main
 git push
 
-git checkout feature/auth-login
-git merge feature/auth-base
+git checkout feat/auth-login
+git merge feat/auth-base
 git push
 ```
 
@@ -332,7 +332,7 @@ git push
 Merging main directly into a child branch corrupts history:
 
 ```sh
-git checkout feature/auth-login
+git checkout feat/auth-login
 git merge main
 ```
 
@@ -529,8 +529,8 @@ git push
 git checkout main
 git fetch --prune origin
 git pull origin main
-git branch -d feature/my_feature
-git ls-remote --exit-code --heads origin feature/my_feature >/dev/null 2>&1 && git push origin --delete feature/my_feature
+git branch -d feat/my_feature
+git ls-remote --exit-code --heads origin feat/my_feature >/dev/null 2>&1 && git push origin --delete feat/my_feature
 ```
 
 <context>
