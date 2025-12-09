@@ -96,6 +96,12 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 **Core requirement**: Agent output MUST follow the same standards as human-written code (emoji restrictions, formatting, etc.)
 
+<required>
+
+**Rule Loading Notification**: Agent MUST proactively report when rules are dynamically loaded or unloaded, including both the rule files and the context triggers that caused the changes. See `$HOME/.smith/AGENTS.md` for detailed specification. This notification is always active.
+
+</required>
+
 ## Path Reference Conventions
 
 **Use standardized path variables:**

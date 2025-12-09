@@ -8,6 +8,51 @@
 
 </metadata>
 
+<required>
+
+## Rule Loading Notification
+
+Agent MUST proactively report to the user when rules are dynamically loaded or unloaded based on context triggers defined in the `<context_triggers>` section below.
+
+**Notification requirements:**
+- Report at the start of your response when rules are loaded/unloaded, before proceeding with the task
+- Include both the rule files and the context triggers that caused the load/unload
+- Format: List each rule file with its triggering context
+- If a referenced rule file does not exist, report that it was skipped gracefully (per AGENTS.md note)
+
+**When to report:**
+- At session start: Report all initially loaded rules
+- During session: Report when context changes trigger new rule loads
+- During session: Report when context changes cause rule unloads (if agent explicitly unloads rules or detects they are no longer applicable)
+
+This notification is always active.
+
+</required>
+
+<examples>
+
+**Notification format:**
+
+```
+Rules loaded:
+- rules-python.md (triggered by: python_development context)
+- rules-core.md (triggered by: always_active context)
+
+Rules unloaded:
+- rules-git.md (context: git_operations no longer active)
+```
+
+**Example at session start:**
+
+```
+Rules loaded:
+- AGENTS.md (entry point)
+- rules-core.md (triggered by: always_active context)
+- rules-python.md (triggered by: python_development context)
+```
+
+</examples>
+
 <guiding_principles>
 
 ## Design Principles
