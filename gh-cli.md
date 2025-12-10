@@ -224,7 +224,12 @@ git branch --show-current
 
 ### PR Status and Merging
 
-**Use `gh pr --help` for common merge and check commands**.
+**Use `gh pr --help` for common merge and check commands**. Key non-obvious patterns:
+
+```sh
+# Extract specific field with jq
+gh pr view 123 --json headRefName -q .headRefName
+```
 
 ## Code Review Operations
 

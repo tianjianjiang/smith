@@ -3,7 +3,7 @@
 <metadata>
 
 - **Scope**: Kiro-specific context management strategies and configuration
-- **Load if**: Using Kiro AND (context window approaching capacity >70% OR optimizing context usage)
+- **Load if**: Using Kiro
 - **Prerequisites**: @context.md, @ai.md
 - **Requires**: Understanding of context windows, token limits, VS Code OSS patterns
 - **Provides**: Steering files, context triggers, file references, custom agents, MCP integration

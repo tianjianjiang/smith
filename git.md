@@ -381,8 +381,10 @@ fi
 # git log @{upstream}.. lists commits that exist locally but not on remote
 # If grep finds HEAD in that list, commit is not pushed yet (safe to amend)
 # If grep fails, HEAD is not in unpushed list, meaning it was pushed (avoid amending)
-if git log @{upstream}.. | grep -q "$(git rev-parse HEAD)"; then
+if git rev-parse @{upstream} >/dev/null 2>&1 && git log @{upstream}.. | grep -q "$(git rev-parse HEAD)"; then
   echo "Commit not pushed yet - safe to amend"
+elif ! git rev-parse @{upstream} >/dev/null 2>&1; then
+  echo "No upstream set - commit not pushed yet (safe to amend)"
 else
   echo "Commit already pushed - avoid amending"
 fi
