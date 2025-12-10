@@ -2,12 +2,12 @@
 
 <metadata>
 
-- **Scope**: Kiro steering file patterns and context management strategies
-- **Load if**: Using Kiro OR creating steering files for AI agent guidance
-- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
-- **Requires**: Understanding of Kiro steering files, context triggers, MCP integration, VS Code extension system
-- **Provides**: Steering file creation patterns, persistent context strategies, custom agent specialization, context-efficient workflows
-- **Research**: Kiro documentation (2025-12), MCP protocol specification, VS Code OSS architecture
+- **Scope**: Kiro-specific context management strategies and configuration
+- **Load if**: Using Kiro
+- **Prerequisites**: @context.md, @ai.md
+- **Requires**: Understanding of context windows, token limits, VS Code OSS patterns
+- **Provides**: Steering files, context triggers, file references, custom agents, MCP integration
+- **Research**: Kiro documentation, VS Code OSS documentation
 
 </metadata>
 
@@ -23,13 +23,15 @@
 - **MCP integration** - Model Context Protocol for extended capabilities
 - **File references** - `#[[file:path]]` syntax for dynamic file inclusion
 
+**For architectural limitations and agent role**: See @context.md - Agent Role in Context Management section
+
+**For universal context management strategies**: See @context.md - Information Retention Strategy, Progressive Disclosure Pattern, Reference-Based Communication
+
 **Architecture**: Kiro inherits VS Code's extension system, configuration patterns, and workspace concepts.
 
 **Canonical example**: @AGENTS.md demonstrates production-grade steering file pattern.
 
 </context>
-
-<required>
 
 ## Steering File Pattern
 
@@ -46,7 +48,7 @@
 
 <required>
 
-### Steering File Structure
+#### Steering File Structure
 
 Based on @AGENTS.md canonical example (using only documented XML tags):
 
@@ -134,7 +136,7 @@ Agent MUST follow these rules at all times:
 </instructions>
 ```
 
-### Key Sections Explained
+**Key Sections Explained**:
 
 **`<metadata>`** - File metadata and loading conditions:
 - **Scope**: What this file covers
@@ -295,7 +297,7 @@ Report which rules are loaded for each context before executing tasks.
 
 </forbidden>
 
-## File Reference Syntax
+### File Reference Syntax
 
 <context>
 
@@ -309,7 +311,7 @@ Report which rules are loaded for each context before executing tasks.
 
 <required>
 
-### File Reference Pattern
+**File Reference Pattern**:
 
 ```markdown
 # Authentication Module Steering
@@ -410,7 +412,7 @@ Better: Use file references for documentation, let agent discover code files as 
 
 </forbidden>
 
-## Context Triggers for Dynamic Loading
+### Context Triggers for Dynamic Loading
 
 <context>
 
@@ -425,8 +427,6 @@ Better: Use file references for documentation, let agent discover code files as 
 
 <required>
 
-### Creating Effective Context Triggers
-
 **Trigger structure**:
 
 ```xml
@@ -440,105 +440,9 @@ Better: Use file references for documentation, let agent discover code files as 
 </trigger>
 ```
 
-**Condition patterns**:
-
-```markdown
-# Language/framework detection
-IF writing/modifying Python code OR running Python tests
-
-# Workflow detection
-IF creating commits OR managing branches OR using git
-
-# Tool detection
-IF using GitHub CLI OR working with pull requests
-
-# Phase detection
-IF testing OR running test suite OR writing tests
-
-# File pattern detection
-IF modifying files in src/database/ OR editing migrations
-```
-
-**Loading patterns**:
-
-```markdown
-# Load single file
-LOAD: `rules-python.md`
-
-# Load multiple related files
-LOAD: `rules-pr-concepts.md`
-LOAD: `rules-github-pr.md`
-LOAD: `rules-github.md`
-
-# Load with action
-LOAD: `rules-security.md`
-ACTION: Run security checks before committing
-```
-
-</required>
-
-<examples>
-
-**Well-designed triggers** (from @AGENTS.md):
-
-```xml
-<trigger context="python_development">
-
-- **IF** writing/modifying Python code OR running Python tests:
-- **LOAD**: @rules-python.md
-
-</trigger>
-
-<trigger context="pull_request_workflows">
-
-- **IF** creating pull requests OR reviewing code OR working with GitHub PRs:
-- **LOAD**: @rules-pr-concepts.md
-- **LOAD**: @rules-github-pr.md
-- **LOAD**: @rules-github.md
-- **LOAD**: @rules-naming.md
-
-</trigger>
-
-<trigger context="always_active">
-
-- **IF** any development task (always active):
-- **LOAD**: @rules-core.md
-
-</trigger>
-```
-
-**Poorly designed triggers**:
-
-```xml
-<!-- Too broad - loads for every file -->
-<trigger context="any_file">
-- IF modifying any file:
-- LOAD: all-rules.md
-</trigger>
-
-<!-- Circular dependency -->
-<trigger context="python">
-- IF Python:
-- LOAD: rules-python.md (which has trigger to load rules-testing.md which loads rules-python.md)
-</trigger>
-
-<!-- Too many files for one trigger -->
-<trigger context="web_dev">
-- IF web development:
-- LOAD: rules-html.md
-- LOAD: rules-css.md
-- LOAD: rules-javascript.md
-- LOAD: rules-typescript.md
-- LOAD: rules-react.md
-- LOAD: rules-vue.md
-[...20 more files...]
-Result: Context bloat, defeats purpose of triggers
-</trigger>
-```
-
 **@ Reference Resolution**:
 
-When context triggers reference @rules-*.md files:
+When context triggers reference @*.md files:
 
 1. **File Not Found**: Agent should report which file failed to load and continue gracefully without that rule file
 2. **Fallback Behavior**: Agent should proceed with available rules, not halt execution
@@ -548,16 +452,16 @@ When context triggers reference @rules-*.md files:
 
 ```text
 Rules loaded:
-- @rules-core.md (triggered by: always_active context)
-- @rules-python.md (triggered by: python_development context)
+- @core.md (triggered by: always_active context)
+- @python.md (triggered by: python_development context)
 
 Rules skipped:
-- @rules-nonexistent.md (file not found, gracefully skipped)
+- @nonexistent.md (file not found, gracefully skipped)
 ```
 
-</examples>
+</required>
 
-## Location Hierarchy
+### Location Hierarchy
 
 <context>
 
@@ -571,68 +475,7 @@ Rules skipped:
 
 </context>
 
-<required>
-
-### Steering File Placement Strategy
-
-**For personal projects**:
-```
-~/personal-project/
-└── AGENTS.md                    # Project standards
-```
-
-**For team projects**:
-```
-~/team-project/
-├── AGENTS.md                    # Team standards (version controlled)
-└── .kiro/
-    └── steering/
-        └── personal-overrides.md # Personal preferences (gitignored)
-```
-
-**For global standards**:
-```
-~/.kiro/
-└── steering/
-    └── global.md                # Applies to all projects
-```
-
-**Reference pattern** (project → global):
-
-```markdown
-# Project AGENTS.md
-
-Follow global standards: #[[file:~/.kiro/steering/global.md]]
-
-## Project-Specific Additions
-
-- Use NestJS framework
-- PostgreSQL database
-- Prisma ORM
-```
-
-</required>
-
-<examples>
-
-**Good hierarchy usage**:
-
-```
-~/.kiro/steering/global.md:
-  - Universal rules (DRY, KISS, YAGNI)
-  - Language-agnostic best practices
-  - Security guidelines
-
-~/project/AGENTS.md:
-  - References global.md
-  - Adds project tech stack
-  - Defines project structure
-  - Loads context-triggered rules
-```
-
-</examples>
-
-## Custom Agents for Context Specialization
+### Custom Agents for Context Specialization
 
 <context>
 
@@ -647,159 +490,7 @@ Follow global standards: #[[file:~/.kiro/steering/global.md]]
 
 </context>
 
-<required>
-
-### Agent Specialization Patterns
-
-**Code Review Agent**:
-
-```markdown
-# .kiro/agents/code-review.md
-
-<metadata>
-- Role: Code reviewer
-- Context window: 50K tokens (focused)
-- Excludes: Implementation details, build config
-</metadata>
-
-<required>
-
-## Review Focus
-
-- Code quality and maintainability
-- Security vulnerabilities
-- Performance issues
-- Test coverage
-- Documentation completeness
-
-## Review Guidelines
-
-- Check for SOLID violations
-- Verify error handling
-- Ensure proper logging
-- Validate input sanitization
-
-</required>
-
-<context>
-
-<plan_tool_usage>
-
-<rules>
-
-**security_review:**
-- Condition: Reviewing authentication/authorization code
-- Load: rules-security.md
-
-</rules>
-
-</plan_tool_usage>
-
-</context>
-```
-
-**Implementation Agent**:
-
-```markdown
-# .kiro/agents/implementation.md
-
-<metadata>
-- Role: Feature implementation
-- Context window: 100K tokens (comprehensive)
-- Includes: Architecture docs, related code, tests
-</metadata>
-
-<required>
-
-## Implementation Workflow
-
-1. Read architecture documentation
-2. Review related existing code
-3. Write failing tests (TDD)
-4. Implement to pass tests
-5. Refactor while keeping tests green
-6. Update documentation
-
-</required>
-
-<context>
-
-<plan_tool_usage>
-
-<rules>
-
-**feature_implementation:**
-- Load: docs/architecture.md
-- Load: rules-testing.md
-- Load: rules-development.md
-
-</rules>
-
-</plan_tool_usage>
-
-</context>
-```
-
-**Documentation Agent**:
-
-```markdown
-# .kiro/agents/documentation.md
-
-<metadata>
-- Role: Documentation writer
-- Context window: 30K tokens (minimal)
-- Excludes: Implementation internals
-</metadata>
-
-<required>
-
-## Documentation Standards
-
-- Use Markdown format
-- Include code examples
-- Provide runnable samples
-- Keep examples up-to-date
-
-</required>
-```
-
-**Benefits of specialization**:
-
-| Aspect | Generalist Agent | Specialized Agents |
-|--------|------------------|-------------------|
-| Context window | 200K (all purposes) | 30-100K (focused) |
-| Response time | Slower (more context) | Faster (less context) |
-| Relevance | Mixed signals | Highly focused |
-| Cost | Higher (large context) | Lower (small context) |
-| Parallel work | One task at a time | Multiple agents in parallel |
-
-</required>
-
-<examples>
-
-**Using specialized agents**:
-
-```text
-Task: Implement feature + review + document
-
-Sequential (one agent):
-1. Implement feature (context: 80K)
-2. Review own code (context: 120K - includes implementation exploration)
-3. Write docs (context: 150K - includes implementation + review)
-Total time: 30 minutes
-Context usage: High (accumulated)
-
-Parallel (specialized agents):
-1. Implementation agent: Implements feature (context: 60K)
-2. Review agent: Reviews code (context: 40K, fresh perspective)
-3. Documentation agent: Writes docs (context: 25K, clean)
-Total time: 12 minutes (agents work concurrently)
-Context usage: Low (each agent has minimal focused context)
-```
-
-</examples>
-
-## MCP Integration for Context Efficiency
+### MCP Integration for Context Efficiency
 
 <context>
 
@@ -813,7 +504,7 @@ Context usage: Low (each agent has minimal focused context)
 
 <required>
 
-### MCP Configuration for Context Optimization
+**MCP Configuration for Context Optimization**:
 
 ```json
 {
@@ -878,7 +569,7 @@ Total context: 33 lines (99.6% reduction)
 
 </examples>
 
-## Persistent Context Across Sessions
+### Persistent Context Across Sessions
 
 <context>
 
@@ -890,7 +581,7 @@ Total context: 33 lines (99.6% reduction)
 
 <required>
 
-### Session Continuity Pattern
+**Session Continuity Pattern**:
 
 **Session 1**:
 1. Work on feature
@@ -903,117 +594,9 @@ Total context: 33 lines (99.6% reduction)
 2. Agent reviews recent commits (`git log -5`)
 3. Agent continues from documented state
 
-**Steering file updates during session**:
-
-```markdown
-# Project AGENTS.md
-
-<context>
-
-## Recent Decisions
-
-- 2025-12-10: Adopted JWT with 7-day refresh for auth (see commit a3b4c5d)
-- 2025-12-09: Migrated to Prisma ORM (see migration guide at docs/prisma-migration.md)
-
-</context>
-
-<context>
-
-<plan_tool_usage>
-
-<rules>
-
-**authentication:**
-- Condition: Working with authentication
-- Load: rules-auth.md
-- NOTE: Using JWT pattern from auth.service.ts:100-150
-
-</rules>
-
-</plan_tool_usage>
-
-</context>
-```
-
-**Commit messages as persistent memory**:
-
-```bash
-git commit -m "feat(auth): implement JWT refresh token rotation
-
-Implemented 7-day refresh token rotation per OAuth2 RFC 6749.
-
-Technical decisions:
-- Store refresh tokens in database (tokens table)
-- Automatic rotation on use (one-time refresh tokens)
-- Sliding window: extends by 7 days on each refresh
-- Invalidation: mark old token as used in database
-
-Implementation:
-- Token service: src/auth/tokens.service.ts:89-156
-- Database schema: prisma/schema.prisma:45-60
-- Tests: tests/auth/tokens.integration.test.ts:234-290
-
-Next steps:
-- Add token cleanup job (delete expired tokens)
-- Implement rate limiting for refresh endpoint
-- Add monitoring for token rotation failures"
-```
-
-**Session restoration**:
-
-```text
-User: (Next session) "Continue working on authentication"
-
-Agent:
-1. Reads AGENTS.md → Sees JWT auth decision
-2. Reads git log → Sees refresh token implementation (commit a3b4c5d)
-3. Reads commit message → Understands next steps
-4. Responds: "I see we implemented JWT refresh tokens. The next steps are:
-   - Add token cleanup job
-   - Implement rate limiting
-   - Add monitoring
-   Which would you like me to work on first?"
-
-Result: Seamless continuation without user re-explaining
-```
-
 </required>
 
-<examples>
-
-**Good session continuity**:
-
-```text
-Session 1 end:
-- Updated AGENTS.md with auth decisions
-- Committed work with detailed message
-- Noted next steps in commit
-
-Session 2 start:
-- Agent reads AGENTS.md
-- Agent reads recent commits
-- Agent proposes continuing from last checkpoint
-- No context re-explanation needed
-```
-
-**Bad session continuity**:
-
-```text
-Session 1 end:
-- Didn't update AGENTS.md
-- Vague commit message: "wip"
-- No documentation of decisions
-
-Session 2 start:
-- Agent has no persistent context
-- User must re-explain entire feature
-- Lost architectural decisions
-- Wasted time reconstructing state
-```
-
-</examples>
-
-## Steering Files as Context Management Tool
+### Steering Files as Context Management Tool
 
 <context>
 
@@ -1029,9 +612,7 @@ Session 2 start:
 
 <required>
 
-### Optimizing Steering Files for Context Efficiency
-
-**Structure for prompt caching** (from `rules-ai_agents.md:Prompt Caching`):
+**Structure for prompt caching** (from @ai.md):
 
 ```markdown
 # AGENTS.md (optimized for caching)
@@ -1089,7 +670,7 @@ Session 2 start:
 
 </required>
 
-## Version Information
+### Version Information
 
 <metadata>
 
@@ -1105,16 +686,14 @@ Features documented here are current as of the version noted above. Kiro is buil
 
 </note>
 
-</context>
+---
 
 <related>
 
-- **Shared principles**: @rules-context-principles.md (universal strategies)
-- **Other platforms**: @rules-context-claude_code.md, @rules-context-cursor.md
-- **Canonical example**: @AGENTS.md (production steering file demonstrating all patterns)
-- **Parent**: @rules-ai_agents.md (AI agent interaction patterns, prompt caching)
-- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
-- **MCP integration**: @rules-tools-mcp.md (MCP server configuration)
-- **Research**: Kiro documentation, VS Code extension API, MCP protocol specification
+- **Universal principles**: @context.md (shared context management strategies, agent role)
+- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Foundation**: @core.md (critical NEVER/ALWAYS rules)
+- **MCP integration**: @tools.md (MCP server configuration)
+- **Research**: Kiro documentation, VS Code OSS documentation, MCP protocol specification
 
 </related>

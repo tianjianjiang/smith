@@ -31,7 +31,7 @@ Standardized naming patterns and path reference conventions.
 
 ### Documentation Rules Files
 **Pattern**: `rules-[category].md` (underscore for multi-word categories)
-- Examples: `rules-semantic_integrity.md`, `rules-tools-mcp.md`
+- Examples: `rules-semantic_integrity.md`, `rules-github-pr-workflows.md`
 
 ### Configuration Files
 Standard names: `.env`, `.env.sample`, `Dockerfile`, `docker-compose.yml`, `pyproject.toml`, `.gitignore`, `README.md`, `AGENTS.md`
@@ -94,7 +94,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 ```markdown
 **Label**: `$WORKSPACE_ROOT/path/to/file.md` - Description
 **Label**: `$REPO_ROOT/path/to/file.md` - Description
-**Label**: @rules-core.md - Description
+**Label**: @core.md - Description
 ```
 
 **Why**: Coding agents parse file paths from code blocks reliably. Markdown links with path variables don't work (agents treat `$REPO_ROOT` as literal directory name).
@@ -102,7 +102,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 **Example**:
 ```markdown
 **Core Rules**: `$WORKSPACE_ROOT/docs/rules-core.md` - NEVER/ALWAYS standards
-**Python**: @rules-python.md - Imports, types, pytest
+**Python**: @python.md - Imports, types, pytest
 ```
 
 ### Usage by Context
@@ -135,7 +135,7 @@ Standard variables: `$REPO_ROOT`, `$WORKSPACE_ROOT`, `$HOME`
 
 ## IDE-Specific Mappings
 
-See @rules-ide_mappings.md for VS Code, PyCharm, Kiro variable syntax.
+See @ide.md for VS Code, PyCharm, Kiro variable syntax.
 
 ## Consistency Requirements
 
@@ -143,6 +143,86 @@ See @rules-ide_mappings.md for VS Code, PyCharm, Kiro variable syntax.
 - Follow same conventions for directory names
 - Ensure documentation links use correct names
 - Reference files with correct names in commit messages
+
+## Conventional Commits Format
+
+<context>
+
+This section defines the conventional commits format used for BOTH:
+- **Git commit messages** (local commits)
+- **PR titles** (pull request titles on GitHub)
+
+Both follow identical formatting rules and the 50/72 character limits.
+
+</context>
+
+<formatting>
+
+**Format**: `type: description` or `type(scope): description`
+
+Scope is optional. Choose type based on PRIMARY change:
+
+- `feat`: New user-facing functionality
+- `fix`: Bug fix for existing functionality
+- `docs`: Documentation ONLY (no code changes)
+- `refactor`: Code restructure without behavior change
+- `style`: Formatting ONLY (whitespace, semicolons)
+- `test`: Test changes ONLY
+- `chore`: Build/tooling (CI, dependencies, scripts)
+- `perf`: Performance improvement
+
+</formatting>
+
+<required>
+
+**Length limits** ([50/72 Rule](https://dev.to/noelworden/improving-your-commit-message-with-the-50-72-rule-3g79)):
+
+**Subject line** (first line):
+- **Target**: 50 characters (ideal for `git log --oneline`)
+- **Hard limit**: 72 characters (80-char terminal - 4-char git indent - 4-char margin)
+
+**Body** (subsequent lines):
+- 72 characters per line maximum
+
+**Atomicity indicator**: If subject exceeds 50 chars, consider if combining multiple changes. Split into separate commits/PRs.
+
+**Application**:
+- **Commit messages**: Subject line = first line of commit message
+- **PR titles**: Entire PR title = subject line (becomes merge commit subject)
+
+</required>
+
+<examples>
+
+**Git commit example:**
+```sh
+git commit -m "feat(rag): add semantic search filtering
+
+Implement metadata-based filtering for semantic search queries.
+Supports multiple filter conditions with AND/OR logic.
+
+Closes #123"
+```
+
+**PR title examples:**
+- `feat(rag): add semantic search filtering`
+- `fix(api): resolve CORS issues`
+- `docs: update deployment guide`
+- `refactor(auth): extract validation logic`
+- `test: add integration tests for search`
+
+</examples>
+
+<forbidden>
+
+- Subject line over 72 characters (commit or PR title)
+- Multiple unrelated changes in subject (e.g., "add X and fix Y and update Z")
+- Using "and" to join unrelated changes (indicator of non-atomic change)
+- Using `docs` when also changing code → use `feat` or `fix`
+- Using `refactor` for bug fixes → use `fix`
+- Using `chore` for new features → use `feat`
+
+</forbidden>
 
 ## Git Branch and Commit Naming
 
@@ -159,15 +239,40 @@ See @rules-ide_mappings.md for VS Code, PyCharm, Kiro variable syntax.
 
 **Branch Type Prefixes** (MUST match conventional commit type):
 
-| Commit Type | Branch Prefix | Example                         | Separator Note                            |
-| ----------- | ------------- | ------------------------------- | ----------------------------------------- |
-| `feat`      | `feat/`       | `feat/user_authentication`      | underscore: single concept                |
-| `fix`       | `fix/`        | `fix/JIRA-1234-query_processor` | hyphen for ticket, underscore for concept |
-| `docs`      | `docs/`       | `docs/enhance_agents_md`        | underscore: single concept                |
-| `refactor`  | `refactor/`   | `refactor/api-rest`             | hyphen: rest is variant of api            |
-| `test`      | `test/`       | `test/integration_auth`         | underscore: single concept                |
-| `chore`     | `chore/`      | `chore/update_dependencies`     | underscore: single concept                |
-| `style`     | `style/`      | `style/format_code`             | underscore: single concept                |
+**feat**: New features
+- Prefix: `feat/`
+- Example: `feat/user_authentication`
+- Separator: underscore for single concept
+
+**fix**: Bug fixes
+- Prefix: `fix/`
+- Example: `fix/JIRA-1234-query_processor`
+- Separator: hyphen for ticket ID, underscore for concept
+
+**docs**: Documentation changes
+- Prefix: `docs/`
+- Example: `docs/enhance_agents_md`
+- Separator: underscore for single concept
+
+**refactor**: Code restructuring
+- Prefix: `refactor/`
+- Example: `refactor/api-rest`
+- Separator: hyphen for rest as variant of api
+
+**test**: Test changes
+- Prefix: `test/`
+- Example: `test/integration_auth`
+- Separator: underscore for single concept
+
+**chore**: Build/tooling changes
+- Prefix: `chore/`
+- Example: `chore/update_dependencies`
+- Separator: underscore for single concept
+
+**style**: Formatting changes
+- Prefix: `style/`
+- Example: `style/format_code`
+- Separator: underscore for single concept
 
 <required>
 
@@ -181,14 +286,31 @@ Branch type prefix MUST match the conventional commit type used in commits.
 
 </required>
 
-| Separator      | Use Case                    | Decision Rule                                                            | Example                                   |
-| -------------- | --------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
-| Underscore (_) | Multi-word phrases/concepts | Words form a SINGLE concept/phrase (think: compound noun)                | `feat/user_authentication`                |
-| Hyphen (-)     | Parts/subsets of a whole    | Second word is a PART or SUBSET of the first (hierarchical relationship) | `feat/auth-login` (login is part of auth) |
-| Hyphen (-)     | Co-existing/differentiation | Different variants/types of the same thing (parallel relationship)       | `feat/api-rest` vs `feat/api-graphql`     |
-| Hyphen (-)     | ISO dates                   | Standard date format                                                     | `2025-01-15`                              |
-| Hyphen (-)     | Ticket IDs                  | Standard ticket format                                                   | `JIRA-1234`, `GH-567`                     |
-| Slash (/)      | Type delimiter only         | Separates branch type from description                                   | `docs/`, `feat/`, `fix/`                  |
+**Separator Usage Rules**:
+
+**Underscore (_)**: Multi-word phrases/concepts
+- Decision Rule: Words form a SINGLE concept/phrase (think: compound noun)
+- Example: `feat/user_authentication`
+
+**Hyphen (-) - Hierarchical**: Parts/subsets of a whole
+- Decision Rule: Second word is a PART or SUBSET of the first
+- Example: `feat/auth-login` (login is part of auth)
+
+**Hyphen (-) - Parallel**: Co-existing/differentiation
+- Decision Rule: Different variants/types of the same thing
+- Example: `feat/api-rest` vs `feat/api-graphql`
+
+**Hyphen (-) - ISO Dates**: Standard date format
+- Decision Rule: Standard date format
+- Example: `2025-01-15`
+
+**Hyphen (-) - Ticket IDs**: Standard ticket format
+- Decision Rule: Standard ticket format
+- Example: `JIRA-1234`, `GH-567`
+
+**Slash (/)**: Type delimiter only
+- Decision Rule: Separates branch type from description
+- Example: `docs/`, `feat/`, `fix/`
 
 **Complex Pattern**: `type/TICKET-number-topic_clause-another_topic-YYYY-MM-DD`
 

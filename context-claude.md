@@ -2,12 +2,12 @@
 
 <metadata>
 
-- **Scope**: Claude Code-specific context management commands and strategies
-- **Load if**: Using Claude Code AND (context window >70% OR optimizing context usage)
-- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
-- **Requires**: Understanding of Claude Code /compact and /clear commands
-- **Provides**: Selective retention patterns, context optimization strategies, persistent configuration patterns
-- **Research**: Anthropic Claude Code documentation (accessed 2025-12), Claude Code best practices, Tool Search Tool
+- **Scope**: Claude Code-specific context management strategies and commands
+- **Load if**: Using Claude Code AND (context window approaching capacity >70% OR optimizing context usage)
+- **Prerequisites**: @context.md, @ai.md
+- **Requires**: Understanding of context windows, token limits, Claude Code commands
+- **Provides**: Claude Code /compact and /clear commands, Tool Search Tool, CLAUDE.md configuration
+- **Research**: Anthropic Claude Code documentation
 
 </metadata>
 
@@ -22,44 +22,13 @@
 - CLAUDE.md - Persistent rules across sessions
 - Context meter - Visual indicator in Claude Code interface
 
+**For architectural limitations and agent role**: See @context.md - Agent Role in Context Management section
+
+**For universal context management strategies**: See @context.md - Information Retention Strategy, Progressive Disclosure Pattern, Reference-Based Communication
+
 **Best practice**: Monitor context meter and recommend `/compact` proactively at 70% capacity to prevent forced truncation.
 
 </context>
-
-## Architectural Limitation
-
-<context>
-
-**Critical**: Agents cannot programmatically trigger `/compact` or `/clear` commands.
-
-**Why**: These are built-in REPL commands, not agent tools. The SlashCommand tool only supports custom user-defined commands in `.claude/commands/`, not built-in commands like `/compact` or `/clear`.
-
-**What agents can do**:
-- Detect when context approaches capacity (based on conversation length)
-- Recommend specific `/compact` command with retention criteria
-- Explain what will be preserved vs discarded
-- Format commands as copy-paste ready for user execution
-
-**What agents cannot do**:
-- Execute `/compact` or `/clear` directly
-- Automatically manage context without user action
-- Trigger built-in commands via SlashCommand tool
-
-**Collaboration model**: User reports context percentage → Agent recommends specific command → User executes command
-
-</context>
-
-<required>
-
-When context approaches 70%, agent MUST:
-1. Inform user that context is at critical threshold
-2. Recommend specific `/compact` command with retention criteria (copy-paste ready)
-3. Explain what will be preserved (task goals, file paths, decisions, todos)
-4. Explain what will be discarded (verbose outputs, failed attempts)
-
-</required>
-
-<required>
 
 ## /compact Command - Selective Retention
 
@@ -94,7 +63,7 @@ This will discard: [list what's removed]
 - **Bad**: `/compact` without retention criteria (user won't know what to preserve)
 - **Bad**: `/compact keep important stuff` (too vague)
 
-### Retention Criteria Template
+#### Retention Criteria Template
 
 ```text
 /compact keep [what to preserve with specific references]
@@ -186,7 +155,7 @@ Result: User executes, can provide feedback without re-reading files
 
 </forbidden>
 
-## /clear Command - Full Reset
+### /clear Command - Full Reset
 
 <context>
 
@@ -283,7 +252,7 @@ This preserves your progress while freeing up context space."
 
 </forbidden>
 
-## Compact vs Clear Decision Matrix
+### Compact vs Clear Decision Matrix
 
 <required>
 
@@ -355,7 +324,7 @@ Reason: Too many dead ends, need fresh start
 
 </examples>
 
-## Tool Search Tool Integration
+### Tool Search Tool Integration
 
 <context>
 
@@ -383,7 +352,7 @@ Agent SHOULD leverage Tool Search Tool:
 
 </required>
 
-## CLAUDE.md for Persistent Rules
+### CLAUDE.md for Persistent Rules
 
 <context>
 
@@ -399,7 +368,7 @@ Agent SHOULD leverage Tool Search Tool:
 
 <required>
 
-## Rule Persistence Strategy
+#### Rule Persistence Strategy
 
 **What goes in CLAUDE.md** (always active):
 - Critical guardrails (NEVER/ALWAYS rules)
@@ -488,29 +457,29 @@ Result: 1200 lines loaded every session, high token usage
 
 </forbidden>
 
-## Context Optimization Workflow
+### Context Optimization Workflow
 
 <required>
 
 Agent SHOULD follow this optimization workflow:
 
-### Phase 1: Exploration (0-50% context)
+#### Phase 1: Exploration (0-50% context)
 - Use progressive disclosure (Grep → targeted Read)
 - Delegate broad exploration to Task tool (isolated context)
 - Keep findings in file:line format
 
-### Phase 2: Implementation (50-70% context)
+#### Phase 2: Implementation (50-70% context)
 - Monitor context meter proactively
 - Use reference-based communication
 - Prepare for compaction (identify what to preserve)
 
-### Phase 3: Critical (70-90% context)
+#### Phase 3: Critical (70-90% context)
 - Execute /compact with specific retention criteria
 - Preserve: task goals, file locations, decisions, todos
 - Discard: exploration results, verbose outputs
 - Resume implementation with cleaned context
 
-### Phase 4: Emergency (90%+ context)
+#### Phase 4: Emergency (90%+ context)
 - Aggressive compaction (keep only essentials)
 - Consider /clear if switching tasks
 - Commit work frequently for session recovery
@@ -547,7 +516,7 @@ Phase 4 (Complete):
 
 </examples>
 
-## Monitoring and Metrics
+### Monitoring and Metrics
 
 <context>
 
@@ -560,7 +529,7 @@ Phase 4 (Complete):
 
 <required>
 
-### User-Agent Communication Pattern
+#### User-Agent Communication Pattern
 
 **User should notify agent**:
 ```text
@@ -603,7 +572,7 @@ Context should now be around 30%, plenty of room to continue."
 
 </examples>
 
-## Version Information
+### Version Information
 
 <metadata>
 
@@ -619,14 +588,11 @@ Features documented here are current as of the version noted above. For newer ve
 
 </note>
 
-</context>
-
 <related>
 
-- **Shared principles**: @rules-context-principles.md (universal strategies)
-- **Other platforms**: @rules-context-cursor.md, @rules-context-kiro.md
-- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
-- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
+- **Universal principles**: @context.md (shared context management strategies, agent role)
+- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Foundation**: @core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Claude Code documentation, Prompt Caching Guide
 
 </related>
