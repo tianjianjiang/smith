@@ -4,7 +4,7 @@
 
 - **Scope**: GitHub platform-specific operations (gh CLI only)
 - **Load if**: Using GitHub CLI commands, GitHub-specific features
-- **Prerequisites**: @git.md, @gh-pr.md, @gh-pr.md
+- **Prerequisites**: @git.md, @gh-pr.md
 
 </metadata>
 

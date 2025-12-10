@@ -136,7 +136,7 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **modifying_existing_pr:**
 - Condition: Working on existing PR OR addressing review comments
-- Action: Check for unaddressed review comments BEFORE making changes (see rules-github-pr-workflows.md Pre-Work Check)
+- Action: Check for unaddressed review comments BEFORE making changes (see @gh-pr.md Pre-Work Check)
 - Load: @gh-pr.md
 
 **pr_review_response:**

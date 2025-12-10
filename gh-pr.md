@@ -4,8 +4,8 @@
 
 - **Scope**: Complete GitHub PR lifecycle - creation, review, rebase, merge, and cleanup
 - **Load if**: Creating PRs, reviewing code, merging changes, managing PR branches, post-merge operations
-- **Prerequisites**: rules-core.md, rules-git.md, rules-github-cli.md, rules-ai_agents.md
-- **Token efficiency**: Use perPage, minimal_output parameters (see rules-github-cli.md)
+- **Prerequisites**: @core.md, @git.md, @gh-cli.md, @ai.md
+- **Token efficiency**: Use perPage, minimal_output parameters (see @gh-cli.md)
 
 </metadata>
 
@@ -990,7 +990,7 @@ MUST verify ALL of these before rebasing:
 
 ```sh
 RECENT_AUTHORS=$(git log -5 --format='%ae' | sort -u)
-git status --porcelorn
+git status --porcelain
 git branch -vv | grep "$BRANCH"
 git merge-tree "$(git merge-base HEAD "origin/$BASE")" HEAD "origin/$BASE"
 git log @{upstream}.. --oneline
@@ -1363,9 +1363,9 @@ git push
 
 # Related Standards
 
-- **Git Operations**: rules-git.md - Commits, branches, merges
-- **Stacked PRs**: stacked.md - Advanced stacked PR patterns and workflows
-- **GitHub CLI**: rules-github-cli.md - GitHub CLI commands and token efficiency
-- **Development Workflow**: rules-development.md - Daily practices, quality gates
-- **Testing**: rules-testing.md - Test requirements
-- **AI Principles**: rules-ai_agents.md - Constitutional AI principles, exploration-before-implementation
+- **Git Operations**: @git.md - Commits, branches, merges
+- **Stacked PRs**: @stacked.md - Advanced stacked PR patterns and workflows
+- **GitHub CLI**: @gh-cli.md - GitHub CLI commands and token efficiency
+- **Development Workflow**: @dev.md - Daily practices, quality gates
+- **Testing**: @testing.md - Test requirements
+- **AI Principles**: @ai.md - Constitutional AI principles, exploration-before-implementation

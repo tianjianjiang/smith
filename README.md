@@ -12,91 +12,91 @@ See [AGENTS.md](AGENTS.md) for context-triggered loading rules and file organiza
 
 Point your AI coding tool to @AGENTS.md (the `@` prefix is a shorthand notation for file imports that auto-loads relative to project context):
 
-**[Aider](https://aider.chat/)[[1]](#ref-1)**:
+[Aider](https://aider.chat/)[[1]](#ref-1):
 - Global: `~/.aider.conf.yml`
 - Project: `AGENTS.md`
 
-**[Amp](https://ampcode.com/manual)[[2]](#ref-2)**:
+[Amp](https://ampcode.com/manual)[[2]](#ref-2):
 - Global: `~/.config/AGENTS.md`
 - Project: `AGENTS.md`
 
-**[Antigravity](https://cloud.google.com/products/antigravity)[[3]](#ref-3)**:
+[Antigravity](https://cloud.google.com/products/antigravity)[[3]](#ref-3):
 - Global: `~/.gemini/GEMINI.md`
 - Project: `.agent/rules/`
 
-**[Claude Code](https://docs.anthropic.com/en/docs/claude-code)[[4]](#ref-4)**:
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code)[[4]](#ref-4):
 - Global: `~/.claude/CLAUDE.md`
 - Project: `AGENTS.md`
 
-**[Continue](https://docs.continue.dev/)[[5]](#ref-5)**:
+[Continue](https://docs.continue.dev/)[[5]](#ref-5):
 - Global: `~/.continue/config.yaml`
 - Project: `.continue/`
 
-**[Cursor](https://docs.cursor.com/context/rules)[[6]](#ref-6)**:
+[Cursor](https://docs.cursor.com/context/rules)[[6]](#ref-6):
 - Global: —[[7]](#ref-7)
 - Project: `.cursor/rules/*.mdc`
 
-**[Devin](https://devin.ai/)[[8]](#ref-8)**:
+[Devin](https://devin.ai/)[[8]](#ref-8):
 - Global: —
 - Project: `AGENTS.md`
 
-**[Gemini CLI](https://developers.google.com/gemini-code-assist/docs/use-agentic-chat-pair-programmer)[[9]](#ref-9)**:
+[Gemini CLI](https://developers.google.com/gemini-code-assist/docs/use-agentic-chat-pair-programmer)[[9]](#ref-9):
 - Global: `~/.gemini/`
 - Project: `GEMINI.md`
 
-**[GitHub Copilot](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot)[[10]](#ref-10)**:
+[GitHub Copilot](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot)[[10]](#ref-10):
 - Global: —[[11]](#ref-11)
 - Project: `.github/copilot-instructions.md`
 
-**[goose](https://github.com/block/goose)[[12]](#ref-12)**:
+[goose](https://github.com/block/goose)[[12]](#ref-12):
 - Global: —
 - Project: `AGENTS.md`
 
-**[JetBrains AI](https://www.jetbrains.com/help/ai-assistant/configure-project-rules.html)[[13]](#ref-13)**:
+[JetBrains AI](https://www.jetbrains.com/help/ai-assistant/configure-project-rules.html)[[13]](#ref-13):
 - Global: `~/.config/JetBrains/*/ai-assistant/rules/`
 - Project: `.aiassistant/rules/`
 
-**[JetBrains Junie](https://www.jetbrains.com/help/junie/customize-guidelines.html)[[14]](#ref-14)**:
+[JetBrains Junie](https://www.jetbrains.com/help/junie/customize-guidelines.html)[[14]](#ref-14):
 - Global: —
 - Project: `.junie/guidelines.md`
 
-**[Kiro](https://kiro.dev/docs/steering/)[[15]](#ref-15)**:
+[Kiro](https://kiro.dev/docs/steering/)[[15]](#ref-15):
 - Global: `~/.kiro/steering/`
 - Project: `.kiro/steering/`
 
-**[OpenAI Codex](https://developers.openai.com/codex/guides/agents-md/)[[16]](#ref-16)**:
+[OpenAI Codex](https://developers.openai.com/codex/guides/agents-md/)[[16]](#ref-16):
 - Global: `~/.codex/AGENTS.md`
 - Project: `AGENTS.md`
 
-**[OpenHands](https://docs.openhands.dev/)[[17]](#ref-17)**:
+[OpenHands](https://docs.openhands.dev/)[[17]](#ref-17):
 - Global: `~/.openhands/settings.json`
 - Project: `.openhands/microagents/`
 
-**[Roo Code](https://docs.roocode.com/features/custom-instructions)[[18]](#ref-18)**:
+[Roo Code](https://docs.roocode.com/features/custom-instructions)[[18]](#ref-18):
 - Global: `~/.roo/rules/`
 - Project: `.roo/rules/`
 
-**[Sourcegraph Cody](https://sourcegraph.com/docs/cody)[[19]](#ref-19)**:
+[Sourcegraph Cody](https://sourcegraph.com/docs/cody)[[19]](#ref-19):
 - Global: Enterprise only
 - Project: `.idea/cody_settings.json`
 
-**[Tabnine](https://docs.tabnine.com/main/getting-started/tabnine-agent/guidelines)[[20]](#ref-20)**:
+[Tabnine](https://docs.tabnine.com/main/getting-started/tabnine-agent/guidelines)[[20]](#ref-20):
 - Global: `~/.config/TabNine/`
 - Project: `.tabnine/guidelines/`
 
-**[VS Code](https://code.visualstudio.com/updates/v1_104)[[21]](#ref-21)**:
+[VS Code](https://code.visualstudio.com/updates/v1_104)[[21]](#ref-21):
 - Global: —
 - Project: `AGENTS.md`
 
-**[Warp](https://docs.warp.dev/agents/using-agents)[[22]](#ref-22)**:
+[Warp](https://docs.warp.dev/agents/using-agents)[[22]](#ref-22):
 - Global: —
 - Project: `WARP.md`
 
-**[Windsurf](https://docs.windsurf.com/)[[23]](#ref-23)**:
+[Windsurf](https://docs.windsurf.com/)[[23]](#ref-23):
 - Global: `.windsurf/rules`
 - Project: `AGENTS.md`
 
-**[Zed](https://zed.dev/docs/ai/agent-panel)[[24]](#ref-24)**:
+[Zed](https://zed.dev/docs/ai/agent-panel)[[24]](#ref-24):
 - Global: —[[25]](#ref-25)
 - Project: `AGENTS.md`
 

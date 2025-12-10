@@ -4,7 +4,7 @@
 
 - **Scope**: Advanced stacked PR workflows and patterns for large features
 - **Load if**: Creating stacked PRs, working on PR stacks, managing dependent PRs
-- **Prerequisites**: rules-github-pr-workflows.md, rules-git.md, rules-github-cli.md
+- **Prerequisites**: @gh-pr.md, @git.md, @gh-cli.md
 
 </metadata>
 
@@ -13,8 +13,8 @@
 ## Scope
 
 - **This document**: Advanced stacked PR patterns, merge workflows, rebase strategies
-- **GitHub PR workflows**: rules-github-pr-workflows.md - Complete GitHub PR lifecycle
-- **Git operations**: rules-git.md - Local git commands
+- **GitHub PR workflows**: @gh-pr.md - Complete GitHub PR lifecycle
+- **Git operations**: @git.md - Local git commands
 
 ## When to Use Stacked PRs
 
@@ -253,6 +253,6 @@ git merge main
 
 ## Related Standards
 
-- **GitHub PR Workflows**: rules-github-pr-workflows.md - Complete GitHub PR lifecycle (creation, review, merge, cleanup)
-- **Git Operations**: rules-git.md - Commits, branches, rebase, force-push
-- **GitHub CLI**: rules-github-cli.md - GitHub CLI commands
+- **GitHub PR Workflows**: @gh-pr.md - Complete GitHub PR lifecycle (creation, review, merge, cleanup)
+- **Git Operations**: @git.md - Commits, branches, rebase, force-push
+- **GitHub CLI**: @gh-cli.md - GitHub CLI commands
