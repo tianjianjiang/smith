@@ -25,11 +25,11 @@ pnpm lint:fix && pnpm test
 
 **Note**: Ruff enforces PEP8 automatically - no need for separate PEP8 checks.
 
-**For Python-specific patterns**: See @rules-python.md
+**For Python-specific patterns**: See @python.md
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @rules-ai_agents.md for comprehensive patterns:
+**For AI agent workflows**: See @ai.md for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
 - AGENTS.md optimization for prompt caching
@@ -49,8 +49,8 @@ Before creating a pull request:
 
 </required>
 
-**See**: @rules-pr-concepts.md - Pull request creation workflow
-**See**: @rules-github-cli.md - GitHub-specific PR commands
+**See**: @gh-pr.md - Pull request creation workflow
+**See**: @gh-cli.md - GitHub-specific PR commands
 
 ## Package Management
 
@@ -117,9 +117,9 @@ Before creating a pull request:
 
 ## Related Standards
 
-- **Personal Rules**: @rules-core.md
-- **Python Standards**: @rules-python.md
-- **Testing**: @rules-testing.md
-- **Git Workflow**: @rules-git.md
-- **GitHub PRs**: @rules-github-cli.md
-- **Naming**: @rules-naming.md
+- **Personal Rules**: @core.md
+- **Python Standards**: @python.md
+- **Testing**: @testing.md
+- **Git Workflow**: @git.md
+- **GitHub PRs**: @gh-cli.md
+- **Naming**: @naming.md

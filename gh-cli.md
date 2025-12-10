@@ -4,7 +4,7 @@
 
 - **Scope**: GitHub platform-specific operations (gh CLI only)
 - **Load if**: Using GitHub CLI commands, GitHub-specific features
-- **Prerequisites**: @rules-git.md, @rules-pr-concepts.md, @rules-github-pr-automation.md
+- **Prerequisites**: @git.md, @gh-pr.md, @gh-pr.md
 
 </metadata>
 
@@ -13,9 +13,9 @@
 ## Scope
 
 - **This document**: GitHub CLI commands, GitHub-specific features
-- **Platform-neutral workflows**: @rules-pr-concepts.md for platform-neutral concepts
-- **Agent automation**: @rules-github-*.md for agent workflows
-- **Local git operations**: @rules-git.md for commits, branches, merges
+- **Platform-neutral workflows**: @gh-pr.md for platform-neutral concepts
+- **Agent automation**: @gh-*.md for agent workflows
+- **Local git operations**: @git.md for commits, branches, merges
 
 </context>
 
@@ -201,24 +201,12 @@ gh pr edit <pr-number> --add-assignee @me
 
 ### Viewing PRs
 
-<examples>
+**Use `gh pr --help` for common commands**. Key non-obvious patterns:
 
 ```sh
-gh pr list
-gh pr list --state all
-gh pr list --author @me
-gh pr list --label bug
-gh pr list --limit 20
-gh pr view 123
-gh pr view 123 --web
-gh pr view 123 --json number,title,body,state,author
+# Extract specific field with jq
 gh pr view 123 --json headRefName -q .headRefName
-gh pr diff 123
-gh pr view 123 --json commits
-gh pr view 123 --comments
 ```
-
-</examples>
 
 ### Checking Out PRs
 
@@ -234,34 +222,9 @@ git branch --show-current
 
 </examples>
 
-### PR Status and Checks
+### PR Status and Merging
 
-<examples>
-
-```sh
-gh pr checks 123
-gh pr checks 123 --watch
-gh run view <run-id>
-gh run view <run-id> --log
-gh run rerun <run-id>
-gh pr checks 123 --rerun
-```
-
-</examples>
-
-### Merging PRs
-
-<examples>
-
-```sh
-gh pr merge 123 --merge
-gh pr merge 123 --squash
-gh pr merge 123 --rebase
-gh pr merge 123 --auto --squash
-gh pr merge 123 --squash --delete-branch
-```
-
-</examples>
+**Use `gh pr --help` for common merge and check commands**.
 
 ## Code Review Operations
 
@@ -305,10 +268,9 @@ gh pr edit 123 --remove-label wontfix
 
 ## Issue Operations
 
-### Creating Issues
+**Use `gh issue --help` for common commands**. Key non-obvious pattern - HEREDOC for multiline bodies:
 
 ```sh
-gh issue create --title "Bug: error message" --body "Description"
 gh issue create --title "bug: API returns 500 error" --body "$(cat <<'EOF'
 ## Description
 API endpoint /api/v1/query returns 500 error when...
@@ -330,33 +292,6 @@ Returns 500 with error message
 - Python: 3.11
 EOF
 )"
-gh issue create --title "Bug" --body "Description" --assignee @me
-gh issue create --title "Bug" --body "Description" --label bug,priority:high
-```
-
-### Viewing Issues
-
-```sh
-gh issue list
-gh issue list --state all
-gh issue list --assignee @me
-gh issue list --label bug
-gh issue list --author @username
-gh issue view 123
-gh issue view 123 --web
-```
-
-### Managing Issues
-
-```sh
-gh issue close 123
-gh issue close 123 --comment "Fixed in PR #456"
-gh issue reopen 123
-gh issue edit 123 --title "Updated title"
-gh issue edit 123 --body "Updated description"
-gh issue edit 123 --add-label bug
-gh issue edit 123 --add-assignee @user
-gh issue comment 123 --body "Update on progress..."
 ```
 
 ## Issue and PR Linking
@@ -422,29 +357,7 @@ Protected branches are configured in repository settings, not via CLI.
 
 ## GitHub Actions Integration
 
-### Viewing Workflow Runs
-
-```sh
-gh run list
-gh run list --workflow ci.yml
-gh run view <run-id>
-gh run view <run-id> --log
-gh run download <run-id>
-```
-
-### Re-running Workflows
-
-```sh
-gh run rerun <run-id> --failed
-gh run rerun <run-id>
-```
-
-### Workflow Status in PRs
-
-```sh
-gh pr checks 123
-gh pr view 123 --json statusCheckRollup
-```
+**Use `gh run --help` for common workflow commands**.
 
 ## CODEOWNERS
 
@@ -499,10 +412,10 @@ gh pr merge 123 --squash --delete-branch
 
 <related>
 
-- **PR Workflows**: @rules-pr-concepts.md - Platform-neutral PR concepts
-- **GitHub PR Operations**: @rules-github-pr-automation.md - GitHub PR workflows
-- **GitHub Workflows**: @rules-github-*.md - GitHub automation workflows
-- **Git Operations**: @rules-git.md - Commits, branches, merges
-- **Development Workflow**: @rules-development.md - Quality gates, pre-PR checks
+- **PR Workflows**: @gh-pr.md - Platform-neutral PR concepts
+- **GitHub PR Operations**: @gh-pr.md - GitHub PR lifecycle
+- **GitHub Workflows**: @gh-*.md - GitHub automation workflows
+- **Git Operations**: @git.md - Commits, branches, merges
+- **Development Workflow**: @dev.md - Quality gates, pre-PR checks
 
 </related>

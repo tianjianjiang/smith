@@ -4,10 +4,10 @@
 
 - **Scope**: Python-specific coding standards
 - **Load if**: Writing Python code, pytest tests, virtual env configuration
-- **Prerequisites**: @rules-core.md
-- **Requires**: @rules-core.md (Personal formatting, NEVER/ALWAYS)
+- **Prerequisites**: @core.md
+- **Requires**: @core.md (Personal formatting, NEVER/ALWAYS)
 - **Referenced by**: Testing, Development workflows
-- **Optional**: @rules-naming.md (File naming patterns)
+- **Optional**: @naming.md (File naming patterns)
 
 </metadata>
 
@@ -56,7 +56,7 @@ def process_documents(docs: List[str], max_count: Optional[int] = None) -> bool:
 
 ## Code Style
 
-**Personal formatting**: See @rules-core.md for line length, indentation, string quotes
+**Personal formatting**: See @core.md for line length, indentation, string quotes
 
 **Python-specific (enforced by ruff):**
 - Trailing commas: Use in multi-line structures
@@ -231,9 +231,9 @@ class Config:
 
 <related>
 
-- **Personal Rules**: @rules-core.md - NEVER/ALWAYS for all languages
-- **Development Workflow**: @rules-development.md - Daily practices
-- **Testing Standards**: @rules-testing.md - Test execution
-- **Naming Conventions**: @rules-naming.md - File naming
+- **Personal Rules**: @core.md - NEVER/ALWAYS for all languages
+- **Development Workflow**: @dev.md - Daily practices
+- **Testing Standards**: @testing.md - Test execution
+- **Naming Conventions**: @naming.md - File naming
 
 </related>

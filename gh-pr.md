@@ -1,10 +1,10 @@
-# GitHub PR Automation Workflows
+# GitHub PR Workflows
 
 <metadata>
 
-- **Scope**: Complete PR lifecycle automation - creation, review, rebase, and post-merge operations
-- **Load if**: Creating PRs, responding to review feedback, managing PR branches, post-merge operations
-- **Prerequisites**: rules-pr-concepts.md, rules-github-cli.md, rules-ai_agents.md
+- **Scope**: Complete GitHub PR lifecycle - creation, review, rebase, merge, and cleanup
+- **Load if**: Creating PRs, reviewing code, merging changes, managing PR branches, post-merge operations
+- **Prerequisites**: rules-core.md, rules-git.md, rules-github-cli.md, rules-ai_agents.md
 - **Token efficiency**: Use perPage, minimal_output parameters (see rules-github-cli.md)
 
 </metadata>
@@ -13,13 +13,15 @@
 
 ## Scope
 
-This document covers the complete GitHub PR automation workflow:
-- **PR creation and description generation**
-- **Review cycle automation** (review→fix→re-review)
-- **Rebase and branch freshness monitoring**
-- **Post-merge operations and cleanup**
+This document covers the complete GitHub PR workflow:
+- **PR creation** (quality checks, title/body format, AI-generated descriptions)
+- **Working on existing PRs** (branch checkout, pre-work checks, post-push requirements)
+- **Code review** (requesting, responding, giving reviews, automation)
+- **Rebase and freshness** (monitoring, decision tree, conflict resolution)
+- **Merging** (strategies, pre-merge checks, post-merge cleanup)
+- **Best practices** (PR size, communication, documentation, CI integration)
 
-For platform-neutral PR concepts, see rules-pr-concepts.md.
+For stacked PR workflows, see stacked.md.
 
 ## Dual-Approach Pattern
 
@@ -43,22 +45,33 @@ For platform-neutral PR concepts, see rules-pr-concepts.md.
 
 ---
 
-# PR Creation and Description Generation
+# PR Creation
 
-**Context**: AI automation creating PRs with comprehensive descriptions
+## Prerequisites and Quality Checks
 
-## Creating Pull Requests
+<constraints>
 
 <required>
 
-- MUST analyze full commit history from base branch divergence
-- MUST review ALL changed files (not just latest commit)
-- MUST write summary based on actual cumulative changes
-- MUST run all checks before PR creation
+- MUST run all quality checks before creating PR
+- MUST ensure branch is up-to-date with base branch
+- MUST have meaningful commit messages
+- MUST link to related issues
 - MUST verify branch tracks correct remote
 - MUST check if branch is current with base before PR creation
 - MUST offer to rebase if branch is behind base
 - MUST verify no merge conflicts exist with base
+
+</required>
+
+**Pre-PR checklist:**
+```sh
+poetry run ruff format . && poetry run ruff check --fix .
+poetry run pytest
+git fetch origin
+git rebase origin/main
+git push -u origin feat/my_feature
+```
 
 **Pre-PR freshness check**:
 ```sh
@@ -71,9 +84,76 @@ if [ "$BEHIND" -gt 0 ]; then
 fi
 ```
 
+</constraints>
+
+## PR Title Format
+
+<context>
+
+**Conventional Commits Format**: PR titles follow the same conventional commits format as commit messages.
+
+See @naming.md for complete specification, including:
+- Format pattern: `type: description` or `type(scope): description`
+- Type definitions (feat, fix, docs, etc.)
+- 50/72 character rule (PR title becomes merge commit subject)
+- Atomicity guidelines
+
+</context>
+
+<required>
+
+**Key requirements for PR titles:**
+- MUST follow conventional commits format
+- MUST stay within 72 character hard limit (GitLab enforces, GitHub truncates)
+- MUST target 50 characters for conciseness
+- MUST represent single logical change (use stacked PRs if needed)
+
 </required>
 
-## PR Description Auto-Generation
+<examples>
+
+- `feat(rag): add semantic search filtering`
+- `fix(api): resolve CORS issues`
+- `docs: update deployment guide`
+- `refactor(auth): extract validation logic`
+- `test: add integration tests for search`
+
+</examples>
+
+## PR Body Template
+
+<examples>
+
+```markdown
+## Summary
+- [Main change - what was added/fixed/changed]
+- [Secondary change or impact]
+- [Additional context if needed]
+
+## Context
+[Why this change is needed - from commit messages and associated tickets]
+
+## Testing
+- [How to verify the changes work - from test files or manual steps]
+- [Specific test commands or scenarios]
+
+## Dependencies
+- Depends on: #[PR number] (if this is a stacked PR)
+- Fixes: #[issue number] (if fixing a reported bug)
+- Blocks: #[PR number] (if other PRs depend on this)
+
+## Related Tickets
+- Closes: #[issue number] or JIRA-[ticket-id]
+- Relates to: #[issue number] (if related but doesn't close)
+
+Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+</examples>
+
+## AI-Generated PR Descriptions
 
 <context>
 
@@ -97,30 +177,6 @@ fi
    - **Testing**: How to verify (from test files or commit descriptions)
    - **Dependencies**: Links to related PRs/issues (stacked PRs, blocking issues)
    - **Compliance**: How changes fulfill ticket requirements (if applicable)
-
-**PR Description Template**:
-```markdown
-## Summary
-- [Main change - what was added/fixed/changed]
-- [Secondary change or impact]
-- [Additional context if needed]
-
-## Context
-[Why this change is needed - from commit messages and associated tickets]
-
-## Testing
-- [How to verify the changes work - from test files or manual steps]
-- [Specific test commands or scenarios]
-
-## Dependencies
-- Depends on: #[PR number] (if this is a stacked PR)
-- Fixes: #[issue number] (if fixing a reported bug)
-- Blocks: #[PR number] (if other PRs depend on this)
-
-## Related Tickets
-- Closes: #[issue number] or JIRA-[ticket-id]
-- Relates to: #[issue number] (if related but doesn't close)
-```
 
 **Customization**: Include project-specific code conventions in generated descriptions (Devin AI best practice).
 
@@ -184,8 +240,6 @@ Agent: [Creates PR using MCP or gh CLI]
 
 </examples>
 
-## PR Creation Common Mistakes
-
 <forbidden>
 
 - **NEVER** analyze only the latest commit for PR summary
@@ -193,65 +247,106 @@ Agent: [Creates PR using MCP or gh CLI]
 - **NEVER** create PR without running checks
 - **NEVER** assume file contents without reading
 - **NEVER** write generic summaries ("updated files")
-
-**Only analyzed latest commit** (should analyze ALL commits):
-"PR adds authentication" - but PR actually includes 5 commits with auth + rate limiting + docs. Only looked at latest commit message instead of full diff.
-
-**Assumed file contents** (should read ALL files):
-"PR updates auth.py and docs" - but doesn't describe WHAT changes were made because didn't actually read the files.
-
-**Generic summaries** (should be specific):
-"Updated files" - provides no value. Should describe actual changes with file:line references.
+- **NEVER** create PR with failing tests
+- **NEVER** merge PR with unresolved conflicts
+- **NEVER** skip CI checks
+- **NEVER** merge without required approvals
 
 </forbidden>
 
-## PR Analysis Checklist
+## PR Requirements
 
 <required>
 
-Before creating PR, MUST:
-
-1. Run `git diff base...HEAD` to see cumulative changes
-2. Run `git log base..HEAD` to see all commits
-3. Read all modified files (not assume contents)
-4. Identify cumulative impact across all commits
-5. Verify tests pass for all changes
-6. Draft summary reflecting full PR scope
+- MUST have descriptive title following conventional commits format
+- MUST include summary (1-3 bullet points)
+- MUST include test plan with checklist
+- MUST link to related issues
+- MUST have all CI checks passing
+- MUST have minimum 1 approval (if enforced by project)
 
 </required>
 
+## Stacked PRs
+
+<context>
+
+For large features (500+ lines), use stacked PRs to maintain atomic, reviewable changes.
+
+**See**: stacked.md for complete stacked PR workflows, merge strategies, and rebase patterns.
+
+</context>
+
 ---
 
-# Review Cycle Automation
+# Working on Existing PRs
 
-**Philosophy**: Automate the iterative review→fix→re-review cycle until all comments are resolved, then proceed to merge when approved.
+## CRITICAL: Always Use Actual Branch Name
 
-**Industry Best Practices**:
-- **CodeRabbitAI**: Incremental review tracking - only review changed files, not entire PR on each iteration
-- **Qodo Merge**: `/implement` command directly applies reviewer suggestions with tracking
-- **Devin AI**: Confidence scoring (high/medium/low) determines whether to implement directly or ask user first
-- **OpenHands**: Label-triggered workflows (e.g., "review-this" label auto-starts review cycle)
-- **Real-world impact**: 73.8% of automated review comments marked "Resolved", 30% reduction in review time
+<forbidden>
 
-## Review Cycle Workflow
+**NEVER create arbitrary local branch names when working on PRs:**
+
+- Do NOT create local branches with assumed names like `pr-123`
+- Do NOT assume branch name follows a pattern
+- Do NOT make changes without verifying current branch
+
+</forbidden>
 
 <required>
 
-**Iterative review cycle workflow**:
+**ALWAYS get and use the actual PR branch name:**
 
-<instructions>
+```sh
+git fetch origin
+git checkout -b "<actual-branch-name>" "origin/<actual-branch-name>"
+git branch --show-current
+git status
+```
 
-1. **Trigger points** (any of these):
-   - User: "address comments on PR #123" or "@agent address comments"
-   - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
-   - Auto: After reviewer requests changes
-   - **Proactive check**: When starting work on existing PR
-     - ALWAYS fetch review comments before making changes
-     - Check for both CHANGES_REQUESTED reviews AND COMMENT reviews
-     - Alert user if unaddressed comments exist
-     - Ask: "Address comments first or proceed with new changes?"
+</required>
+
+## Why This Matters
 
 <context>
+
+**Problem**: Creating local branches with assumed names that don't match the PR's actual branch name.
+
+**Impact**:
+- Your changes won't push to the PR
+- You're working on a disconnected branch
+- Risk of losing work or creating merge conflicts
+
+**Solution**: Always verify the PR's actual branch name from GitHub, then checkout from origin.
+
+</context>
+
+## Recovery if You Made This Mistake
+
+If you already made changes to the wrong branch:
+
+```sh
+git checkout "<actual-branch-name>"
+git cherry-pick <commit-sha-from-wrong-branch>
+git branch -D <wrong-branch-name>
+```
+
+## Pre-Work Requirements
+
+<required>
+
+Before making changes to an existing PR:
+
+1. **Check for review comments**: Fetch all inline review comments
+2. **Verify comment types**: Check for CHANGES_REQUESTED AND COMMENT reviews
+3. **Alert on pending feedback**: Inform user of unaddressed comments
+4. **Confirm approach**: Ask if user wants to address comments first
+
+</required>
+
+<context>
+
+**Rationale**: Bot reviewers (CodeRabbitAI, Copilot) often post informational COMMENT reviews that don't change PR state. Without proactive checking, these are easily missed.
 
 **CRITICAL: GitHub has TWO types of comments**:
 
@@ -274,7 +369,7 @@ Before creating PR, MUST:
 
 </context>
 
-### Pre-Work Review Comment Check
+## Pre-Work Review Comment Check
 
 <required>
 
@@ -301,14 +396,139 @@ Before creating PR, MUST:
 
 </required>
 
-<context>
+## Post-Push Requirements
 
-**Why This Matters**:
-- CodeRabbitAI posts COMMENT reviews (not CHANGES_REQUESTED)
-- COMMENT reviews don't change PR state
-- Without proactive checking, informational feedback is missed
+<required>
 
-</context>
+After pushing changes to a PR:
+
+1. **Address review comments**: Read and respond to all new review comments
+2. **Revise PR title**: Update if changes have shifted the PR's focus
+3. **Revise PR body**: Update summary to reflect current cumulative changes
+4. **Verify atomicity**: Confirm PR still represents a single logical change
+
+</required>
+
+<forbidden>
+
+- Leaving review comments unaddressed after push
+- PR title/body that doesn't reflect actual changes
+- Pushing without checking for new review comments
+
+</forbidden>
+
+## Pre-Commit Hook Handling
+
+<scenario>
+
+**When hooks modify files during commit:**
+
+1. Pre-commit hook runs automatically
+2. Hook modifies files (formatting, linting fixes)
+3. Commit fails with "files were modified by hook"
+
+</scenario>
+
+<required>
+
+**Workflow for hook modifications:**
+
+```sh
+git add .
+git commit -m "feat: add feature"
+git diff --cached
+git log -1 --format='%an %ae'
+git status
+git commit --amend --no-edit
+git commit -m "style: apply pre-commit hook fixes"
+```
+
+</required>
+
+<forbidden>
+
+- **NEVER** amend without checking commit authorship
+- **NEVER** amend commits already pushed to remote
+- **NEVER** amend commits from other authors
+
+</forbidden>
+
+**Decision tree:**
+- Amend IF: You authored last commit AND commit not pushed yet
+- New commit IF: Last commit from someone else OR already pushed
+
+For complete amend safety guidelines, see @git.md.
+
+---
+
+# Code Review Process
+
+## Requesting Review
+
+**Best practices:**
+- Request reviews from relevant team members
+- Provide context in PR description
+- Link to design docs or RFCs if applicable
+- Highlight areas needing special attention
+- Ensure all CI checks are passing before requesting review
+
+## Responding to Reviews
+
+**Address all comments:**
+1. Read all review comments carefully
+2. Respond to each comment thread
+3. Make requested changes
+4. Test your changes thoroughly
+5. Mark conversations as resolved
+6. Re-request review after changes
+
+**Workflow:**
+```sh
+git add .
+git commit -m "refactor: address review comments"
+git push
+```
+
+## Giving Reviews
+
+**Review checklist:**
+- [ ] Code follows project standards
+- [ ] Tests are adequate and passing
+- [ ] Documentation is updated
+- [ ] No security vulnerabilities
+- [ ] Performance considerations addressed
+- [ ] Error handling is appropriate
+- [ ] Changes are focused and don't include unrelated modifications
+
+**Review types:**
+- **Approve**: Code is ready to merge
+- **Request changes**: Issues must be addressed before merging
+- **Comment**: Suggestions or questions, but not blocking
+
+## Review Cycle Automation
+
+**Philosophy**: Automate the iterative review→fix→re-review cycle until all comments are resolved, then proceed to merge when approved.
+
+**Industry Best Practices**:
+- **CodeRabbitAI**: Incremental review tracking - only review changed files, not entire PR on each iteration
+- **Qodo Merge**: `/implement` command directly applies reviewer suggestions with tracking
+- **Devin AI**: Confidence scoring (high/medium/low) determines whether to implement directly or ask user first
+- **OpenHands**: Label-triggered workflows (e.g., "review-this" label auto-starts review cycle)
+- **Real-world impact**: 73.8% of automated review comments marked "Resolved", 30% reduction in review time
+
+## Review Cycle Workflow
+
+<required>
+
+**Iterative review cycle workflow**:
+
+<instructions>
+
+1. **Trigger points** (any of these):
+   - User: "address comments on PR #123" or "@agent address comments"
+   - Label: "review-this" or "needs-fixes" added to PR (OpenHands pattern)
+   - Auto: After reviewer requests changes
+   - **Proactive check**: When starting work on existing PR (see Pre-Work Review Comment Check above)
 
 2. **Fetch inline review thread comments**:
 
@@ -334,9 +554,14 @@ Before creating PR, MUST:
    ```
 
 3. **Categorize comments**:
-   - **Actionable**: Specific code changes requested (can be implemented)
+   - **Actionable (must fix)**: Specific code changes requested (bugs, security, breaking changes)
+   - **Nitpick/Minor**: Style suggestions, minor improvements (CodeRabbitAI often labels these "nitpick" or "suggestion")
+   - **Inline code comments**: Specific to particular lines of code (require code changes)
+   - **General PR comments**: Overall feedback on PR (may not require code changes)
    - **Clarification**: Questions needing answers (respond in comment thread)
    - **Discussion**: Architectural/subjective decisions (needs human input)
+
+   **Priority order**: Actionable (must fix) > Nitpick/Minor > Clarification > Discussion
 
 4. **For each actionable comment**:
    - **Analyze confidence**: Determine if request is clear and unambiguous
@@ -369,6 +594,13 @@ Fixed in commit ${COMMIT_SHA}."
    **IMPORTANT**: Use the `/replies` endpoint, NOT the base `/comments` endpoint. The `in_reply_to` parameter does NOT work.
 
    **Mark thread as resolved** (gh CLI + GraphQL API - requires two steps):
+
+   **When to resolve**:
+   - ✅ After implementing actionable change and committing
+   - ✅ After answering clarification question
+   - ✅ For nitpick/minor suggestions you've addressed
+   - ❌ NOT before changes are committed and pushed
+   - ❌ NOT for discussion threads (let reviewer resolve after consensus)
 
    **Step 1: Find the thread ID for your comment**:
    ```sh
@@ -405,27 +637,6 @@ Fixed in commit ${COMMIT_SHA}."
      }
    }'
    ```
-
-   <forbidden>
-
-   **NEVER mention bots when replying to review comments**:
-
-   - `@copilot Thank you for the feedback!` → Triggers unwanted PR creation
-   - `@coderabbitai Thanks for the review!` → Unnecessary bot notification
-
-   **CRITICAL: When replying to Copilot's inline review comments, NEVER mention `@copilot`.**
-
-   **Rationale**: Copilot is designed to open sub-PRs when mentioned. Mentioning `@copilot` in acknowledgment replies triggers unwanted sub-PR creation.
-
-   </forbidden>
-
-   <required>
-
-   **When to use @copilot** (ONLY when requesting action):
-   - `@copilot Please implement this suggestion`
-   - `@copilot Fix the issue you identified`
-
-   </required>
 
 5. **Commit and push changes**:
    ```sh
@@ -492,6 +703,27 @@ Addresses review feedback from PR review."
    If count > 0, review and resolve remaining threads before proceeding to merge.
 
 </instructions>
+
+</required>
+
+<forbidden>
+
+**NEVER mention bots when replying to review comments**:
+
+- `@copilot Thank you for the feedback!` → Triggers unwanted PR creation
+- `@coderabbitai Thanks for the review!` → Unnecessary bot notification
+
+**CRITICAL: When replying to Copilot's inline review comments, NEVER mention `@copilot`.**
+
+**Rationale**: Copilot is designed to open sub-PRs when mentioned. Mentioning `@copilot` in acknowledgment replies triggers unwanted sub-PR creation.
+
+</forbidden>
+
+<required>
+
+**When to use @copilot** (ONLY when requesting action):
+- `@copilot Please implement this suggestion`
+- `@copilot Fix the issue you identified`
 
 </required>
 
@@ -574,16 +806,31 @@ git merge-tree "$(git merge-base HEAD origin/main)" HEAD origin/main | grep -q "
 
 <required>
 
-**Decision matrix**:
+**Rebase Decision Logic**:
 
-| Scenario | Action | Rationale |
-|----------|-------------|-----------|
-| PR behind base, no conflicts, user not explicitly working on it | ASK user | Respectful of user control |
-| PR behind base, no conflicts, user just said "update PR" | AUTO-REBASE | Clear intent |
-| PR behind base, conflicts detected | INFORM + ASK | Requires manual resolution |
-| Parent PR merged, child PR exists | INFORM + OFFER | Helpful but not intrusive |
-| About to request review, PR outdated | BLOCK + INFORM | Prevent bad review request |
-| PR current with base | DO NOTHING | No action needed |
+**Scenario 1: PR behind base, no conflicts, user not explicitly working on it**
+- Action: ASK user
+- Rationale: Respectful of user control
+
+**Scenario 2: PR behind base, no conflicts, user just said "update PR"**
+- Action: AUTO-REBASE
+- Rationale: Clear intent
+
+**Scenario 3: PR behind base, conflicts detected**
+- Action: INFORM + ASK
+- Rationale: Requires manual resolution
+
+**Scenario 4: Parent PR merged, child PR exists**
+- Action: INFORM + OFFER
+- Rationale: Helpful but not intrusive
+
+**Scenario 5: About to request review, PR outdated**
+- Action: BLOCK + INFORM
+- Rationale: Prevent bad review request
+
+**Scenario 6: PR current with base**
+- Action: DO NOTHING
+- Rationale: No action needed
 
 **Safe auto-rebase criteria** (ALL must be true):
 1. User gave explicit update/rebase command
@@ -743,7 +990,7 @@ MUST verify ALL of these before rebasing:
 
 ```sh
 RECENT_AUTHORS=$(git log -5 --format='%ae' | sort -u)
-git status --porcelain
+git status --porcelorn
 git branch -vv | grep "$BRANCH"
 git merge-tree "$(git merge-base HEAD "origin/$BASE")" HEAD "origin/$BASE"
 git log @{upstream}.. --oneline
@@ -766,7 +1013,47 @@ git rebase --abort
 
 ---
 
-# Post-Merge Operations and Cleanup
+# Merging Pull Requests
+
+## Pre-Merge Checklist
+
+<required>
+
+- MUST have all CI checks passing
+- MUST have required approvals
+- MUST be up-to-date with base branch
+- MUST have no merge conflicts
+- MUST have related issues linked
+
+</required>
+
+## Merge Strategies
+
+<context>
+
+**Merge commit:**
+- Creates a merge commit preserving all individual commits
+- **Use for**: Feature branches with multiple logical commits
+- Maintains complete history of branch development
+
+**Squash and merge:**
+- Combines all commits into a single commit
+- **Use for**: Small fixes, documentation updates, single logical change
+- Clean main branch history, but loses individual commit history
+
+**Rebase and merge:**
+- Replays commits on top of base branch
+- **Use for**: When linear history is required and commits are clean
+- No merge commits, but rewrites history
+
+**When to use each:**
+- **Merge commit**: Feature branches with meaningful commit history
+- **Squash**: Tiny fixes, doc updates, experimental branches with messy commits
+- **Rebase**: Projects requiring linear history with clean commits
+
+</context>
+
+## Post-Merge Operations and Cleanup
 
 **Context**: Operations to perform after PR is merged
 
@@ -886,7 +1173,6 @@ fi
 Use the cascade update workflow described above.
 
 **For non-stacked PRs** (simple feature branch):
-See rules-pr-concepts.md for standard cleanup workflow:
 ```sh
 git checkout main
 git fetch --prune origin
@@ -895,6 +1181,18 @@ git branch -d feat/my_feature
 git ls-remote --exit-code --heads origin feat/my_feature >/dev/null 2>&1 && \
   git push origin --delete feat/my_feature
 ```
+
+<context>
+
+**Command explanation:**
+
+- `git fetch --prune`: Update remote refs and remove stale tracking branches
+- `git pull origin main`: Update local main with merged commits (required for branch -d check)
+- `git branch -d`: Safe delete (fails if branch not merged to main)
+- `git ls-remote --exit-code`: Check if remote branch exists before attempting deletion
+- Works whether GitHub auto-delete is enabled or disabled
+
+</context>
 
 <forbidden>
 
@@ -907,10 +1205,167 @@ git ls-remote --exit-code --heads origin feat/my_feature >/dev/null 2>&1 && \
 
 ---
 
+# Best Practices
+
+## PR Size
+
+<constraints>
+
+- Keep PRs focused and small (< 400 lines changed ideal)
+- Split large features into multiple PRs
+- Use draft PRs for work in progress
+- One logical change per PR
+
+</constraints>
+
+## Communication
+
+- Use PR comments for technical discussions
+- Use issue comments for requirements and planning
+- Tag relevant team members with @mentions
+- Be respectful and constructive in reviews
+- Explain your reasoning in review responses
+
+## Documentation
+
+- Update README if public API changes
+- Update CHANGELOG for notable changes
+- Add inline code comments for complex logic
+- Include examples in PR description for new features
+
+## CI Integration
+
+<required>
+
+**Monitor CI status before and after changes:**
+
+```sh
+git push
+git add .
+git commit -m "fix: resolve CI check failures"
+git push
+```
+
+</required>
+
+<forbidden>
+
+- **NEVER** request review while CI checks are failing
+- **NEVER** ignore CI check failures
+- **NEVER** merge with failing checks
+
+</forbidden>
+
+**Best practices:**
+- Ensure all tests run in CI
+- Set up automatic deployment previews when possible
+- Configure status checks as required
+- Wait for all checks to pass before requesting review
+- If checks fail, fix immediately before other work
+- Monitor checks continuously to catch failures early
+
+---
+
+# Troubleshooting PR Issues
+
+## Changes Not Appearing in PR
+
+**Symptoms**: You made changes and committed but PR doesn't show them
+
+**Diagnosis:**
+```sh
+git branch --show-current
+git branch -vv
+```
+
+**Solution:**
+```sh
+git branch --set-upstream-to=origin/<branch-name>
+git push
+```
+
+## Merge Conflicts After Base Branch Update
+
+**Symptoms**: PR shows merge conflicts with base branch
+
+**Diagnosis:**
+```sh
+git fetch origin
+git log HEAD..origin/main
+```
+
+**Solution:**
+```sh
+git fetch origin main:main
+git rebase main
+git status
+git add .
+git rebase --continue
+git push --force-with-lease
+```
+
+## CI Checks Fail After Pre-Commit Hook
+
+**Symptoms**: Pre-commit passes locally but CI fails
+
+**Solution:**
+```sh
+poetry run ruff check . --config=<same-as-ci>
+poetry run pytest --cov=<same-as-ci>
+```
+
+## Recovery Procedures
+
+### Wrong Branch Checkout
+
+**Problem**: Made changes to wrong branch
+
+**Solution**: See "Recovery if You Made This Mistake" section above in "Working on Existing PRs"
+
+### Accidentally Pushed to Wrong Remote
+
+**Problem**: Pushed PR branch to wrong repository
+
+**Solution:**
+```sh
+git remote -v
+git remote remove wrong-remote
+git remote add origin <correct-repo-url>
+git push -u origin <branch-name>
+```
+
+### Undo Last Commit but Keep Changes
+
+**Problem**: Made commit but want to redo it differently
+
+**Solution:**
+```sh
+git reset --soft HEAD~1
+git reset HEAD~1
+git add .
+git commit -m "better commit message"
+```
+
+### Syncing with Updated Base Branch
+
+**Problem**: Base branch (main/develop) has new commits
+
+**Solution:**
+```sh
+git fetch origin
+git rebase origin/main
+git push --force-with-lease
+git merge origin/main
+git push
+```
+
+---
+
 # Related Standards
 
-- **PR Concepts**: rules-pr-concepts.md - Platform-neutral PR workflows, stacked PRs, code review process
+- **Git Operations**: rules-git.md - Commits, branches, merges
+- **Stacked PRs**: stacked.md - Advanced stacked PR patterns and workflows
 - **GitHub CLI**: rules-github-cli.md - GitHub CLI commands and token efficiency
-- **Git Operations**: rules-git.md - Local git operations, commits, branches
-- **Workflow Utilities**: rules-github-utils.md - Troubleshooting and recovery procedures
+- **Development Workflow**: rules-development.md - Daily practices, quality gates
+- **Testing**: rules-testing.md - Test requirements
 - **AI Principles**: rules-ai_agents.md - Constitutional AI principles, exploration-before-implementation

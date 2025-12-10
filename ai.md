@@ -4,7 +4,7 @@
 
 - **Scope**: Steering coding agents (Claude Code, GitHub Copilot, AI pair programming)
 - **Load if**: Working with AI agents for development tasks
-- **Prerequisites**: @rules-core.md, @rules-development.md
+- **Prerequisites**: @core.md, @dev.md
 - **Requires**: Understanding of prompt engineering, Constitutional AI principles
 - **Provides**: Agent steering patterns, efficiency optimization, quality assurance
 - **Research**: Anthropic (Claude Code, Prompt Caching, Constitutional AI), OpenAI (o1/o3, Structured Outputs), Microsoft (LLMLingua)
@@ -1207,8 +1207,8 @@ Agent workflow:
 
 <related>
 
-- **Foundation**: @rules-core.md (core principles), @rules-development.md (workflow)
-- **Practices**: @rules-pr-concepts.md (PR concepts), @rules-github-agent-*.md (agent PR workflows), @rules-tools.md (tool configuration)
+- **Foundation**: @core.md (core principles), @dev.md (workflow)
+- **Practices**: @gh-pr.md (PR concepts), @gh-pr.md (GitHub PR workflows), @tools.md (tool configuration)
 - **Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
 
 </related>

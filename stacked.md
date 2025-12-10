@@ -4,7 +4,7 @@
 
 - **Scope**: Advanced stacked PR workflows and patterns for large features
 - **Load if**: Creating stacked PRs, working on PR stacks, managing dependent PRs
-- **Prerequisites**: rules-pr-concepts.md, rules-git.md, rules-github-cli.md
+- **Prerequisites**: rules-github-pr-workflows.md, rules-git.md, rules-github-cli.md
 
 </metadata>
 
@@ -13,8 +13,7 @@
 ## Scope
 
 - **This document**: Advanced stacked PR patterns, merge workflows, rebase strategies
-- **Core PR concepts**: rules-pr-concepts.md - Platform-neutral PR workflows
-- **GitHub operations**: rules-github-pr-automation.md - GitHub-specific PR automation
+- **GitHub PR workflows**: rules-github-pr-workflows.md - Complete GitHub PR lifecycle
 - **Git operations**: rules-git.md - Local git commands
 
 ## When to Use Stacked PRs
@@ -143,13 +142,19 @@ main ──●──●──●──M
 
 **Squash merge IS allowed** if you follow the branch deletion process for stacked PRs.
 
-**Merge strategy by position**:
+**Merge Strategy by PR Position**:
 
-| PR Position           | Squash Merge    | Branch Deletion Timing   |
-| --------------------- | --------------- | ------------------------ |
-| Parent (has children) | OK with process | After child base updated |
-| Middle                | OK with process | After child base updated |
-| Final (leaf)          | OK              | Immediate OK             |
+**Parent (has children)**:
+- Squash Merge: OK with process
+- Branch Deletion Timing: After child base updated
+
+**Middle**:
+- Squash Merge: OK with process
+- Branch Deletion Timing: After child base updated
+
+**Final (leaf)**:
+- Squash Merge: OK
+- Branch Deletion Timing: Immediate OK
 
 </required>
 
@@ -248,7 +253,6 @@ git merge main
 
 ## Related Standards
 
-- **Core PR Concepts**: rules-pr-concepts.md - Platform-neutral PR workflows, code review
-- **GitHub PR Automation**: rules-github-pr-automation.md - GitHub-specific workflows, post-merge cascade
+- **GitHub PR Workflows**: rules-github-pr-workflows.md - Complete GitHub PR lifecycle (creation, review, merge, cleanup)
 - **Git Operations**: rules-git.md - Commits, branches, rebase, force-push
 - **GitHub CLI**: rules-github-cli.md - GitHub CLI commands

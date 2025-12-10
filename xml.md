@@ -27,19 +27,19 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 
 **Reference**: [Use XML tags to structure your prompts](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/use-xml-tags)
 
-| Tag                        | Purpose                 | Example                       |
-| -------------------------- | ----------------------- | ----------------------------- |
-| `<metadata>`               | File/component metadata | Load conditions, scope        |
-| `<instructions>`           | Direct commands to AI   | Step-by-step guidance         |
-| `<background_information>` | Context setting         | Domain knowledge              |
-| `<examples>`               | Few-shot examples       | Correct patterns              |
-| `<thinking>`               | Chain-of-thought        | Step-by-step reasoning        |
-| `<answer>`                 | Final output            | Clean result after thinking   |
-| `<context>`                | Contextual information  | Surrounding details           |
-| `<formatting>`             | Output format specs     | Patterns, templates           |
-| `<forbidden>`              | Prohibited actions      | Anti-patterns, mistakes       |
-| `<required>`               | Mandatory requirements  | Must-do rules                 |
-| `<related>`                | Cross-references        | Links to other files          |
+**Available tags**:
+
+- `<metadata>` - File/component metadata (load conditions, scope)
+- `<instructions>` - Direct commands to AI (step-by-step guidance)
+- `<background_information>` - Context setting (domain knowledge)
+- `<examples>` - Few-shot examples (correct patterns)
+- `<thinking>` - Chain-of-thought (step-by-step reasoning)
+- `<answer>` - Final output (clean result after thinking)
+- `<context>` - Contextual information (surrounding details)
+- `<formatting>` - Output format specs (patterns, templates)
+- `<forbidden>` - Prohibited actions (anti-patterns, mistakes)
+- `<required>` - Mandatory requirements (must-do rules)
+- `<related>` - Cross-references (links to other files)
 
 **Chain-of-Thought Reference**: [Let Claude think](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/chain-of-thought)
 
@@ -54,33 +54,31 @@ Do NOT invent placeholder-style tags like `<type>`, `<scope>`, or `<description>
 
 **Phrasal XML Tag Format**: GPT-5 family models use an implicit phrasal format for XML tags, where multi-word concepts are expressed as single tags with underscores connecting words (e.g., `<plan_tool_usage>`, `<context_gathering>`, `<code_editing_rules>`). This naming convention creates descriptive, self-documenting tag names that clearly indicate their purpose. While simple tags like `<task>` and `<instructions>` are also supported, the phrasal format is preferred for complex, domain-specific instructions in GPT-5/5.1 models.
 
-| Tag                                      | Purpose                        | Example                                                |
-| ---------------------------------------- | ------------------------------ | ------------------------------------------------------ |
-| `<instructions>`                         | Operational guidelines         | Technical constraints, step-by-step procedures         |
-| `<plan_tool_usage>`                      | Planning and task management   | Guidelines for creating and maintaining task plans     |
-| `<context_gathering>`                    | Search depth strategy          | Information collection methods and early stop criteria |
-| `<exploration>`                          | Codebase investigation         | Strategies before implementation                       |
-| `<verification>`                         | Testing requirements           | Quality checks and validation                          |
-| `<persistence>`                          | Agent continuation behavior    | Task completion guidelines                             |
-| `<self_reflection>`                      | Internal quality evaluation    | Rubrics for self-assessment                            |
-| `<code_editing_rules>`                   | Coding standards               | Guidelines with nested subsections                     |
-| `<guiding_principles>`                   | Foundational philosophies      | Engineering tenets (often nested in other tags)        |
-| `<tool_preambles>`                       | Agent communication patterns   | Patterns before tool calls                             |
-| `<efficiency>`                           | Time-conscious execution       | Optimization strategies                                |
-| `<apply_patch>`                          | Patch application guidelines   | Code change procedures                                 |
-| `<final_instructions>`                   | Critical closing directives    | Final steps before completion                          |
-| `<efficient_context_understanding_spec>` | Context gathering optimization | Methods for quick context collection                   |
-| `<task>`                                 | Specific user request          | The actual question or objective                       |
+**Core tags**:
+
+- `<instructions>` - Operational guidelines (technical constraints, step-by-step procedures)
+- `<plan_tool_usage>` - Planning and task management (guidelines for creating and maintaining task plans)
+- `<context_gathering>` - Search depth strategy (information collection methods and early stop criteria)
+- `<exploration>` - Codebase investigation (strategies before implementation)
+- `<verification>` - Testing requirements (quality checks and validation)
+- `<persistence>` - Agent continuation behavior (task completion guidelines)
+- `<self_reflection>` - Internal quality evaluation (rubrics for self-assessment)
+- `<code_editing_rules>` - Coding standards (guidelines with nested subsections)
+- `<guiding_principles>` - Foundational philosophies (engineering tenets, often nested in other tags)
+- `<tool_preambles>` - Agent communication patterns (patterns before tool calls)
+- `<efficiency>` - Time-conscious execution (optimization strategies)
+- `<apply_patch>` - Patch application guidelines (code change procedures)
+- `<final_instructions>` - Critical closing directives (final steps before completion)
+- `<efficient_context_understanding_spec>` - Context gathering optimization (methods for quick context collection)
+- `<task>` - Specific user request (the actual question or objective)
 
 **GPT-5.1 Additional Tags**:
 
-| Tag                           | Purpose                | Example                         |
-| ----------------------------- | ---------------------- | ------------------------------- |
-| `<final_answer_formatting>`   | Output structure rules | Length, format specifications   |
-| `<output_verbosity_spec>`     | Response conciseness   | Content priority and verbosity  |
-| `<user_updates_spec>`         | Progress update rules  | Frequency, tone for updates     |
-| `<solution_persistence>`      | Autonomous completion  | No early termination guidelines |
-| `<design_system_enforcement>` | UI component styling   | Design tokens and styling rules |
+- `<final_answer_formatting>` - Output structure rules (length, format specifications)
+- `<output_verbosity_spec>` - Response conciseness (content priority and verbosity)
+- `<user_updates_spec>` - Progress update rules (frequency, tone for updates)
+- `<solution_persistence>` - Autonomous completion (no early termination guidelines)
+- `<design_system_enforcement>` - UI component styling (design tokens and styling rules)
 
 **Tag Nesting Examples**:
 
@@ -158,15 +156,13 @@ Analyze the attached financial report and identify the most important metrics.
 
 **Special Tokens**:
 
-| Token             | Purpose                                  | Example                           |
-| ----------------- | ---------------------------------------- | --------------------------------- |
-| `<\|start\|>`     | Marks the beginning of a message         | Message boundary start            |
-| `<\|end\|>`       | Indicates the end of a message           | Message boundary end              |
-| `<\|message\|>`   | Separates header from content            | Content delimiter                 |
-| `<\|channel\|>`   | Specifies channel for assistant messages | `analysis`, `final`, `commentary` |
-| `<\|constrain\|>` | Data type specification                  | Tool call parameter types         |
-| `<\|call\|>`      | Marks a tool invocation                  | Tool call indicator               |
-| `<\|return\|>`    | Indicates completion of response         | Response termination              |
+- `<\|start\|>` - Marks the beginning of a message (message boundary start)
+- `<\|end\|>` - Indicates the end of a message (message boundary end)
+- `<\|message\|>` - Separates header from content (content delimiter)
+- `<\|channel\|>` - Specifies channel for assistant messages (`analysis`, `final`, `commentary`)
+- `<\|constrain\|>` - Data type specification (tool call parameter types)
+- `<\|call\|>` - Marks a tool invocation (tool call indicator)
+- `<\|return\|>` - Indicates completion of response (response termination)
 
 **Roles** (message types):
 
@@ -199,18 +195,18 @@ Analyze the attached financial report and identify the most important metrics.
 - [Gemini API Prompting Strategies](https://ai.google.dev/gemini-api/docs/prompting-strategies)
 - [Gemini 3 Prompting Best Practices](https://www.philschmid.de/gemini-3-prompt-practices)
 
-| Tag                   | Purpose                      | Example                    |
-| --------------------- | ---------------------------- | -------------------------- |
-| `<role>`              | Assistant identity/expertise | Persona definition         |
-| `<instructions>`      | Step-by-step procedures      | Plan, Execute, Validate    |
-| `<constraints>`       | Behavioral limitations       | Verbosity, tone            |
-| `<context>`           | Background information       | Data, situation            |
-| `<task>`              | Specific user request        | The actual question        |
-| `<output_format>`     | Response structure           | JSON, markdown, etc         |
-| `<rules>`             | Behavioral guidelines        | Cite sources, be objective |
-| `<planning_process>`  | Analysis steps               | Decomposition, strategy    |
-| `<error_handling>`    | Edge case responses          | Missing data handling      |
-| `<final_instruction>` | Critical closing directive   | Before execution           |
+**Available tags**:
+
+- `<role>` - Assistant identity/expertise (persona definition)
+- `<instructions>` - Step-by-step procedures (plan, execute, validate)
+- `<constraints>` - Behavioral limitations (verbosity, tone)
+- `<context>` - Background information (data, situation)
+- `<task>` - Specific user request (the actual question)
+- `<output_format>` - Response structure (JSON, markdown, etc)
+- `<rules>` - Behavioral guidelines (cite sources, be objective)
+- `<planning_process>` - Analysis steps (decomposition, strategy)
+- `<error_handling>` - Edge case responses (missing data handling)
+- `<final_instruction>` - Critical closing directive (before execution)
 
 ## Quick Reference: Commonly Used Tags
 
@@ -220,23 +216,53 @@ Analyze the attached financial report and identify the most important metrics.
 
 </context>
 
-| Tag              | Claude | GPT-5/5.1 | Codex | Gemini | Purpose                      |
-| ---------------- | ------ | --------- | ----- | ------ | ---------------------------- |
-| `<instructions>` | Yes    | Yes       | Yes   | Yes    | Step-by-step guidance        |
-| `<task>`         | Yes    | Yes       | Yes   | Yes    | Specific user request        |
-| `<context>`      | Yes    | Yes       | Yes   | Yes    | Background information       |
-| `<examples>`     | Yes    | Yes       | Yes   | Yes    | Few-shot examples            |
-| `<constraints>`  | Yes    | Yes       | Yes   | Yes    | Behavioral limitations       |
-| `<role>`         | No     | No        | No    | Yes    | Assistant identity/expertise |
-| `<formatting>`   | Yes    | No        | No    | No     | Output format specifications |
-| `<thinking>`     | Yes    | No        | No    | No     | Chain-of-thought reasoning   |
-| `<answer>`       | Yes    | No        | No    | No     | Final output after thinking  |
+**Universal Tags** (all platforms):
 
-**Model-Specific Tags**: Use these only with their intended models:
+- `<instructions>` - Step-by-step guidance
+- `<task>` - Specific user request
+- `<context>` - Background information
+- `<examples>` - Few-shot examples
+- `<constraints>` - Behavioral limitations
 
-- **Claude**: `<metadata>`, `<background_information>`, `<forbidden>`, `<required>`, `<related>`
-- **GPT-5/5.1**: `<plan_tool_usage>`, `<context_gathering>`, `<exploration>`, `<verification>`, `<persistence>`, `<self_reflection>`, `<code_editing_rules>`, `<guiding_principles>`, `<tool_preambles>`, `<efficiency>`, `<apply_patch>`, `<final_instructions>`
-- **Gemini**: `<output_format>`, `<rules>`, `<planning_process>`, `<error_handling>`, `<final_instruction>`
+**Claude-Specific Tags**:
+
+- `<metadata>` - File/component metadata
+- `<background_information>` - Context setting
+- `<forbidden>` - Prohibited actions
+- `<required>` - Mandatory requirements
+- `<related>` - Cross-references
+- `<formatting>` - Output format specifications
+- `<thinking>` - Chain-of-thought reasoning
+- `<answer>` - Final output after thinking
+
+**GPT-5/5.1-Specific Tags**:
+
+- `<plan_tool_usage>` - Planning and task management
+- `<context_gathering>` - Search depth strategy
+- `<exploration>` - Codebase investigation
+- `<verification>` - Testing requirements
+- `<persistence>` - Agent continuation behavior
+- `<self_reflection>` - Internal quality evaluation
+- `<code_editing_rules>` - Coding standards
+- `<guiding_principles>` - Foundational philosophies
+- `<tool_preambles>` - Agent communication patterns
+- `<efficiency>` - Time-conscious execution
+- `<apply_patch>` - Patch application guidelines
+- `<final_instructions>` - Critical closing directives
+- `<final_answer_formatting>` - Output structure rules (GPT-5.1)
+- `<output_verbosity_spec>` - Response conciseness (GPT-5.1)
+- `<user_updates_spec>` - Progress update rules (GPT-5.1)
+- `<solution_persistence>` - Autonomous completion (GPT-5.1)
+- `<design_system_enforcement>` - UI component styling (GPT-5.1)
+
+**Gemini-Specific Tags**:
+
+- `<role>` - Assistant identity/expertise
+- `<output_format>` - Response structure
+- `<rules>` - Behavioral guidelines
+- `<planning_process>` - Analysis steps
+- `<error_handling>` - Edge case responses
+- `<final_instruction>` - Critical closing directive
 
 ## Markdown Rendering with XML Tags
 
@@ -356,8 +382,8 @@ Do NOT use XML-like placeholders:
 
 <related>
 
-- **Naming Conventions**: @rules-naming.md - General naming rules
-- **Git Standards**: @rules-git.md - Branch and commit naming
-- **AI Agent Guidelines**: @rules-ai_agents.md - Agent interaction patterns
+- **Naming Conventions**: @naming.md - General naming rules
+- **Git Standards**: @git.md - Branch and commit naming
+- **AI Agent Guidelines**: @ai.md - Agent interaction patterns
 
 </related>

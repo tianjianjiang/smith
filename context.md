@@ -4,7 +4,7 @@
 
 - **Scope**: Universal context management strategies for AI coding agents
 - **Load if**: Context management OR optimizing context usage OR context window approaching capacity
-- **Prerequisites**: @rules-ai_agents.md
+- **Prerequisites**: @ai.md
 - **Requires**: Understanding of context windows, token limits, and prompt engineering
 - **Provides**: Universal context optimization strategies, selective retention patterns, progressive disclosure techniques
 - **Research**: Anthropic (Claude Code, Prompt Caching), Cursor documentation, Kiro steering files, LLMLingua (Microsoft Research)
@@ -485,9 +485,9 @@ Universal best practices:
 
 <related>
 
-- **Platform-specific**: See @rules-context-platforms.md (Claude Code, Cursor, Kiro)
-- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
-- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
+- **Platform-specific**: See @context-claude.md (Claude Code), @context-cursor.md (Cursor), @context-kiro.md (Kiro)
+- **Parent**: @ai.md (AI agent interaction patterns)
+- **Foundation**: @core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Prompt Caching Guide, Microsoft LLMLingua paper
 
 </related>
