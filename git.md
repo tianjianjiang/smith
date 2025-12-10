@@ -5,9 +5,8 @@
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **PR workflows**: See @rules-pr-concepts.md for platform-neutral pull request workflows, code reviews
-- **GitHub PR operations**: See @rules-github-pr.md for GitHub PR workflows
-- **GitHub operations**: See @rules-github.md for GitHub CLI commands
+- **PR workflows**: See @gh-pr.md for pull request workflows and code reviews
+- **GitHub operations**: See @gh-cli.md for GitHub CLI commands
 
 </context>
 
@@ -60,15 +59,25 @@ Branch type prefix MUST match the conventional commit type used in commits.
 
 </examples>
 
-See @rules-naming.md for complete branch naming conventions including type prefixes, separator rules, and examples.
+See @naming.md for complete branch naming conventions including type prefixes, separator rules, and examples.
 
 ## Commit Standards
 
-<formatting>
+<context>
 
-**Conventional Commits Format**: `type: description` or `type(scope): description`
+**Conventional Commits Format**: See @naming.md for complete conventional commits format specification, including:
+- Format pattern: `type: description` or `type(scope): description`
+- Type definitions (feat, fix, docs, etc.)
+- 50/72 character rule
+- Atomicity guidelines
 
-Scope is optional. Example structure:
+This format applies to both commit messages and PR titles.
+
+</context>
+
+<examples>
+
+**Commit structure:**
 ```text
 feat(auth): add OAuth2 login
 
@@ -78,31 +87,7 @@ Supports Google and GitHub providers.
 Closes #123
 ```
 
-</formatting>
-
-<required>
-
-**Subject line limits** ([50/72 Rule](https://dev.to/noelworden/improving-your-commit-message-with-the-50-72-rule-3g79)):
-- **Target**: 50 characters (ideal for `git log --oneline`)
-- **Hard limit**: 72 characters (80-char terminal - 4-char git indent - 4-char margin)
-
-**Body line limit**: 72 characters per line
-
-**Atomicity indicator**: Exceeding 50 chars suggests combining multiple changes. Split into separate commits.
-
-</required>
-
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, no logic change)
-- `refactor`: Code refactoring
-- `test`: Test additions or changes
-- `chore`: Build process, tooling changes
-
-<examples>
-
+**Command:**
 ```sh
 git commit -m "feat(rag): add semantic search filtering
 
@@ -364,15 +349,69 @@ git diff main...feat/branch  # Changes since branching
 git rebase -i HEAD~3  # Last 3 commits
 ```
 
-**Amend last commit (before push):**
-```sh
-git commit --amend --no-edit
-git commit --amend  # Edit message
-```
-
 </examples>
 
 </scenario>
+
+## Amend Operations Safety
+
+<forbidden>
+
+**NEVER amend in these scenarios:**
+
+- Commit authored by someone else
+- Commit already pushed to remote (unless you force push intentionally)
+- Working on protected branches (main, develop)
+- Commit is part of a PR under active review by others
+
+</forbidden>
+
+<required>
+
+**Verification checklist before amending:**
+
+```sh
+AUTHOR=$(git log -1 --format='%ae')
+CURRENT_USER=$(git config user.email)
+if [ "$AUTHOR" != "$CURRENT_USER" ]; then
+  echo "Not your commit - create new commit instead"
+  exit 1
+fi
+# Check if HEAD exists in unpushed commits list
+# git log @{upstream}.. lists commits that exist locally but not on remote
+# If grep finds HEAD in that list, commit is not pushed yet (safe to amend)
+# If grep fails, HEAD is not in unpushed list, meaning it was pushed (avoid amending)
+if git rev-parse @{upstream} >/dev/null 2>&1 && git log @{upstream}.. | grep -q "$(git rev-parse HEAD)"; then
+  echo "Commit not pushed yet - safe to amend"
+elif ! git rev-parse @{upstream} >/dev/null 2>&1; then
+  echo "No upstream set - commit not pushed yet (safe to amend)"
+else
+  echo "Commit already pushed - avoid amending"
+fi
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
+  echo "Protected branch - DO NOT AMEND"
+  exit 1
+fi
+```
+
+**Amend commands:**
+```sh
+git commit --amend --no-edit  # Keep same message
+git commit --amend            # Edit message
+```
+
+</required>
+
+**Safe amend scenarios:**
+- Pre-commit hook modified files (see @gh-pr.md Pre-Commit Hook Handling)
+- Fixing typo in commit message you just made
+- Adding forgotten file to your last commit (before push)
+
+**When to create new commit instead:**
+- Addressing review feedback (keep review history)
+- Fixing bugs found after push
+- Any change to commits from other authors
 
 ## Conflict Resolution
 
@@ -391,9 +430,8 @@ git merge --abort
 
 ## Related Standards
 
-- **PR Workflows**: @rules-pr-concepts.md - Platform-neutral PR concepts
-- **GitHub PR Operations**: @rules-github-pr.md - GitHub PR workflows
-- **GitHub Workflows**: @rules-github.md - GitHub CLI operations
-- **Development Workflow**: @rules-development.md - Daily practices
-- **Naming Conventions**: @rules-naming.md - Branch naming
-- **Personal Rules**: @rules-core.md - Core standards
+- **GitHub PR Workflows**: @gh-pr.md - Complete PR lifecycle (creation, review, merge)
+- **GitHub CLI**: @gh-cli.md - GitHub CLI operations
+- **Development Workflow**: @dev.md - Daily practices
+- **Naming Conventions**: @naming.md - Branch and commit naming
+- **Core Standards**: @core.md - Personal coding standards

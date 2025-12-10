@@ -25,15 +25,20 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 <forbidden>
 
-- NEVER write inline comments except in config files (.env, .env.sample, .env.tmpl) or `# TODO:` comments
 - **NEVER use decorative emoji** (including ❌, ✅, ⚠️, 📝, 🎉, 👍) in code, logs, print statements, error messages, or documentation. Exception: user-facing UI text if explicitly requested. Unicode symbols for functional purposes (arrows →, math ±×÷) are allowed. Checkmarks (check and cross marks) are redundant when followed by descriptive labels (Good/Bad, Correct/Incorrect).
-- NEVER write excessive blank lines between code blocks
+- NEVER add excessive blank lines between code blocks
 - NEVER commit files without exactly one trailing newline
 
 </forbidden>
 
 <required>
 
+**Inline Comments**:
+- ONLY add inline comments when code intent is not self-evident from naming and structure
+- Prefer self-documenting code (clear variable/function names) over inline comments
+- Allowed cases: Config files (.env), TODO markers, complex algorithms, non-obvious business logic
+
+**File Format**:
 - ALWAYS have exactly one newline at the end of every file
 - ALWAYS use language-appropriate formatters before commits
 - ALWAYS use descriptive names following language conventions
@@ -83,7 +88,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 ## AI Agent Output Standards
 
-**For AI agent workflows and principles**: See @rules-ai_agents.md for comprehensive coverage:
+**For AI agent workflows and principles**: See @ai.md for comprehensive coverage:
 - Constitutional AI principles (Helpful, Honest, Harmless framework)
 - Exploration-before-implementation patterns
 - Code quality and security requirements
@@ -104,29 +109,28 @@ Fundamental coding rules applying as personal standards across all languages, co
 - `$WORKSPACE_ROOT/` for workspace-relative paths
 - `$REPO_ROOT/` for repository-relative paths
 
-**See:** @rules-naming.md for detailed path standards
+**See:** @naming.md for detailed path standards
 
 <related>
 
 ## Language-Specific Standards
 
 For language-specific rules, see:
-- **Python**: @rules-python.md
+- **Python**: @python.md
 - **TypeScript/JavaScript**: (Create rules-typescript.md as needed)
 
 ## Development Workflow
 
 For daily workflow, code quality checks, and tool usage:
-- @rules-development.md
-- @rules-testing.md
+- @dev.md
+- @testing.md
 
 ## Version Control
 
 For Git and GitHub workflows:
-- @rules-git.md
-- @rules-pr-concepts.md - Platform-neutral concepts
-- @rules-github-pr.md
-- @rules-github.md
+- @git.md
+- @gh-pr.md
+- @gh-cli.md
 
 </related>
 
