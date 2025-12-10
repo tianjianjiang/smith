@@ -4,10 +4,10 @@
 
 - **Scope**: Testing requirements and execution patterns
 - **Load if**: Writing tests, running test suites, pytest configuration
-- **Prerequisites**: [Core Standards](./rules-core.md) → [Python Standards](./rules-python.md)
-- **Requires**: [Python Standards](./rules-python.md#testing-with-pytest) (Pytest patterns)
+- **Prerequisites**: @core.md → @python.md
+- **Requires**: @python.md (Pytest patterns)
 - **Referenced by**: Development workflows
-- **Optional**: [Naming](./rules-naming.md#test-files) (Test file naming)
+- **Optional**: @naming.md (Test file naming)
 
 </metadata>
 
@@ -17,8 +17,8 @@
 <required>
 
 - MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
-- MUST follow test file naming conventions - see [Naming Standards](@rules-naming.md#test-files)
-- MUST use pytest functions (not classes) - see @rules-python.md
+- MUST follow test file naming conventions - see [Naming Standards](@naming.md#test-files)
+- MUST use pytest functions (not classes) - see @python.md
 - MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
 
 </required>
@@ -31,7 +31,7 @@
 
 </context>
 
-**For naming patterns**: See @rules-naming.md for test file and JSON test data naming
+**For naming patterns**: See @naming.md for test file and JSON test data naming
 
 ## Test Execution
 
@@ -44,7 +44,7 @@ poetry run pytest tests/integration/ -v
 
 <required>
 
-- MUST use virtual env runner for pytest - see [Python Standards](@rules-python.md#virtual-environment-execution)
+- MUST use virtual env runner for pytest - see [Python Standards](@python.md#virtual-environment-execution)
 - MUST run unit and integration tests separately if mirrored structure exists
 
 </required>
@@ -55,7 +55,7 @@ poetry run pytest tests/integration/ -v
 
 </forbidden>
 
-**For pytest execution patterns, .env loading**: See @rules-python.md
+**For pytest execution patterns, .env loading**: See @python.md
 
 ## Environment Configuration
 
@@ -72,8 +72,8 @@ poetry run pytest tests/integration/ -v
 
 <related>
 
-- **Python Testing**: @rules-python.md - Pytest patterns
-- **Development Workflow**: @rules-development.md - Code quality
-- **Naming Conventions**: @rules-naming.md - Test file naming
+- **Python Testing**: @python.md - Pytest patterns
+- **Development Workflow**: @dev.md - Code quality
+- **Naming Conventions**: @naming.md - Test file naming
 
 </related>

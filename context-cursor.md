@@ -2,12 +2,12 @@
 
 <metadata>
 
-- **Scope**: Cursor-specific context management commands and strategies
-- **Load if**: Using Cursor AND (context window approaching limit OR optimizing context usage)
-- **Prerequisites**: @rules-context-principles.md, @rules-ai_agents.md
-- **Requires**: Understanding of Cursor /summarize command, @ mention syntax, .cursorrules configuration
-- **Provides**: Manual vs automatic summarization strategies, file inclusion patterns, workarounds for vague summaries
-- **Research**: Cursor documentation (verified 2025-12), Cursor community best practices, Agent mode capabilities
+- **Scope**: Cursor-specific context management strategies and commands
+- **Load if**: Using Cursor AND (context window approaching capacity >70% OR optimizing context usage)
+- **Prerequisites**: @context.md, @ai.md
+- **Requires**: Understanding of context windows, token limits, Cursor commands
+- **Provides**: Cursor /summarize command, @ mentions, @codebase, .cursorrules configuration
+- **Research**: Cursor documentation
 
 </metadata>
 
@@ -22,36 +22,15 @@
 - @codebase - Search entire codebase for relevant code
 - .cursorrules - Persistent project-specific instructions
 
+**For architectural limitations and agent role**: See @context.md - Agent Role in Context Management section
+
+**For universal context management strategies**: See @context.md - Information Retention Strategy, Progressive Disclosure Pattern, Reference-Based Communication
+
 **Limitation**: Automatic summarization uses smaller flash model which can produce vague summaries, losing technical details.
 
 **Best practice**: Use manual `/summarize` proactively before automatic trigger to maintain better control over summary quality.
 
 </context>
-
-## Architectural Limitation
-
-<context>
-
-**Critical**: Agents cannot programmatically trigger `/summarize` command.
-
-**Why**: `/summarize` is a built-in REPL command, not an agent tool. Similar to Claude Code's `/compact` and `/clear`, these commands can only be executed by users.
-
-**What agents can do**:
-- Detect when context approaches capacity (based on conversation length)
-- Recommend when user should execute `/summarize`
-- Suggest which files to re-add with @ mentions after summarization
-- Explain benefits of manual vs automatic summarization
-
-**What agents cannot do**:
-- Execute `/summarize` directly
-- Automatically manage context without user action
-- Prevent automatic summarization from triggering
-
-**Collaboration model**: Agent detects context usage → Agent recommends `/summarize` with @ mention guidance → User executes command → Agent continues with restored context
-
-</context>
-
-<required>
 
 ## /summarize Command - Manual Summarization
 
@@ -149,7 +128,7 @@ Result: Lost productivity, user has to re-explain details
 
 </forbidden>
 
-## Automatic Summarization
+### Automatic Summarization
 
 <context>
 
@@ -164,7 +143,7 @@ Result: Lost productivity, user has to re-explain details
 
 <required>
 
-## Mitigation Strategies for Vague Summaries
+#### Mitigation Strategies for Vague Summaries
 
 When automatic summarization occurs, agent MUST:
 
@@ -237,7 +216,7 @@ Result: Seamless continuation despite summarization
 
 </examples>
 
-## @ Mention Patterns for Context Control
+### @ Mention Patterns for Context Control
 
 <context>
 
@@ -253,7 +232,7 @@ Result: Seamless continuation despite summarization
 
 Agent SHOULD use @ mentions strategically:
 
-### When to @ Mention Files
+#### When to @ Mention Files
 
 1. **After summarization** (restore critical files):
    ```text
@@ -277,7 +256,7 @@ Agent SHOULD use @ mentions strategically:
    @config/database.ts review connection pooling settings
    ```
 
-### @ Mention Patterns
+#### @ Mention Patterns
 
 **Single file**:
 ```text
@@ -346,7 +325,7 @@ Better: Grep for "user registration" → get file paths → @ mention specific f
 
 </forbidden>
 
-## @codebase for Discovery
+### @codebase for Discovery
 
 <context>
 
@@ -427,7 +406,7 @@ Better: Grep for "authentication" → get file:line → Read specific section
 
 </examples>
 
-## .cursorrules for Persistent Instructions
+### .cursorrules for Persistent Instructions
 
 <context>
 
@@ -443,7 +422,7 @@ Better: Grep for "authentication" → get file:line → Read specific section
 
 <required>
 
-## Rule Organization Strategy
+#### Rule Organization Strategy
 
 **What goes in .cursorrules** (project-specific):
 - Technology stack (frameworks, libraries, databases)
@@ -452,7 +431,7 @@ Better: Grep for "authentication" → get file:line → Read specific section
 - External API conventions
 - Reference to personal standards
 
-**What goes in `@`-prefixed personal standards** (e.g., `@AGENTS.md`, `@rules-*.md`):
+**What goes in `@`-prefixed personal standards** (e.g., `@AGENTS.md`, `@*.md`):
 - Universal coding principles (DRY, KISS, YAGNI)
 - Language-specific style (Python, TypeScript, etc.)
 - Git workflow preferences
@@ -466,7 +445,7 @@ Better: Grep for "authentication" → get file:line → Read specific section
 
 Follow personal coding standards from:
 - @AGENTS.md (entry point for all personal standards)
-- @rules-core.md (critical NEVER/ALWAYS rules)
+- @core.md (critical NEVER/ALWAYS rules)
 
 ## Project Stack
 
@@ -585,7 +564,7 @@ Better: Reference @AGENTS.md, add only project-specific patterns
 
 </forbidden>
 
-## Cursor Agent Mode Context Gathering
+### Cursor Agent Mode Context Gathering
 
 <context>
 
@@ -671,7 +650,7 @@ Better: Let Agent Mode discover which files are actually relevant
 
 </examples>
 
-## Context-Efficient File Reading
+### Context-Efficient File Reading
 
 <context>
 
@@ -723,7 +702,7 @@ Result: Loaded 50 lines instead of 800, fix implemented efficiently
 
 </examples>
 
-## Version Information
+### Version Information
 
 <metadata>
 
@@ -739,14 +718,14 @@ Features documented here are current as of the version noted above. Cursor 2.0 i
 
 </note>
 
-</context>
+---
+
 
 <related>
 
-- **Shared principles**: @rules-context-principles.md (universal strategies)
-- **Other platforms**: @rules-context-claude_code.md, @rules-context-kiro.md
-- **Parent**: @rules-ai_agents.md (AI agent interaction patterns)
-- **Foundation**: @rules-core.md (critical NEVER/ALWAYS rules)
-- **Research**: Cursor documentation, Cursor community forum, Agent Mode capabilities
+- **Universal principles**: @context.md (shared context management strategies, agent role)
+- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Foundation**: @core.md (critical NEVER/ALWAYS rules)
+- **Research**: Cursor documentation
 
 </related>

@@ -16,7 +16,7 @@ This file documents the AI agent's **context-aware capabilities** through dynami
 
 **Key Concepts:**
 - **Contexts**: Operational modes (e.g., `python_development`, `git_operations`, `testing`)
-- **Rules**: Coding standards loaded for each context (e.g., @rules-python.md, @rules-git.md)
+- **Rules**: Coding standards loaded for each context (e.g., @python.md, @git.md)
 - **Dynamic Loading**: Agent loads only relevant rules based on detected context
 - **Notifications**: Agent reports which rules are active before proceeding with tasks
 
@@ -38,11 +38,11 @@ Agent MUST proactively report when rules are dynamically loaded or unloaded. See
 
 ```text
 Rules loaded:
-- @rules-python.md (triggered by: python_development context)
-- @rules-core.md (triggered by: always_active context)
+- @python.md (triggered by: python_development context)
+- @core.md (triggered by: always_active context)
 
 Rules unloaded:
-- @rules-git.md (triggered by: git_operations context no longer active)
+- @git.md (triggered by: git_operations context no longer active)
 ```
 
 **Example at session start:**
@@ -50,8 +50,8 @@ Rules unloaded:
 ```text
 Rules loaded:
 - @AGENTS.md (entry point)
-- @rules-core.md (triggered by: always_active context)
-- @rules-python.md (triggered by: python_development context)
+- @core.md (triggered by: always_active context)
+- @python.md (triggered by: python_development context)
 ```
 
 </examples>
@@ -75,7 +75,7 @@ Rules loaded:
 
 ### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
 
-See @rules-ai_agents.md for Helpful, Honest, Harmless principles.
+See @ai.md for Helpful, Honest, Harmless principles.
 
 </guiding_principles>
 
@@ -89,7 +89,7 @@ See @rules-ai_agents.md for Helpful, Honest, Harmless principles.
 
 ### XML Tag Standards
 
-See @rules-xml_tags.md for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
+See @xml.md for approved XML tags with evidence-based references from Anthropic, OpenAI, and Google.
 
 ## Context-Aware Rule Loading
 
@@ -116,84 +116,89 @@ See @rules-xml_tags.md for approved XML tags with evidence-based references from
 ### Context-to-Rules Mapping
 
 **always_active:**
-- @rules-core.md (Critical NEVER/ALWAYS rules)
+- @core.md (Critical NEVER/ALWAYS rules)
 
 **python_development:**
 - Condition: Writing/modifying Python code OR running Python tests
-- Load: @rules-python.md
+- Load: @python.md
 
 **git_operations:**
 - Condition: Performing git commits, merges, or branch management
-- Load: @rules-git.md, @rules-naming.md
+- Load: @git.md, @naming.md
 
 **pull_request_workflows:**
 - Condition: Creating pull requests OR reviewing code OR merging PRs
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github.md, @rules-naming.md
+- Load: @gh-pr.md, @gh-cli.md, @naming.md
 
 **github_workflows:**
 - Condition: Using GitHub CLI OR creating PRs OR managing GitHub features
-- Load: @rules-github.md
+- Load: @gh-cli.md
 
 **modifying_existing_pr:**
 - Condition: Working on existing PR OR addressing review comments
-- Action: Check for unaddressed review comments BEFORE making changes (see rules-github-review.md Pre-Work Check)
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-pr.md (if using GitHub), @rules-github-review.md (review automation)
+- Action: Check for unaddressed review comments BEFORE making changes (see @gh-pr.md Pre-Work Check)
+- Load: @gh-pr.md
 
 **pr_review_response:**
 - Condition: Responding to PR review feedback OR resolving review comments
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-review.md (review automation)
+- Load: @gh-pr.md (review automation)
 
 **pre_commit_hooks:**
 - Condition: Pre-commit hooks modify files OR need to amend commits
-- Load: @rules-github-utils.md (hook coordination), @rules-git.md
+- Load: @gh-pr.md (hook coordination), @git.md (amend safety)
 
 **testing:**
 - Condition: Writing or running tests (any language)
-- Load: @rules-testing.md
+- Load: @testing.md
 
 **new_project:**
 - Condition: Initializing a new project
-- Load: @rules-development.md, @rules-naming.md
+- Load: @dev.md, @naming.md
 
 **ide_configuration:**
-- Condition: Configuring editor/IDE settings
-- Load: @rules-tools.md, @rules-ide_mappings.md
+- Condition: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables ($WORKSPACE_ROOT, ${workspaceFolder}, etc.)
+- Load: @tools.md, @ide.md
 
 **ai_agent_interaction:**
 - Condition: Using Claude Code OR GitHub Copilot OR AI pair programming
-- Load: @rules-ai_agents.md
+- Load: @ai.md
+
+**platform_context_loading:**
+- Condition: Session start OR platform detected (Claude Code, Cursor, or Kiro)
+- Load: @context.md (universal strategies, always), @context-claude.md (if Claude Code) OR @context-cursor.md (if Cursor) OR @context-kiro.md (if Kiro)
+- Action: Load platform-specific context management strategies proactively at session start
 
 **context_management:**
 - Condition: Context window approaching capacity (>70%) OR optimizing context usage OR debugging context issues
-- Load: @rules-context-principles.md (universal strategies), @rules-context-claude_code.md (if using Claude Code), @rules-context-cursor.md (if using Cursor), @rules-context-kiro.md (if using Kiro OR creating steering files)
-- Action: Monitor context usage, apply selective retention strategies
+- Load: @context.md (universal strategies - already loaded by platform_context_loading)
+- Action: Monitor context usage, apply selective retention strategies for active platform
 
 **prompt_engineering:**
 - Condition: Writing or reviewing AI prompts, AGENTS.md files, or rules documentation
-- Load: @rules-xml_tags.md
+- Load: @xml.md
 
 **stacked_pr_parent_merged:**
 - Condition: Parent PR in stack just merged OR working on child PR after parent merge
-- Load: @rules-pr-concepts.md (stacked PRs), @rules-github-rebase.md (rebase workflows), @rules-github-merge.md (post-merge cascade), @rules-git.md, @rules-github.md
+- Load: @stacked.md (stacked PR patterns), @gh-pr.md (rebase + post-merge workflows), @git.md, @gh-cli.md
 - Action: Check if child PRs need rebase, offer to update stack
 
 **pr_maintenance:**
 - Condition: Working on existing PR OR updating PR branch OR before requesting review
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (freshness + rebase)
+- Load: @gh-pr.md (freshness + rebase)
 - Action: Check PR freshness relative to base branch, detect conflicts
 
 **pr_review_request:**
 - Condition: User asks to request PR review OR agent about to request review
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-rebase.md (pre-review freshness check)
+- Load: @gh-pr.md (pre-review freshness check)
 - Action: Verify PR is up-to-date with base, all checks pass, no conflicts
 
 **agent_pr_creation:**
 - Condition: Agent about to create PR OR agent analyzing commits for PR
-- Load: @rules-pr-concepts.md (platform-neutral concepts), @rules-github-create.md (PR description generation)
+- Load: @gh-pr.md (PR description generation)
 
 **post_merge_operations:**
 - Condition: PR just merged OR immediately after merge operation
-- Load: @rules-github-merge.md (post-merge workflows), @rules-github.md
+- Load: @gh-pr.md (post-merge workflows), @gh-cli.md
 - Action: Check for dependent PRs, offer cascade updates, cleanup branches
 
 ### Reporting Format
@@ -227,14 +232,61 @@ Agent MUST proactively report to the user when rules are dynamically loaded or u
 
 ### Report Format
 
-"Rules loaded: @[filename] (triggered by: [context_name] context)"
+**Loading:**
+```
+Rules loaded:
+- @[filename] (triggered by: [context_name] context)
+- @[filename] (triggered by: [context_name] context)
+```
+
+**Unloading:**
+```
+Rules unloaded:
+- @[filename] (context no longer active: [context_name])
+```
+
+**Graceful skip:**
+```
+Rules skipped (file not found):
+- @[filename] (triggered by: [context_name] context)
+```
 
 ### Workflow
 
 1. **Detect context** from user request, file type, or current operation
 2. **Match context** to applicable rules using context-to-rules mapping
-3. **Report active rules** to user before proceeding with task
+3. **Report active rules** to user before proceeding with task (both loading and unloading)
 4. **Execute task** following those rules
+5. **On context change**: Report which rules are being unloaded and which are being loaded
+
+### Examples
+
+**Session start (Claude Code detected):**
+```
+Rules loaded:
+- @core.md (triggered by: always_active context)
+- @context.md (triggered by: platform_context_loading context)
+- @context-claude.md (triggered by: platform_context_loading context)
+```
+
+**Task: Create PR**
+```
+Rules loaded:
+- @gh-pr.md (triggered by: pull_request_workflows context)
+- @gh-cli.md (triggered by: pull_request_workflows context)
+- @naming.md (triggered by: pull_request_workflows context)
+- @git.md (triggered by: git_operations context)
+```
+
+**Context change: From Python development to Git operations**
+```
+Rules unloaded:
+- @python.md (context no longer active: python_development)
+
+Rules loaded:
+- @git.md (triggered by: git_operations context)
+- @naming.md (triggered by: git_operations context)
+```
 
 </instructions>
 
