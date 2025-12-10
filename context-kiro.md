@@ -612,7 +612,7 @@ Total context: 33 lines (99.6% reduction)
 
 <required>
 
-**Structure for prompt caching** (from `rules-ai_agents.md:Prompt Caching`):
+**Structure for prompt caching** (from @ai.md):
 
 ```markdown
 # AGENTS.md (optimized for caching)

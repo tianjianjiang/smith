@@ -1208,7 +1208,7 @@ Agent workflow:
 <related>
 
 - **Foundation**: @core.md (core principles), @dev.md (workflow)
-- **Practices**: @gh-pr.md (PR concepts), @gh-pr.md (GitHub PR workflows), @tools.md (tool configuration)
+- **Practices**: @gh-pr.md (PR workflows), @tools.md (tool configuration)
 - **Research**: Anthropic Claude Code Best Practices, Prompt Caching Guide, Constitutional AI; OpenAI o1/o3 Prompting Guide, Structured Outputs; Microsoft LLMLingua; Google Gemini responseSchema
 
 </related>

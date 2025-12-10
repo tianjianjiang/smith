@@ -129,8 +129,7 @@ For daily workflow, code quality checks, and tool usage:
 
 For Git and GitHub workflows:
 - @git.md
-- @gh-pr.md - Platform-neutral concepts
-- @gh-pr.md - GitHub PR lifecycle
+- @gh-pr.md
 - @gh-cli.md
 
 </related>

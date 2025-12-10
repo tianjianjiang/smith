@@ -4,10 +4,10 @@
 
 - **Scope**: Testing requirements and execution patterns
 - **Load if**: Writing tests, running test suites, pytest configuration
-- **Prerequisites**: [Core Standards](./rules-core.md) → [Python Standards](./rules-python.md)
-- **Requires**: [Python Standards](./rules-python.md#testing-with-pytest) (Pytest patterns)
+- **Prerequisites**: @core.md → @python.md
+- **Requires**: @python.md (Pytest patterns)
 - **Referenced by**: Development workflows
-- **Optional**: [Naming](./rules-naming.md#test-files) (Test file naming)
+- **Optional**: @naming.md (Test file naming)
 
 </metadata>
 

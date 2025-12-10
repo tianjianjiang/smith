@@ -5,8 +5,7 @@
 ## Scope
 
 - **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **PR workflows**: See @gh-pr.md for platform-neutral pull request workflows, code reviews
-- **GitHub PR operations**: See @gh-pr.md for GitHub PR workflows
+- **PR workflows**: See @gh-pr.md for pull request workflows and code reviews
 - **GitHub operations**: See @gh-cli.md for GitHub CLI commands
 
 </context>

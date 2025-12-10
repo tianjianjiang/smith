@@ -13,7 +13,7 @@
 
 <context>
 
-For personal rules, see `rules-core.md`.
+For personal rules, see @core.md.
 
 </context>
 

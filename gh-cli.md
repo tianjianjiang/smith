@@ -14,7 +14,7 @@
 
 - **This document**: GitHub CLI commands, GitHub-specific features
 - **Platform-neutral workflows**: @gh-pr.md for platform-neutral concepts
-- **Agent automation**: @gh-*.md for agent workflows
+- **Agent automation**: @gh-pr.md for PR workflows
 - **Local git operations**: @git.md for commits, branches, merges
 
 </context>
