@@ -117,6 +117,7 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **always_active:**
 - @core.md (Critical NEVER/ALWAYS rules)
+- @thinking.md (Systematic thinking, anti-sycophancy)
 
 **python_development:**
 - Condition: Writing/modifying Python code OR running Python tests
