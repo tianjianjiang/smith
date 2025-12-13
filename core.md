@@ -17,6 +17,19 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 </context>
 
+## Fundamental Principles
+
+<required>
+
+- **DRY** (Don't Repeat Yourself): Single source of truth; eliminate duplication
+- **KISS** (Keep It Simple, Stupid): Simplest solution that works; avoid unnecessary complexity
+- **YAGNI** (You Aren't Gonna Need It): Don't implement until actually needed
+- **SINE** (Simple Is Not Easy): Simplicity requires deliberate effort; refactor toward simplicity
+- **MECE** (Mutually Exclusive, Collectively Exhaustive): Categories don't overlap; coverage is complete
+- **Occam's Razor**: Prefer solutions with fewest assumptions
+
+</required>
+
 ## Critical Coding Rules
 
 **NEVER violate these rules - STRICTLY ENFORCED across ALL tools and outputs**
@@ -101,6 +114,15 @@ Fundamental coding rules applying as personal standards across all languages, co
 **Rule Loading Notification**: Agent MUST proactively report when rules are dynamically loaded or unloaded, including both the rule files and the context triggers that caused the changes. See @AGENTS.md for detailed specification. This notification is always active.
 
 </required>
+
+### Systematic Thinking
+
+See context-triggered files for critical thinking techniques:
+- @design.md - Design principles (DRY, KISS, YAGNI, SOLID)
+- @talk.md - Anti-sycophancy, Socratic method (always_active)
+- @think.md - Reasoning, problem decomposition, Polya's method
+- @verify.md - Hypothesis testing, root cause analysis
+- @guard.md - Cognitive guards
 
 ## Path Reference Conventions
 
