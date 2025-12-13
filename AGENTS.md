@@ -49,8 +49,8 @@ Rules unloaded:
 
 ```text
 Rules loaded:
-- @AGENTS.md (entry point)
 - @core.md (triggered by: always_active context)
+- @talk.md (triggered by: always_active context)
 - @python.md (triggered by: python_development context)
 ```
 
@@ -117,6 +117,7 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **always_active:**
 - @core.md (Critical NEVER/ALWAYS rules)
+- @talk.md (Anti-sycophancy, Socratic questioning, truthfulness)
 
 **python_development:**
 - Condition: Writing/modifying Python code OR running Python tests
@@ -201,6 +202,22 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 - Load: @gh-pr.md (post-merge workflows), @gh-cli.md
 - Action: Check for dependent PRs, offer cascade updates, cleanup branches
 
+**think:**
+- Condition: Planning implementation OR estimating scope OR evaluating arguments OR decomposing tasks
+- Load: @think.md
+
+**verify:**
+- Condition: Bug reported OR test failure OR root cause analysis OR proving correctness
+- Load: @verify.md
+
+**design:**
+- Condition: Starting new feature OR refactoring OR architecture decisions
+- Load: @design.md
+
+**guard:**
+- Condition: Making important decisions OR risk assessment
+- Load: @guard.md
+
 ### Reporting Format
 
 Rules loaded: @[filename] (triggered by: [context_name] context)
@@ -265,6 +282,7 @@ Rules skipped (file not found):
 ```
 Rules loaded:
 - @core.md (triggered by: always_active context)
+- @talk.md (triggered by: always_active context)
 - @context.md (triggered by: platform_context_loading context)
 - @context-claude.md (triggered by: platform_context_loading context)
 ```
