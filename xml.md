@@ -335,48 +335,15 @@ Analyze the attached financial report and identify the most important metrics.
 
 ## Placeholder Alternatives
 
-<forbidden>
+See @placeholder.md for comprehensive placeholder syntax standards.
 
-Do NOT use XML-like placeholders:
+<required>
 
-- `<type>` → Use backticks: `type`
-- `<scope>` → Use backticks: `scope`
-- `<description>` → Use backticks: `description`
+**Primary**: Backticks `` `placeholder` ``
+**Secondary**: Brackets `[placeholder]` (in code blocks)
+**Avoid**: `<placeholder>`, `{{placeholder}}`, `{placeholder}`
 
-</forbidden>
-
-<formatting>
-
-**For patterns/templates**, use one of:
-
-1. **Backtick literals**: `type/descriptive_name`
-2. **Jinja2 variables**: `{{ variable_name }}`
-3. **Shell-style**: `${VARIABLE_NAME}`
-4. **Bracket placeholders**: `[placeholder]`
-
-</formatting>
-
-<examples>
-
-**Approved placeholder styles**:
-
-```text
-**Pattern**: `type: description` or `type(scope): description`
-**Template**: {{ branch_type }}/{{ feature_name }}
-```
-
-</examples>
-
-<forbidden>
-
-**XML-like placeholders** (do not use):
-
-```text
-**Pattern**: <type>: <description>
-**Template**: <branch_type>/<feature_name>
-```
-
-</forbidden>
+</required>
 
 ## Related Standards
 

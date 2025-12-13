@@ -184,7 +184,7 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **prompt_engineering:**
 - Condition: Writing or reviewing AI prompts, AGENTS.md files, or rules documentation
-- Load: @xml.md
+- Load: @xml.md, @placeholder.md
 
 **stacked_pr_parent_merged:**
 - Condition: Parent PR in stack just merged OR working on child PR after parent merge
