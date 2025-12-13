@@ -123,6 +123,14 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 - Condition: Writing/modifying Python code OR running Python tests
 - Load: @python.md
 
+**typescript_development:**
+- Condition: Working with TypeScript (frontend OR backend)
+- Load: @typescript.md
+
+**nuxt_development:**
+- Condition: Working with Nuxt projects specifically
+- Load: @nuxt.md
+
 **git_operations:**
 - Condition: Performing git commits, merges, or branch management
 - Load: @git.md, @naming.md
