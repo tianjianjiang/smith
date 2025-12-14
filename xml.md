@@ -382,8 +382,8 @@ Do NOT use XML-like placeholders:
 
 <related>
 
-- **Naming Conventions**: @naming.md - General naming rules
+- **Naming Conventions**: @style.md - General naming rules
 - **Git Standards**: @git.md - Branch and commit naming
-- **AI Agent Guidelines**: @ai.md - Agent interaction patterns
+- **AI Agent Guidelines**: @steering.md - Agent interaction patterns
 
 </related>

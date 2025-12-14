@@ -4,11 +4,11 @@
 
 ## Overview
 
-Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see [Naming Standards](@naming.md#path-reference-standards).
+Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see [Naming Standards](@style.md#path-reference-standards).
 
 ## Conceptual Variables
 
-**Defined in**: [Naming Standards](@naming.md#path-reference-standards)
+**Defined in**: [Naming Standards](@style.md#path-reference-standards)
 - `$WORKSPACE_ROOT` - Current workspace directory
 - `$REPO_ROOT` - Monorepo root
 - `$HOME` - User home directory
@@ -76,6 +76,6 @@ $HOME            →  $USER_HOME$
 
 - **VS Code Variables**: [Documentation](https://code.visualstudio.com/docs/editor/variables-reference)
 - **PyCharm Macros**: [Documentation](https://www.jetbrains.com/help/idea/absolute-path-variables.html)
-- **Path Standards**: @naming.md
+- **Path Standards**: @style.md
 
 </related>

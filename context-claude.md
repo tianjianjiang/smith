@@ -4,7 +4,7 @@
 
 - **Scope**: Claude Code-specific context management strategies and commands
 - **Load if**: Using Claude Code AND (context window approaching capacity >70% OR optimizing context usage)
-- **Prerequisites**: @context.md, @ai.md
+- **Prerequisites**: @context.md, @steering.md
 - **Requires**: Understanding of context windows, token limits, Claude Code commands
 - **Provides**: Claude Code /compact and /clear commands, Tool Search Tool, CLAUDE.md configuration
 - **Research**: Anthropic Claude Code documentation
@@ -591,7 +591,7 @@ Features documented here are current as of the version noted above. For newer ve
 <related>
 
 - **Universal principles**: @context.md (shared context management strategies, agent role)
-- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Parent**: @steering.md (AI agent interaction patterns, prompt caching)
 - **Foundation**: @core.md (critical NEVER/ALWAYS rules)
 - **Research**: Anthropic Claude Code documentation, Prompt Caching Guide
 

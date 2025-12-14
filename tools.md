@@ -119,7 +119,7 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 <related>
 
 - **Claude Code Patterns**: @context-claude.md - CLAUDE.md configuration, Tool Search Tool
-- **Structured Output Patterns**: @ai.md - Structured Output Steering section
+- **Structured Output Patterns**: @steering.md - Structured Output Steering section
 - **Python Configuration**: @python.md - Virtual environment execution, pytest patterns
 - **IDE Path Variables**: @ide.md - IDE-specific path syntax
 

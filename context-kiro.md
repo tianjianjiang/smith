@@ -4,7 +4,7 @@
 
 - **Scope**: Kiro-specific context management strategies and configuration
 - **Load if**: Using Kiro
-- **Prerequisites**: @context.md, @ai.md
+- **Prerequisites**: @context.md, @steering.md
 - **Requires**: Understanding of context windows, token limits, VS Code OSS patterns
 - **Provides**: Steering files, context triggers, file references, custom agents, MCP integration
 - **Research**: Kiro documentation, VS Code OSS documentation
@@ -612,7 +612,7 @@ Total context: 33 lines (99.6% reduction)
 
 <required>
 
-**Structure for prompt caching** (from @ai.md):
+**Structure for prompt caching** (from @prompts.md):
 
 ```markdown
 # AGENTS.md (optimized for caching)
@@ -691,7 +691,7 @@ Features documented here are current as of the version noted above. Kiro is buil
 <related>
 
 - **Universal principles**: @context.md (shared context management strategies, agent role)
-- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Parent**: @steering.md (AI agent interaction patterns, prompt caching)
 - **Foundation**: @core.md (critical NEVER/ALWAYS rules)
 - **MCP integration**: @tools.md (MCP server configuration)
 - **Research**: Kiro documentation, VS Code OSS documentation, MCP protocol specification

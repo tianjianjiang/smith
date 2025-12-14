@@ -4,7 +4,7 @@
 
 - **Scope**: Complete GitHub PR lifecycle - creation, review, rebase, merge, and cleanup
 - **Load if**: Creating PRs, reviewing code, merging changes, managing PR branches, post-merge operations
-- **Prerequisites**: @core.md, @git.md, @gh-cli.md, @ai.md
+- **Prerequisites**: @core.md, @git.md, @gh-cli.md, @steering.md
 - **Token efficiency**: Use perPage, minimal_output parameters (see @gh-cli.md)
 
 </metadata>
@@ -21,7 +21,7 @@ This document covers the complete GitHub PR workflow:
 - **Merging** (strategies, pre-merge checks, post-merge cleanup)
 - **Best practices** (PR size, communication, documentation, CI integration)
 
-For stacked PR workflows, see stacked.md.
+For stacked PR workflows, see stacks.md.
 
 ## Dual-Approach Pattern
 
@@ -92,7 +92,7 @@ fi
 
 **Conventional Commits Format**: PR titles follow the same conventional commits format as commit messages.
 
-See @naming.md for complete specification, including:
+See @style.md for complete specification, including:
 - Format pattern: `type: description` or `type(scope): description`
 - Type definitions (feat, fix, docs, etc.)
 - 50/72 character rule (PR title becomes merge commit subject)
@@ -273,7 +273,7 @@ Agent: [Creates PR using MCP or gh CLI]
 
 For large features (500+ lines), use stacked PRs to maintain atomic, reviewable changes.
 
-**See**: stacked.md for complete stacked PR workflows, merge strategies, and rebase patterns.
+**See**: stacks.md for complete stacked PR workflows, merge strategies, and rebase patterns.
 
 </context>
 
@@ -1364,8 +1364,8 @@ git push
 # Related Standards
 
 - **Git Operations**: @git.md - Commits, branches, merges
-- **Stacked PRs**: @stacked.md - Advanced stacked PR patterns and workflows
+- **Stacked PRs**: @stacks.md - Advanced stacked PR patterns and workflows
 - **GitHub CLI**: @gh-cli.md - GitHub CLI commands and token efficiency
 - **Development Workflow**: @dev.md - Daily practices, quality gates
-- **Testing**: @testing.md - Test requirements
-- **AI Principles**: @ai.md - Constitutional AI principles, exploration-before-implementation
+- **Testing**: @tests.md - Test requirements
+- **AI Principles**: @steering.md - Constitutional AI principles, exploration-before-implementation

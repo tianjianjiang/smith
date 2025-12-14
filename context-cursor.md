@@ -4,7 +4,7 @@
 
 - **Scope**: Cursor-specific context management strategies and commands
 - **Load if**: Using Cursor AND (context window approaching capacity >70% OR optimizing context usage)
-- **Prerequisites**: @context.md, @ai.md
+- **Prerequisites**: @context.md, @steering.md
 - **Requires**: Understanding of context windows, token limits, Cursor commands
 - **Provides**: Cursor /summarize command, @ mentions, @codebase, .cursorrules configuration
 - **Research**: Cursor documentation
@@ -724,7 +724,7 @@ Features documented here are current as of the version noted above. Cursor 2.0 i
 <related>
 
 - **Universal principles**: @context.md (shared context management strategies, agent role)
-- **Parent**: @ai.md (AI agent interaction patterns, prompt caching)
+- **Parent**: @steering.md (AI agent interaction patterns, prompt caching)
 - **Foundation**: @core.md (critical NEVER/ALWAYS rules)
 - **Research**: Cursor documentation
 
