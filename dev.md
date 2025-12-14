@@ -29,7 +29,7 @@ pnpm lint:fix && pnpm test
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @ai.md for comprehensive patterns:
+**For AI agent workflows**: See @steering.md for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
 - AGENTS.md optimization for prompt caching
@@ -119,7 +119,7 @@ Before creating a pull request:
 
 - **Personal Rules**: @core.md
 - **Python Standards**: @python.md
-- **Testing**: @testing.md
+- **Testing**: @tests.md
 - **Git Workflow**: @git.md
 - **GitHub PRs**: @gh-cli.md
-- **Naming**: @naming.md
+- **Naming**: @style.md

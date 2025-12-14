@@ -49,8 +49,8 @@ Rules unloaded:
 
 ```text
 Rules loaded:
-- @AGENTS.md (entry point)
 - @core.md (triggered by: always_active context)
+- @steering.md (triggered by: always_active context)
 - @python.md (triggered by: python_development context)
 ```
 
@@ -75,7 +75,7 @@ Rules loaded:
 
 ### [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (HHH)
 
-See @ai.md for Helpful, Honest, Harmless principles.
+See @steering.md for Helpful, Honest, Harmless principles.
 
 </guiding_principles>
 
@@ -117,6 +117,7 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **always_active:**
 - @core.md (Critical NEVER/ALWAYS rules)
+- @steering.md (Anti-sycophancy, Socratic questioning, truthfulness, Constitutional AI)
 
 **python_development:**
 - Condition: Writing/modifying Python code OR running Python tests
@@ -124,11 +125,11 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **git_operations:**
 - Condition: Performing git commits, merges, or branch management
-- Load: @git.md, @naming.md
+- Load: @git.md, @style.md
 
 **pull_request_workflows:**
 - Condition: Creating pull requests OR reviewing code OR merging PRs
-- Load: @gh-pr.md, @gh-cli.md, @naming.md
+- Load: @gh-pr.md, @gh-cli.md, @style.md
 
 **github_workflows:**
 - Condition: Using GitHub CLI OR creating PRs OR managing GitHub features
@@ -149,19 +150,15 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **testing:**
 - Condition: Writing or running tests (any language)
-- Load: @testing.md
+- Load: @tests.md
 
 **new_project:**
 - Condition: Initializing a new project
-- Load: @dev.md, @naming.md
+- Load: @dev.md, @style.md
 
 **ide_configuration:**
 - Condition: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables ($WORKSPACE_ROOT, ${workspaceFolder}, etc.)
 - Load: @tools.md, @ide.md
-
-**ai_agent_interaction:**
-- Condition: Using Claude Code OR GitHub Copilot OR AI pair programming
-- Load: @ai.md
 
 **platform_context_loading:**
 - Condition: Session start OR platform detected (Claude Code, Cursor, or Kiro)
@@ -175,11 +172,11 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 
 **prompt_engineering:**
 - Condition: Writing or reviewing AI prompts, AGENTS.md files, or rules documentation
-- Load: @xml.md
+- Load: @xml.md, @prompts.md
 
 **stacked_pr_parent_merged:**
 - Condition: Parent PR in stack just merged OR working on child PR after parent merge
-- Load: @stacked.md (stacked PR patterns), @gh-pr.md (rebase + post-merge workflows), @git.md, @gh-cli.md
+- Load: @stacks.md (stacked PR patterns), @gh-pr.md (rebase + post-merge workflows), @git.md, @gh-cli.md
 - Action: Check if child PRs need rebase, offer to update stack
 
 **pr_maintenance:**
@@ -200,6 +197,22 @@ See @xml.md for approved XML tags with evidence-based references from Anthropic,
 - Condition: PR just merged OR immediately after merge operation
 - Load: @gh-pr.md (post-merge workflows), @gh-cli.md
 - Action: Check for dependent PRs, offer cascade updates, cleanup branches
+
+**think:**
+- Condition: Planning implementation OR estimating scope OR evaluating arguments OR decomposing tasks
+- Load: @reasoning.md
+
+**verify:**
+- Condition: Bug reported OR test failure OR root cause analysis OR proving correctness
+- Load: @validation.md
+
+**design:**
+- Condition: Starting new feature OR refactoring OR architecture decisions
+- Load: @design.md
+
+**guard:**
+- Condition: Making important decisions OR risk assessment
+- Load: @clarity.md
 
 ### Reporting Format
 
@@ -265,6 +278,7 @@ Rules skipped (file not found):
 ```
 Rules loaded:
 - @core.md (triggered by: always_active context)
+- @steering.md (triggered by: always_active context)
 - @context.md (triggered by: platform_context_loading context)
 - @context-claude.md (triggered by: platform_context_loading context)
 ```
@@ -274,7 +288,7 @@ Rules loaded:
 Rules loaded:
 - @gh-pr.md (triggered by: pull_request_workflows context)
 - @gh-cli.md (triggered by: pull_request_workflows context)
-- @naming.md (triggered by: pull_request_workflows context)
+- @style.md (triggered by: pull_request_workflows context)
 - @git.md (triggered by: git_operations context)
 ```
 
@@ -285,7 +299,7 @@ Rules unloaded:
 
 Rules loaded:
 - @git.md (triggered by: git_operations context)
-- @naming.md (triggered by: git_operations context)
+- @style.md (triggered by: git_operations context)
 ```
 
 </instructions>

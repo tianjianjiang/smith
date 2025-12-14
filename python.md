@@ -7,7 +7,7 @@
 - **Prerequisites**: @core.md
 - **Requires**: @core.md (Personal formatting, NEVER/ALWAYS)
 - **Referenced by**: Testing, Development workflows
-- **Optional**: @naming.md (File naming patterns)
+- **Optional**: @style.md (File naming patterns)
 
 </metadata>
 
@@ -233,7 +233,7 @@ class Config:
 
 - **Personal Rules**: @core.md - NEVER/ALWAYS for all languages
 - **Development Workflow**: @dev.md - Daily practices
-- **Testing Standards**: @testing.md - Test execution
-- **Naming Conventions**: @naming.md - File naming
+- **Testing Standards**: @tests.md - Test execution
+- **Naming Conventions**: @style.md - File naming
 
 </related>

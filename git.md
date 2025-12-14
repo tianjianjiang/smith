@@ -59,13 +59,13 @@ Branch type prefix MUST match the conventional commit type used in commits.
 
 </examples>
 
-See @naming.md for complete branch naming conventions including type prefixes, separator rules, and examples.
+See @style.md for complete branch naming conventions including type prefixes, separator rules, and examples.
 
 ## Commit Standards
 
 <context>
 
-**Conventional Commits Format**: See @naming.md for complete conventional commits format specification, including:
+**Conventional Commits Format**: See @style.md for complete conventional commits format specification, including:
 - Format pattern: `type: description` or `type(scope): description`
 - Type definitions (feat, fix, docs, etc.)
 - 50/72 character rule
@@ -433,5 +433,5 @@ git merge --abort
 - **GitHub PR Workflows**: @gh-pr.md - Complete PR lifecycle (creation, review, merge)
 - **GitHub CLI**: @gh-cli.md - GitHub CLI operations
 - **Development Workflow**: @dev.md - Daily practices
-- **Naming Conventions**: @naming.md - Branch and commit naming
+- **Naming Conventions**: @style.md - Branch and commit naming
 - **Core Standards**: @core.md - Personal coding standards

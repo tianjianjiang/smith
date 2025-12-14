@@ -7,7 +7,7 @@
 - **Prerequisites**: @core.md → @python.md
 - **Requires**: @python.md (Pytest patterns)
 - **Referenced by**: Development workflows
-- **Optional**: @naming.md (Test file naming)
+- **Optional**: @style.md (Test file naming)
 
 </metadata>
 
@@ -17,7 +17,7 @@
 <required>
 
 - MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
-- MUST follow test file naming conventions - see [Naming Standards](@naming.md#test-files)
+- MUST follow test file naming conventions - see [Naming Standards](@style.md#test-files)
 - MUST use pytest functions (not classes) - see @python.md
 - MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
 
@@ -31,7 +31,7 @@
 
 </context>
 
-**For naming patterns**: See @naming.md for test file and JSON test data naming
+**For naming patterns**: See @style.md for test file and JSON test data naming
 
 ## Test Execution
 
@@ -74,6 +74,6 @@ poetry run pytest tests/integration/ -v
 
 - **Python Testing**: @python.md - Pytest patterns
 - **Development Workflow**: @dev.md - Code quality
-- **Naming Conventions**: @naming.md - Test file naming
+- **Naming Conventions**: @style.md - Test file naming
 
 </related>

@@ -17,6 +17,19 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 </context>
 
+## Fundamental Principles
+
+<required>
+
+- **DRY** (Don't Repeat Yourself): Single source of truth; eliminate duplication
+- **KISS** (Keep It Simple, Stupid): Simplest solution that works; avoid unnecessary complexity
+- **YAGNI** (You Aren't Gonna Need It): Don't implement until actually needed
+- **SINE** (Simple Is Not Easy): Simplicity requires deliberate effort; refactor toward simplicity
+- **MECE** (Mutually Exclusive, Collectively Exhaustive): Categories don't overlap; coverage is complete
+- **Occam's Razor**: Prefer solutions with fewest assumptions
+
+</required>
+
 ## Critical Coding Rules
 
 **NEVER violate these rules - STRICTLY ENFORCED across ALL tools and outputs**
@@ -88,7 +101,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 ## AI Agent Output Standards
 
-**For AI agent workflows and principles**: See @ai.md for comprehensive coverage:
+**For AI agent workflows and principles**: See @steering.md for comprehensive coverage:
 - Constitutional AI principles (Helpful, Honest, Harmless framework)
 - Exploration-before-implementation patterns
 - Code quality and security requirements
@@ -102,6 +115,15 @@ Fundamental coding rules applying as personal standards across all languages, co
 
 </required>
 
+### Systematic Thinking
+
+See context-triggered files for critical thinking techniques:
+- @design.md - Design principles (DRY, KISS, YAGNI, SOLID)
+- @steering.md - Anti-sycophancy, Socratic method (always_active)
+- @reasoning.md - Reasoning, problem decomposition, Polya's method
+- @validation.md - Hypothesis testing, root cause analysis
+- @clarity.md - Cognitive guards, logic fallacies
+
 ## Path Reference Conventions
 
 **Use standardized path variables:**
@@ -109,7 +131,7 @@ Fundamental coding rules applying as personal standards across all languages, co
 - `$WORKSPACE_ROOT/` for workspace-relative paths
 - `$REPO_ROOT/` for repository-relative paths
 
-**See:** @naming.md for detailed path standards
+**See:** @style.md for detailed path standards
 
 <related>
 
@@ -123,7 +145,7 @@ For language-specific rules, see:
 
 For daily workflow, code quality checks, and tool usage:
 - @dev.md
-- @testing.md
+- @tests.md
 
 ## Version Control
 
