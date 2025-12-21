@@ -42,8 +42,8 @@ Skills and rules follow 3-tier loading to minimize token usage:
 
 <required>
 
-- Bullet lists over tables for instructions (LLMs parse lists more reliably)
-- Tables ONLY for structured reference data (not rules or instructions)
+- **Bullet lists over tables for ALL content** (instructions AND reference data)
+- LLMs parse bullet lists more reliably than tables
 - XML tags for semantic boundaries: `<required>`, `<forbidden>`, `<context>`, `<examples>`
 - Metadata blocks at file start for early loading
 - Lines under 80 characters for better parsing
@@ -98,7 +98,7 @@ See @xml.md for complete reference.
 
 - Mixing good/bad examples in same XML tag
 - Inventing placeholder-style tags (`<type>`, `<scope>`)
-- Tables for instruction content
+- **Markdown tables** (use bullet lists for ALL content, even reference data)
 - Nested lists deeper than 2 levels
 - Skipped heading levels
 
@@ -135,8 +135,8 @@ See @xml.md for complete reference.
 
 <related>
 
-- @xml.md - Approved XML tags and usage
-- @context.md - Context management strategies
+- `@xml.md` - Approved XML tags and usage
+- `@context.md` - Context management strategies
 - @principles.md - Core coding principles
 
 </related>

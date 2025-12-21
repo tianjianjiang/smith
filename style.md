@@ -87,7 +87,7 @@ docs: update deployment guide
 - `feat/auth-login` (hyphen: login is part of auth)
 - `fix/JIRA-1234-query_processor`
 
-**Branch type MUST match commit type**
+Branch type MUST match commit type
 
 </required>
 

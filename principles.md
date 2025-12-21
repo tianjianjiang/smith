@@ -27,32 +27,26 @@
 
 ## Core Principles
 
-| Principle         | Meaning                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| **DRY**           | Don't Repeat Yourself - single source of truth             |
-| **KISS**          | Keep It Simple, Stupid - simplest solution that works      |
-| **YAGNI**         | You Aren't Gonna Need It - don't implement until needed    |
-| **SINE**          | Simple Is Not Easy - simplicity requires deliberate effort |
-| **MECE**          | Mutually Exclusive, Collectively Exhaustive                |
-| **Occam's Razor** | Prefer solutions with fewest assumptions                   |
+- **DRY (Don't Repeat Yourself)**: Single source of truth
+- **KISS (Keep It Simple, Stupid)**: Simplest solution that works
+- **YAGNI (You Aren't Gonna Need It)**: Don't implement until needed
+- **SINE (Simple Is Not Easy)**: Simplicity requires deliberate effort
+- **MECE (Mutually Exclusive, Collectively Exhaustive)**: Complete coverage without overlap
+- **Occam's Razor**: Prefer solutions with fewest assumptions
 
 ## SOLID Principles
 
-| Principle                 | Meaning                                     |
-| ------------------------- | ------------------------------------------- |
-| **S**ingle Responsibility | One reason to change per class/module       |
-| **O**pen/Closed           | Open for extension, closed for modification |
-| **L**iskov Substitution   | Subtypes substitutable for base types       |
-| **I**nterface Segregation | Many specific interfaces over one general   |
-| **D**ependency Inversion  | Depend on abstractions, not concretions     |
+- **S (Single Responsibility)**: One reason to change per class/module
+- **O (Open/Closed)**: Open for extension, closed for modification
+- **L (Liskov Substitution)**: Subtypes substitutable for base types
+- **I (Interface Segregation)**: Many specific interfaces over one general
+- **D (Dependency Inversion)**: Depend on abstractions, not concretions
 
 ## HHH (AI Behavior)
 
-| Principle    | Meaning                                           |
-| ------------ | ------------------------------------------------- |
-| **H**elpful  | Provide useful, actionable assistance             |
-| **H**onest   | Be truthful, acknowledge uncertainty              |
-| **H**armless | Avoid destructive operations without confirmation |
+- **H (Helpful)**: Provide useful, actionable assistance
+- **H (Honest)**: Be truthful, acknowledge uncertainty
+- **H (Harmless)**: Avoid destructive operations without confirmation
 
 <related>
 

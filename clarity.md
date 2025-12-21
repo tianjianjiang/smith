@@ -122,13 +122,25 @@ Work expands to fill the time available for completion.
 
 **Research:**
 
-- Croskerry, P. (2003). Cognitive forcing strategies in clinical decision making
-- Kahneman, D. & Tversky, A. (1979). Planning fallacy
-- Goldratt, E. (1997). Critical Chain (Student Syndrome, Parkinson's Law)
+[1] Croskerry, P. (2003). Cognitive forcing strategies in clinical decision making
+[2] Kahneman, D. & Tversky, A. (1979). Planning fallacy
+[3] Goldratt, E. (1997). Critical Chain (Student Syndrome, Parkinson's Law)
 
 **Related files:**
 
 - @guidance.md - Anti-sycophancy, questioning techniques
-- @analysis.md - Pre-mortem analysis, constraint thinking
+- `@analysis.md` - Pre-mortem analysis, constraint thinking
 
 </related>
+
+## ACTION (Recency Zone)
+
+<required>
+
+**When making decisions or evaluating reasoning:**
+1. Pause before finalizing (Cognitive timeout)
+2. Ask "What am I assuming? What could go wrong?"
+3. Generate 2-3 alternatives before committing
+4. Seek disconfirming evidence, not confirming evidence
+
+</required>

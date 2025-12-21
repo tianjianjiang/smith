@@ -241,15 +241,27 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 **Research:**
 
-- Popper, K. (1934). The Logic of Scientific Discovery (Falsification)
-- Deming, W.E. PDSA Cycle (Plan-Do-Study-Act)
-- Platt, J. R. (1964). Strong inference. Science, 146(3642)
-- Zeller, A. (2009). Why Programs Fail: A Guide to Systematic Debugging
+[1] Popper, K. (1934). The Logic of Scientific Discovery (Falsification)
+[2] Deming, W.E. PDSA Cycle (Plan-Do-Study-Act)
+[3] Platt, J. R. (1964). Strong inference. Science, 146(3642)
+[4] Zeller, A. (2009). Why Programs Fail: A Guide to Systematic Debugging
 
 **Related files:**
 
 - @guidance.md - Questioning techniques
-- @analysis.md - Reasoning patterns, problem decomposition
-- @clarity.md - Cognitive guards, logic fallacies
+- `@analysis.md` - Reasoning patterns, problem decomposition
+- `@clarity.md` - Cognitive guards, logic fallacies
 
 </related>
+
+## ACTION (Recency Zone)
+
+<required>
+
+**When debugging or validating:**
+1. Use Strong Inference: devise multiple hypotheses before testing
+2. Apply 5 Whys to find root cause, not symptoms
+3. Use Git Bisect for regressions (binary search ~7 commits for 100-commit range)
+4. Run tests with coverage; inspect code paths common to failures
+
+</required>

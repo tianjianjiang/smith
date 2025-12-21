@@ -35,8 +35,6 @@ General principles to specific conclusions (logically certain):
 2. Apply to specific case
 3. Derive guaranteed conclusion
 
-**For coding**: "All API endpoints require authentication (premise). /users is an endpoint. Therefore /users requires authentication."
-
 ### Inductive Reasoning
 
 Specific observations to general patterns (probabilistic):
@@ -47,9 +45,7 @@ Specific observations to general patterns (probabilistic):
 2. Identify patterns
 3. Form general hypothesis (may be wrong)
 
-**For coding**: "These 5 failing tests all timeout after 30s. The timeout setting is probably too short."
-
-**Caution**: Inductive conclusions can be wrong. "All observed swans are white" was disproven by black swans.
+**Caution**: Inductive conclusions can be wrong.
 
 ### Abductive Reasoning
 
@@ -62,39 +58,13 @@ Best explanation from incomplete observations (inference to best explanation):
 3. Select most plausible explanation
 4. Test to confirm or falsify
 
-**For debugging**: "API returns 500 only on Mondays. Most likely: scheduled job causes resource contention."
-
 </required>
 
 ## Extended Thinking Guidance
 
-**Context trigger**: `think` - Load when planning implementation, estimating scope, evaluating arguments, or decomposing tasks
+Modern LLMs have built-in extended thinking for complex problem-solving.
 
-<context>
-
-**Context**: Modern coding agent LLMs have built-in extended thinking capabilities for complex problem-solving
-
-**When to use**:
-- Complex architectural decisions requiring deep analysis
-- Multi-step refactoring with dependency tracking
-- Security analysis requiring threat modeling
-- Performance optimization requiring profiling analysis
-
-</context>
-
-<examples>
-
-**Steering approach**:
-```markdown
-"Use extended thinking to analyze the authentication flow across all services,
-identify potential race conditions, and propose a comprehensive fix that maintains
-backward compatibility."
-```
-
-**Good practice**:
-- "Implement OAuth2 authentication that works with our existing user service and maintains session persistence across load-balanced instances"
-
-</examples>
+**When to use**: Complex architectural decisions, multi-step refactoring, security analysis, performance optimization.
 
 <forbidden>
 
@@ -102,9 +72,6 @@ backward compatibility."
 - NEVER ask for visible reasoning steps (defeats efficiency purpose)
 - NEVER use for simple, straightforward tasks
 - NEVER provide explicit reasoning instructions (focus on outcome specification, not process)
-
-**Anti-pattern**:
-- "Think step-by-step about how to implement authentication"
 
 </forbidden>
 
@@ -119,8 +86,6 @@ Break down to fundamentals, reason up:
 1. **Identify assumptions** - What do we take for granted?
 2. **Decompose** - What are the fundamental truths?
 3. **Reconstruct** - Build solution from first principles only
-
-**For coding**: Instead of copying patterns, ask "What problem are we solving? What's the simplest solution?"
 
 ### Polya's 4-Step Method
 
@@ -157,11 +122,6 @@ Order-of-magnitude approximation with limited data:
 3. Combine estimates (multiply/add as appropriate)
 4. Sanity check: Is result reasonable?
 
-**For engineering**: "How many queries/second can this handle?"
-- Break down: connections x queries/connection x time
-- Estimate each factor with reasonable bounds
-- Result: Order of magnitude (10s, 100s, 1000s)
-
 </required>
 
 ## Constraint Thinking
@@ -178,8 +138,6 @@ Systematic bottleneck elimination (Goldratt):
 4. **Elevate** - Increase constraint capacity if still limiting
 5. **Repeat** - Find the new constraint (it will shift)
 
-**For coding**: "What single factor is blocking progress? Focus there first."
-
 ### Three-Point Estimation (PERT)
 
 Handle uncertainty with optimistic, likely, pessimistic:
@@ -189,8 +147,6 @@ Handle uncertainty with optimistic, likely, pessimistic:
 - **P**: Pessimistic (realistic worst case)
 - **Expected**: (O + 4M + P) / 6
 
-**For coding**: "This refactor could take 2 hours (O), probably 4 hours (M), or 8 hours if we hit edge cases (P). Expected: ~4.3 hours."
-
 ### Current Reality Tree (CRT)
 
 Trace symptoms to root cause:
@@ -199,8 +155,6 @@ Trace symptoms to root cause:
 2. Connect with "if...then" cause-effect logic
 3. Trace backward to find common root cause
 4. Validate: Does root cause explain ALL symptoms?
-
-**For debugging**: "5 different errors → trace back → all stem from misconfigured auth service"
 
 </required>
 
@@ -217,9 +171,7 @@ Before implementation, imagine failure has occurred:
 3. **Categorize** - Group failure modes
 4. **Mitigate** - Address highest-risk items in plan
 
-**For coding**: Before implementing, ask "How could this fail in production?"
-
-**Research**: Increases identification of potential problems by 30% (Klein, 2007).
+Increases problem identification by 30% [3].
 
 ### Inversion Thinking
 
@@ -227,9 +179,7 @@ Think backward to avoid failure:
 
 - Instead of "How do I succeed?" ask "How could I fail?"
 - Instead of "How to make this fast?" ask "What would make this slow?"
-- Avoid stupidity rather than seeking brilliance
-
-**Key insight**: "Spend less time being brilliant, more time avoiding obvious stupidity." (Munger)
+- Avoid stupidity rather than seeking brilliance [4]
 
 </required>
 
@@ -248,27 +198,37 @@ Ensure coverage by examining from 6 perspectives:
 - **Green** (Creativity): What alternatives exist? New approaches?
 - **Blue** (Process): Are we on track? What's the next step?
 
-**For code review**: Cycle through each hat for comprehensive analysis.
-
 </required>
 
 <related>
 
 **Research:**
 
-- Boyd, J. (1995). The Essence of Winning and Losing (OODA Loop)
-- Polya, G. (1945). How to Solve It
-- Klein, G. (2007). Performing a project premortem
-- Munger, C. Inversion thinking in decision-making
-- de Bono, E. (1985). Six Thinking Hats
-- Goldratt, E. (1984). The Goal (Theory of Constraints)
-- Malcolm, D.G. et al. (1959). PERT (Program Evaluation Review Technique)
+[1] Boyd, J. (1995). The Essence of Winning and Losing (OODA Loop)
+[2] Polya, G. (1945). How to Solve It
+[3] Klein, G. (2007). Performing a project premortem
+[4] Munger, C. Inversion thinking in decision-making
+[5] de Bono, E. (1985). Six Thinking Hats
+[6] Goldratt, E. (1984). The Goal (Theory of Constraints)
+[7] Malcolm, D.G. et al. (1959). PERT (Program Evaluation Review Technique)
 
 **Related files:**
 
 - @guidance.md - Questioning techniques, Socratic method
-- @validation.md - Hypothesis testing, root cause analysis
-- @clarity.md - Cognitive guards, logic fallacies
-- @design.md - Design principles (SOLID)
+- `@validation.md` - Hypothesis testing, root cause analysis
+- `@clarity.md` - Cognitive guards, logic fallacies
+- `@design.md` - Design principles (SOLID)
 
 </related>
+
+## ACTION (Recency Zone)
+
+<required>
+
+**When planning or decomposing problems:**
+1. Use Polya's 4-Step method (Understand → Plan → Execute → Review)
+2. Break into 3-5 milestones, not micro-steps
+3. Before implementation: Pre-mortem ("How could this fail?")
+4. Use constraint thinking (TOC Five Focusing Steps) to find bottlenecks
+
+</required>

@@ -30,10 +30,13 @@
 
 ## Test Organization
 
-| Type        | Location             | Characteristics                           |
-| ----------- | -------------------- | ----------------------------------------- |
-| Unit        | `tests/unit/`        | Mock dependencies, fast                   |
-| Integration | `tests/integration/` | Real services, `@pytest.mark.integration` |
+**Unit**:
+- Location: `tests/unit/`
+- Characteristics: Mock dependencies, fast
+
+**Integration**:
+- Location: `tests/integration/`
+- Characteristics: Real services, `@pytest.mark.integration`
 
 ## TDD Workflow
 

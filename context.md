@@ -15,19 +15,37 @@
 
 ## Platform Thresholds
 
-| Platform    | Warning | Critical | Auto-Action       |
-| ----------- | ------- | -------- | ----------------- |
-| Claude Code | 60%     | 70-75%   | `/compact` at 95% |
-| Kiro        | 70%     | 80%      | Auto-summarize    |
-| Cursor      | 70%     | 80%      | `/summarize`      |
+**Claude Code**:
+- Warning: 60%
+- Critical: 70-75%
+- Auto-Action: `/compact` at 95%
+
+**Kiro**:
+- Warning: 70%
+- Critical: 80%
+- Auto-Action: Auto-summarize
+
+**Cursor**:
+- Warning: 70%
+- Critical: 80%
+- Auto-Action: `/summarize`
 
 ## Compaction Commands
 
-| Platform    | Inspect       | Compact      | Clear       |
-| ----------- | ------------- | ------------ | ----------- |
-| Claude Code | `/context`    | `/compact`   | `/clear`    |
-| Kiro        | Context meter | Auto at 80%  | New session |
-| Cursor      | UI indicator  | `/summarize` | New chat    |
+**Claude Code**:
+- Inspect: `/context`
+- Compact: `/compact`
+- Clear: `/clear`
+
+**Kiro**:
+- Inspect: Context meter
+- Compact: Auto at 80%
+- Clear: New session
+
+**Cursor**:
+- Inspect: UI indicator
+- Compact: `/summarize`
+- Clear: New chat
 
 ## Serena MCP Preference
 

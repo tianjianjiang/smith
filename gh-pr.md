@@ -80,23 +80,19 @@ git push -u origin feat/my_feature
 
 ## Rebase Decision Tree
 
-| Scenario                                     | Action                 |
-| -------------------------------------------- | ---------------------- |
-| Behind base, no conflicts, explicit "update" | AUTO-REBASE            |
-| Behind base, no conflicts, not explicit      | ASK user               |
-| Behind base, conflicts detected              | INFORM + ASK           |
-| Parent PR merged                             | INFORM + OFFER cascade |
-| About to request review, outdated            | BLOCK + INFORM         |
+**Behind base, no conflicts, explicit "update"**: AUTO-REBASE
+**Behind base, no conflicts, not explicit**: ASK user
+**Behind base, conflicts detected**: INFORM + ASK
+**Parent PR merged**: INFORM + OFFER cascade
+**About to request review, outdated**: BLOCK + INFORM
 
 **Staleness thresholds**: <5 commits (fresh), 5-10 (notify), >10 (recommend), >20 (urgent)
 
 ## Merge Strategies
 
-| Strategy     | Use for                                  |
-| ------------ | ---------------------------------------- |
-| Merge commit | Feature branches with meaningful history |
-| Squash       | Small fixes, docs, single logical change |
-| Rebase       | Linear history required, clean commits   |
+**Merge commit**: Feature branches with meaningful history
+**Squash**: Small fixes, docs, single logical change
+**Rebase**: Linear history required, clean commits
 
 ## Stacked PRs
 

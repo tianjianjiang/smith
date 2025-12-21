@@ -11,7 +11,7 @@
 
 <required>
 
-**Cache reduces costs 90%, latency 85%**
+Cache reduces costs 90%, latency 85%
 
 **Structure for caching:**
 1. Static content first (methodology, rules)
@@ -28,6 +28,7 @@
 - Reordering tools between calls
 - Injecting dynamic content into static sections
 - Modifying cached prefix unnecessarily
+- Using markdown tables (see `@skills.md` - use bullet lists instead)
 
 </forbidden>
 

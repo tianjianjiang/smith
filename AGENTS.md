@@ -28,12 +28,12 @@ Personal coding standards for AI-assisted development with progressive disclosur
 <required>
 
 **Load on task match, unload after 5 turns unused**:
-- Python code/tests → @python.md
-- Git commits/merges → @git.md, @style.md
-- PR create/review → @gh-pr.md, @gh-cli.md
-- Tests → @tests.md
-- Prompts/AI → @xml.md, @prompts.md
-- Platform detect → @context-{platform}.md (never unload)
+- Python code/tests → `@python.md`
+- Git commits/merges → `@git.md`, `@style.md`
+- PR create/review → `@gh-pr.md`, `@gh-cli.md`
+- Tests → `@tests.md`
+- Prompts/AI → `@xml.md`, `@prompts.md`
+- Platform detect → `@context-{platform}.md` (never unload)
 
 </required>
 
@@ -78,9 +78,35 @@ Personal coding standards for AI-assisted development with progressive disclosur
 - @principles.md - Core principles (DRY, KISS, YAGNI, SOLID)
 - @standards.md - Universal coding standards
 - @guidance.md - AI agent behavior patterns
-- @context.md - Context management thresholds
+- `@context.md` - Context management thresholds
 
 </related>
+
+## Agent Capabilities
+
+**Claude Code**:
+- **Context**: 200k tokens, monitor at 60%, compact at 70%
+- **Operations**: Code generation, file I/O, web search, MCP servers
+- **Features**: Tool search (on-demand tool loading), browser automation
+- **Limitations**: None notable
+
+**Kiro**:
+- **Context**: Auto-summarize at 80%
+- **Operations**: Code generation, file I/O
+- **Features**: Native AGENTS.md support
+- **Limitations**: Terminal hangs (echo with double quotes, heredoc), strReplace fails on duplicates
+
+**OpenAI Codex, Amp, Jules**:
+- **Support**: Native AGENTS.md support
+- **Operations**: Standard code generation and file operations
+
+**Gemini CLI, Aider**:
+- **Support**: Requires configuration for AGENTS.md
+- **Operations**: Standard code generation capabilities
+
+**Cursor**:
+- **Format**: Uses .mdc format (incompatible with AGENTS.md)
+- **Config**: Requires .cursorrules for configuration
 
 ## Platform Compatibility
 

@@ -32,11 +32,9 @@
 
 ## Import Organization
 
-| Order | Type        | Example                      |
-| ----- | ----------- | ---------------------------- |
-| 1     | stdlib      | `import os, sys`             |
-| 2     | third-party | `import pytest`              |
-| 3     | local       | `from package.module import` |
+1. **stdlib**: `import os, sys`
+2. **third-party**: `import pytest`
+3. **local**: `from package.module import`
 
 ## Type Hints
 

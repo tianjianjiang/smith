@@ -104,7 +104,7 @@
 <related>
 
 - @principles.md - DRY, KISS, YAGNI, SOLID
-- @context.md - Memory management
+- `@context.md` - Memory management
 
 </related>
 

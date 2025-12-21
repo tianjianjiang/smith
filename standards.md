@@ -74,13 +74,13 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 <related>
 
 - @principles.md - Fundamental coding principles
-- @style.md - Path and naming standards
+- `@style.md` - Path and naming standards
 - @guidance.md - AI agent behavior patterns (always active)
-- @dev.md - Development workflow
-- @tests.md - Testing standards
-- @git.md - Version control
-- @gh-pr.md - Pull request workflows
-- @gh-cli.md - GitHub CLI operations
+- `@dev.md` - Development workflow
+- `@tests.md` - Testing standards
+- `@git.md` - Version control
+- `@gh-pr.md` - Pull request workflows
+- `@gh-cli.md` - GitHub CLI operations
 
 </related>
 

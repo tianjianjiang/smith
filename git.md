@@ -32,13 +32,10 @@
 
 ## Branch Strategy
 
-| Branch     | Purpose                   |
-| ---------- | ------------------------- |
-| `main`     | Production-ready          |
-| `develop`  | Integration               |
-| `feat/*`   | Features from develop     |
-| `fix/*`    | Bug fixes                 |
-| `hotfix/*` | Emergency fixes from main |
+- **`main`**: Production-ready
+- **`develop`**: Integration
+- **`feat/*`**: Features from develop
+- **`fix/*`**: Bug fixes (including emergency fixes from main)
 
 **Naming**: `type/descriptive_name` (e.g., `feat/user_auth`, `fix/JIRA-1234-query`)
 
