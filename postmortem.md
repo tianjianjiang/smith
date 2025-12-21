@@ -147,21 +147,19 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 ### Blameless Language
 
-**Core principle**: Focus on systems, not people. Incidents are symptoms of system problems; people make mistakes; systems should prevent or catch them. Blame prevents learning and honest reporting.
+**Core principle**: Focus on systems, not people. Incidents are system failures; blame prevents learning.
 
-**Guidelines**: Use "we" not "they". Focus on "what" and "why" not "who". Describe actions and outcomes, not judgments.
+**Guidelines**: Use "we" not "they". Focus on "what" and "why" not "who".
 
 <forbidden>
 
-**Blaming language** (avoid):
-> "[Person] deployed broken code that caused the outage."
+"[Person] deployed broken code" - assigns blame
 
 </forbidden>
 
 <examples>
 
-**Blameless language** (prefer):
-> "The deployment process allowed code with a connection leak to reach production. The code review process didn't catch the missing error handling, and automated tests didn't cover the connection lifecycle scenario."
+"The deployment process allowed code with a connection leak to reach production" - describes system gap
 
 </examples>
 
@@ -169,101 +167,51 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 <examples>
 
-```markdown
-# Postmortem: [Service Name] Outage
+Postmortem structure (see sections 1-8 above for details):
+1. Incident Summary (date, duration, severity, metrics)
+2. Impact Assessment (customer, business, technical impact)
+3. Timeline (ISO 8601 timestamps, key events)
+4. Root Cause Analysis (Five Whys, contributing factors)
+5. Resolution Steps (mitigation, fixes, verification)
+6. Action Items (ID, owner, priority, target date)
+7. Lessons Learned (went well, could improve, process improvements)
+8. Communication Plan (internal, customer, follow-up)
 
-## Incident Summary
-- **Date**: YYYY-MM-DD
-- **Duration**: YYYY-MM-DDTHH:MM:SS±HH:MM/YYYY-MM-DDTHH:MM:SS±HH:MM (ISO 8601 time range, local timezone)
-- **Severity**: P0 (Critical)
-- **Affected**: [Service name], [X]% of [operations] failed
-
-## Impact Assessment
-- **Users affected**: [NUMBER] [affected operations]
-- **Business impact**: [Impact description], SLA violation
-- **Technical impact**: [Technical issue description], [X]% error rate
-
-## Timeline
-YYYY-MM-DDTHH:MM:SS±HH:MM - Alert: [Alert description]
-YYYY-MM-DDTHH:MM:SS±HH:MM - On-call paged, investigation started
-YYYY-MM-DDTHH:MM:SS±HH:MM - Root cause: [Root cause description]
-YYYY-MM-DDTHH:MM:SS±HH:MM - Mitigation: [Mitigation action]
-YYYY-MM-DDTHH:MM:SS±HH:MM - Service restored, monitoring confirmed normal
-
-## Root Cause Analysis
-
-### Primary Root Cause
-[Root cause description]
-
-### Five Whys Analysis
-1. Why did the service fail? → [Immediate cause]
-2. Why [immediate cause]? → [Underlying cause]
-3. Why [underlying cause]? → [Deeper cause]
-4. Why wasn't this caught? → [Detection gap]
-5. Why [detection gap]? → [Root cause]
-
-### Contributing Factors
-- [Contributing factor 1]
-- [Contributing factor 2]
-- [Contributing factor 3]
-- [Contributing factor 4]
-
-## Resolution Steps
-1. [Immediate mitigation action]
-2. [Long-term fix applied]
-3. [Verification steps taken]
-4. [Rollback status if applicable]
-
-## Action Items
-
-- **PM-001**: [Action item description]
-  - Owner: [Team/Individual]
-  - Priority: P0
-  - Target Date: YYYY-MM-DD
-- **PM-002**: [Action item description]
-  - Owner: [Team/Individual]
-  - Priority: P0
-  - Target Date: YYYY-MM-DD
-- **PM-003**: [Action item description]
-  - Owner: [Team/Individual]
-  - Priority: P1
-  - Target Date: YYYY-MM-DD
-
-## Lessons Learned
-
-### What Went Well
-- [Positive aspect 1]
-- [Positive aspect 2]
-- [Positive aspect 3]
-
-### What Could Be Improved
-- [Improvement area 1]
-- [Improvement area 2]
-- [Improvement area 3]
-
-### Process Improvements
-- [Process improvement 1]
-- [Process improvement 2]
-- [Process improvement 3]
-
-## Communication Plan
-- Internal: [Internal communication method]
-- Status page: [Status page update]
-- Customer: [Customer communication if applicable]
-- Follow-up: Postmortem review scheduled for YYYY-MM-DD
-```
+Templates: [1] [2] [3] [4] [5] [6] [7]
 
 </examples>
 
-## References
+## ACTION (Recency Zone)
 
-1. Google Cloud Architecture Center. "Conducting Postmortems." https://cloud.google.com/architecture/framework/reliability/conduct-postmortems
-2. Atlassian. "Incident Postmortem Templates." https://www.atlassian.com/incident-management/postmortem/templates
-3. PagerDuty. "Postmortem Documentation Template." https://postmortems.pagerduty.com/resources/post_mortem_template/
-4. AWS. "Incident Postmortem Template." https://dev.to/aws/incident-postmortem-template-18m7
-5. Rootly. "Incident Postmortem Guide." https://rootly.com/incident-postmortems/template
-6. FireHydrant. "Incident Retrospective Template." https://firehydrant.com/blog/incident-retrospective-postmortem-template/
-7. GitHub. "dastergon/postmortem-templates." https://github.com/dastergon/postmortem-templates
-8. Google. "Site Reliability Engineering Book." Chapter on Postmortem Culture.
-9. Atlassian. "How to Run a Blameless Postmortem." https://www.atlassian.com/incident-management/postmortem/blameless
-10. Atlassian. "Incident Management Handbook: Postmortems." https://www.atlassian.com/incident-management/handbook/postmortems
+<required>
+
+**When conducting postmortems:**
+1. Schedule within 48-72 hours of incident resolution
+2. Include all key participants (incident commander, responders, affected teams)
+3. Follow 8-section structure (Summary → Impact → Timeline → Root Cause → Resolution → Action Items → Lessons → Communication)
+4. Use Five Whys or fishbone diagram for root cause analysis
+5. Assign owners and timelines to all action items
+6. Share widely for organizational learning
+
+</required>
+
+<related>
+
+**Research:**
+
+[1] Google Cloud Architecture Center - Conducting Postmortems: https://cloud.google.com/architecture/framework/reliability/conduct-postmortems
+[2] Atlassian - Incident Postmortem Templates: https://www.atlassian.com/incident-management/postmortem/templates
+[3] PagerDuty - Postmortem Documentation Template: https://postmortems.pagerduty.com/resources/post_mortem_template/
+[4] AWS - Incident Postmortem Template: https://dev.to/aws/incident-postmortem-template-18m7
+[5] Rootly - Incident Postmortem Guide: https://rootly.com/incident-postmortems/template
+[6] FireHydrant - Incident Retrospective Template: https://firehydrant.com/blog/incident-retrospective-postmortem-template/
+[7] GitHub - dastergon/postmortem-templates: https://github.com/dastergon/postmortem-templates
+[8] Google SRE Book - Chapter on Postmortem Culture
+[9] Atlassian - How to Run a Blameless Postmortem: https://www.atlassian.com/incident-management/postmortem/blameless
+
+**Related files:**
+
+- `@clarity.md` - Root cause analysis techniques (Five Whys, fishbone)
+- `@validation.md` - Hypothesis testing
+
+</related>
