@@ -1,6 +1,29 @@
 # Development Workflow Standards
 
+<metadata>
+
+- **Scope**: Development workflow standards and code quality requirements
+- **Load if**: Initializing a new project
+- **Prerequisites**: @principles.md, @standards.md
+
+</metadata>
+
+<context>
+
 This document defines development workflow standards and code quality requirements.
+
+</context>
+
+## CRITICAL (Primacy Zone)
+
+<forbidden>
+
+- Committing without running formatters and linters
+- Committing without running tests
+- Creating PRs with failing quality checks
+- Having more than ONE task in_progress simultaneously
+
+</forbidden>
 
 ## Code Quality (MANDATORY)
 
@@ -29,11 +52,28 @@ pnpm lint:fix && pnpm test
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @ai.md for comprehensive patterns:
+**For AI agent workflows**: See @guidance.md for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
 - AGENTS.md optimization for prompt caching
 - Constitutional AI principles (HHH framework)
+
+## Agent Task Decomposition
+
+**Sweet spot**: 3-5 high-level milestones, not micro-steps
+
+<required>
+
+- Tasks MUST focus on logical phases, be independently verifiable
+- Exactly ONE task in_progress at any time
+- Mark complete only after tests pass and changes committed
+- Use git commits + todos for session bridging
+
+</required>
+
+**Task states**: pending → in_progress → completed
+
+**Dependencies**: Note in task description (e.g., "depends on #1")
 
 ## Pre-PR Quality Gates
 
@@ -94,15 +134,8 @@ Before creating a pull request:
 
 ### Output Organization
 
-**Directory**: `debug_scripts/outputs/`
-**Structure**: Categorized folders
-- `document_analysis/`
-- `symbol_tests/`
-- `query_tests/`
-- `performance_analysis/`
-
-**Naming**: `[script_purpose]_[identifier]_[timestamp].json`
-**Git**: Add `debug_scripts/outputs/` to `.gitignore`
+**Directory**: `debug_scripts/outputs/` (add to `.gitignore`)
+**Naming**: `[purpose]_[id]_[timestamp].json`
 
 ## Logging and Observability
 
@@ -115,11 +148,36 @@ Before creating a pull request:
 - Centralized controls in project documentation
 - Test logging: Configure via `pytest.ini` and `pyproject.toml`
 
-## Related Standards
+<related>
 
-- **Personal Rules**: @core.md
-- **Python Standards**: @python.md
-- **Testing**: @testing.md
-- **Git Workflow**: @git.md
-- **GitHub PRs**: @gh-cli.md
-- **Naming**: @naming.md
+- @principles.md - Fundamental coding principles
+- @standards.md - Universal code standards
+- @python.md - Python-specific patterns
+- @tests.md - Testing standards
+- @git.md - Version control workflow
+- @gh-cli.md - GitHub CLI operations
+- @style.md - Naming conventions
+
+</related>
+
+
+## ACTION (Recency Zone)
+
+<required>
+
+**Before committing:**
+```sh
+# Python
+poetry run ruff check --fix && poetry run ruff format
+poetry run pytest
+
+# Frontend
+pnpm lint:fix && pnpm test
+```
+
+**Task management:**
+- One task in_progress at a time
+- Mark complete only after tests pass
+- Commit frequently for session recovery
+
+</required>

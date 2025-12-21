@@ -8,15 +8,18 @@
 
 </metadata>
 
+## CRITICAL (Primacy Zone)
+
+<forbidden>
+
+- NEVER merge child PR before parent
+- NEVER merge main directly into child branch
+- NEVER create stacks deeper than 3-4 levels
+- NEVER use squash merge for non-final PRs in a stack
+
+</forbidden>
+
 <context>
-
-## Scope
-
-- **This document**: Advanced stacked PR patterns, merge workflows, rebase strategies
-- **GitHub PR workflows**: @gh-pr.md - Complete GitHub PR lifecycle
-- **Git operations**: @git.md - Local git commands
-
-## When to Use Stacked PRs
 
 For large features, use stacked PRs to maintain atomic, reviewable changes.
 
@@ -74,14 +77,6 @@ main
 5. Repeat for each level in stack
 
 </required>
-
-<forbidden>
-
-- NEVER merge child PR before parent (merges into parent branch, not main)
-- NEVER merge main directly into child branch (corrupts history)
-- NEVER use squash merge for non-final PRs in a stack
-
-</forbidden>
 
 <examples>
 
@@ -244,15 +239,23 @@ git merge main
 
 </forbidden>
 
-## Stacked PR References
+<related>
 
-- [How to handle stacked PRs on GitHub](https://www.nutrient.io/blog/how-to-handle-stacked-pull-requests-on-github/)
-- [Stacked pull requests with squash merge](https://echobind.com/post/stacked-pull-requests-with-squash-merge/)
-- [How to merge stacked PRs in GitHub](https://graphite.com/guides/how-to-merge-stack-pull-requests-github)
-- [Dave Pacheco's Stacked PR Workflow](https://www.davepacheco.net/blog/2025/stacked-prs-on-github/)
+- @gh-pr.md - Complete GitHub PR lifecycle
+- @git.md - Commits, branches, rebase
+- @gh-cli.md - GitHub CLI commands
 
-## Related Standards
+</related>
 
-- **GitHub PR Workflows**: @gh-pr.md - Complete GitHub PR lifecycle (creation, review, merge, cleanup)
-- **Git Operations**: @git.md - Commits, branches, rebase, force-push
-- **GitHub CLI**: @gh-cli.md - GitHub CLI commands
+
+## ACTION (Recency Zone)
+
+<required>
+
+**Merge stacked PRs bottom-up:**
+1. Merge parent PR first
+2. Rebase child: `git rebase --onto origin/main feat/parent`
+3. Force push child: `git push --force-with-lease`
+4. Delete parent branch after child base updated
+
+</required>

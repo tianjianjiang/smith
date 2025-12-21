@@ -44,7 +44,7 @@ Include these sections in order:
 
 ### 1. Incident Summary
 
-Include: title, ID, date, duration (ISO 8601 time range: `YYYY-MM-DDTHH:MM:SS+09:00/YYYY-MM-DDTHH:MM:SS+09:00`), severity (P0/P1/P2), brief description (2-3 sentences), key metrics (downtime, affected users, error rates)
+Include: title, ID, date, duration (ISO 8601 time range: `YYYY-MM-DDTHH:MM:SS±HH:MM/YYYY-MM-DDTHH:MM:SS±HH:MM` using local timezone), severity (P0/P1/P2), brief description (2-3 sentences), key metrics (downtime, affected users, error rates)
 
 ### 2. Impact Assessment
 
@@ -52,14 +52,14 @@ Include: customer impact (users, regions, services), business impact (revenue, S
 
 ### 3. Timeline
 
-Include: discovery time/method, key events chronologically (Asia/Tokyo, ISO 8601: `YYYY-MM-DDTHH:MM:SS+09:00`), response actions, resolution time, post-resolution verification
+Include: discovery time/method, key events chronologically (local timezone, ISO 8601: `YYYY-MM-DDTHH:MM:SS±HH:MM`), response actions, resolution time, post-resolution verification
 
 ```text
-YYYY-MM-DDTHH:MM:SS+09:00 - Alert triggered: [Alert description]
-YYYY-MM-DDTHH:MM:SS+09:00 - On-call engineer paged, investigation started
-YYYY-MM-DDTHH:MM:SS+09:00 - Root cause identified: [Root cause description]
-YYYY-MM-DDTHH:MM:SS+09:00 - Mitigation applied: [Mitigation action]
-YYYY-MM-DDTHH:MM:SS+09:00 - Service restored, monitoring confirmed normal operation
+YYYY-MM-DDTHH:MM:SS±HH:MM - Alert triggered: [Alert description]
+YYYY-MM-DDTHH:MM:SS±HH:MM - On-call engineer paged, investigation started
+YYYY-MM-DDTHH:MM:SS±HH:MM - Root cause identified: [Root cause description]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Mitigation applied: [Mitigation action]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Service restored, monitoring confirmed normal operation
 ```
 
 ### 4. Root Cause Analysis
@@ -174,7 +174,7 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 ## Incident Summary
 - **Date**: YYYY-MM-DD
-- **Duration**: YYYY-MM-DDTHH:MM:SS+09:00/YYYY-MM-DDTHH:MM:SS+09:00 (ISO 8601 time range)
+- **Duration**: YYYY-MM-DDTHH:MM:SS±HH:MM/YYYY-MM-DDTHH:MM:SS±HH:MM (ISO 8601 time range, local timezone)
 - **Severity**: P0 (Critical)
 - **Affected**: [Service name], [X]% of [operations] failed
 
@@ -184,11 +184,11 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 - **Technical impact**: [Technical issue description], [X]% error rate
 
 ## Timeline
-YYYY-MM-DDTHH:MM:SS+09:00 - Alert: [Alert description]
-YYYY-MM-DDTHH:MM:SS+09:00 - On-call paged, investigation started
-YYYY-MM-DDTHH:MM:SS+09:00 - Root cause: [Root cause description]
-YYYY-MM-DDTHH:MM:SS+09:00 - Mitigation: [Mitigation action]
-YYYY-MM-DDTHH:MM:SS+09:00 - Service restored, monitoring confirmed normal
+YYYY-MM-DDTHH:MM:SS±HH:MM - Alert: [Alert description]
+YYYY-MM-DDTHH:MM:SS±HH:MM - On-call paged, investigation started
+YYYY-MM-DDTHH:MM:SS±HH:MM - Root cause: [Root cause description]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Mitigation: [Mitigation action]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Service restored, monitoring confirmed normal
 
 ## Root Cause Analysis
 
