@@ -1,437 +1,129 @@
 # Git Workflow Standards
 
-<context>
+<metadata>
 
-## Scope
+- **Load if**: Git commits, merges, branch management
+- **Prerequisites**: @principles.md, @standards.md
+- **Related**: @gh-pr.md (PRs), @gh-cli.md (GitHub CLI), @style.md (naming)
 
-- **This document**: Local git commands, branching, commits, merges, history, conflict resolution
-- **PR workflows**: See @gh-pr.md for pull request workflows and code reviews
-- **GitHub operations**: See @gh-cli.md for GitHub CLI commands
+</metadata>
 
-</context>
-
-## Branch Strategy
-
-<context>
-
-**Branch Structure:**
-
-This section outlines the branch *types* used in the workflow. See "Branch Naming Conventions" below for the *naming patterns* for each type.
-
-- `main` - Production-ready code
-- `develop` - Integration branch for features
-- `feat/*` - Feature branches from develop (MUST use `feat/` prefix for conventional commit type `feat`)
-- `hotfix/*` - Emergency fixes from main
-
-</context>
+## CRITICAL (Primacy Zone)
 
 <forbidden>
 
 - NEVER commit directly to main branch
-- NEVER force push to main or develop branches
-- NEVER use `--no-verify` flag (always run hooks)
+- NEVER force push to main or develop
+- NEVER use `--no-verify` (always run hooks)
+- NEVER amend commits already pushed to remote
+- NEVER amend commits authored by others
+- NEVER rebase shared branches (main, develop)
 
 </forbidden>
 
 <required>
 
 - MUST create feature branches from develop
-- MUST use merge commits for feature branches (preserves history)
-- MUST keep branches up-to-date with base branch
+- MUST use `git mv` for renames (preserves history)
+- MUST GPG sign all commits: `git commit -S -m "..."`
+- MUST keep branches linear (prefer rebase over merge)
 
 </required>
 
-### Branch Naming Conventions
+## Branch Strategy
 
-<required>
+- **`main`**: Production-ready
+- **`develop`**: Integration
+- **`feat/*`**: Features from develop
+- **`fix/*`**: Bug fixes (including emergency fixes from main)
 
-Names MUST follow the `type/descriptive_name` pattern, where `type` matches the conventional commit type.
-
-Branch type prefix MUST match the conventional commit type used in commits.
-
-</required>
-
-<examples>
-
-- `feat/user_authentication`
-- `fix/JIRA-1234-query_processor`
-- `docs/enhance_agents_md`
-
-</examples>
-
-See @naming.md for complete branch naming conventions including type prefixes, separator rules, and examples.
+**Naming**: `type/descriptive_name` (e.g., `feat/user_auth`, `fix/JIRA-1234-query`)
 
 ## Commit Standards
 
-<context>
+**Format**: See @style.md for conventional commits
 
-**Conventional Commits Format**: See @naming.md for complete conventional commits format specification, including:
-- Format pattern: `type: description` or `type(scope): description`
-- Type definitions (feat, fix, docs, etc.)
-- 50/72 character rule
-- Atomicity guidelines
-
-This format applies to both commit messages and PR titles.
-
-</context>
-
-<examples>
-
-**Commit structure:**
-```text
-feat(auth): add OAuth2 login
-
-Implement OAuth2 authentication flow with token refresh.
-Supports Google and GitHub providers.
-
-Closes #123
-```
-
-**Command:**
 ```sh
-git commit -m "feat(rag): add semantic search filtering
+git commit -S -m "feat(auth): add OAuth2 login
 
-Implement metadata-based filtering for semantic search queries.
-Supports multiple filter conditions with AND/OR logic.
-
+Implement OAuth2 authentication flow.
 Closes #123"
 ```
 
-</examples>
+**Atomic commits**: One logical change per commit, passes tests, reversible.
 
-## File Operations
-
-**Renaming files:**
-
-<required>
-
-- MUST use `git mv` for renames (preserves Git history)
-- NEVER delete + recreate (loses history)
-
-</required>
-
-<examples>
+## Merge Strategy
 
 ```sh
-git mv old_name.py new_name.py
-git commit -m "refactor: rename old_name to new_name"
+# Feature merge (use --no-ff)
+git checkout develop && git pull
+git merge --no-ff feat/my_feature
+git push origin develop
 ```
 
-</examples>
+**Squash**: Only for tiny fixes, WIP cleanup
+**Rebase**: Update feature branch from develop (never shared branches)
 
-**Large file handling:**
-- Use `.gitignore` for build artifacts, debug outputs, `.venv`
-- Never commit secrets, API keys, or `.env` files
-- Use Git LFS for large binary files if needed
+## Working with Remotes
 
-## Commit Workflow
+```sh
+git fetch origin
+git pull origin develop
+git push -u origin feat/my_feature  # First push
+git push --force-with-lease origin feat/my_feature  # Personal branches only
+```
 
-<examples>
+## Post-Merge Sync
 
-**Before committing:**
+```sh
+git fetch origin
+git checkout main && git pull
+```
+
+## Conflict Resolution
+
+1. `git pull origin develop`
+2. Resolve conflicts in editor
+3. `git add <file>`
+4. `git rebase --continue` or `git merge --continue`
+5. Test before pushing
+
+**Abort**: `git rebase --abort` or `git merge --abort`
+
+<related>
+
+- @gh-pr.md - PR workflows
+- @gh-cli.md - GitHub CLI
+- @style.md - Naming conventions
+
+</related>
+
+## ACTION (Recency Zone)
+
+**New feature workflow:**
+```sh
+git checkout -b "feat/user_auth"
+git add .
+git commit -S -m "feat: add user authentication"
+git push -u origin "feat/user_auth"
+gh pr create --title "feat: add user auth" --body "..." --assignee @me
+```
+
+**Before commit:**
 ```sh
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
 ```
 
-</examples>
-
-<forbidden>
-
-- NEVER skip pre-commit hooks with `--no-verify`
-- NEVER commit files without running quality checks
-- NEVER commit with failing tests
-
-</forbidden>
-
-**Commit message guidelines:**
-- Write meaningful descriptions (why, not what)
-- Reference issues with `#123` or `Closes #123`
-- Keep subject line under 72 characters
-- Use imperative mood ("add feature" not "added feature")
-
-### GPG Signing
-
-<required>
-
-All commits MUST be GPG signed.
-
+**Stash:**
 ```sh
-git commit -S -m "type: description"
-```
-
-GPG should be pre-configured for automatic signing.
-
-</required>
-
-### Linear History
-
-<guiding_principles>
-
-<required>
-
-Maintain linear commit history for clarity and bisectability.
-
-- Use rebase to update feature branches: `git rebase main`
-- Squash WIP commits before merging
-- Each commit should be a complete, working unit
-- Avoid merge commits in feature branches
-
-</required>
-
-</guiding_principles>
-
-### Atomic Commits
-
-<guiding_principles>
-
-<required>
-
-Each commit MUST be:
-- **Logically atomic**: One coherent change per commit
-- **Semantically complete**: Passes tests, compiles, works independently
-- **Reversible**: Can be reverted without breaking other changes
-
-</required>
-
-<examples>
-
-```text
-git commit -m "feat(auth): add OAuth2 login flow"
-git commit -m "fix(auth): resolve token refresh race condition"
-git commit -m "docs(auth): update authentication guide"
-```
-
-</examples>
-
-<forbidden>
-
-```text
-git commit -m "feat(auth): add OAuth2 login, fix token bug, update docs"
-```
-
-</forbidden>
-
-</guiding_principles>
-
-### Atomic Workflow
-
-<required>
-
-Workflow for new work:
-
-1. Create branch with correct naming
-2. Make changes in atomic commits with GPG signing
-3. Push branch to remote
-4. Create PR (recommended)
-
-```sh
-git checkout -b "feat/user_authentication"
-git add .
-git commit -S -m "feat: add user authentication"
-git push -u origin "feat/user_authentication"
-gh pr create --title "feat: add user authentication" --body "..." --assignee @me
-```
-
-</required>
-
-## Merge Strategy
-
-**Feature branches:**
-```sh
-git checkout develop
-git pull origin develop
-git merge --no-ff feat/my_feature
-git push origin develop
-```
-
-<required>
-
-- MUST use merge commits (`--no-ff`) for feature branches
-- MUST resolve conflicts locally before pushing
-- MUST ensure all tests pass after merge
-
-</required>
-
-**When to squash:**
-- Tiny fixes (typos, formatting)
-- WIP commits that should be single logical change
-- **NEVER** squash feature branches with multiple logical changes
-
-**When to rebase:**
-- Updating feature branch with latest develop
-- Cleaning up local commits before push
-- **NEVER** rebase shared branches (main, develop)
-
-## Working with Remotes
-
-**Fetch and pull:**
-```sh
-git fetch origin
-git pull origin develop
-```
-
-**Push branches:**
-```sh
-git push origin feat/my_feature
-git push -u origin feat/my_feature  # First push with tracking
-```
-
-<forbidden>
-
-- NEVER use `git push --force` on main or develop
-- NEVER push without pulling latest changes first
-
-</forbidden>
-
-**Force push (only for personal feature branches):**
-```sh
-git push --force-with-lease origin feat/my_feature
-```
-
-### Post-Merge Local Sync
-
-<required>
-
-After merging a PR (yours or someone else's), sync local repository:
-
-```sh
-git fetch origin              # Update remote tracking refs
-git checkout main && git pull # Sync local main
-```
-
-**Why both commands:**
-- `git fetch`: Updates `origin/main` reference without modifying working directory
-- `git pull`: Fast-forwards local `main` to match remote
-
-</required>
-
-<forbidden>
-
-- Working on stale local main (always pull after merges)
-- Forgetting to fetch (remote refs become outdated)
-
-</forbidden>
-
-## Stash Management
-
-<scenario>
-
-<examples>
-
-```sh
-git stash push -m "WIP: feature implementation"
-git stash list
+git stash push -m "feat: feature #WIP"
 git stash pop
-git stash apply stash@{0}
 ```
 
-</examples>
-
-</scenario>
-
-## History Management
-
-<scenario>
-
-<examples>
-
-**View history:**
+**History:**
 ```sh
 git log --oneline --graph --decorate
-git log --author="name" --since="2 weeks ago"
-git diff main...feat/branch  # Changes since branching
+git rebase -i HEAD~3  # Local only
 ```
-
-**Interactive rebase (local only):**
-```sh
-git rebase -i HEAD~3  # Last 3 commits
-```
-
-</examples>
-
-</scenario>
-
-## Amend Operations Safety
-
-<forbidden>
-
-**NEVER amend in these scenarios:**
-
-- Commit authored by someone else
-- Commit already pushed to remote (unless you force push intentionally)
-- Working on protected branches (main, develop)
-- Commit is part of a PR under active review by others
-
-</forbidden>
-
-<required>
-
-**Verification checklist before amending:**
-
-```sh
-AUTHOR=$(git log -1 --format='%ae')
-CURRENT_USER=$(git config user.email)
-if [ "$AUTHOR" != "$CURRENT_USER" ]; then
-  echo "Not your commit - create new commit instead"
-  exit 1
-fi
-# Check if HEAD exists in unpushed commits list
-# git log @{upstream}.. lists commits that exist locally but not on remote
-# If grep finds HEAD in that list, commit is not pushed yet (safe to amend)
-# If grep fails, HEAD is not in unpushed list, meaning it was pushed (avoid amending)
-if git rev-parse @{upstream} >/dev/null 2>&1 && git log @{upstream}.. | grep -q "$(git rev-parse HEAD)"; then
-  echo "Commit not pushed yet - safe to amend"
-elif ! git rev-parse @{upstream} >/dev/null 2>&1; then
-  echo "No upstream set - commit not pushed yet (safe to amend)"
-else
-  echo "Commit already pushed - avoid amending"
-fi
-BRANCH=$(git branch --show-current)
-if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
-  echo "Protected branch - DO NOT AMEND"
-  exit 1
-fi
-```
-
-**Amend commands:**
-```sh
-git commit --amend --no-edit  # Keep same message
-git commit --amend            # Edit message
-```
-
-</required>
-
-**Safe amend scenarios:**
-- Pre-commit hook modified files (see @gh-pr.md Pre-Commit Hook Handling)
-- Fixing typo in commit message you just made
-- Adding forgotten file to your last commit (before push)
-
-**When to create new commit instead:**
-- Addressing review feedback (keep review history)
-- Fixing bugs found after push
-- Any change to commits from other authors
-
-## Conflict Resolution
-
-**When conflicts occur:**
-1. Pull latest changes: `git pull origin develop`
-2. Resolve conflicts in IDE or editor
-3. Stage resolved files: `git add <file>`
-4. Continue: `git rebase --continue` or `git merge --continue`
-5. Test thoroughly before pushing
-
-**Abort if needed:**
-```sh
-git rebase --abort
-git merge --abort
-```
-
-## Related Standards
-
-- **GitHub PR Workflows**: @gh-pr.md - Complete PR lifecycle (creation, review, merge)
-- **GitHub CLI**: @gh-cli.md - GitHub CLI operations
-- **Development Workflow**: @dev.md - Daily practices
-- **Naming Conventions**: @naming.md - Branch and commit naming
-- **Core Standards**: @core.md - Personal coding standards
