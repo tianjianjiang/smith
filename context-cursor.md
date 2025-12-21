@@ -28,7 +28,7 @@
 <required>
 
 **Recommendation format:**
-```
+```text
 /summarize
 
 After summarizing, re-add critical files:
@@ -63,7 +63,7 @@ After summarizing, re-add critical files:
 - Large files >600 lines (@codebase truncates at 250)
 
 **Patterns:**
-```
+```text
 @auth/middleware.ts @auth/tokens.ts    # Multiple files
 @src/auth.ts @tests/auth.test.ts       # File + tests
 ```
@@ -109,7 +109,7 @@ After summarizing, re-add critical files:
 - Git workflow
 
 **Example:**
-```
+```markdown
 # Project Rules
 Follow standards from @AGENTS.md
 

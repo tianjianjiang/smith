@@ -33,7 +33,7 @@
 - Incomplete todos/next steps
 
 **Recommendation format:**
-```
+```text
 /compact keep task requirements, files (auth.ts:234, tokens.ts:89), 
 design decisions, remaining todos
 ```

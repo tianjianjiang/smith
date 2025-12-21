@@ -45,7 +45,7 @@
 **Kiro native tool issues:**
 
 - `strReplace` fails on duplicate content (use Serena instead)
-- `readFile` truncates large files without warning
+- `readFile` silently truncates large files
 - File writes can create duplicate sections
 - Mid-operation aborts during file reads/edits
 

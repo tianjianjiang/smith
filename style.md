@@ -60,7 +60,7 @@
 
 <examples>
 
-```
+```text
 feat(auth): add token refresh
 fix: resolve CORS issues
 docs: update deployment guide

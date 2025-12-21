@@ -50,7 +50,7 @@
 - Version referenced
 
 **Format:**
-```
+```text
 "React 19 introduced [feature] (source: [URL])"
 
 Sources:

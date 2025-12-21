@@ -11,7 +11,7 @@
 
 **Context lifecycle**: 0-50% (explore) → 50-70% (monitor) → 70-90% (compact) → 90%+ (emergency)
 
-**Take action at 70%** to maintain control over what's retained.
+**Take action at your platform's Warning threshold** (see Platform Thresholds below) to maintain control over what's retained. The 70% guideline is approximate; use platform-specific thresholds for precise action timing.
 
 ## Platform Thresholds
 
