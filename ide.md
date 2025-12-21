@@ -1,17 +1,34 @@
 # IDE Path Variable Mappings
 
+<metadata>
+
+- **Scope**: Maps conceptual path variables to IDE-specific syntax
+- **Load if**: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables
+- **Prerequisites**: @principles.md, @standards.md, @style.md
+
+</metadata>
+
+## CRITICAL: Variable Translation (Primacy Zone)
+
+<required>
+
+**Always use conceptual variables in documentation**, translate to IDE-specific syntax in configs:
+- `$WORKSPACE_ROOT` → `${workspaceFolder}` (VS Code) or `$PROJECT_DIR$` (JetBrains)
+- `$HOME` → `${userHome}` (VS Code) or `$USER_HOME$` (JetBrains)
+
+</required>
+
 <context>
 
 ## Overview
 
-Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see [Naming Standards](@naming.md#path-reference-standards).
+Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see @style.md#path-reference-standards.
 
 ## Conceptual Variables
 
-**Defined in**: [Naming Standards](@naming.md#path-reference-standards)
-- `$WORKSPACE_ROOT` - Current workspace directory
-- `$REPO_ROOT` - Monorepo root
-- `$HOME` - User home directory
+**Defined in**: @style.md - Path Reference Standards
+
+For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usage patterns, see @style.md.
 
 </context>
 
@@ -76,6 +93,18 @@ $HOME            →  $USER_HOME$
 
 - **VS Code Variables**: [Documentation](https://code.visualstudio.com/docs/editor/variables-reference)
 - **PyCharm Macros**: [Documentation](https://www.jetbrains.com/help/idea/absolute-path-variables.html)
-- **Path Standards**: @naming.md
+- **Path Standards**: @style.md
 
 </related>
+
+
+## ACTION (Recency Zone)
+
+<required>
+
+**When writing IDE configs:**
+1. Use conceptual variables in docs (`$WORKSPACE_ROOT`)
+2. Translate to IDE syntax in config files
+3. Prefer environment variables for cross-IDE compatibility
+
+</required>
