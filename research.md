@@ -51,10 +51,9 @@
 
 **Format:**
 ```text
-"React 19 introduced [feature] (source: [URL])"
+"React 19 introduced `feature_name` [1]"
 
-Sources:
-- [Description]: [URL] (retrieved [date])
+[1] Source Name: URL (retrieved YYYY-MM-DD)
 ```
 
 **Confidence indicators:**

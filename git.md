@@ -118,7 +118,7 @@ poetry run pytest
 
 **Stash:**
 ```sh
-git stash push -m "WIP: feature"
+git stash push -m "feat: feature #WIP"
 git stash pop
 ```
 

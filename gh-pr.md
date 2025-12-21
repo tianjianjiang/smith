@@ -24,7 +24,7 @@
 <required>
 
 - MUST run quality checks before creating PR
-- MUST ensure branch is up-to-date with base
+- MUST ensure branch is up-to-date before requesting review or merging
 - MUST link to related issues
 - MUST have all CI checks passing before merge
 
@@ -68,6 +68,8 @@ git push -u origin feat/my_feature
 1. Fetch review comments: `gh api /repos/{owner}/{repo}/pulls/{PR}/comments`
 2. Categorize: Actionable > Nitpick > Clarification > Discussion
 3. Implement fixes with confidence scoring (high: implement, low: ask)
+   - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
+   - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
 4. Reply to comments with commit SHA
 5. Mark threads resolved via GraphQL API
 6. Re-check for new comments after CI passes
@@ -87,6 +89,8 @@ git push -u origin feat/my_feature
 **About to request review, outdated**: BLOCK + INFORM
 
 **Staleness thresholds**: <5 commits (fresh), 5-10 (notify), >10 (recommend), >20 (urgent)
+
+**Note**: The above decision tree provides guidance during active development. The MUST requirement for up-to-date branches is enforced when requesting review or merging.
 
 ## Merge Strategies
 
