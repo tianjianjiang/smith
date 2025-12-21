@@ -1,6 +1,36 @@
 # Tool Configurations
 
+<metadata>
+
+- **Scope**: Configuration standards for development tools, IDEs, and MCP integrations
+- **Load if**: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR configuring MCP tools
+- **Prerequisites**: @principles.md, @standards.md
+
+</metadata>
+
+## CRITICAL: Tool Configuration (Primacy Zone)
+
+<required>
+
+- Check codebase and local docs BEFORE using MCP tools
+- Use MCP tools only when task specifically requires them
+- Activate tools conditionally, not by default
+
+</required>
+
+<forbidden>
+
+- Mandating Serena MCP for all plans (only multi-session)
+- Requiring Context7 for all libraries (only unfamiliar external)
+- Loading MCP tools unconditionally
+
+</forbidden>
+
+<context>
+
 This document defines configuration standards for development tools, IDEs, and external integrations.
+
+</context>
 
 ## IDE & Extension Settings
 - **Global Settings**: `$HOME/Library/Application Support/[Code|Cursor|Kiro]/User/settings.json`
@@ -45,44 +75,6 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 - Configuration: Use WebFetch tool if available
 - Avoid: Content available locally, speculative browsing
 
-### MCP Tool Reference
-
-**MCP Tools**:
-
-**Serena MCP**:
-- Purpose: Session persistence
-- Use for: Multi-session tasks, plan recovery
-- Configuration: `.kiro/settings/mcp.json`
-
-**Context7**:
-- Purpose: External library documentation
-- Use for: Unfamiliar NPM/PyPI packages, API references
-- Configuration: MCP settings
-
-**Fetch**:
-- Purpose: Web content retrieval
-- Use for: User-provided URLs, web documentation
-- Configuration: Built-in or MCP
-
-### MCP Best Practices
-
-<required>
-
-- MUST check codebase and local docs first before using MCP tools
-- MUST only use MCP tools when task specifically requires them or user requests
-- SHOULD activate tools conditionally based on task needs, not by default
-
-</required>
-
-<forbidden>
-
-- NEVER mandate Serena MCP for all plans (only for multi-session tasks)
-- NEVER require Context7 for all libraries (only for unfamiliar external ones)
-- NEVER load MCP tools unconditionally in every session
-- NEVER use MCP tools for simple single-session tasks
-
-</forbidden>
-
 **For MCP server configuration in Kiro**: See @context-kiro.md - MCP Integration for Context Efficiency section
 
 ## Configuration Hierarchy
@@ -119,8 +111,20 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 <related>
 
 - **Claude Code Patterns**: @context-claude.md - CLAUDE.md configuration, Tool Search Tool
-- **Structured Output Patterns**: @ai.md - Structured Output Steering section
+- **Structured Output Patterns**: @prompts.md - Structured Output Steering section
 - **Python Configuration**: @python.md - Virtual environment execution, pytest patterns
 - **IDE Path Variables**: @ide.md - IDE-specific path syntax
 
 </related>
+
+
+## ACTION (Recency Zone)
+
+<required>
+
+**Before using MCP tools:**
+1. Check codebase and local docs first
+2. Use MCP only when local info insufficient
+3. Configure tools conditionally per task
+
+</required>
