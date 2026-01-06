@@ -4,48 +4,20 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <metadata>
 
-- **Always loaded**: @principles.md, @standards.md, @guidance.md
+- **Always loaded**: @principles/SKILL.md, @standards/SKILL.md, @guidance/SKILL.md
 - **Load condition**: Session start (all platforms)
-- **Token budget**: This file ~500 tokens, per-standard <2000 tokens
+- **Token budget**: This file ~500 tokens, per-skill <2000 tokens
 
 </metadata>
 
-## Rule Loading Protocol (CRITICAL)
+## Platform Context (Load First)
 
-<required>
+**Kiro**: Load @context-kiro/SKILL.md
+**Claude Code**: Load @context-claude/SKILL.md
 
-**Before each task, agent MUST report loaded files**:
-- Format: "Loaded @python.md (Python task detected)"
-- Format: "Unloaded @git.md (no Git operations for 5+ turns)"
-- Always-active files: Assume loaded, do not report
+## Always Load
 
-**Enforcement**: Reporting demonstrates actual file reading, not fake compliance
-
-</required>
-
-## Semantic Activation
-
-<required>
-
-**Load on task match, unload after 5 turns unused**:
-- Python code/tests → `@python.md`
-- Git commits/merges → `@git.md`, `@style.md`
-- PR create/review → `@gh-pr.md`, `@gh-cli.md`
-- Tests → `@tests.md`
-- Prompts/AI → `@xml.md`, `@prompts.md`
-- Platform detect → `@context-{platform}.md` (never unload)
-
-</required>
-
-## Proactive Compaction
-
-<required>
-
-- **At 60% context**: Recommend /compact, unload unused files
-- **At 70% context**: CRITICAL - compact before degradation
-- **Lost-in-middle**: LLMs weaken in middle 60% of context
-
-</required>
+@principles/SKILL.md @standards/SKILL.md @guidance/SKILL.md
 
 ## Core Principles
 
@@ -53,7 +25,94 @@ Personal coding standards for AI-assisted development with progressive disclosur
 - **KISS**: Keep It Simple, Stupid
 - **YAGNI**: You Aren't Gonna Need It
 - **SOLID**: Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion
-- **HHH**: Helpful, Honest, Harmless (see @guidance.md)
+- **HHH**: Helpful, Honest, Harmless (see @guidance/SKILL.md)
+
+## Skill Loading
+
+<required>
+
+**Before each task**:
+1. Identify which skills apply
+2. Read the skill files using tools
+3. Report: "Loaded @principles/SKILL.md, @python/SKILL.md"
+4. Unload after 5 turns unused
+
+</required>
+
+## Proactive Compaction
+
+<required>
+
+- **At 60% context**: Recommend /compact, unload unused
+- **At 70% context**: CRITICAL - compact before degradation
+
+</required>
+
+<available_skills>
+<!-- Core (always load) -->
+<skill name="principles" description="DRY, KISS, YAGNI, SOLID principles">@principles/SKILL.md</skill>
+<skill name="standards" description="Universal coding standards">@standards/SKILL.md</skill>
+<skill name="guidance" description="AI agent behavior patterns">@guidance/SKILL.md</skill>
+
+<!-- Context -->
+<skill name="context" description="Context management thresholds">`@context/SKILL.md`</skill>
+<skill name="context-kiro" description="Kiro-specific rules">`@context-kiro/SKILL.md`</skill>
+<skill name="context-claude" description="Claude Code rules">`@context-claude/SKILL.md`</skill>
+<skill name="context-cursor" description="Cursor rules">`@context-cursor/SKILL.md`</skill>
+<skill name="serena" description="Serena MCP integration">`@serena/SKILL.md`</skill>
+
+<!-- Reasoning -->
+<skill name="analysis" description="Problem decomposition, Polya method">`@analysis/SKILL.md`</skill>
+<skill name="clarity" description="Cognitive traps, logic fallacies">`@clarity/SKILL.md`</skill>
+<skill name="design" description="SOLID principles, architecture">`@design/SKILL.md`</skill>
+<skill name="validation" description="Hypothesis testing, debugging">`@validation/SKILL.md`</skill>
+<skill name="postmortem" description="Incident postmortem methodology">`@postmortem/SKILL.md`</skill>
+
+<!-- Testing -->
+<skill name="tests" description="Testing standards, TDD workflow">`@tests/SKILL.md`</skill>
+
+<!-- Languages -->
+<skill name="python" description="Python patterns and testing">`@python/SKILL.md`</skill>
+<skill name="typescript" description="TypeScript patterns">`@typescript/SKILL.md`</skill>
+<skill name="nuxt" description="Nuxt.js framework">`@nuxt/SKILL.md`</skill>
+
+<!-- Git/GitHub -->
+<skill name="git" description="Git commits, merges, rebases">`@git/SKILL.md`</skill>
+<skill name="gh-pr" description="PR creation and review">`@gh-pr/SKILL.md`</skill>
+<skill name="gh-cli" description="GitHub CLI usage">`@gh-cli/SKILL.md`</skill>
+<skill name="style" description="Commit message conventions">`@style/SKILL.md`</skill>
+<skill name="stacks" description="Stacked PR workflows">`@stacks/SKILL.md`</skill>
+
+<!-- Other -->
+<skill name="prompts" description="Prompt engineering">`@prompts/SKILL.md`</skill>
+<skill name="xml" description="XML tag patterns for AI">`@xml/SKILL.md`</skill>
+<skill name="placeholder" description="Documentation placeholders">`@placeholder/SKILL.md`</skill>
+<skill name="tools" description="Development tools">`@tools/SKILL.md`</skill>
+<skill name="dev" description="Development workflow">`@dev/SKILL.md`</skill>
+<skill name="ide" description="IDE configuration">`@ide/SKILL.md`</skill>
+<skill name="research" description="Research methodology">`@research/SKILL.md`</skill>
+<skill name="skills" description="Skill authoring">`@skills/SKILL.md`</skill>
+</available_skills>
+
+## Semantic Activation
+
+<required>
+
+**Load on task match, unload after 5 turns unused**:
+
+**Languages**: Python → `@python/SKILL.md`, TypeScript → `@typescript/SKILL.md`, Nuxt → `@nuxt/SKILL.md`
+**Testing**: Tests/TDD → `@tests/SKILL.md`
+**Git/GitHub**: Commits → `@git/SKILL.md`, PRs → `@gh-pr/SKILL.md`
+**Reasoning**: Analysis → `@analysis/SKILL.md`, Design → `@design/SKILL.md`, Debug → `@validation/SKILL.md`
+**Other**: Prompts → `@prompts/SKILL.md`, XML → `@xml/SKILL.md`
+
+</required>
+
+## Platform Compatibility
+
+**Native AGENTS.md**: Claude Code, OpenAI Codex, Amp, Jules, Kiro
+**Config required**: Gemini CLI, Aider
+**Not compatible**: Cursor (.mdc format)
 
 ## Kiro Terminal (CRITICAL)
 
@@ -75,41 +134,9 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <related>
 
-- @principles.md - Core principles (DRY, KISS, YAGNI, SOLID)
-- @standards.md - Universal coding standards
-- @guidance.md - AI agent behavior patterns
-- `@context.md` - Context management thresholds
+- @principles/SKILL.md - Core principles (DRY, KISS, YAGNI, SOLID)
+- @standards/SKILL.md - Universal coding standards
+- @guidance/SKILL.md - AI agent behavior patterns
+- `@context/SKILL.md` - Context management thresholds
 
 </related>
-
-## Agent Capabilities
-
-**Claude Code**:
-- **Context**: 200k tokens, monitor at 60%, compact at 70%
-- **Operations**: Code generation, file I/O, web search, MCP servers
-- **Features**: Tool search (on-demand tool loading), browser automation
-- **Limitations**: None notable
-
-**Kiro**:
-- **Context**: Auto-summarize at 80%
-- **Operations**: Code generation, file I/O
-- **Features**: Native AGENTS.md support
-- **Limitations**: Terminal hangs (echo with double quotes, heredoc), strReplace fails on duplicates
-
-**OpenAI Codex, Amp, Jules**:
-- **Support**: Native AGENTS.md support
-- **Operations**: Standard code generation and file operations
-
-**Gemini CLI, Aider**:
-- **Support**: Requires configuration for AGENTS.md
-- **Operations**: Standard code generation capabilities
-
-**Cursor**:
-- **Format**: Uses .mdc format (incompatible with AGENTS.md)
-- **Config**: Requires .cursorrules for configuration
-
-## Platform Compatibility
-
-**Native AGENTS.md**: Claude Code, OpenAI Codex, Amp, Jules, Kiro
-**Config required**: Gemini CLI, Aider
-**Not compatible**: Cursor (.mdc format)
