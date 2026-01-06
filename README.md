@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **30 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io) specification and [AGENTS.md](https://agents.md) standard.
+Smith is a collection of **30 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io)[[29]](#ref-29) specification and [AGENTS.md](https://agents.md)[[28]](#ref-28) standard.
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -13,23 +13,27 @@ Smith is a collection of **30 skills** for AI-assisted development, following th
 
 ## Quick Start
 
-```sh
+```shell
 git clone https://github.com/tianjianjiang/smith.git $HOME/.smith
 ```
 
 ### Link to your project
 
-```sh
-# Claude Code
-ln -sf $HOME/.smith/AGENTS.md $HOME/.claude/CLAUDE.md
+Claude Code global config:
 
-# Or symlink to project root
+```shell
+ln -sf $HOME/.smith/AGENTS.md $HOME/.claude/CLAUDE.md
+```
+
+Or symlink to project root:
+
+```shell
 ln -sf $HOME/.smith/AGENTS.md ./AGENTS.md
 ```
 
 ## Structure
 
-```
+```text
 smith/
 ├── AGENTS.md              # Main entry point (agents.md standard)
 ├── {skill-name}/
@@ -51,7 +55,7 @@ smith/
 
 ### SKILL.md Format
 
-Each skill follows [agentskills.io specification](https://agentskills.io/specification):
+Each skill follows [agentskills.io specification](https://agentskills.io/specification)[[29]](#ref-29):
 
 ```yaml
 ---
@@ -82,7 +86,7 @@ Instructions...
 
 ## Platform Compatibility
 
-See [AGENTS.md](AGENTS.md) for the full skill index and loading protocol.
+See [AGENTS.md](AGENTS.md) for the full skill index and loading protocol. Global AGENTS.md support is an ongoing discussion[[27]](#ref-27).
 
 ### Native AGENTS.md Support
 
@@ -90,12 +94,12 @@ See [AGENTS.md](AGENTS.md) for the full skill index and loading protocol.
 |------|---------------|----------------|
 | **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)**[[4]](#ref-4) | `~/.claude/CLAUDE.md` | `AGENTS.md` |
 | **[OpenAI Codex](https://developers.openai.com/codex/guides/agents-md/)**[[16]](#ref-16) | `~/.codex/AGENTS.md` | `AGENTS.md` |
-| **[Amp](https://ampcode.com/manual)**[[2]](#ref-2) | `~/.config/AGENTS.md` | `AGENTS.md` |
+| **[Amp](https://ampcode.com/manual)**[[2]](#ref-2) | `~/.config/AGENTS.md`[[26]](#ref-26) | `AGENTS.md` |
 | **[Devin](https://devin.ai/)**[[8]](#ref-8) | — | `AGENTS.md` |
 | **[Kiro](https://kiro.dev/docs/steering/)**[[15]](#ref-15) | `~/.kiro/steering/` | `AGENTS.md` |
 | **[VS Code](https://code.visualstudio.com/updates/v1_104)**[[21]](#ref-21) | — | `AGENTS.md` |
 | **[Windsurf](https://docs.windsurf.com/)**[[23]](#ref-23) | `.windsurf/rules` | `AGENTS.md` |
-| **[Zed](https://zed.dev/docs/ai/agent-panel)**[[24]](#ref-24) | — | `AGENTS.md` |
+| **[Zed](https://zed.dev/docs/ai/agent-panel)**[[24]](#ref-24) | —[[25]](#ref-25) | `AGENTS.md` |
 | **[goose](https://github.com/block/goose)**[[12]](#ref-12) | — | `AGENTS.md` |
 
 ### Requires Configuration
@@ -112,7 +116,7 @@ See [AGENTS.md](AGENTS.md) for the full skill index and loading protocol.
 
 | Tool | Format | Project Config |
 |------|--------|----------------|
-| **[Cursor](https://docs.cursor.com/context/rules)**[[6]](#ref-6) | `.mdc` | `.cursor/rules/*.mdc` |
+| **[Cursor](https://docs.cursor.com/context/rules)**[[6]](#ref-6)[[7]](#ref-7) | `.mdc` | `.cursor/rules/*.mdc` |
 | **[Antigravity](https://cloud.google.com/products/antigravity)**[[3]](#ref-3) | `GEMINI.md` | `.agent/rules/` |
 
 <details>

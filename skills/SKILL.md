@@ -85,8 +85,6 @@ Skills and rules follow 3-tier loading to minimize token usage:
 
 ## XML Tag Usage
 
-See @xml/SKILL.md for complete reference.
-
 **Universal tags** (cross-platform):
 - `<instructions>` - Step-by-step guidance
 - `<context>` - Background information
@@ -142,7 +140,7 @@ See @xml/SKILL.md for complete reference.
 
 - `@xml/SKILL.md` - Approved XML tags and usage
 - `@context/SKILL.md` - Context management strategies
-- `@principles/SKILL.md` - Core coding principles
+- @principles/SKILL.md - Core coding principles
 
 </related>
 

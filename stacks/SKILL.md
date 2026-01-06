@@ -107,7 +107,7 @@ When a parent PR merges, child PRs must be rebased:
 3. Rebase onto updated main
 4. Force push (safe for your PR branch)
 
-```sh
+```shell
 git fetch origin
 git checkout feat/auth-login
 git rebase --onto origin/main feat/auth-base
@@ -161,7 +161,7 @@ Squash merge creates a single commit, destroying commit ancestry. Child branches
 **Fixing child PR after parent was squash merged**:
 
 Option 1 - Rebase with `--fork-point`:
-```sh
+```shell
 git fetch origin
 git checkout feat/auth-login
 git rebase --onto origin/main --fork-point origin/feat/auth-base
@@ -169,7 +169,7 @@ git push --force-with-lease
 ```
 
 Option 2 - Interactive rebase to drop parent's commits:
-```sh
+```shell
 git checkout main && git pull
 git checkout feat/auth-login
 git rebase -i main
@@ -184,7 +184,7 @@ In the interactive editor, mark all commits from the parent branch as `drop`.
 
 When pulling changes from main into a stack, cascade updates through the stack sequentially:
 
-```sh
+```shell
 git checkout feat/auth-base
 git merge main
 git push
@@ -200,7 +200,7 @@ git push
 
 Merging main directly into a child branch corrupts history:
 
-```sh
+```shell
 git checkout feat/auth-login
 git merge main
 ```

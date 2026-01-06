@@ -9,7 +9,6 @@ description: Git workflow standards with branch strategy, commit conventions, an
 
 - **Load if**: Git commits, merges, branch management
 - **Prerequisites**: @principles/SKILL.md, @standards/SKILL.md
-- **Related**: @gh-pr/SKILL.md (PRs), @gh-cli/SKILL.md (GitHub CLI), @style/SKILL.md (naming)
 
 </metadata>
 
@@ -46,9 +45,9 @@ description: Git workflow standards with branch strategy, commit conventions, an
 
 ## Commit Standards
 
-**Format**: See @style/SKILL.md for conventional commits
+**Format**: See `@style/SKILL.md#conventional-commits`
 
-```sh
+```shell
 git commit -S -m "feat(auth): add OAuth2 login
 
 Implement OAuth2 authentication flow.
@@ -59,8 +58,8 @@ Closes #123"
 
 ## Merge Strategy
 
-```sh
-# Feature merge (use --no-ff)
+Feature merge (use --no-ff):
+```shell
 git checkout develop && git pull
 git merge --no-ff feat/my_feature
 git push origin develop
@@ -71,16 +70,18 @@ git push origin develop
 
 ## Working with Remotes
 
-```sh
+```shell
 git fetch origin
 git pull origin develop
-git push -u origin feat/my_feature  # First push
-git push --force-with-lease origin feat/my_feature  # Personal branches only
+git push -u origin feat/my_feature
+git push --force-with-lease origin feat/my_feature
 ```
+
+Use `-u` for first push. Use `--force-with-lease` for personal branches only.
 
 ## Post-Merge Sync
 
-```sh
+```shell
 git fetch origin
 git checkout main && git pull
 ```
@@ -106,7 +107,7 @@ git checkout main && git pull
 ## ACTION (Recency Zone)
 
 **New feature workflow:**
-```sh
+```shell
 git checkout -b "feat/user_auth"
 git add .
 git commit -S -m "feat: add user authentication"
@@ -115,20 +116,22 @@ gh pr create --title "feat: add user auth" --body "..." --assignee @me
 ```
 
 **Before commit:**
-```sh
+```shell
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
 ```
 
 **Stash:**
-```sh
+```shell
 git stash push -m "feat: feature #WIP"
 git stash pop
 ```
 
 **History:**
-```sh
+```shell
 git log --oneline --graph --decorate
-git rebase -i HEAD~3  # Local only
+git rebase -i HEAD~3
 ```
+
+Interactive rebase for local commits only.

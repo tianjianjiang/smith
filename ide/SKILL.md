@@ -27,13 +27,13 @@ description: IDE path variable mappings for VS Code, Cursor, Kiro, and JetBrains
 
 ## Overview
 
-Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see @style/SKILL.md.
+Maps conceptual path variables to IDE-specific syntax. For variable definitions and usage, see `@style/SKILL.md#path-references`.
 
 ## Conceptual Variables
 
-**Defined in**: @style/SKILL.md - Path Reference Standards
+**Defined in**: `@style/SKILL.md#path-references`
 
-For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usage patterns, see @style/SKILL.md.
+For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usage patterns, see `@style/SKILL.md#path-references`.
 
 </context>
 
@@ -94,7 +94,7 @@ For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usa
 
 - **VS Code Variables**: [Documentation](https://code.visualstudio.com/docs/editor/variables-reference)
 - **PyCharm Macros**: [Documentation](https://www.jetbrains.com/help/idea/absolute-path-variables.html)
-- **Path Standards**: @style/SKILL.md
+- **Path Standards**: `@style/SKILL.md#path-references`
 
 </related>
 

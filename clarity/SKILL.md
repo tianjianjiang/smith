@@ -137,7 +137,7 @@ Work expands to fill the time available for completion.
 
 <related>
 
-- `@guidance/SKILL.md` - Anti-sycophancy, questioning techniques
+- @guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@analysis/SKILL.md` - Pre-mortem analysis, constraint thinking
 - `@validation/SKILL.md` - Hypothesis testing, debugging
 

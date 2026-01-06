@@ -40,8 +40,8 @@ description: SOLID principles and architecture design patterns. Use when startin
 
 <related>
 
-- `@principles/SKILL.md` - Fundamental principles (DRY, KISS, YAGNI)
-- `@standards/SKILL.md` - Universal code standards
+- @principles/SKILL.md - Fundamental principles (DRY, KISS, YAGNI)
+- @standards/SKILL.md - Universal code standards
 - `@dev/SKILL.md` - Development workflow
 - `@analysis/SKILL.md` - Problem decomposition before design
 

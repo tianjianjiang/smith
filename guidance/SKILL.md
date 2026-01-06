@@ -108,7 +108,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 <related>
 
-- `@principles/SKILL.md` - DRY, KISS, YAGNI, SOLID
+- @principles/SKILL.md - DRY, KISS, YAGNI, SOLID
 - `@context/SKILL.md` - Memory management
 
 </related>

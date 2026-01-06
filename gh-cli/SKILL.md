@@ -28,7 +28,7 @@ description: GitHub CLI operations with token efficiency and pagination best pra
 
 ## Installation
 
-```sh
+```shell
 brew install gh
 gh auth login
 ```
@@ -37,7 +37,7 @@ gh auth login
 
 ### Creating PRs
 
-```sh
+```shell
 gh pr create --title "feat: add feature" --body "Description" --assignee @me
 gh pr create --draft --title "feat: add feature #WIP" --body "Work in progress"
 gh pr create --title "feat: feature" --reviewer @user1,@user2
@@ -51,7 +51,7 @@ gh pr create --title "feat: feature" --reviewer @user1,@user2
 
 ### Viewing and Checking Out
 
-```sh
+```shell
 gh pr view 123
 BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
 git checkout -b "$BRANCH" "origin/$BRANCH"
@@ -59,14 +59,14 @@ git checkout -b "$BRANCH" "origin/$BRANCH"
 
 ### Merging
 
-```sh
+```shell
 gh pr checks 123 --watch
 gh pr merge 123 --squash --delete-branch
 ```
 
 ## Code Review
 
-```sh
+```shell
 gh pr edit 123 --add-reviewer @username
 gh pr review 123 --approve -b "LGTM!"
 gh pr review 123 --request-changes -b "Please address concerns"
@@ -75,7 +75,7 @@ gh pr comment 123 --body "Addressed feedback"
 
 ## Issue Operations
 
-```sh
+```shell
 gh issue create --title "fix: description" --body "Details"
 gh issue list --state open
 ```
@@ -117,7 +117,7 @@ Configure in: Repository Settings → Branches → Protection rules
 3. Assign yourself to PRs
 
 **Common workflow:**
-```sh
+```shell
 gh pr view 123 --comments
 git commit -m "refactor: address feedback"
 git push

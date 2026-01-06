@@ -219,7 +219,7 @@ Ensure coverage by examining from 6 perspectives:
 
 <related>
 
-- `@guidance/SKILL.md` - Questioning techniques
+- @guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@clarity/SKILL.md` - Cognitive guards, logic fallacies
 - `@validation/SKILL.md` - Hypothesis testing, debugging
 

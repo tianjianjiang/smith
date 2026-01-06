@@ -2,6 +2,14 @@
 
 Personal coding standards for AI-assisted development with progressive disclosure.
 
+<metadata>
+
+- **Always loaded**: @principles/SKILL.md, @standards/SKILL.md, @guidance/SKILL.md
+- **Load condition**: Session start (all platforms)
+- **Token budget**: This file ~500 tokens, per-skill <2000 tokens
+
+</metadata>
+
 ## Platform Context (Load First)
 
 **Kiro**: Load @context-kiro/SKILL.md
@@ -27,8 +35,7 @@ Personal coding standards for AI-assisted development with progressive disclosur
 1. Identify which skills apply
 2. Read the skill files using tools
 3. Report: "Loaded @principles/SKILL.md, @python/SKILL.md"
-
-**Unload after 5 turns unused**
+4. Unload after 5 turns unused
 
 </required>
 
@@ -74,13 +81,13 @@ Personal coding standards for AI-assisted development with progressive disclosur
 <skill name="gh-pr" description="PR creation and review">`@gh-pr/SKILL.md`</skill>
 <skill name="gh-cli" description="GitHub CLI usage">`@gh-cli/SKILL.md`</skill>
 <skill name="style" description="Commit message conventions">`@style/SKILL.md`</skill>
+<skill name="stacks" description="Stacked PR workflows">`@stacks/SKILL.md`</skill>
 
 <!-- Other -->
 <skill name="prompts" description="Prompt engineering">`@prompts/SKILL.md`</skill>
 <skill name="xml" description="XML tag patterns for AI">`@xml/SKILL.md`</skill>
 <skill name="placeholder" description="Documentation placeholders">`@placeholder/SKILL.md`</skill>
 <skill name="tools" description="Development tools">`@tools/SKILL.md`</skill>
-<skill name="stacks" description="Technology stacks">`@stacks/SKILL.md`</skill>
 <skill name="dev" description="Development workflow">`@dev/SKILL.md`</skill>
 <skill name="ide" description="IDE configuration">`@ide/SKILL.md`</skill>
 <skill name="research" description="Research methodology">`@research/SKILL.md`</skill>
@@ -89,17 +96,41 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 ## Semantic Activation
 
+<required>
+
+**Load on task match, unload after 5 turns unused**:
+
 **Languages**: Python → `@python/SKILL.md`, TypeScript → `@typescript/SKILL.md`, Nuxt → `@nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@tests/SKILL.md`
 **Git/GitHub**: Commits → `@git/SKILL.md`, PRs → `@gh-pr/SKILL.md`
 **Reasoning**: Analysis → `@analysis/SKILL.md`, Design → `@design/SKILL.md`, Debug → `@validation/SKILL.md`
 **Other**: Prompts → `@prompts/SKILL.md`, XML → `@xml/SKILL.md`
 
+</required>
+
 ## Platform Compatibility
 
 **Native AGENTS.md**: Claude Code, OpenAI Codex, Amp, Jules, Kiro
 **Config required**: Gemini CLI, Aider
 **Not compatible**: Cursor (.mdc format)
+
+## Kiro Terminal (CRITICAL)
+
+<forbidden>
+
+- echo with double quotes (hangs)
+- heredoc syntax (fails)
+- Complex zsh themes (hangs)
+
+</forbidden>
+
+<required>
+
+- Use Python scripts for file generation
+- Prefer Serena MCP tools over Kiro native file operations
+- Use single quotes or write to file instead of echo
+
+</required>
 
 <related>
 

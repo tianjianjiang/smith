@@ -50,7 +50,7 @@ This document defines configuration standards for development tools, IDEs, and e
 - **Purpose**: Suppress INFO/DEBUG logs from external libraries during test execution
 - **Exception**: Use DEBUG level only when actively debugging specific issues
 
-**For detailed pytest execution patterns**: See @python/SKILL.md - Virtual Environment Execution section
+**For detailed pytest execution patterns**: See `@python/SKILL.md#action-recency-zone`
 
 ## MCP Tool Integration (Optional)
 
@@ -82,15 +82,14 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 - Configuration: Use WebFetch tool if available
 - Avoid: Content available locally, speculative browsing
 
-**For MCP server configuration in Kiro**: See @context-kiro/SKILL.md - MCP Integration for Context Efficiency section
+**For MCP server configuration in Kiro**: See `@context-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
 ## Configuration Hierarchy
 
-- `.smith/` (Personal Standards - @-prefixed files auto-load from project context)
-- Project-Level Configurations: AGENTS.md files
-- IDE Configurations: VS Code, Cursor, Kiro settings
-- Tool Configurations: Serena MCP, Claude Code Extensions
-- Project Configurations: `.vscode/`, `.cursor/`, `.kiro/settings/`
+- `$HOME/.smith/` - Global personal standards (symlinked to projects)
+- `AGENTS.md` - Project-level agent instructions
+- `.vscode/`, `.cursor/`, `.kiro/settings/` - IDE-specific configs
+- MCP tool configs - Serena, Context7, etc.
 
 ## Synchronization Points
 
@@ -108,10 +107,10 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 
 <related>
 
-- **Claude Code Patterns**: @context-claude/SKILL.md - CLAUDE.md configuration, Tool Search Tool
-- **Structured Output Patterns**: @prompts/SKILL.md - Structured Output Steering section
-- **Python Configuration**: @python/SKILL.md - Virtual environment execution, pytest patterns
-- **IDE Path Variables**: @ide/SKILL.md - IDE-specific path syntax
+- `@context-claude/SKILL.md` - Claude Code patterns
+- `@prompts/SKILL.md` - Structured output patterns
+- `@python/SKILL.md` - Virtual environment, pytest patterns
+- `@ide/SKILL.md` - IDE-specific path syntax
 
 </related>
 

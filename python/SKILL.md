@@ -111,8 +111,8 @@ class Config:
 
 <related>
 
-- `@principles/SKILL.md` - Core principles
-- `@standards/SKILL.md` - Universal coding standards
+- @principles/SKILL.md - Core principles
+- @standards/SKILL.md - Universal coding standards
 - `@tests/SKILL.md` - Testing standards (pytest patterns)
 - `@dev/SKILL.md` - Development workflow
 
@@ -120,21 +120,20 @@ class Config:
 
 ## ACTION (Recency Zone)
 
-**Before commit:**
-```sh
-# Poetry
+**Before commit (Poetry):**
+```shell
 poetry run ruff check --fix
 poetry run ruff format
 poetry run pytest
+```
 
-# uv
+**Before commit (uv):**
+```shell
 uv run ruff check --fix
 uv run ruff format
 uv run pytest
 ```
 
 **Package management:**
-```sh
-# Poetry: poetry install | poetry add <pkg> | poetry remove <pkg>
-# uv: uv sync | uv add <pkg> | uv remove <pkg>
-```
+- Poetry: `poetry install`, `poetry add <pkg>`, `poetry remove <pkg>`
+- uv: `uv sync`, `uv add <pkg>`, `uv remove <pkg>`

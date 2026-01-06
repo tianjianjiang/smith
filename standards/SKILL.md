@@ -78,9 +78,9 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 
 <related>
 
-- `@principles/SKILL.md` - Fundamental coding principles
+- @principles/SKILL.md - Fundamental coding principles
 - `@style/SKILL.md` - Path and naming standards
-- `@guidance/SKILL.md` - AI agent behavior patterns (always active)
+- @guidance/SKILL.md - AI agent behavior patterns (always active)
 - `@dev/SKILL.md` - Development workflow
 - `@tests/SKILL.md` - Testing standards
 - `@git/SKILL.md` - Version control

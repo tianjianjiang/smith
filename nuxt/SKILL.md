@@ -77,12 +77,14 @@ Nuxt uses `NUXT_` prefix for runtime config environment variables.
 
 <examples>
 
-```sh
-# Server-only
+Server-only:
+```shell
 NUXT_DATABASE_URL=postgres://...
 NUXT_API_SECRET=secret
+```
 
-# Public (exposed to browser)
+Public (exposed to browser):
+```shell
 NUXT_PUBLIC_API_BASE=https://api.example.com
 ```
 

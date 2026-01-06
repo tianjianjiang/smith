@@ -112,7 +112,7 @@ description: Universal context management strategies including lifecycle phases,
 
 <related>
 
-- `@guidance/SKILL.md` - Core agent behavior
+- @guidance/SKILL.md - Core agent behavior
 - `@prompts/SKILL.md` - Prompt caching optimization
 - `@context-claude/SKILL.md` - Claude-specific context patterns
 - `@context-kiro/SKILL.md` - Kiro-specific context patterns

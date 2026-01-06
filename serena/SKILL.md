@@ -32,7 +32,7 @@ description: Serena MCP integration for reliable file operations and semantic co
 <forbidden>
 
 **In Kiro, DO NOT use native tools when Serena is available:**
-- `readFile` - Truncates large files without warning
+- `readFile` - Silently truncates large files
 - `strReplace` - Fails on duplicate content (common in generated code)
 - `grepSearch` - Less efficient than Serena pattern search
 
@@ -43,7 +43,7 @@ description: Serena MCP integration for reliable file operations and semantic co
 <context>
 
 **Kiro native tool issues:**
-- `readFile` truncates large files without warning
+- `readFile` silently truncates large files
 - `strReplace` fails on duplicate content (common in generated code)
 - File writes can create duplicate sections
 - Mid-operation aborts during file reads/edits
@@ -77,21 +77,21 @@ description: Serena MCP integration for reliable file operations and semantic co
 
 ### Reading Files
 
-```
+```python
 get_symbols_overview(relative_path, depth)
 ```
 - Get high-level file structure first
 - Use `depth=1` for immediate children
 - **Use before diving into specific symbols**
 
-```
+```python
 find_symbol(name_path_pattern, relative_path, include_body)
 ```
 - Find classes, functions, methods by name
 - Use `include_body=true` only when needed
 - Supports patterns: `MyClass/get*`, `*/test_*`
 
-```
+```python
 search_for_pattern(substring_pattern, relative_path, context_lines_before, context_lines_after)
 ```
 - Use regex patterns to find specific content
@@ -100,7 +100,7 @@ search_for_pattern(substring_pattern, relative_path, context_lines_before, conte
 
 ### Writing Files
 
-```
+```python
 replace_content(relative_path, needle, repl, mode)
 ```
 - `mode="regex"` for pattern matching (preferred)
@@ -108,14 +108,14 @@ replace_content(relative_path, needle, repl, mode)
 - Use `.*?` for non-greedy wildcards
 - Set `allow_multiple_occurrences=true` if needed
 
-```
+```python
 replace_symbol_body(name_path, relative_path, body)
 ```
 - Replace entire function/class body
 - Body includes signature line
 - Does NOT include preceding docstrings/imports
 
-```
+```python
 insert_after_symbol(name_path, relative_path, body)
 insert_before_symbol(name_path, relative_path, body)
 ```
@@ -124,7 +124,7 @@ insert_before_symbol(name_path, relative_path, body)
 
 ### Navigation
 
-```
+```python
 find_referencing_symbols(name_path, relative_path)
 ```
 - Find all references to a symbol
@@ -190,7 +190,7 @@ language: markdown
 
 **To verify Serena MCP is available:**
 
-```
+```python
 list_memories()
 ```
 
@@ -222,6 +222,6 @@ list_memories()
 
 - `@context-kiro/SKILL.md` - Kiro terminal limitations, tool issues
 - `@context/SKILL.md` - Context management thresholds
-- `@guidance/SKILL.md` - AI agent behavior patterns
+- @guidance/SKILL.md - AI agent behavior patterns
 
 </related>

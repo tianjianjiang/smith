@@ -171,22 +171,23 @@ Binary search through commit history:
 
 **Usage**:
 
-```sh
+```shell
 git bisect start
-git bisect bad                 # Current commit broken
-git bisect good abc1234        # Known good commit
-# Git checks out middle, you test
-git bisect good  # or bad
-# Repeat until culprit found
+git bisect bad
+git bisect good abc1234
+git bisect good
 git bisect reset
 ```
 
+Mark current as bad, known-good commit, then test each checkout (good/bad) until culprit found.
+
 **Automated**:
 
-```sh
+```shell
 git bisect run ./test.sh
-# Exit 0 = good, 1-127 = bad, 125 = skip
 ```
+
+Exit codes: 0 = good, 1-127 = bad, 125 = skip
 
 **Complexity**: O(log n) - tests ~7 commits for 100 commit range
 
@@ -239,7 +240,7 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 <related>
 
-- `@guidance/SKILL.md` - Questioning techniques
+- @guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@analysis/SKILL.md` - Reasoning patterns, problem decomposition
 - `@clarity/SKILL.md` - Cognitive guards, logic fallacies
 

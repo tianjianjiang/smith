@@ -33,7 +33,7 @@ Cache reduces costs 90%, latency 85%
 - Reordering tools between calls
 - Injecting dynamic content into static sections
 - Modifying cached prefix unnecessarily
-- Using markdown tables (see @skills/SKILL.md - use bullet lists instead)
+- Using Markdown tables (see `@skills/SKILL.md` - use bullet lists instead)
 
 </forbidden>
 

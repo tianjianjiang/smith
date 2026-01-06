@@ -70,12 +70,18 @@ Essential tokens: `<|start|>`, `<|end|>`, `<|message|>`, `<|channel|>`, `<|retur
 
 </required>
 
+## agentskills.io Tags
+
+- `<available_skills>` - Container for skill index in AGENTS.md
+- `<skill name="..." description="...">` - Individual skill entry
+
 ## Quick Reference
 
 - **Claude**: `<required>`, `<forbidden>`, `<context>` - Instructions, constraints
 - **GPT-5**: `<plan_tool_usage>`, `<final_instructions>` - Planning, task management
 - **Gemini**: `<rules>`, `<output_format>` - Structured output
 - **Harmony**: `<|start|>`, `<|end|>` - Special tokens only
+- **agentskills.io**: `<available_skills>`, `<skill>` - Skill discovery
 
 ## Markdown Rendering
 
@@ -118,7 +124,7 @@ Without blank lines, markdown renders as literal text.
 <related>
 
 - `@prompts/SKILL.md` - Prompt engineering
-- `@guidance/SKILL.md` - Agent behavior
+- @guidance/SKILL.md - Agent behavior
 
 </related>
 

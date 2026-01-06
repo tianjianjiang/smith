@@ -42,7 +42,7 @@ description: File naming, path standards, and conventional commits. Use when nam
 **Use code blocks, not Markdown links:**
 ```markdown
 **Core Principles**: @principles/SKILL.md - Description
-**Python**: @python/SKILL.md - Description
+**Related Skill**: @skill-name/SKILL.md - Description
 ```
 
 **Variables**: `$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`
@@ -106,7 +106,7 @@ Branch type MUST match commit type
 <related>
 
 - `@git/SKILL.md` - Branch and commit workflows
-- `@python/SKILL.md` - Python naming conventions
+- @principles/SKILL.md - Core principles (DRY, KISS, YAGNI)
 
 </related>
 

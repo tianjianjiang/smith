@@ -9,7 +9,6 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 
 - **Load if**: Creating PRs, reviewing code, merging, stacked PRs
 - **Prerequisites**: @principles/SKILL.md, @standards/SKILL.md, @git/SKILL.md
-- **Related**: @gh-cli/SKILL.md (CLI), @stacks/SKILL.md (stacked PRs), @style/SKILL.md (naming)
 
 </metadata>
 
@@ -48,8 +47,8 @@ Follow conventional commits: `type(scope): description`
 
 ## PR Creation Workflow
 
-```sh
-# Pre-PR checklist
+Pre-PR checklist:
+```shell
 poetry run ruff format . && poetry run ruff check --fix .
 poetry run pytest
 git fetch origin && git rebase origin/main
@@ -106,7 +105,7 @@ git push -u origin feat/my_feature
 ## Stacked PRs
 
 For stacked PRs, merge parent WITHOUT `--delete-branch`, then:
-```sh
+```shell
 gh pr edit {CHILD} --base main
 git rebase --onto origin/main feat/parent_branch
 git push --force-with-lease
@@ -125,23 +124,25 @@ git push origin --delete feat/parent_branch
 ## ACTION (Recency Zone)
 
 **Create PR:**
-```sh
+```shell
 gh pr create --title "feat: add feature" --body "..." --assignee @me
 ```
 
 **Merge PR:**
-```sh
-gh pr merge {PR} --squash  # or --merge, --rebase
+```shell
+gh pr merge {PR} --squash
 ```
 
+Options: `--squash`, `--merge`, or `--rebase`
+
 **Post-merge cleanup:**
-```sh
+```shell
 git checkout main && git fetch --prune origin && git pull
 git branch -d feat/my_feature
 ```
 
 **Check freshness:**
-```sh
+```shell
 git fetch origin
 BEHIND=$(git rev-list HEAD..origin/main --count)
 ```

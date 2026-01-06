@@ -40,24 +40,13 @@ This document defines development workflow standards and code quality requiremen
 
 </required>
 
-**Python projects:**
-```sh
-poetry run ruff check --fix && poetry run ruff format
-poetry run pytest
-```
-
-**Frontend projects:**
-```sh
-pnpm lint:fix && pnpm test
-```
-
-**Note**: Ruff enforces PEP8 automatically - no need for separate PEP8 checks.
-
-**For Python-specific patterns**: See @python/SKILL.md
+**Language-specific commands:**
+- **Python**: See `@python/SKILL.md#action-recency-zone` (supports Poetry and uv)
+- **TypeScript/Frontend**: See `@typescript/SKILL.md`
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @guidance/SKILL.md for comprehensive patterns:
+**For AI agent workflows**: See `@guidance/SKILL.md` for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
 - AGENTS.md optimization for prompt caching
@@ -86,16 +75,15 @@ pnpm lint:fix && pnpm test
 
 Before creating a pull request:
 
-- MUST run all formatters: `poetry run ruff format .`
-- MUST run all linters: `poetry run ruff check --fix .`
-- MUST run all tests: `poetry run pytest`
+- MUST run all formatters and linters (see language-specific skills)
+- MUST run all tests
 - MUST ensure branch is up-to-date with base branch
 - MUST review your own changes first (`git diff`)
 
 </required>
 
-**See**: @gh-pr/SKILL.md - Pull request creation workflow
-**See**: @gh-cli/SKILL.md - GitHub-specific PR commands
+**See**: `@gh-pr/SKILL.md` - Pull request creation workflow
+**See**: `@gh-cli/SKILL.md` - GitHub-specific PR commands
 
 ## Package Management
 
@@ -155,8 +143,8 @@ Before creating a pull request:
 
 <related>
 
-- `@principles/SKILL.md` - Fundamental coding principles
-- `@standards/SKILL.md` - Universal code standards
+- @principles/SKILL.md - Fundamental coding principles
+- @standards/SKILL.md - Universal code standards
 - `@python/SKILL.md` - Python-specific patterns
 - `@tests/SKILL.md` - Testing standards
 - `@git/SKILL.md` - Version control workflow
@@ -170,14 +158,7 @@ Before creating a pull request:
 <required>
 
 **Before committing:**
-```sh
-# Python
-poetry run ruff check --fix && poetry run ruff format
-poetry run pytest
-
-# Frontend
-pnpm lint:fix && pnpm test
-```
+- Run formatters, linters, and tests (see `@python/SKILL.md` or `@typescript/SKILL.md`)
 
 **Task management:**
 - One task in_progress at a time

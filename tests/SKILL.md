@@ -8,7 +8,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 <metadata>
 
 - **Load if**: Writing tests, running test suites, TDD
-- **Prerequisites**: `@principles/SKILL.md`, `@standards/SKILL.md`, `@python/SKILL.md`
+- **Prerequisites**: @principles/SKILL.md, @standards/SKILL.md, `@python/SKILL.md`
 
 </metadata>
 
@@ -61,7 +61,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 - `@python/SKILL.md` - Python testing patterns (pytest functions)
 - `@dev/SKILL.md` - Development workflow (quality gates)
-- `@principles/SKILL.md` - Core principles
+- @principles/SKILL.md - Core principles
 
 </related>
 
@@ -69,13 +69,14 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 <required>
 
-**Run tests:**
-```sh
-# Python (use virtual env runner)
+**Run tests (Poetry):**
+```shell
 poetry run pytest tests/unit/ -v
 poetry run pytest tests/integration/ -v
+```
 
-# Or with uv
+**Run tests (uv):**
+```shell
 uv run pytest tests/unit/ -v
 ```
 

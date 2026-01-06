@@ -51,8 +51,8 @@ Code blocks within documents follow their own language conventions.
 
 Code blocks follow their language's conventions:
 
-```sh
-# Shell: use literal UPPER_SNAKE or quotes
+Shell (use literal UPPER_SNAKE or quotes):
+```shell
 git checkout -b "feat/FEATURE_NAME"
 export API_KEY="YOUR_API_KEY"
 ```

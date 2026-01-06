@@ -55,8 +55,8 @@ description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID, HHH). Use w
 
 <related>
 
-- `@standards/SKILL.md` - Universal coding standards
-- `@guidance/SKILL.md` - AI agent behavior (HHH framework)
+- @standards/SKILL.md - Universal coding standards
+- @guidance/SKILL.md - AI agent behavior (HHH framework)
 
 </related>
 
