@@ -12,8 +12,34 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 ## Platform Context (Load First)
 
-**Kiro**: Load @context-kiro/SKILL.md
-**Claude Code**: Load @context-claude/SKILL.md
+<required>
+
+**Auto-detect platform in order:**
+1. **MCP servers**: Check for `cursor-ide-browser` or `cursor-browser-extension` → **Cursor** → Load @context-cursor/SKILL.md
+2. **MCP servers**: Check for `kiro-*` → **Kiro** → Load @context-kiro/SKILL.md
+3. **System prompt**: If mentions "Claude Code" → **Claude Code** → Load @context-claude/SKILL.md
+4. **Default**: Ask user or use Cursor (most common)
+
+</required>
+
+**Manual override** (if auto-detection fails):
+- **Cursor**: Load @context-cursor/SKILL.md
+- **Kiro**: Load @context-kiro/SKILL.md
+- **Claude Code**: Load @context-claude/SKILL.md
+
+## Serena MCP Integration (If Available)
+
+<required>
+
+**If Serena MCP server is available, at session start:**
+
+1. Load memory: `agents_md_loading_protocol` - Contains complete AGENTS.md loading protocol
+   - Use: `mcp_oraiosserena_read_memory("agents_md_loading_protocol")`
+   - This memory documents how to load all workspace AGENTS.md files and skills
+
+2. Follow the protocol in that memory for loading workspace-specific AGENTS.md files
+
+</required>
 
 ## Always Load
 
@@ -34,8 +60,27 @@ Personal coding standards for AI-assisted development with progressive disclosur
 **Before each task**:
 1. Identify which skills apply
 2. Read the skill files using tools
-3. Report: "Loaded @principles/SKILL.md, @python/SKILL.md"
+3. Report using notification format below
 4. Unload after 5 turns unused
+
+</required>
+
+## Skill Notification Format
+
+<required>
+
+**Always notify when skills change state:**
+
+- **Session start**: `Skills loaded: @principles, @standards, @guidance, @context-{platform}`
+- **Task activation**: `Activated: @python (task match: Python code detected)`
+- **Explicit load**: `Loaded: @git (user requested)`
+- **Unload**: `Unloaded: @python (5 turns unused)`
+
+**Format rules:**
+- Use short names (omit `/SKILL.md` suffix)
+- Include reason in parentheses
+- Group multiple loads on one line when possible
+- Always notify on state change (load/unload)
 
 </required>
 
@@ -110,9 +155,9 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 ## Platform Compatibility
 
-**Native AGENTS.md**: Claude Code, OpenAI Codex, Amp, Jules, Kiro
+**Native AGENTS.md**: Claude Code, OpenAI Codex, Amp, Jules, Kiro, Cursor
 **Config required**: Gemini CLI, Aider
-**Not compatible**: Cursor (.mdc format)
+**Note**: Cursor also supports `.mdc` format, but AGENTS.md works via MCP integration
 
 ## Kiro Terminal (CRITICAL)
 
