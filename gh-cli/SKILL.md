@@ -1,9 +1,9 @@
 ---
 name: gh-cli
-description: GitHub CLI operations with token efficiency and pagination best practices. Use when executing gh commands for PR operations, issue management, code review, or repository interactions. Covers safe perPage limits and protected branch configuration.
+description: GitHub CLI gotchas and best practices. Use when executing gh commands. Covers token efficiency, pagination limits, and common pitfalls.
 ---
 
-# GitHub CLI Operations
+# GitHub CLI Best Practices
 
 <metadata>
 
@@ -26,102 +26,26 @@ description: GitHub CLI operations with token efficiency and pagination best pra
 
 </required>
 
-## Installation
-
-```shell
-brew install gh
-gh auth login
-```
-
-## Pull Request Operations
-
-### Creating PRs
-
-```shell
-gh pr create --title "feat: add feature" --body "Description" --assignee @me
-gh pr create --draft --title "feat: add feature #WIP" --body "Work in progress"
-gh pr create --title "feat: feature" --reviewer @user1,@user2
-```
+## Common Pitfalls
 
 <required>
 
-**ALWAYS assign yourself** when creating PRs: `--assignee @me`
+- **ALWAYS assign yourself**: `--assignee @me`
+- **Draft PRs**: Use `--draft` with `#WIP` in title for work-in-progress
+- **Ensure gh installed**: If `gh` not found, prompt user/agent to install
 
 </required>
 
-### Viewing and Checking Out
-
-```shell
-gh pr view 123
-BRANCH=$(gh pr view 123 --json headRefName -q .headRefName)
-git checkout -b "$BRANCH" "origin/$BRANCH"
-```
-
-### Merging
-
-```shell
-gh pr checks 123 --watch
-gh pr merge 123 --squash --delete-branch
-```
-
-## Code Review
-
-```shell
-gh pr edit 123 --add-reviewer @username
-gh pr review 123 --approve -b "LGTM!"
-gh pr review 123 --request-changes -b "Please address concerns"
-gh pr comment 123 --body "Addressed feedback"
-```
-
-## Issue Operations
-
-```shell
-gh issue create --title "fix: description" --body "Details"
-gh issue list --state open
-```
-
-### Linking Issues
+## Issue Linking
 
 In PR descriptions:
 - `Closes #123` - Auto-closes on merge
 - `Fixes #123` - Same as Closes
 - `Relates to #123` - Links without closing
 
-## Protected Branches
-
-<required>
-
-**Main branch:**
-- Require PR reviews (min 1)
-- Require status checks
-- Require up-to-date branches
-
-</required>
-
-Configure in: Repository Settings → Branches → Protection rules
-
 <related>
 
-- `@gh-pr/SKILL.md` - PR workflows
+- `@gh-pr/SKILL.md` - PR workflows, review comment fetching
 - `@git/SKILL.md` - Git operations
 
 </related>
-
-## ACTION (Recency Zone)
-
-<required>
-
-**Before PR operations:**
-1. Use pagination (perPage, page)
-2. Use minimal_output for searches
-3. Assign yourself to PRs
-
-**Common workflow:**
-```shell
-gh pr view 123 --comments
-git commit -m "refactor: address feedback"
-git push
-gh pr comment 123 --body "Ready for re-review"
-```
-
-</required>

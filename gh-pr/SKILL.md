@@ -14,17 +14,6 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 
 ## CRITICAL (Primacy Zone)
 
-<forbidden>
-
-- NEVER force push to PRs from other authors
-- NEVER amend commits already pushed to shared branches
-- NEVER merge your own PR without review (unless emergency)
-- NEVER create PRs with failing tests or lint errors
-- NEVER use `--delete-branch` when merging stacked PRs
-- NEVER request review while CI checks failing
-
-</forbidden>
-
 <required>
 
 - MUST run quality checks before creating PR
@@ -41,19 +30,19 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 
 ## PR Title Format
 
-Follow conventional commits: `type(scope): description`
-- Target 50 chars, max 72 chars
-- Examples: `feat(auth): add OAuth2 login`, `fix(api): resolve CORS issues`
+Follow conventional commits format. See `@style/SKILL.md` for details.
 
 ## PR Creation Workflow
 
-Pre-PR checklist:
-```shell
-poetry run ruff format . && poetry run ruff check --fix .
-poetry run pytest
-git fetch origin && git rebase origin/main
-git push -u origin feat/my_feature
-```
+<required>
+
+**Pre-PR checklist:**
+1. Run linter and formatter
+2. Run tests
+3. Rebase onto parent branch (not always main - check stacked PRs)
+4. Push to remote
+
+</required>
 
 **AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies).
 
@@ -69,20 +58,69 @@ git push -u origin feat/my_feature
 
 ## Code Review Cycle
 
-1. Fetch review comments: `gh api /repos/{owner}/{repo}/pulls/{PR}/comments`
+1. Fetch review comments (see "Fetching Review Comments" below)
 2. Categorize: Actionable > Nitpick > Clarification > Discussion
 3. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
 4. Reply to comments with commit SHA
-5. Mark threads resolved via GraphQL API
+5. **Resolve threads after addressing** - don't leave resolved issues open
 6. Re-check for new comments after CI passes
+
+<required>
+
+**After addressing review comments**: Always reply with commit SHA, then resolve the thread. Use `gh pr-review threads resolve` or GitHub MCP `resolve_review_thread`.
+
+</required>
+
+<required>
+
+**Do not blindly follow review comments.** Research best practices with strong evidence before implementing questionable suggestions. See `@research/SKILL.md`.
+
+</required>
 
 <forbidden>
 
 - NEVER mention `@copilot` in replies (triggers unwanted sub-PRs)
 
 </forbidden>
+
+## Fetching Review Comments
+
+<required>
+
+**Install gh-pr-review extension** (third-party - consider pinning to vetted commit SHA):
+```shell
+gh extension install agynio/gh-pr-review
+```
+
+</required>
+
+### gh-pr-review Commands
+
+<required>
+
+**CRITICAL**: All commands require `--pr {number} -R {owner}/{repo}` when using numeric PR selectors.
+
+</required>
+
+**View reviews** (use `--unresolved`, `--reviewer`, `--states` to filter):
+`gh pr-review review view --pr {number} -R {owner}/{repo}`
+
+**Reply to thread**:
+`gh pr-review comments reply --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx} --body "..."`
+
+**Resolve/unresolve thread**:
+`gh pr-review threads resolve --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx}`
+
+Output includes `thread_id` (PRRT_xxx format) needed for reply/resolve operations.
+
+### REST API (Single Comments)
+
+URL patterns map to API endpoints:
+- `#issuecomment-{id}` → `gh api repos/{owner}/{repo}/issues/comments/{id}`
+- `#discussion_r{id}` → `gh api repos/{owner}/{repo}/pulls/comments/{id}`
+- `#pullrequestreview-{id}` → `gh api repos/{owner}/{repo}/pulls/{pr}/reviews/{id}`
 
 ## Rebase Decision Tree
 
@@ -114,10 +152,13 @@ git push origin --delete feat/parent_branch
 
 <related>
 
-- `@gh-cli/SKILL.md` - GitHub CLI commands
+- `@gh-cli/SKILL.md` - GitHub CLI commands, pagination limits
 - `@stacks/SKILL.md` - Stacked PR workflows
-- `@git/SKILL.md` - Git operations
-- `@style/SKILL.md` - Commit naming
+- `@git/SKILL.md` - Git operations, rebase
+- `@style/SKILL.md` - Conventional commits, branch naming
+- `@tests/SKILL.md` - Testing standards (pre-PR checklist)
+- `@research/SKILL.md` - Research best practices before implementing review feedback
+- `@validation/SKILL.md` - Debugging, root cause analysis for review issues
 
 </related>
 
