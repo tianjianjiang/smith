@@ -23,6 +23,7 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 - NEVER execute pytest without virtual env runner (missing .env vars)
 - NEVER execute directly: `.venv/bin/python -m pytest`
 - NEVER mix package managers in same project
+- NEVER use %-style formatting in log messages (use `extra=` parameter for structured logging)
 
 </forbidden>
 
@@ -32,6 +33,7 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 - ALWAYS use type hints for all function signatures
 - ALWAYS use function-based tests: `def test_should_<action>_when_<condition>():`
 - ALWAYS use virtual env runner: `poetry run` or `uv run`
+- ALWAYS use structured logging with `extra=` parameter for all log data
 
 </required>
 

@@ -10,6 +10,7 @@ description: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use 
 - **Scope**: Writing AGENTS.md, SKILL.md, and steering files
 - **Load if**: Creating or editing agent instructions, rules, or documentation
 - **Prerequisites**: @xml/SKILL.md for approved XML tags
+- **Based on**: [agentskills.io](https://agentskills.io) standards
 
 </metadata>
 
@@ -54,6 +55,7 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - Lines under 80 characters for better parsing
 - No nested lists deeper than 2 levels
 - Code blocks with language hints for all code examples
+- **Shell code blocks must be copy-paste ready** - no inline comments, move descriptions outside as text or subsection titles
 
 </required>
 
@@ -104,6 +106,7 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - **Markdown tables** (use bullet lists for ALL content, even reference data)
 - Nested lists deeper than 2 levels
 - Skipped heading levels
+- Inline comments inside shell code blocks
 
 </forbidden>
 
