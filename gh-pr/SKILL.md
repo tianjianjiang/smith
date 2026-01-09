@@ -64,8 +64,14 @@ Follow conventional commits format. See `@style/SKILL.md` for details.
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
 4. Reply to comments with commit SHA
-5. Mark threads resolved
+5. **Resolve threads after addressing** - don't leave resolved issues open
 6. Re-check for new comments after CI passes
+
+<required>
+
+**After addressing review comments**: Always reply with commit SHA, then resolve the thread. Use `gh pr-review threads resolve` or GitHub MCP `resolve_review_thread`.
+
+</required>
 
 <required>
 
