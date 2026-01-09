@@ -83,125 +83,38 @@ Follow conventional commits format. See `@style/SKILL.md` for details.
 
 <required>
 
-**Install gh-pr-review extension** for inline review comments:
+**Install gh-pr-review extension** (third-party - consider pinning to vetted commit SHA):
 ```shell
 gh extension install agynio/gh-pr-review
 ```
 
-**Security note**: Third-party extensions run with gh CLI privileges. Consider pinning to a vetted commit SHA for production environments and periodically reviewing updates.
-
 </required>
 
-### URL Pattern Recognition
-
-**Issue/PR comment** (`#issuecomment-{id}`):
-`gh api repos/{owner}/{repo}/issues/comments/{id}`
-
-**Inline review comment** (`#discussion_r{id}`):
-`gh api repos/{owner}/{repo}/pulls/comments/{id}`
-
-**Review summary** (`#pullrequestreview-{id}`):
-`gh api repos/{owner}/{repo}/pulls/{pr}/reviews/{id}`
-
-### Fetching Single Comments (REST)
-
-**Inline review comment** (`discussion_r`):
-```shell
-gh api repos/{owner}/{repo}/pulls/comments/{comment_id} --jq '.body'
-```
-
-**Issue/PR conversation comment** (`issuecomment`):
-```shell
-gh api repos/{owner}/{repo}/issues/comments/{comment_id} --jq '.body'
-```
-
-**Review summary** (`pullrequestreview`):
-```shell
-gh api repos/{owner}/{repo}/pulls/{pr}/reviews/{review_id} --jq '.body'
-```
-
-### Review Threads with gh-pr-review
+### gh-pr-review Commands
 
 <required>
 
-**Use `gh-pr-review` for thread context** - REST API cannot access review threads:
+**CRITICAL**: All commands require `--pr {number} -R {owner}/{repo}` when using numeric PR selectors.
 
 </required>
 
-**View all reviews with inline comments and threads:**
-```shell
-gh pr-review review view {pr} -R {owner}/{repo}
-```
+**View reviews** (use `--unresolved`, `--reviewer`, `--states` to filter):
+`gh pr-review review view --pr {pr} -R {owner}/{repo}`
 
-**Filter unresolved threads only:**
-```shell
-gh pr-review review view {pr} --unresolved
-```
+**Reply to thread**:
+`gh pr-review comments reply --pr {pr} -R {owner}/{repo} --thread-id {PRRT_xxx} --body "..."`
 
-**Filter by reviewer:**
-```shell
-gh pr-review review view {pr} --reviewer username
-```
+**Resolve/unresolve thread**:
+`gh pr-review threads resolve --pr {pr} -R {owner}/{repo} --thread-id {PRRT_xxx}`
 
-**Filter by state:**
-```shell
-gh pr-review review view {pr} --states CHANGES_REQUESTED,COMMENTED
-```
+Output includes `thread_id` (PRRT_xxx format) needed for reply/resolve operations.
 
-**Output schema:**
-```json
-{
-  "reviews": [{
-    "id": "PRR_...",
-    "state": "CHANGES_REQUESTED",
-    "author_login": "reviewer",
-    "comments": [{
-      "thread_id": "PRRT_...",
-      "path": "src/file.ts",
-      "line": 42,
-      "body": "Comment text",
-      "is_resolved": false,
-      "thread": [{ "author_login": "...", "body": "Reply" }]
-    }]
-  }]
-}
-```
+### REST API (Single Comments)
 
-### Replying and Resolving Threads
-
-**Reply to a thread:**
-```shell
-gh pr-review comments reply --thread-id PRRT_xxx --body "Fixed in abc123"
-```
-
-**Resolve a thread:**
-```shell
-gh pr-review threads resolve PRRT_xxx
-```
-
-**Unresolve a thread:**
-```shell
-gh pr-review threads unresolve PRRT_xxx
-```
-
-### Creating Reviews Programmatically
-
-**Start a pending review:**
-```shell
-gh pr-review review --start {pr} -R {owner}/{repo}
-```
-
-**Add inline comment to pending review:**
-```shell
-gh pr-review review --add-comment --review-id PRR_xxx \
-  --path src/file.ts --line 42 --body "Consider refactoring"
-```
-
-**Submit the review:**
-```shell
-gh pr-review review --submit --review-id PRR_xxx \
-  --event COMMENT --body "Review complete"
-```
+URL patterns map to API endpoints:
+- `#issuecomment-{id}` → `gh api repos/{owner}/{repo}/issues/comments/{id}`
+- `#discussion_r{id}` → `gh api repos/{owner}/{repo}/pulls/comments/{id}`
+- `#pullrequestreview-{id}` → `gh api repos/{owner}/{repo}/pulls/{pr}/reviews/{id}`
 
 ## Rebase Decision Tree
 
