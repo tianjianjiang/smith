@@ -3,7 +3,7 @@ name: git
 description: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, or rebasing. Covers GPG signing, atomic commits, and safety flags.
 ---
 
-# Git Workflow Standards
+# Git Workflow Gotchas
 
 <metadata>
 

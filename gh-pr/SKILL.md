@@ -88,6 +88,8 @@ Follow conventional commits format. See `@style/SKILL.md` for details.
 gh extension install agynio/gh-pr-review
 ```
 
+**Security note**: Third-party extensions run with gh CLI privileges. Consider pinning to a vetted commit SHA for production environments and periodically reviewing updates.
+
 </required>
 
 ### URL Pattern Recognition
