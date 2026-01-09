@@ -22,6 +22,14 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 </required>
 
+<forbidden>
+
+- NEVER force push to main or shared branches
+- NEVER commit directly to main branch
+- NEVER rebase shared branches (only personal feature branches)
+
+</forbidden>
+
 ## Branch Naming
 
 See `@style/SKILL.md` for naming conventions.

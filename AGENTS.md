@@ -34,7 +34,7 @@ Personal coding standards for AI-assisted development with progressive disclosur
 **If Serena MCP server is available, at session start:**
 
 1. Load memory: `agents_md_loading_protocol` - Contains complete AGENTS.md loading protocol
-   - Use: `mcp_oraiosserena_read_memory("agents_md_loading_protocol")`
+   - Use: `read_memory("agents_md_loading_protocol")` (Serena MCP tool)
    - This memory documents how to load all workspace AGENTS.md files and skills
 
 2. Follow the protocol in that memory for loading workspace-specific AGENTS.md files

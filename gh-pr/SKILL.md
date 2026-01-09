@@ -105,13 +105,13 @@ gh extension install agynio/gh-pr-review
 </required>
 
 **View reviews** (use `--unresolved`, `--reviewer`, `--states` to filter):
-`gh pr-review review view --pr {pr} -R {owner}/{repo}`
+`gh pr-review review view --pr {number} -R {owner}/{repo}`
 
 **Reply to thread**:
-`gh pr-review comments reply --pr {pr} -R {owner}/{repo} --thread-id {PRRT_xxx} --body "..."`
+`gh pr-review comments reply --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx} --body "..."`
 
 **Resolve/unresolve thread**:
-`gh pr-review threads resolve --pr {pr} -R {owner}/{repo} --thread-id {PRRT_xxx}`
+`gh pr-review threads resolve --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx}`
 
 Output includes `thread_id` (PRRT_xxx format) needed for reply/resolve operations.
 
