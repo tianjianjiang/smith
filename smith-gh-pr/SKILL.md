@@ -72,6 +72,8 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 <required>
 
 **Code review response rules:**
+- **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
+- **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
 - Reply with commit SHA, then resolve thread (`gh pr-review threads resolve` or GitHub MCP)
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
@@ -81,6 +83,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 <forbidden>
 
+- NEVER reply to file-inline comments with `gh pr comment` (loses thread context)
 - NEVER mention `@copilot` in replies (triggers unwanted sub-PRs)
 
 </forbidden>
