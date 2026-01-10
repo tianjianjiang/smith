@@ -68,6 +68,16 @@ description: Proactive research protocol for version queries, APIs, and best pra
 
 </required>
 
+## Paywall Workarounds
+
+<context>
+
+**Medium.com**: Replace domain with `freedium-mirror.cfd`
+- Pattern: `https://freedium-mirror.cfd/https://medium.com/@author/article`
+- Use when WebFetch returns paywall/403 errors
+
+</context>
+
 ## When NOT to Research
 
 - Fundamental concepts (won't change)
