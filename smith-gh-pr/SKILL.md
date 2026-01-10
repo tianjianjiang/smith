@@ -150,6 +150,23 @@ git push --force-with-lease
 git push origin --delete feat/parent_branch
 ```
 
+## Claude Code Plugin Integration
+
+<context>
+
+**When plugins are available, prefer plugin commands:**
+
+- **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
+- **`/commit-push-pr`**: Commits, pushes, and creates PR in one step
+- **pr-review-toolkit agents**: Specialized review via Task tool
+  - `code-reviewer` - CLAUDE.md compliance, style, bugs
+  - `silent-failure-hunter` - Error handling issues
+  - `pr-test-analyzer` - Test coverage gaps
+
+**Plugin commands complement** (not replace) manual `gh` workflows.
+
+</context>
+
 <related>
 
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands, pagination limits
