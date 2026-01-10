@@ -250,6 +250,31 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 </context>
 
+## Ralph Loop Integration
+
+<context>
+
+**Debugging techniques map to Ralph iterations:**
+
+- **Strong Inference**: Each hypothesis test = one iteration
+- **5 Whys**: Each "Why?" deepening = one iteration
+- **Delta Debugging**: Split → Test → Recurse maps to iterations
+- **Git Bisect**: Can run inside Ralph for regression hunting
+
+**Example Ralph prompt for debugging:**
+```
+/ralph-loop "Debug [issue] using Strong Inference:
+1. List 3 hypotheses
+2. Design test to eliminate one
+3. Run test, record result
+4. Eliminate disproven hypothesis
+5. Repeat until root cause found
+6. Output <promise>ROOT CAUSE FOUND</promise>" \
+--completion-promise "ROOT CAUSE FOUND" --max-iterations 15
+```
+
+</context>
+
 <related>
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow

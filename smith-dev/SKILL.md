@@ -141,6 +141,26 @@ Before creating a pull request:
 - Centralized controls in project documentation
 - Test logging: Configure via `pytest.ini` and `pyproject.toml`
 
+## Ralph Loop Integration
+
+<context>
+
+**Task decomposition aligns with Ralph iterations:**
+
+- Each milestone (3-5 recommended) = iteration boundary
+- Quality gates run between iterations
+- Commit frequently for session recovery
+
+**Structure Ralph prompts with milestones:**
+```
+Phase 1: [milestone] + tests
+Phase 2: [milestone] + tests
+Phase 3: Integration tests
+Output <promise>COMPLETE</promise> after all phases.
+```
+
+</context>
+
 <related>
 
 - @smith-principles/SKILL.md - Fundamental coding principles
