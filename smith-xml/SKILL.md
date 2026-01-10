@@ -38,8 +38,23 @@ Only use well-established XML tags. Do NOT invent placeholder-style tags.
 - `<thinking>` - Chain-of-thought reasoning
 - `<answer>` - Final output
 
-## GPT-5/5.1 Tags
+## Tag Selection Criteria
 
+<required>
+
+**`<required>` = "DO this"** (imperative, mandatory behavior)
+- Agent MUST follow; failure causes incorrect behavior
+- Use for: MUST/ALWAYS/NEVER statements, mandatory behaviors, action directives
+
+**`<context>` = "KNOW this"** (informational, may deprioritize)
+- Agent uses to inform decisions; not mandatory
+- Use for: Explanations, methodologies, background, reference material
+
+</required>
+
+## GPT-5.x Tags (Updated Dec 2025)
+
+**GPT-5/5.1 Tags:**
 - `<plan_tool_usage>` - Planning and task management
 - `<context_gathering>` - Search depth strategy
 - `<exploration>` - Codebase investigation
@@ -48,13 +63,30 @@ Only use well-established XML tags. Do NOT invent placeholder-style tags.
 - `<guiding_principles>` - Foundational philosophies
 - `<final_instructions>` - Critical closing directives
 
-## Gemini Tags
+**GPT-5.2 Tags (Dec 2025):**
+- `<planning>` - Scaffolds reasoning before execution
+- `<response>` - Contains output after planning phase
+- `<solution_persistence>` - Maintains global context across agent turns
+- `<user_updates_spec>` - Defines scope boundaries
+- `<tool_preambles>` - Tool usage instructions
+- `<output_verbosity_spec>` - Output length/format constraints
+
+**Pattern**: GPT-5.2 favors `_spec` suffix for instruction categories
+
+## Gemini 3 Tags (Updated Nov 2025)
 
 - `<role>` - Assistant identity
-- `<output_format>` - Response structure
 - `<rules>` - Behavioral guidelines
-- `<planning_process>` - Analysis steps
-- `<final_instruction>` - Critical closing directive
+- `<planning_process>` - Analysis workflow
+- `<error_handling>` - Error management
+- `<context>` - Background info (universal)
+- `<instructions>` - Step-by-step guidance (universal)
+- `<constraints>` - Parameters (universal)
+- `<output_format>` - Response structure
+- `<task>` - User request (universal)
+- `<final_instruction>` - Closing directive (recency zone)
+
+**Pattern**: Gemini 3 uses snake_case, prefers direct/concise prompts
 
 ## Harmony Format (gpt-oss-120b)
 
@@ -78,10 +110,24 @@ Essential tokens: `<|start|>`, `<|end|>`, `<|message|>`, `<|channel|>`, `<|retur
 ## Quick Reference
 
 - **Claude**: `<required>`, `<forbidden>`, `<context>` - Instructions, constraints
-- **GPT-5**: `<plan_tool_usage>`, `<final_instructions>` - Planning, task management
-- **Gemini**: `<rules>`, `<output_format>` - Structured output
+- **GPT-5.2**: `<planning>`, `<response>`, `*_spec` tags - Agentic workflows
+- **Gemini 3**: `<rules>`, `<planning_process>`, `<output_format>` - Structured output
 - **Harmony**: `<|start|>`, `<|end|>` - Special tokens only
 - **agentskills.io**: `<available_skills>`, `<skill>` - Skill discovery
+
+## Naming Conventions
+
+<context>
+
+**Platform-specific patterns:**
+- **Claude**: lowercase concepts (e.g., `<required>`, `<forbidden>`, `<context>`)
+- **GPT-5.2**: snake_case with `_spec` suffix (e.g., `<user_updates_spec>`, `<output_verbosity_spec>`)
+- **Gemini 3**: snake_case (e.g., `<planning_process>`, `<error_handling>`)
+
+**Universal tags** (work across platforms):
+- `<context>`, `<instructions>`, `<task>`, `<examples>`, `<constraints>`
+
+</context>
 
 ## Markdown Rendering
 
