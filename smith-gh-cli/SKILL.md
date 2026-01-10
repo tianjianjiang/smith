@@ -8,7 +8,7 @@ description: GitHub CLI gotchas and best practices. Use when executing gh comman
 <metadata>
 
 - **Load if**: Using GitHub CLI commands
-- **Prerequisites**: @smith-git/SKILL.md, @smith-gh-pr/SKILL.md
+- **Prerequisites**: `@smith-git/SKILL.md`, `@smith-gh-pr/SKILL.md`
 
 </metadata>
 

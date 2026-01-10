@@ -8,7 +8,7 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 <metadata>
 
 - **Load if**: Creating PRs, reviewing code, merging, stacked PRs
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-git/SKILL.md
+- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-git/SKILL.md`
 
 </metadata>
 
@@ -58,18 +58,32 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 ## Code Review Cycle
 
-1. Fetch review comments (see "Fetching Review Comments" below)
-2. Categorize: Actionable > Nitpick > Clarification > Discussion
-3. Implement fixes with confidence scoring (high: implement, low: ask)
+1. Fetch review comments using `gh pr-review` (see "Fetching Review Comments" below)
+2. **Get ALL comments including Nitpicks** - don't skip minor issues
+3. Categorize: Actionable > Nitpick > Clarification > Discussion
+4. **Proactively audit similar issues** in other files not explicitly mentioned
+5. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
-4. Reply to comments with commit SHA
-5. **Resolve threads after addressing** - don't leave resolved issues open
-6. Re-check for new comments after CI passes
+6. Reply to comments with commit SHA
+7. **Resolve threads after addressing** - don't leave resolved issues open
+8. Re-check for new comments after CI passes
 
 <required>
 
 **After addressing review comments**: Always reply with commit SHA, then resolve the thread. Use `gh pr-review threads resolve` or GitHub MCP `resolve_review_thread`.
+
+</required>
+
+<required>
+
+**Proactive audit**: When a reviewer identifies an issue (e.g., backtick convention), search the entire codebase for similar issues before committing fixes. Don't rely solely on explicit review comments.
+
+</required>
+
+<required>
+
+**Check CodeRabbit Nitpick comments**: Review the full PR comment thread for Nitpick sections (collapsible `<details>` blocks), not just inline file comments.
 
 </required>
 
@@ -89,9 +103,16 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 <required>
 
+**Always prefer `gh pr-review`** over `gh api` for review operations - provides structured output with thread IDs.
+
 **Install gh-pr-review extension** (third-party - consider pinning to vetted commit SHA):
 ```shell
 gh extension install agynio/gh-pr-review
+```
+
+**List unresolved threads:**
+```shell
+gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved
 ```
 
 </required>

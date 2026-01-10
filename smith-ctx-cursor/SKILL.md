@@ -8,7 +8,7 @@ description: Cursor context management with /summarize command, @ mentions for f
 <metadata>
 
 - **Load if**: Using Cursor, context >60%
-- **Prerequisites**: @smith-ctx/SKILL.md
+- **Prerequisites**: `@smith-ctx/SKILL.md`
 
 </metadata>
 

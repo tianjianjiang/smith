@@ -9,7 +9,7 @@ description: Stacked pull request workflows for large features. Use when creatin
 
 - **Scope**: Advanced stacked PR workflows and patterns for large features
 - **Load if**: Creating stacked PRs, working on PR stacks, managing dependent PRs
-- **Prerequisites**: @smith-gh-pr/SKILL.md, @smith-git/SKILL.md, @smith-gh-cli/SKILL.md
+- **Prerequisites**: `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`, `@smith-gh-cli/SKILL.md`
 
 </metadata>
 

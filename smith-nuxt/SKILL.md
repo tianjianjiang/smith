@@ -9,7 +9,7 @@ description: Nuxt 3 development patterns including auto-import stubbing for test
 
 - **Scope**: Nuxt 3 specific patterns
 - **Load if**: Working with Nuxt projects
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-typescript/SKILL.md
+- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-typescript/SKILL.md`
 
 </metadata>
 
