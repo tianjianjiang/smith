@@ -82,20 +82,13 @@ All skills use "smith-" prefix to avoid conflicts with Claude Code built-in comm
 
 <required>
 
-**Always notify when skills change state:**
+ALWAYS notify on skill state changes using format: `{Action}: @{skill-name} ({reason})`
 
-- **Session start**: `Skills loaded: @smith-principles, @smith-standards, @smith-guidance, @smith-ctx-{platform}`
-- **Task activation**: `Activated: @smith-python (task match: Python code detected)`
-- **Explicit load**: `Loaded: @smith-git (user requested)`
-- **Unload**: `Unloaded: @smith-python (5 turns unused)`
-
-**Format rules:**
-- Use short names (omit `/SKILL.md` suffix)
-- Include reason in parentheses
-- Group multiple loads on one line when possible
-- Always notify on state change (load/unload)
+Actions: `Skills loaded`, `Activated`, `Loaded`, `Unloaded`
 
 </required>
+
+Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on one line.
 
 ## Proactive Compaction
 
