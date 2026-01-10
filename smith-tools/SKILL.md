@@ -41,7 +41,7 @@ This document defines configuration standards for development tools, IDEs, and e
 
 - **Global Settings**: `$HOME/Library/Application Support/[Code|Cursor|Kiro]/User/settings.json`
 - **Workspace Settings**: `.vscode/settings.json`, `.cursor/settings.json`, `.kiro/settings/`
-- **Claude Code**: Same configuration across all IDEs, follow personal coding standards
+- **Claude Code**: Same configuration across all IDEs, follow skill standards
 - **Consistency**: Synchronized extension preferences across all environments
 
 ## Pytest Configuration (MANDATORY)

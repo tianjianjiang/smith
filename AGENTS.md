@@ -1,6 +1,6 @@
-# Smith Coding Standards
+# Smith AI Agent Skills
 
-Personal coding standards for AI-assisted development with progressive disclosure.
+AI agent skills for development with progressive disclosure.
 
 <metadata>
 
@@ -156,6 +156,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`
+**Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
 **Git/GitHub**: Commits → `@smith-git/SKILL.md`, PRs → `@smith-gh-pr/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`

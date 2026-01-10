@@ -1,10 +1,10 @@
 # Agent Smith
 
-> Personal coding standards that follow you everywhere, Mr. Anderson.
+> AI agent skills that follow you everywhere, Mr. Anderson.
 
 ## Overview
 
-Smith is a collection of **30 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io)[[29]](#ref-29) specification and [AGENTS.md](https://agents.md)[[28]](#ref-28) standard.
+Smith is a collection of **31 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io)[[29]](#ref-29) specification and [AGENTS.md](https://agents.md)[[28]](#ref-28) standard.
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -51,7 +51,7 @@ smith/
 └── ...
 ```
 
-### Skills (30 total)
+### Skills (31 total)
 
 | Category | Skills |
 |----------|--------|
@@ -60,6 +60,7 @@ smith/
 | **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem` |
 | **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
 | **Testing** | `smith-tests` |
+| **Workflow** | `smith-ralph` |
 | **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
 | **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills` |
 
