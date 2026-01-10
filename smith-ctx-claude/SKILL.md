@@ -138,6 +138,8 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 <related>
 
 - `@smith-ctx/SKILL.md` - Universal context strategies
+- `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
+- `@smith-ctx-kiro/SKILL.md` - Kiro platform context
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
 
 </related>

@@ -19,7 +19,7 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 
 **MECE relationship**:
 - `@smith-analysis/SKILL.md` - Constructive thinking (how to reason)
-- `@smith-clarity/SKILL.md` - Defensive thinking (what to avoid)
+- **smith-clarity** (this file) - Defensive thinking (what to avoid)
 - `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
 
 </context>
