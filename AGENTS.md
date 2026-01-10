@@ -1,10 +1,10 @@
-# Smith Coding Standards
+# Smith AI Agent Skills
 
-Personal coding standards for AI-assisted development with progressive disclosure.
+AI agent skills for development with progressive disclosure.
 
 <metadata>
 
-- **Always loaded**: @principles/SKILL.md, @standards/SKILL.md, @guidance/SKILL.md
+- **Always loaded**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
 - **Load condition**: Session start (all platforms)
 - **Token budget**: This file ~500 tokens, per-skill <2000 tokens
 
@@ -15,17 +15,30 @@ Personal coding standards for AI-assisted development with progressive disclosur
 <required>
 
 **Auto-detect platform in order:**
-1. **MCP servers**: Check for `cursor-ide-browser` or `cursor-browser-extension` → **Cursor** → Load @context-cursor/SKILL.md
-2. **MCP servers**: Check for `kiro-*` → **Kiro** → Load @context-kiro/SKILL.md
-3. **System prompt**: If mentions "Claude Code" → **Claude Code** → Load @context-claude/SKILL.md
+1. **MCP servers**: Check for `cursor-ide-browser` or `cursor-browser-extension` → **Cursor** → Load `@smith-ctx-cursor/SKILL.md`
+2. **MCP servers**: Check for `kiro-*` → **Kiro** → Load `@smith-ctx-kiro/SKILL.md`
+3. **System prompt**: If mentions "Claude Code" → **Claude Code** → Load `@smith-ctx-claude/SKILL.md`
 4. **Default**: Ask user or use Cursor (most common)
 
 </required>
 
 **Manual override** (if auto-detection fails):
-- **Cursor**: Load @context-cursor/SKILL.md
-- **Kiro**: Load @context-kiro/SKILL.md
-- **Claude Code**: Load @context-claude/SKILL.md
+- **Cursor**: Load `@smith-ctx-cursor/SKILL.md`
+- **Kiro**: Load `@smith-ctx-kiro/SKILL.md`
+- **Claude Code**: Load `@smith-ctx-claude/SKILL.md`
+
+## Claude Code Skills Integration
+
+<context>
+
+**Symlink for skill discovery:**
+```shell
+ln -sf $HOME/.smith $HOME/.claude/skills
+```
+
+All skills use "smith-" prefix to avoid conflicts with Claude Code built-in commands (`/context`, `/ide`, `/skills`, etc.).
+
+</context>
 
 ## Serena MCP Integration (If Available)
 
@@ -43,7 +56,7 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 ## Always Load
 
-@principles/SKILL.md @standards/SKILL.md @guidance/SKILL.md
+@smith-principles/SKILL.md @smith-standards/SKILL.md @smith-guidance/SKILL.md @smith-ctx/SKILL.md
 
 ## Core Principles
 
@@ -51,7 +64,7 @@ Personal coding standards for AI-assisted development with progressive disclosur
 - **KISS**: Keep It Simple, Stupid
 - **YAGNI**: You Aren't Gonna Need It
 - **SOLID**: Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion
-- **HHH**: Helpful, Honest, Harmless (see @guidance/SKILL.md)
+- **HHH**: Helpful, Honest, Harmless (see @smith-guidance/SKILL.md)
 
 ## Skill Loading
 
@@ -69,18 +82,11 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <required>
 
-**Always notify when skills change state:**
+ALWAYS notify on skill state changes using format: `{Action}: @{skill-name} ({reason})`
 
-- **Session start**: `Skills loaded: @principles, @standards, @guidance, @context-{platform}`
-- **Task activation**: `Activated: @python (task match: Python code detected)`
-- **Explicit load**: `Loaded: @git (user requested)`
-- **Unload**: `Unloaded: @python (5 turns unused)`
+Actions: `Skills loaded`, `Activated`, `Loaded`, `Unloaded`
 
-**Format rules:**
-- Use short names (omit `/SKILL.md` suffix)
-- Include reason in parentheses
-- Group multiple loads on one line when possible
-- Always notify on state change (load/unload)
+Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on one line.
 
 </required>
 
@@ -95,48 +101,51 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <available_skills>
 <!-- Core (always load) -->
-<skill name="principles" description="DRY, KISS, YAGNI, SOLID principles">@principles/SKILL.md</skill>
-<skill name="standards" description="Universal coding standards">@standards/SKILL.md</skill>
-<skill name="guidance" description="AI agent behavior patterns">@guidance/SKILL.md</skill>
+<skill name="smith-principles" description="DRY, KISS, YAGNI, SOLID principles">@smith-principles/SKILL.md</skill>
+<skill name="smith-standards" description="Universal coding standards">@smith-standards/SKILL.md</skill>
+<skill name="smith-guidance" description="AI agent behavior patterns">@smith-guidance/SKILL.md</skill>
+<skill name="smith-ctx" description="Context management, proactive recommendations">@smith-ctx/SKILL.md</skill>
 
-<!-- Context -->
-<skill name="context" description="Context management thresholds">`@context/SKILL.md`</skill>
-<skill name="context-kiro" description="Kiro-specific rules">`@context-kiro/SKILL.md`</skill>
-<skill name="context-claude" description="Claude Code rules">`@context-claude/SKILL.md`</skill>
-<skill name="context-cursor" description="Cursor rules">`@context-cursor/SKILL.md`</skill>
-<skill name="serena" description="Serena MCP integration">`@serena/SKILL.md`</skill>
+<!-- Context (platform-specific) -->
+<skill name="smith-ctx-kiro" description="Kiro-specific rules">`@smith-ctx-kiro/SKILL.md`</skill>
+<skill name="smith-ctx-claude" description="Claude Code rules">`@smith-ctx-claude/SKILL.md`</skill>
+<skill name="smith-ctx-cursor" description="Cursor rules">`@smith-ctx-cursor/SKILL.md`</skill>
+<skill name="smith-serena" description="Serena MCP integration">`@smith-serena/SKILL.md`</skill>
 
 <!-- Reasoning -->
-<skill name="analysis" description="Problem decomposition, Polya method">`@analysis/SKILL.md`</skill>
-<skill name="clarity" description="Cognitive traps, logic fallacies">`@clarity/SKILL.md`</skill>
-<skill name="design" description="SOLID principles, architecture">`@design/SKILL.md`</skill>
-<skill name="validation" description="Hypothesis testing, debugging">`@validation/SKILL.md`</skill>
-<skill name="postmortem" description="Incident postmortem methodology">`@postmortem/SKILL.md`</skill>
+<skill name="smith-analysis" description="Problem decomposition, Polya method">`@smith-analysis/SKILL.md`</skill>
+<skill name="smith-clarity" description="Cognitive traps, logic fallacies">`@smith-clarity/SKILL.md`</skill>
+<skill name="smith-design" description="SOLID principles, architecture">`@smith-design/SKILL.md`</skill>
+<skill name="smith-validation" description="Hypothesis testing, debugging">`@smith-validation/SKILL.md`</skill>
+<skill name="smith-postmortem" description="Incident postmortem methodology">`@smith-postmortem/SKILL.md`</skill>
 
 <!-- Testing -->
-<skill name="tests" description="Testing standards, TDD workflow">`@tests/SKILL.md`</skill>
+<skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
 
 <!-- Languages -->
-<skill name="python" description="Python patterns and testing">`@python/SKILL.md`</skill>
-<skill name="typescript" description="TypeScript patterns">`@typescript/SKILL.md`</skill>
-<skill name="nuxt" description="Nuxt.js framework">`@nuxt/SKILL.md`</skill>
+<skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
+<skill name="smith-typescript" description="TypeScript patterns">`@smith-typescript/SKILL.md`</skill>
+<skill name="smith-nuxt" description="Nuxt.js framework">`@smith-nuxt/SKILL.md`</skill>
 
 <!-- Git/GitHub -->
-<skill name="git" description="Git commits, merges, rebases">`@git/SKILL.md`</skill>
-<skill name="gh-pr" description="PR creation and review">`@gh-pr/SKILL.md`</skill>
-<skill name="gh-cli" description="GitHub CLI usage">`@gh-cli/SKILL.md`</skill>
-<skill name="style" description="Commit message conventions">`@style/SKILL.md`</skill>
-<skill name="stacks" description="Stacked PR workflows">`@stacks/SKILL.md`</skill>
+<skill name="smith-git" description="Git commits, merges, rebases">`@smith-git/SKILL.md`</skill>
+<skill name="smith-gh-pr" description="PR creation and review">`@smith-gh-pr/SKILL.md`</skill>
+<skill name="smith-gh-cli" description="GitHub CLI usage">`@smith-gh-cli/SKILL.md`</skill>
+<skill name="smith-style" description="Commit message conventions">`@smith-style/SKILL.md`</skill>
+<skill name="smith-stacks" description="Stacked PR workflows">`@smith-stacks/SKILL.md`</skill>
+
+<!-- Workflow -->
+<skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
 
 <!-- Other -->
-<skill name="prompts" description="Prompt engineering">`@prompts/SKILL.md`</skill>
-<skill name="xml" description="XML tag patterns for AI">`@xml/SKILL.md`</skill>
-<skill name="placeholder" description="Documentation placeholders">`@placeholder/SKILL.md`</skill>
-<skill name="tools" description="Development tools">`@tools/SKILL.md`</skill>
-<skill name="dev" description="Development workflow">`@dev/SKILL.md`</skill>
-<skill name="ide" description="IDE configuration">`@ide/SKILL.md`</skill>
-<skill name="research" description="Research methodology">`@research/SKILL.md`</skill>
-<skill name="skills" description="Skill authoring">`@skills/SKILL.md`</skill>
+<skill name="smith-prompts" description="Prompt engineering">`@smith-prompts/SKILL.md`</skill>
+<skill name="smith-xml" description="XML tag patterns for AI">`@smith-xml/SKILL.md`</skill>
+<skill name="smith-placeholder" description="Documentation placeholders">`@smith-placeholder/SKILL.md`</skill>
+<skill name="smith-tools" description="Development tools">`@smith-tools/SKILL.md`</skill>
+<skill name="smith-dev" description="Development workflow">`@smith-dev/SKILL.md`</skill>
+<skill name="smith-ide" description="IDE configuration">`@smith-ide/SKILL.md`</skill>
+<skill name="smith-research" description="Research methodology">`@smith-research/SKILL.md`</skill>
+<skill name="smith-skills" description="Skill authoring">`@smith-skills/SKILL.md`</skill>
 </available_skills>
 
 ## Semantic Activation
@@ -145,11 +154,12 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 **Load on task match, unload after 5 turns unused**:
 
-**Languages**: Python → `@python/SKILL.md`, TypeScript → `@typescript/SKILL.md`, Nuxt → `@nuxt/SKILL.md`
-**Testing**: Tests/TDD → `@tests/SKILL.md`
-**Git/GitHub**: Commits → `@git/SKILL.md`, PRs → `@gh-pr/SKILL.md`
-**Reasoning**: Analysis → `@analysis/SKILL.md`, Design → `@design/SKILL.md`, Debug → `@validation/SKILL.md`
-**Other**: Prompts → `@prompts/SKILL.md`, XML → `@xml/SKILL.md`
+**Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
+**Testing**: Tests/TDD → `@smith-tests/SKILL.md`
+**Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
+**Git/GitHub**: Commits → `@smith-git/SKILL.md`, PRs → `@smith-gh-pr/SKILL.md`
+**Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
+**Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 
 </required>
 
@@ -179,9 +189,9 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <related>
 
-- @principles/SKILL.md - Core principles (DRY, KISS, YAGNI, SOLID)
-- @standards/SKILL.md - Universal coding standards
-- @guidance/SKILL.md - AI agent behavior patterns
-- `@context/SKILL.md` - Context management thresholds
+- @smith-principles/SKILL.md - Core principles (DRY, KISS, YAGNI, SOLID)
+- @smith-standards/SKILL.md - Universal coding standards
+- @smith-guidance/SKILL.md - AI agent behavior patterns
+- @smith-ctx/SKILL.md - Context management, proactive recommendations
 
 </related>

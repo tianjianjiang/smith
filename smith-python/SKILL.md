@@ -1,0 +1,138 @@
+---
+name: smith-python
+description: Python development with uv, pytest, ruff, and type hints. Use when writing Python code, running tests, managing Python packages, or working with virtual environments. Covers import organization, type hints, pytest patterns, and environment variables.
+---
+
+# Python Development Standards
+
+<metadata>
+
+- **Load if**: Python code, pytest, virtual env
+- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md
+
+</metadata>
+
+## CRITICAL (Primacy Zone)
+
+<forbidden>
+
+- NEVER use relative imports (`from .module import`)
+- NEVER use inline imports within functions
+- NEVER use unittest-style TestCase classes
+- NEVER use pytest class-based tests (`class TestFoo:`)
+- NEVER execute pytest without virtual env runner (missing .env vars)
+- NEVER execute directly: `.venv/bin/python -m pytest`
+- NEVER mix package managers in same project
+- NEVER use %-style formatting in log messages (use `extra=` parameter for structured logging)
+
+</forbidden>
+
+<required>
+
+- ALWAYS use absolute imports (`from package.module import`)
+- ALWAYS use type hints for all function signatures
+- ALWAYS use function-based tests: `def test_should_<action>_when_<condition>():`
+- ALWAYS use virtual env runner: `poetry run` or `uv run`
+- ALWAYS use structured logging with `extra=` parameter for all log data
+
+</required>
+
+## Import Organization
+
+1. **stdlib**: `import os, sys`
+2. **third-party**: `import pytest`
+3. **local**: `from package.module import`
+
+## Type Hints
+
+```python
+from typing import Optional, List
+
+def process_docs(docs: List[str], max_count: Optional[int] = None) -> bool:
+    pass
+```
+
+## Testing with Pytest
+
+```python
+# Function-based tests (required pattern)
+def test_should_parse_pdf_when_valid_file_provided():
+    result = parse_pdf("valid.pdf")
+    assert result.success == True
+
+# OK: Helper classes for test data (not test cases)
+class TestDataBuilder:
+    @staticmethod
+    def create_valid_input() -> dict:
+        return {"key": "value"}
+```
+
+## Environment Variables
+
+```python
+import os
+from pydantic_settings import BaseSettings
+
+# Simple access
+api_key = os.getenv("API_KEY", "default")
+
+# Pydantic settings (preferred)
+class Settings(BaseSettings):
+    api_key: str
+    timeout: int = 30
+    class Config:
+        env_file = ".env"
+
+# CRITICAL: Set BEFORE importing library
+os.environ["LIBRARY_CONFIG"] = "value"
+import library  # Now sees config
+```
+
+## Common Patterns
+
+- **Error handling**: Catch specific exceptions, log, re-raise
+- **Logging**: `logger = logging.getLogger(__name__)`
+- **Dataclasses**: Use `@dataclass(frozen=True)` for immutable config
+
+## Claude Code LSP (Experimental)
+
+<context>
+
+**LSP plugins exist but are currently broken** (race condition in initialization):
+- `pyright-lsp@claude-plugins-official`
+
+**When fixed**, LSP provides: goToDefinition, findReferences, hover, documentSymbol, getDiagnostics
+
+**Workaround**: Use Serena MCP for language server features (`find_symbol`, `find_referencing_symbols`)
+
+</context>
+
+<related>
+
+- @smith-principles/SKILL.md - Core principles
+- @smith-standards/SKILL.md - Universal coding standards
+- `@smith-tests/SKILL.md` - Testing standards (pytest patterns)
+- `@smith-dev/SKILL.md` - Development workflow
+- `@smith-serena/SKILL.md` - Serena MCP for language server features
+
+</related>
+
+## ACTION (Recency Zone)
+
+**Before commit (Poetry):**
+```shell
+poetry run ruff check --fix
+poetry run ruff format
+poetry run pytest
+```
+
+**Before commit (uv):**
+```shell
+uv run ruff check --fix
+uv run ruff format
+uv run pytest
+```
+
+**Package management:**
+- Poetry: `poetry install`, `poetry add <pkg>`, `poetry remove <pkg>`
+- uv: `uv sync`, `uv add <pkg>`, `uv remove <pkg>`
