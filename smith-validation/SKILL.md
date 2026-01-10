@@ -91,6 +91,8 @@ Root cause analysis through iterative questioning:
 
 Explain code line-by-line aloud; when explanation doesn't match code, you've found the bug.
 
+**For AI agents**: When stuck, explain the problem step-by-step before proposing solutions.
+
 ### Feynman Technique
 
 Explain simply to reveal gaps: Choose concept → Explain to child → Identify gaps → Review.
