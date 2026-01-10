@@ -57,6 +57,18 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - Virtual env runners load `.env` automatically
 - Use `.env.example` as template (NEVER commit `.env`)
 
+## Claude Code Plugin Integration
+
+<context>
+
+**When pr-review-toolkit is available:**
+
+- **pr-test-analyzer agent**: Analyzes behavioral coverage, identifies critical gaps
+- Rates test gaps 1-10 (10 = critical, must add)
+- Trigger: "Check if the tests are thorough" or use Task tool
+
+</context>
+
 <related>
 
 - `@smith-python/SKILL.md` - Python testing patterns (pytest functions)

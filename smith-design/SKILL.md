@@ -38,6 +38,21 @@ description: SOLID principles and architecture design patterns. Use when startin
 
 </required>
 
+## Claude Code Plugin Integration
+
+<context>
+
+**When pr-review-toolkit is available:**
+
+- **type-design-analyzer agent**: Rates type design on 4 dimensions (1-10 each)
+  - Encapsulation
+  - Invariant expression
+  - Usefulness
+  - Enforcement
+- Trigger: "Review the [TypeName] type design" or use Task tool
+
+</context>
+
 <related>
 
 - @smith-principles/SKILL.md - Fundamental principles (DRY, KISS, YAGNI)

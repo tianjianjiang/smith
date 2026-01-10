@@ -238,6 +238,18 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 </required>
 
+## Claude Code Plugin Integration
+
+<context>
+
+**When pr-review-toolkit is available:**
+
+- **silent-failure-hunter agent**: Detects silent failures, inadequate error handling
+- Analyzes catch blocks, fallback behavior, missing logging
+- Trigger: "Check for silent failures" or use Task tool
+
+</context>
+
 <related>
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
