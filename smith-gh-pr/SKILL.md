@@ -71,25 +71,11 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 <required>
 
-**After addressing review comments**: Always reply with commit SHA, then resolve the thread. Use `gh pr-review threads resolve` or GitHub MCP `resolve_review_thread`.
-
-</required>
-
-<required>
-
-**Proactive audit**: When a reviewer identifies an issue (e.g., backtick convention), search the entire codebase for similar issues before committing fixes. Don't rely solely on explicit review comments.
-
-</required>
-
-<required>
-
-**Check CodeRabbit Nitpick comments**: Review the full PR comment thread for Nitpick sections (collapsible `<details>` blocks), not just inline file comments. When replying, use "Quote reply" on the specific review comment - do not post standalone comments.
-
-</required>
-
-<required>
-
-**Do not blindly follow review comments.** Research best practices with strong evidence before implementing questionable suggestions. See `@smith-research/SKILL.md`.
+**Code review response rules:**
+- Reply with commit SHA, then resolve thread (`gh pr-review threads resolve` or GitHub MCP)
+- Proactive audit: search codebase for similar issues before committing
+- Check CodeRabbit Nitpicks in PR thread `<details>` blocks (not just inline file comments); use "Quote reply"
+- Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 
 </required>
 
@@ -103,27 +89,17 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 <required>
 
-**Always prefer `gh pr-review`** over `gh api` for review operations - provides structured output with thread IDs.
+**Use `gh pr-review`** over `gh api` - structured output with thread IDs.
 
-**Install gh-pr-review extension** (third-party - consider pinning to vetted commit SHA):
-```shell
-gh extension install agynio/gh-pr-review
-```
-
-**List unresolved threads:**
-```shell
-gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved
-```
+All commands require `--pr {number} -R {owner}/{repo}` for numeric PR selectors.
 
 </required>
+
+**Install**: `gh extension install agynio/gh-pr-review` (consider pinning to vetted SHA)
+
+**List unresolved threads**: `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 
 ### gh-pr-review Commands
-
-<required>
-
-**CRITICAL**: All commands require `--pr {number} -R {owner}/{repo}` when using numeric PR selectors.
-
-</required>
 
 **View reviews** (use `--unresolved`, `--reviewer`, `--states` to filter):
 `gh pr-review review view --pr {number} -R {owner}/{repo}`
