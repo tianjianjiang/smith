@@ -74,7 +74,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 **Code review response rules:**
 - Reply with commit SHA, then resolve thread (`gh pr-review threads resolve` or GitHub MCP)
 - Proactive audit: search codebase for similar issues before committing
-- Check CodeRabbit Nitpicks in PR thread `<details>` blocks (not just inline file comments); use "Quote reply"
+- **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 
 </required>
