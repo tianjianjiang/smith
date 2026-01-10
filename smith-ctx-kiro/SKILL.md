@@ -91,14 +91,6 @@ Kiro native tools have known reliability issues:
 
 </required>
 
-## Context Thresholds
-
-- **Warning**: 70% capacity
-- **Critical**: 80% capacity (auto-summarize triggers)
-- **Action**: Save to Serena memory, then start new session or wait for auto-summarize
-
-**Context inspection**: Check context meter in Kiro chat panel
-
 ## AGENTS.md Integration
 
 Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separate `.kiro/steering/` files needed.
