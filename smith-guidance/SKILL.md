@@ -119,7 +119,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 <related>
 
 - @smith-principles/SKILL.md - DRY, KISS, YAGNI, SOLID
-- `@smith-ctx/SKILL.md` - Memory management
+- @smith-ctx/SKILL.md - Context management
 
 </related>
 

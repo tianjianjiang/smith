@@ -116,7 +116,7 @@ Code examples that evolve
 
 <related>
 
-- `@smith-ctx/SKILL.md` - Progressive disclosure, reference-based communication
+- @smith-ctx/SKILL.md - Progressive disclosure, reference-based communication
 - `@smith-xml/SKILL.md` - Approved XML tags
 
 </related>

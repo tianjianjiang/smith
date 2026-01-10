@@ -83,7 +83,7 @@ Skills and rules follow 3-tier loading to minimize token usage:
 
 **Backtick usage for skill references:**
 - **Always-load skills** (core): No backticks - @smith-principles/SKILL.md
-- **Dynamic skills**: With backticks - `@smith-ctx/SKILL.md`
+- **Dynamic skills**: With backticks - `@smith-python/SKILL.md`
 - **Self-reference**: Bold without @ - **smith-skills**
 
 This distinguishes core skills (always in context) from contextual skills (loaded on demand).
@@ -155,7 +155,7 @@ This distinguishes core skills (always in context) from contextual skills (loade
 <related>
 
 - `@smith-xml/SKILL.md` - Approved XML tags and usage
-- `@smith-ctx/SKILL.md` - Context management strategies
+- @smith-ctx/SKILL.md - Context management strategies
 - @smith-principles/SKILL.md - Core coding principles
 
 </related>
