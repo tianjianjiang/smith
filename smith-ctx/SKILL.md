@@ -28,11 +28,9 @@ description: Universal context management with proactive recommendations. Agent 
 
 ## Platform Reference
 
-| Platform | Warning | Critical | Compact | Clear |
-|----------|---------|----------|---------|-------|
-| Claude Code | 60% | 70-75% | `/compact` | `/clear` |
-| Kiro | 70% | 80% | Auto | New session |
-| Cursor | 70% | 80% | `/summarize` | New chat |
+- **Claude Code**: Warning 60%, Critical 70-75%, Compact `/compact`, Clear `/clear`
+- **Kiro**: Warning 70%, Critical 80%, Compact Auto, Clear New session
+- **Cursor**: Warning 70%, Critical 80%, Compact `/summarize`, Clear New chat
 
 ## Progressive Disclosure
 
