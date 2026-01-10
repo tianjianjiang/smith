@@ -1,24 +1,28 @@
 ---
 name: smith-ctx
-description: Universal context management strategies including lifecycle phases, platform thresholds, progressive disclosure, and Serena MCP preference. Use when context approaches capacity (>70%) or optimizing context usage across any AI coding platform.
+description: Universal context management with proactive recommendations. Agent checks context levels and recommends compaction/summarization to users. Always active as foundation for context optimization.
 ---
 
 # Context Management
 
 <metadata>
 
-- **Load if**: Context approaching capacity (>70%), optimizing context usage
+- **Load if**: Always active (context management foundation)
 - **Prerequisites**: @smith-guidance/SKILL.md
 
 </metadata>
 
-## CRITICAL (Primacy Zone)
+## CRITICAL: Proactive Context Management (Primacy Zone)
 
 <required>
 
+**Agent role**: Check context levels proactively, RECOMMEND actions to user.
+
 **Context lifecycle**: 0-50% (explore) → 50-70% (monitor) → 70-90% (compact) → 90%+ (emergency)
 
-**Take action at your platform's Warning threshold** to maintain control over what's retained.
+**To check context**: Prompt "What is the current context usage?" to get percentage.
+
+**Agent RECOMMENDS - user executes** the platform's compaction command.
 
 </required>
 
@@ -113,10 +117,10 @@ description: Universal context management strategies including lifecycle phases,
 <related>
 
 - @smith-guidance/SKILL.md - Core agent behavior
-- `@smith-prompts/SKILL.md` - Prompt caching optimization
-- `@smith-ctx-claude/SKILL.md` - Claude-specific context patterns
-- `@smith-ctx-kiro/SKILL.md` - Kiro-specific context patterns
-- `@smith-ctx-cursor/SKILL.md` - Cursor-specific context patterns
+- `@smith-ctx-claude/SKILL.md` - Claude Code: agent runs `/context`
+- `@smith-ctx-cursor/SKILL.md` - Cursor: UI indicator, `/summarize`
+- `@smith-ctx-kiro/SKILL.md` - Kiro: 80% auto-summarize, Serena memory
+- `@smith-serena/SKILL.md` - Serena MCP for persistent memory
 
 </related>
 
@@ -124,16 +128,22 @@ description: Universal context management strategies including lifecycle phases,
 
 <required>
 
-**At 70% capacity:**
-1. User reports context level
-2. Agent recommends retention criteria
-3. User executes compact command
-4. Continue with focused context
+**Proactive context checks:**
+1. Periodically check context (platform-specific method)
+2. At warning threshold: Recommend compaction with retention criteria
+3. At critical threshold: Urgently recommend before degradation
+4. User executes command, agent continues with focused context
 
-**Before compaction, preserve:**
-- Task requirements
+**Before recommending compaction, prepare:**
+- Task requirements summary
 - File paths with line numbers
-- Design decisions
+- Key design decisions
 - Remaining todos
+
+**Recommendation format:**
+```text
+Context at [X]%. Recommend `/compact` (or `/summarize`).
+Keep: [task], [files], [decisions], [todos]
+```
 
 </required>

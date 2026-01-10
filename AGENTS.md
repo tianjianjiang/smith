@@ -4,7 +4,7 @@ Personal coding standards for AI-assisted development with progressive disclosur
 
 <metadata>
 
-- **Always loaded**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md
+- **Always loaded**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
 - **Load condition**: Session start (all platforms)
 - **Token budget**: This file ~500 tokens, per-skill <2000 tokens
 
@@ -56,7 +56,7 @@ All skills use "smith-" prefix to avoid conflicts with Claude Code built-in comm
 
 ## Always Load
 
-@smith-principles/SKILL.md @smith-standards/SKILL.md @smith-guidance/SKILL.md
+@smith-principles/SKILL.md @smith-standards/SKILL.md @smith-guidance/SKILL.md @smith-ctx/SKILL.md
 
 ## Core Principles
 
@@ -104,9 +104,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-principles" description="DRY, KISS, YAGNI, SOLID principles">@smith-principles/SKILL.md</skill>
 <skill name="smith-standards" description="Universal coding standards">@smith-standards/SKILL.md</skill>
 <skill name="smith-guidance" description="AI agent behavior patterns">@smith-guidance/SKILL.md</skill>
+<skill name="smith-ctx" description="Context management, proactive recommendations">@smith-ctx/SKILL.md</skill>
 
-<!-- Context -->
-<skill name="smith-ctx" description="Context management thresholds">`@smith-ctx/SKILL.md`</skill>
+<!-- Context (platform-specific) -->
 <skill name="smith-ctx-kiro" description="Kiro-specific rules">`@smith-ctx-kiro/SKILL.md`</skill>
 <skill name="smith-ctx-claude" description="Claude Code rules">`@smith-ctx-claude/SKILL.md`</skill>
 <skill name="smith-ctx-cursor" description="Cursor rules">`@smith-ctx-cursor/SKILL.md`</skill>
@@ -188,6 +188,6 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 - @smith-principles/SKILL.md - Core principles (DRY, KISS, YAGNI, SOLID)
 - @smith-standards/SKILL.md - Universal coding standards
 - @smith-guidance/SKILL.md - AI agent behavior patterns
-- `@smith-ctx/SKILL.md` - Context management thresholds
+- @smith-ctx/SKILL.md - Context management, proactive recommendations
 
 </related>
