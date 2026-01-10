@@ -16,10 +16,12 @@ description: Proactive research protocol for version queries, APIs, and best pra
 
 <required>
 
+**Temporal constraint**: ALWAYS get today's real date first as critical context for research queries.
+
 **MUST research when:**
 - Version/release queries ("latest version of X")
 - API/documentation queries ("how to use X API")
-- Best practices queries ("recommended way in 2025")
+- Best practices queries ("recommended way in [current year]")
 - Technology assessment ("should I use X or Y")
 - Unfamiliar technology (not in training data)
 
@@ -38,7 +40,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
    - GitHub: `https://api.github.com/repos/[owner]/[repo]/releases/latest`
 
 3. **Web search** - Broad queries
-   - Include current year: "Next.js 15 best practices 2025"
+   - Include current year: "Next.js 15 best practices [current year]"
 
 4. **GitHub repo** - Source of truth
    - README, CHANGELOG, release notes
@@ -110,7 +112,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
 
 <related>
 
-- `@smith-guidance/SKILL.md` - Honest principle
+- @smith-guidance/SKILL.md - Honest principle
 - `@smith-tools/SKILL.md` - MCP fetch configuration
 
 </related>
