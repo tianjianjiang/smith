@@ -103,7 +103,7 @@ Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separa
 
 <related>
 
-- `@smith-ctx/SKILL.md` - Universal context strategies
+- @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-serena/SKILL.md` - Serena MCP tools (mandatory for Kiro)
 
 </related>
@@ -112,11 +112,16 @@ Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separa
 
 <required>
 
+**Proactive context management:**
+1. Prompt for context status periodically
+2. At 70%: Warn that 80% auto-summarize is approaching
+3. Save important context to Serena memory before 80%
+
+**Platform auto-summarizes at 80%** - agent prepares user by saving state first.
+
 **In Kiro sessions:**
 1. Avoid echo with double quotes
 2. Use Python scripts for file generation
 3. Use Serena MCP tools (mandatory, not optional)
-4. Check context meter at 70%
-5. Save state to Serena memory before compaction
 
 </required>
