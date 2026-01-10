@@ -23,10 +23,15 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 
 </required>
 
-## Dual-Approach Pattern
+## Avoid GitHub MCP
 
-**Preferred**: GitHub MCP (`mcp__github__create_pull_request`, `mcp__github__merge_pull_request`)
-**Fallback**: gh CLI (`gh pr create`, `gh pr merge`)
+<forbidden>
+
+- GitHub MCP tools (`mcp__github__*`) - hard to control pagination (token waste), less complete than CLI, requires personal token
+
+</forbidden>
+
+**Use instead**: `gh pr-review` extension, `gh api`, or GraphQL queries
 
 ## PR Title Format
 
@@ -74,7 +79,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 **Code review response rules:**
 - **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
-- Reply with commit SHA, then resolve thread (`gh pr-review threads resolve` or GitHub MCP)
+- Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
@@ -99,6 +104,12 @@ All commands require `--pr {number} -R {owner}/{repo}` for numeric PR selectors.
 </required>
 
 **Install**: `gh extension install agynio/gh-pr-review` (consider pinning to vetted SHA)
+
+**On `gh pr-review` errors:**
+1. Check if extension installed: `gh extension list | grep pr-review`
+2. Verify command syntax (common: missing `--pr`, wrong `-R` format)
+3. Verify repo name: `gh repo view --json nameWithOwner`
+4. If not installed: `gh extension install agynio/gh-pr-review`
 
 **List unresolved threads**: `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 

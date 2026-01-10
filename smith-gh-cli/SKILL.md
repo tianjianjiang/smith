@@ -12,11 +12,19 @@ description: GitHub CLI gotchas and best practices. Use when executing gh comman
 
 </metadata>
 
-## CRITICAL: Token Efficiency (Primacy Zone)
+## CRITICAL: Avoid GitHub MCP (Primacy Zone)
+
+<forbidden>
+
+- GitHub MCP tools - hard to control pagination (25k token truncation), less complete than CLI, requires personal token
+
+</forbidden>
+
+**Use instead**: `gh pr-review` extension, `gh api`, or GraphQL queries
+
+## Token Efficiency
 
 <required>
-
-**ALWAYS use pagination** - GitHub MCP truncates at 25,000 tokens
 
 **Safe perPage limits:**
 - `list_pull_requests`: perPage 20-30
