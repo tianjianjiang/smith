@@ -140,6 +140,22 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 
 </context>
 
+## Plugin Discovery
+
+<context>
+
+**Available plugin commands:**
+- `/code-review` - Automated PR review with 4 parallel agents
+- `/commit` - Auto-commit with message generation
+- `/commit-push-pr` - Full PR workflow
+- `/clean_gone` - Branch cleanup
+
+**Check installed plugins:** `/plugins` or `cat ~/.claude/plugins/installed_plugins.json`
+
+**Official marketplace:** `anthropics/claude-plugins-official`
+
+</context>
+
 <related>
 
 - @smith-ctx/SKILL.md - Universal context strategies
