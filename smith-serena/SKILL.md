@@ -1,6 +1,6 @@
 ---
 name: smith-serena
-description: Serena MCP integration for reliable file operations and semantic code editing. Activate when Serena MCP is available, for file I/O operations, symbol-level editing, or persistent memory. MANDATORY for Kiro - use Serena tools over native tools.
+description: Serena MCP integration for file I/O, semantic code editing, and persistent memory. ALWAYS use Serena for file operations and language server features when available. Proactively sync memories at phase/todo/session boundaries.
 ---
 
 # Serena MCP Integration
@@ -12,47 +12,46 @@ description: Serena MCP integration for reliable file operations and semantic co
 
 </metadata>
 
-## CRITICAL: Tool Preference (Primacy Zone)
+## CRITICAL: Serena-First Principle (Primacy Zone)
 
 <required>
 
-**When Serena MCP is available, MUST use Serena tools over Kiro native tools:**
+**When Serena MCP is available, ALWAYS use Serena for:**
+
+1. **File I/O** - All file reading and writing operations
+2. **Language server features** - Symbols, references, navigation, semantic editing
+3. **Persistent memory** - Cross-session and cross-compaction context
 
 **Tool Preference Order:**
 1. `find_symbol`, `get_symbols_overview` - Reading code (semantic)
 2. `search_for_pattern` - Reading with regex patterns
 3. `replace_content` (regex mode) - Editing code
 4. `replace_symbol_body` - Replacing function/class bodies
-5. `find_referencing_symbols` - Navigation
+5. `find_referencing_symbols` - Navigation, impact analysis
 6. `write_memory`, `read_memory` - Persistent context
-7. Kiro native tools - **Fallback ONLY when Serena unavailable**
+7. Platform native tools - **Fallback ONLY when Serena unavailable**
 
 </required>
 
 <forbidden>
 
-**In Kiro, DO NOT use native tools when Serena is available:**
-- `readFile` - Silently truncates large files
-- `strReplace` - Fails on duplicate content (common in generated code)
-- `grepSearch` - Less efficient than Serena pattern search
+**DO NOT use platform native tools when Serena is available:**
+- Native file read tools may truncate large files silently
+- String-based replace tools fail on duplicate content
+- Text-based search is less efficient than semantic search
 
 </forbidden>
 
-## Why Serena Over Kiro Native Tools
+## Why Serena Over Native Tools
 
 <context>
 
-**Kiro native tool issues:**
-- `readFile` silently truncates large files
-- `strReplace` fails on duplicate content (common in generated code)
-- File writes can create duplicate sections
-- Mid-operation aborts during file reads/edits
-
 **Serena advantages:**
+- Semantic symbol operations reduce context usage by 99%+
 - Regex mode handles complex replacements reliably
-- Symbol-level operations reduce context by 99%+
 - Memory files persist across sessions and compaction
-- Semantic editing avoids string-matching failures
+- Language server integration provides accurate navigation
+- No silent truncation or string-matching failures
 
 </context>
 
@@ -130,33 +129,35 @@ find_referencing_symbols(name_path, relative_path)
 - Find all references to a symbol
 - More accurate than text search
 
-## Memory Workflow
+## Proactive Memory Workflow
 
 <required>
 
-**Memory files persist across sessions and compaction.**
+**Memory files persist across sessions and compaction. Sync proactively at boundaries.**
 
 **Location**: `.serena/memories/`
 
 **Session Start:**
-1. `list_memories()` - See available context
-2. `read_memory(memory_file_name)` - Load relevant memories
+1. `list_memories()` - Discover available context
+2. `read_memory()` - Load `project_overview`, `session_summary`, relevant task memories
 
-**During Work:**
-- `write_memory(memory_file_name, content)` - Save important discoveries
-- Use descriptive names: `project_overview.md`, `session_summary.md`
+**Phase/Todo Boundaries (PROACTIVE):**
+- **Before starting phase/todo**: `read_memory()` for relevant context
+- **After completing phase/todo**: `write_memory()` with findings, decisions, blockers
+- **On status change**: Update `task_completion` memory with progress
 
 **Before Compaction (at 70% context):**
-- `write_memory()` - Save session state and progress
+- `write_memory()` - Save full session state, current task, next steps
 
 **Session End:**
-- `write_memory()` - Save continuity notes for next session
+- `write_memory()` - Continuity notes: what was done, what's next, blockers
 
 **Memory Naming Conventions:**
-- `project_overview.md` - High-level project context
-- `session_summary.md` - Current session progress
-- `{feature}_notes.md` - Feature-specific context
-- `task_completion.md` - Completed task tracking
+- `project_overview` - High-level project context (read at start)
+- `session_summary` - Current session progress (update frequently)
+- `task_completion` - Completed task tracking (update on todo completion)
+- `{feature}_notes` - Feature-specific context
+- `{task}_context` - Task-specific discoveries and decisions
 
 </required>
 
@@ -194,8 +195,8 @@ language: markdown
 list_memories()
 ```
 
-- If successful: Serena is available, use Serena tools
-- If fails: Fall back to Kiro native tools with caution
+- If successful: Serena is available, use Serena tools exclusively
+- If fails: Fall back to platform native tools with caution
 
 </required>
 
@@ -203,25 +204,31 @@ list_memories()
 
 <required>
 
-**Before file operations in Kiro:**
+**Serena-first for all file operations:**
 
-1. Check if Serena MCP is available (`list_memories()` as test)
-2. If available, use Serena tools (see preference order above)
-3. If unavailable, fall back to Kiro native tools with caution
-4. For large files, always prefer `search_for_pattern` over `readFile`
+1. Test availability: `list_memories()`
+2. Use Serena tools for file I/O and language server features
+3. Fall back to platform native tools ONLY if Serena unavailable
 
-**Workflow for edits:**
-1. `get_symbols_overview` to understand structure
-2. `find_symbol` to locate target
-3. `replace_symbol_body` or `replace_content` for changes
-4. `write_memory` to persist important context
+**Workflow for code tasks:**
+1. `read_memory()` - Load relevant context before starting
+2. `get_symbols_overview` - Understand file structure
+3. `find_symbol` - Locate target symbols
+4. `replace_symbol_body` or `replace_content` - Make changes
+5. `write_memory()` - Persist discoveries after completing
+
+**Periodic memory sync:**
+- Phase start → `read_memory()`
+- Phase end → `write_memory()`
+- Todo start → `read_memory()` if context needed
+- Todo complete → `write_memory()` with findings
 
 </required>
 
 <related>
 
-- `@smith-ctx-kiro/SKILL.md` - Kiro terminal limitations, tool issues
-- `@smith-ctx/SKILL.md` - Context management thresholds
+- `@smith-ctx/SKILL.md` - Context management thresholds (70% compaction trigger)
 - @smith-guidance/SKILL.md - AI agent behavior patterns
+- `@smith-ctx-kiro/SKILL.md` - Kiro-specific: Serena is MANDATORY over native tools
 
 </related>
