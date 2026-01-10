@@ -26,7 +26,7 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 
 ## Logic Fallacies
 
-<required>
+<context>
 
 ### Formal Fallacies (structural)
 
@@ -50,7 +50,7 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 3. Provide evidence-based counter-reasoning
 4. Respect user while correcting logic
 
-</required>
+</context>
 
 ## Cognitive Traps
 
@@ -108,7 +108,7 @@ Work expands to fill the time available for completion.
 
 ## Cognitive Forcing Strategies
 
-<required>
+<context>
 
 1. **Cognitive timeout**: Pause before finalizing any solution
 2. **Metacognition**: "What am I assuming? What could I be missing?"
@@ -121,7 +121,7 @@ Work expands to fill the time available for completion.
 3. After fixing bug: Verify fix addresses root cause, not symptom
 4. When user agrees: Ask "Are there downsides we haven't considered?"
 
-</required>
+</context>
 
 ## ACTION (Recency Zone)
 
