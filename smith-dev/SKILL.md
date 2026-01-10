@@ -46,7 +46,7 @@ This document defines development workflow standards and code quality requiremen
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See `@smith-guidance/SKILL.md` for comprehensive patterns:
+**For AI agent workflows**: See @smith-guidance/SKILL.md for comprehensive patterns:
 - Exploration workflow (Read → Ask → Propose → Review → Implement)
 - Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
 - AGENTS.md optimization for prompt caching

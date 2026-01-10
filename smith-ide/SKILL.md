@@ -9,7 +9,7 @@ description: IDE path variable mappings for VS Code, Cursor, Kiro, and JetBrains
 
 - **Scope**: Maps conceptual path variables to IDE-specific syntax
 - **Load if**: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-style/SKILL.md
+- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-style/SKILL.md`
 
 </metadata>
 

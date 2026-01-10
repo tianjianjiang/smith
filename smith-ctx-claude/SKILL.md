@@ -8,7 +8,7 @@ description: Claude Code context management with /compact and /clear commands, C
 <metadata>
 
 - **Load if**: Using Claude Code, context >60%
-- **Prerequisites**: @smith-ctx/SKILL.md
+- **Prerequisites**: `@smith-ctx/SKILL.md`
 
 </metadata>
 

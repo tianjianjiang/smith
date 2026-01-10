@@ -9,7 +9,7 @@ description: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use 
 
 - **Scope**: Writing AGENTS.md, SKILL.md, and steering files
 - **Load if**: Creating or editing agent instructions, rules, or documentation
-- **Prerequisites**: @smith-xml/SKILL.md for approved XML tags
+- **Prerequisites**: `@smith-xml/SKILL.md` for approved XML tags
 - **Based on**: [agentskills.io](https://agentskills.io) standards
 
 </metadata>
