@@ -1,10 +1,10 @@
 # Agent Smith
 
-> Personal coding standards that follow you everywhere, Mr. Anderson.
+> AI agent skills that follow you everywhere, Mr. Anderson.
 
 ## Overview
 
-Smith is a collection of **30 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io)[[29]](#ref-29) specification and [AGENTS.md](https://agents.md)[[28]](#ref-28) standard.
+Smith is a collection of **31 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -31,27 +31,38 @@ Or symlink to project root:
 ln -sf $HOME/.smith/AGENTS.md ./AGENTS.md
 ```
 
+### Claude Code Skills Directory
+
+Symlink smith as Claude Code skills for automatic discovery:
+
+```shell
+ln -sf $HOME/.smith $HOME/.claude/skills
+```
+
+Claude Code discovers skills and offers them based on task context. All skills use "smith-" prefix to avoid conflicts with built-in commands (`/context`, `/ide`, `/skills`, etc.).
+
 ## Structure
 
 ```text
 smith/
 ├── AGENTS.md              # Main entry point (agents.md standard)
-├── {skill-name}/
+├── smith-{skill-name}/
 │   └── SKILL.md           # Skill file (agentskills.io standard)
 └── ...
 ```
 
-### Skills (30 total)
+### Skills (31 total)
 
 | Category | Skills |
 |----------|--------|
-| **Core** | `principles`, `standards`, `guidance` |
-| **Context** | `context`, `context-claude`, `context-kiro`, `context-cursor`, `serena` |
-| **Reasoning** | `analysis`, `clarity`, `design`, `validation`, `postmortem` |
-| **Languages** | `python`, `typescript`, `nuxt` |
-| **Testing** | `tests` |
-| **Git/GitHub** | `git`, `gh-pr`, `gh-cli`, `style`, `stacks` |
-| **Other** | `prompts`, `xml`, `placeholder`, `tools`, `dev`, `ide`, `research`, `skills` |
+| **Core** | `smith-principles`, `smith-standards`, `smith-guidance` |
+| **Context** | `smith-ctx`, `smith-ctx-claude`, `smith-ctx-kiro`, `smith-ctx-cursor`, `smith-serena` |
+| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem` |
+| **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
+| **Testing** | `smith-tests` |
+| **Workflow** | `smith-ralph` |
+| **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
+| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills` |
 
 ### SKILL.md Format
 
