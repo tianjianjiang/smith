@@ -8,7 +8,7 @@ description: Claude Code context management with /compact and /clear commands, C
 <metadata>
 
 - **Load if**: Using Claude Code, context >60%
-- **Prerequisites**: `@smith-ctx/SKILL.md`
+- **Prerequisites**: @smith-ctx/SKILL.md
 
 </metadata>
 
@@ -16,7 +16,12 @@ description: Claude Code context management with /compact and /clear commands, C
 
 <required>
 
-**Monitor context meter** - Recommend `/compact` at 60%, `/clear` at 90%
+**Agent prompts for context status**, then recommends action to user.
+
+**Thresholds:**
+- 60%: Recommend `/compact` with retention criteria
+- 70%: Warn of degradation risk, prepare criteria urgently
+- 90%: Recommend `/clear` or aggressive compaction
 
 **Decision tree:**
 - Same task, need space → `/compact keep [specifics]`
@@ -137,7 +142,7 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 
 <related>
 
-- `@smith-ctx/SKILL.md` - Universal context strategies
+- @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
 - `@smith-ctx-kiro/SKILL.md` - Kiro platform context
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
@@ -148,13 +153,18 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 
 <required>
 
-**At 60% context**: Recommend `/compact` proactively
-**At 70% context**: Warn of degradation, prepare retention criteria
-**At 90% context**: Aggressive compaction or `/clear`
+**Proactive context management:**
+1. Prompt for context status
+2. At 60%: Recommend `/compact` with retention criteria
+3. At 70%: Warn of degradation, prepare criteria urgently
+4. At 90%: Recommend `/clear` or aggressive compaction
+
+**Agent RECOMMENDS - user executes the command.**
 
 **Workflow:**
-1. Monitor context meter
+1. Periodically prompt for context usage percentage
 2. Prepare retention criteria before hitting limits
-3. Commit frequently for session recovery
+3. Recommend action with specific criteria
+4. Commit frequently for session recovery
 
 </required>
