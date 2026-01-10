@@ -28,7 +28,7 @@ description: Reasoning frameworks and problem decomposition techniques. Use when
 
 ## Reasoning Patterns
 
-<required>
+<context>
 
 ### Deductive Reasoning
 
@@ -63,7 +63,7 @@ Best explanation from incomplete observations (inference to best explanation):
 3. Select most plausible explanation
 4. Test to confirm or falsify
 
-</required>
+</context>
 
 ## Extended Thinking Guidance
 
@@ -82,7 +82,7 @@ Modern LLMs have built-in extended thinking for complex problem-solving.
 
 ## Problem Decomposition
 
-<required>
+<context>
 
 ### First Principles Thinking
 
@@ -112,11 +112,11 @@ Universally applicable problem-solving:
    - Can you check the result differently?
    - Can you use this for other problems?
 
-</required>
+</context>
 
 ## Estimation
 
-<required>
+<context>
 
 ### Fermi Estimation
 
@@ -127,11 +127,11 @@ Order-of-magnitude approximation with limited data:
 3. Combine estimates (multiply/add as appropriate)
 4. Sanity check: Is result reasonable?
 
-</required>
+</context>
 
 ## Constraint Thinking
 
-<required>
+<context>
 
 ### TOC Five Focusing Steps
 
@@ -161,11 +161,11 @@ Trace symptoms to root cause:
 3. Trace backward to find common root cause
 4. Validate: Does root cause explain ALL symptoms?
 
-</required>
+</context>
 
 ## Risk Assessment
 
-<required>
+<context>
 
 ### Pre-Mortem Analysis
 
@@ -186,11 +186,11 @@ Think backward to avoid failure:
 - Instead of "How to make this fast?" ask "What would make this slow?"
 - Avoid stupidity rather than seeking brilliance
 
-</required>
+</context>
 
 ## Comprehensive Review
 
-<required>
+<context>
 
 ### Six Thinking Hats
 
@@ -203,7 +203,7 @@ Ensure coverage by examining from 6 perspectives:
 - **Green** (Creativity): What alternatives exist? New approaches?
 - **Blue** (Process): Are we on track? What's the next step?
 
-</required>
+</context>
 
 ## ACTION (Recency Zone)
 

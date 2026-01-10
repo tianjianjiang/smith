@@ -23,7 +23,7 @@ description: Hypothesis testing, root cause analysis, and debugging techniques. 
 
 ## Hypothesis Testing
 
-<required>
+<context>
 
 ### Strong Inference
 
@@ -55,11 +55,11 @@ A theory is scientific only if it can be proven false:
 **Anti-pattern**: Only running tests you expect to pass
 **Good practice**: Actively try to break your own code
 
-</required>
+</context>
 
 ## Root Cause Analysis
 
-<required>
+<context>
 
 ### 5 Whys (Toyota)
 
@@ -81,11 +81,11 @@ Root cause analysis through iterative questioning:
 
 **Caution**: Don't stop at symptoms. "Why?" should reach systemic causes.
 
-</required>
+</context>
 
 ## Explanation Techniques
 
-<required>
+<context>
 
 ### Rubber Duck Debugging
 
@@ -110,11 +110,11 @@ Explain simply to reveal understanding gaps:
 
 **For coding**: If you can't explain your solution simply, you don't understand it well enough.
 
-</required>
+</context>
 
 ## Systematic Isolation
 
-<required>
+<context>
 
 ### Delta Debugging
 
@@ -159,11 +159,11 @@ Defect -> Infection -> Propagation -> Failure
 
 Work backward from failure to find defect.
 
-</required>
+</context>
 
 ## Version Control Debugging
 
-<required>
+<context>
 
 ### Git Bisect
 
@@ -197,11 +197,11 @@ Exit codes: 0 = good, 1-127 = bad, 125 = skip
 - Automated test can detect the bug
 - Need to find exact commit that broke something
 
-</required>
+</context>
 
 ## Coverage-Based Localization
 
-<required>
+<context>
 
 ### Spectrum-Based Fault Localization (SBFL)
 
@@ -224,7 +224,7 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 **For AI agents**: When multiple tests fail, identify code paths common to failures but not successes.
 
-</required>
+</context>
 
 ## ACTION (Recency Zone)
 
