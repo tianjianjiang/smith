@@ -134,6 +134,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-style" description="Commit message conventions">`@smith-style/SKILL.md`</skill>
 <skill name="smith-stacks" description="Stacked PR workflows">`@smith-stacks/SKILL.md`</skill>
 
+<!-- Workflow -->
+<skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
+
 <!-- Other -->
 <skill name="smith-prompts" description="Prompt engineering">`@smith-prompts/SKILL.md`</skill>
 <skill name="smith-xml" description="XML tag patterns for AI">`@smith-xml/SKILL.md`</skill>
