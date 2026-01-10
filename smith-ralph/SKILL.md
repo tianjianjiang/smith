@@ -46,7 +46,7 @@ Each test file = iteration boundary. Commit after green.
 
 **Pattern**: Phase milestones = iteration boundaries. Quality gates between.
 
-```
+```text
 Phase 1: [milestone] + tests
 Phase 2: [milestone] + tests
 Output <promise>COMPLETE</promise> after all phases.
@@ -119,7 +119,7 @@ Output <promise>COMPLETE</promise> after all phases.
 <required>
 
 **Starting Ralph:**
-```
+```shell
 /ralph-loop "[task]" --completion-promise "[DONE]" --max-iterations 20
 ```
 
