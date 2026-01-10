@@ -18,15 +18,11 @@ description: Claude Code context management with /compact and /clear commands, C
 
 **Agent prompts for context status**, then recommends action to user.
 
-**Thresholds:**
-- 60%: Recommend `/compact` with retention criteria
-- 70%: Warn of degradation risk, prepare criteria urgently
-- 90%: Recommend `/clear` or aggressive compaction
+**Thresholds**: 60% warning, 70% critical, 90% emergency (see @smith-ctx/SKILL.md)
 
 **Decision tree:**
 - Same task, need space → `/compact keep [specifics]`
 - New unrelated task → commit first, then `/clear`
-- Dead ends only → document failures, `/clear`
 
 </required>
 

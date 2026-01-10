@@ -90,26 +90,9 @@ import library  # Now sees config
 
 ## Common Patterns
 
-```python
-# Error handling
-try:
-    result = risky_operation()
-except SpecificError as e:
-    logger.error(f"Operation failed: {e}")
-    raise
-
-# Logging
-import logging
-logger = logging.getLogger(__name__)
-
-# Dataclasses
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class Config:
-    api_key: str
-    timeout: int = 30
-```
+- **Error handling**: Catch specific exceptions, log, re-raise
+- **Logging**: `logger = logging.getLogger(__name__)`
+- **Dataclasses**: Use `@dataclass(frozen=True)` for immutable config
 
 ## Claude Code LSP (Experimental)
 
