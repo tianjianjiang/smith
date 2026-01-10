@@ -8,7 +8,7 @@ description: Cursor context management with /summarize command, @ mentions for f
 <metadata>
 
 - **Load if**: Using Cursor, context >60%
-- **Prerequisites**: `@smith-ctx/SKILL.md`
+- **Prerequisites**: @smith-ctx/SKILL.md
 
 </metadata>
 
@@ -16,9 +16,9 @@ description: Cursor context management with /summarize command, @ mentions for f
 
 <required>
 
-**Use `/summarize` proactively at 60-70%** - Don't wait for automatic trigger
+**Agent prompts for context status**, then recommends `/summarize` at 60-70%.
 
-**Automatic summarization uses smaller flash model** → vague summaries, lost details
+**Automatic summarization uses smaller flash model** → vague summaries, lost details. Recommend manual `/summarize` before auto-trigger.
 
 **After any summarization:**
 1. Re-state critical context (task, files, decisions)
@@ -128,7 +128,7 @@ Follow standards from @AGENTS.md
 
 <related>
 
-- `@smith-ctx/SKILL.md` - Universal context strategies
+- @smith-ctx/SKILL.md - Universal context strategies
 
 </related>
 
@@ -136,9 +136,12 @@ Follow standards from @AGENTS.md
 
 <required>
 
-**At 60% context**: Run `/summarize` proactively
-**After summarization**: Re-add files with @ mentions
-**For large files**: Always use @ mention, not @codebase
+**Proactive context management:**
+1. Prompt for context status
+2. At 60-70%: Recommend `/summarize` before auto-trigger
+3. After summarization: Remind to re-add files with @ mentions
+
+**Agent RECOMMENDS - user executes the command.**
 
 **File size strategy:**
 - <250 lines: @codebase works
