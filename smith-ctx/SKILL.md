@@ -114,6 +114,31 @@ description: Universal context management with proactive recommendations. Agent 
 
 </required>
 
+## Ralph Loop Context Management
+
+<required>
+
+**Ralph burns context rapidly.** Each iteration loads files, runs tests, analyzes output.
+
+**Context cost per iteration:**
+- File reads: ~500-2000 tokens each
+- Test output: ~200-1000 tokens
+- Hypothesis analysis: ~300-500 tokens
+- Cumulative: 10 iterations ≈ 10-35k tokens
+
+**Ralph compaction strategy:**
+- At 60%: Prepare retention criteria, continue
+- At 70%: Recommend `/compact`, persist Ralph state to Serena memory
+- After compaction: Resume from memory, continue iterations
+
+**Essential retention for Ralph:**
+- Current iteration number
+- Hypotheses tested/remaining
+- Test results summary
+- File:line references
+
+</required>
+
 <related>
 
 - @smith-guidance/SKILL.md - Core agent behavior

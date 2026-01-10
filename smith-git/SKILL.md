@@ -63,6 +63,25 @@ See `@smith-style/SKILL.md` for naming conventions.
 
 </context>
 
+## Ralph Loop Commit Strategy
+
+<required>
+
+**Atomic commits mark iteration boundaries.**
+
+**Ralph commit pattern:**
+1. Complete iteration (test passes or hypothesis proven)
+2. Commit with iteration number: `fix(feature): iteration 3 - resolved null check`
+3. Continue to next iteration
+4. If regression, use `git bisect` to find breaking iteration
+
+**Benefits:**
+- Rollback to any iteration
+- Linear history for debugging
+- Recovery point if context compacts
+
+</required>
+
 <related>
 
 - `@smith-stacks/SKILL.md` - Stacked PR workflows (uses linear history, force-with-lease)

@@ -225,6 +225,30 @@ list_memories()
 
 </required>
 
+## Ralph Loop Memory Integration
+
+<required>
+
+**Serena memories persist Ralph state across compaction.**
+
+**Memory structure for Ralph iterations:**
+```
+Memory: ralph_[task]_state
+- iteration: 5
+- hypotheses_tested: [H1: disproven, H2: disproven]
+- hypotheses_remaining: [H3, H4]
+- test_results: [pass: 12, fail: 2]
+- coverage: 78%
+- next_action: "Test H3 with integration test"
+```
+
+**Sync timing:**
+- After each successful iteration: `write_memory()`
+- Before compaction: `write_memory()` with full state
+- After compaction: `read_memory()` to resume
+
+</required>
+
 <related>
 
 - @smith-ctx/SKILL.md - Context management thresholds (70% compaction trigger)
