@@ -83,7 +83,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 <required>
 
-**Check CodeRabbit Nitpick comments**: Review the full PR comment thread for Nitpick sections (collapsible `<details>` blocks), not just inline file comments.
+**Check CodeRabbit Nitpick comments**: Review the full PR comment thread for Nitpick sections (collapsible `<details>` blocks), not just inline file comments. When replying, use "Quote reply" on the specific review comment - do not post standalone comments.
 
 </required>
 
