@@ -20,7 +20,7 @@ description: Reasoning frameworks and problem decomposition techniques. Use when
 **When to use**: Problem framing, solution design, risk assessment, logical validation.
 
 **MECE relationship**:
-- `@smith-analysis/SKILL.md` - Constructive thinking (how to reason)
+- **smith-analysis** (this file) - Constructive thinking (how to reason)
 - `@smith-clarity/SKILL.md` - Defensive thinking (what to avoid)
 - `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
 
