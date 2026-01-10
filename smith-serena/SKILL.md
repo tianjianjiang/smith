@@ -227,7 +227,7 @@ list_memories()
 
 <related>
 
-- `@smith-ctx/SKILL.md` - Context management thresholds (70% compaction trigger)
+- @smith-ctx/SKILL.md - Context management thresholds (70% compaction trigger)
 - @smith-guidance/SKILL.md - AI agent behavior patterns
 - `@smith-ctx-kiro/SKILL.md` - Kiro-specific: Serena is MANDATORY over native tools
 
