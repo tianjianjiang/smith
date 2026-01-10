@@ -73,23 +73,9 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 <context>
 
-**TDD workflow maps naturally to Ralph iterations:**
+**TDD = Ralph iteration**: test → implement → pytest → iterate until `<promise>TESTS PASS</promise>`.
 
-1. Each test file = one iteration boundary
-2. Test failures drive next iteration
-3. Commit after each green test cycle
-4. Coverage verification closes iteration
-
-**Example Ralph prompt for TDD:**
-```
-/ralph-loop "Implement [feature] using TDD:
-1. Write failing test
-2. Implement minimal code to pass
-3. Run: poetry run pytest -v
-4. If failures, debug and fix
-5. Output <promise>TESTS PASS</promise> when green" \
---completion-promise "TESTS PASS" --max-iterations 20
-```
+See `@smith-ralph/SKILL.md` for full patterns.
 
 </context>
 

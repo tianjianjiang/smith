@@ -89,26 +89,13 @@ Root cause analysis through iterative questioning:
 
 ### Rubber Duck Debugging
 
-Explain code line-by-line to reveal errors (from "The Pragmatic Programmer"):
-
-1. Place rubber duck (or equivalent) on desk
-2. Explain what code should do, line by line
-3. When explanation doesn't match code, you've found the bug
-
-**Why it works**: Forcing verbalization engages different cognitive processes than reading.
-
-**For AI agents**: When stuck, explain the problem step-by-step before proposing solutions.
+Explain code line-by-line aloud; when explanation doesn't match code, you've found the bug.
 
 ### Feynman Technique
 
-Explain simply to reveal understanding gaps:
+Explain simply to reveal gaps: Choose concept → Explain to child → Identify gaps → Review.
 
-1. **Choose concept** - What are you trying to understand?
-2. **Explain to a child** - Use simple words, no jargon
-3. **Identify gaps** - Where did explanation break down?
-4. **Review and simplify** - Return to source, fill gaps, repeat
-
-**For coding**: If you can't explain your solution simply, you don't understand it well enough.
+If you can't explain it simply, you don't understand it well enough.
 
 </context>
 
@@ -118,46 +105,15 @@ Explain simply to reveal understanding gaps:
 
 ### Delta Debugging
 
-Systematically minimize failing input to isolate cause:
+Minimize failing input: split in half, test each, recurse on failing half until minimal.
 
-**Algorithm**:
+**Use when**: Large input crashes, many files break tests, config changes fail.
 
-1. Start with failing input of size n
-2. Split into halves, test each half
-3. If half fails alone, recurse on that half
-4. If neither fails alone, increase granularity
-5. Continue until minimal failing input found
+### Scientific Debugging (TRAFFIC)
 
-**Complexity**: O(n log n) best case, O(n²) worst case
+**T**rack → **R**eproduce → **A**utomate → **F**ind origins → **F**ocus → **I**solate → **C**orrect
 
-**For debugging**:
-
-- Large input causes crash: Find minimal reproducer
-- Many changed files break tests: Find minimal set
-- Config change causes failure: Find minimal diff
-
-### Scientific Debugging
-
-Apply scientific method systematically:
-
-**TRAFFIC Principle**:
-
-1. **T**rack the problem (reproduce reliably)
-2. **R**eproduce automatically (create test case)
-3. **A**utomate and simplify (minimize reproducer)
-4. **F**ind origins (locate infection chain)
-5. **F**ocus on likely causes (domain knowledge)
-6. **I**solate the infection chain (delta debugging)
-7. **C**orrect the defect (fix root cause)
-
-**Infection Chain Model**:
-
-```text
-Defect -> Infection -> Propagation -> Failure
-(code)    (bad state)   (spreads)     (visible)
-```
-
-Work backward from failure to find defect.
+Work backward: Failure → Propagation → Infection → Defect.
 
 </context>
 
@@ -254,24 +210,9 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 <context>
 
-**Debugging techniques map to Ralph iterations:**
+**Debugging = Ralph iteration**: hypothesis → test → eliminate → iterate until `<promise>ROOT CAUSE FOUND</promise>`.
 
-- **Strong Inference**: Each hypothesis test = one iteration
-- **5 Whys**: Each "Why?" deepening = one iteration
-- **Delta Debugging**: Split → Test → Recurse maps to iterations
-- **Git Bisect**: Can run inside Ralph for regression hunting
-
-**Example Ralph prompt for debugging:**
-```
-/ralph-loop "Debug [issue] using Strong Inference:
-1. List 3 hypotheses
-2. Design test to eliminate one
-3. Run test, record result
-4. Eliminate disproven hypothesis
-5. Repeat until root cause found
-6. Output <promise>ROOT CAUSE FOUND</promise>" \
---completion-promise "ROOT CAUSE FOUND" --max-iterations 15
-```
+See `@smith-ralph/SKILL.md` for full patterns.
 
 </context>
 

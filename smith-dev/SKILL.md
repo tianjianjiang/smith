@@ -145,19 +145,9 @@ Before creating a pull request:
 
 <context>
 
-**Task decomposition aligns with Ralph iterations:**
+**Milestones = Ralph iterations**: Each phase boundary triggers quality gates.
 
-- Each milestone (3-5 recommended) = iteration boundary
-- Quality gates run between iterations
-- Commit frequently for session recovery
-
-**Structure Ralph prompts with milestones:**
-```
-Phase 1: [milestone] + tests
-Phase 2: [milestone] + tests
-Phase 3: Integration tests
-Output <promise>COMPLETE</promise> after all phases.
-```
+See `@smith-ralph/SKILL.md` for full patterns.
 
 </context>
 

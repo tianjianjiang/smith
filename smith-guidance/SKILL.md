@@ -110,25 +110,9 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 <context>
 
-**The exploration workflow IS Ralph's structure:**
+**Ralph = structured exploration**: Read → Hypothesize → Test → Execute → Loop.
 
-| Exploration Step | Ralph Iteration |
-|------------------|-----------------|
-| Read | Load relevant files, check previous iteration results |
-| Ask | Form testable hypothesis |
-| Propose | Design experiment/test |
-| Implement | Execute test, analyze result |
-| (Loop) | Repeat until proven/disproven |
-
-**Ralph prompts should enforce exploration:**
-```
-For each iteration:
-1. Read relevant files before changes
-2. Form ONE testable hypothesis
-3. Design minimal test to prove/disprove
-4. Execute and record result
-5. Commit if progress made
-```
+See `@smith-ralph/SKILL.md` for full patterns.
 
 </context>
 
