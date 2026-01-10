@@ -86,9 +86,9 @@ ALWAYS notify on skill state changes using format: `{Action}: @{skill-name} ({re
 
 Actions: `Skills loaded`, `Activated`, `Loaded`, `Unloaded`
 
-</required>
-
 Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on one line.
+
+</required>
 
 ## Proactive Compaction
 
