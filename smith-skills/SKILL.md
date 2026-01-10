@@ -77,6 +77,19 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - Critical rules in first 20% (primacy zone)
 - Action items in last 10% (recency zone)
 
+## Skill Reference Convention
+
+<required>
+
+**Backtick usage for skill references:**
+- **Always-load skills** (core): No backticks - @smith-principles/SKILL.md
+- **Dynamic skills**: With backticks - `@smith-ctx/SKILL.md`
+- **Self-reference**: Bold without @ - **smith-skills**
+
+This distinguishes core skills (always in context) from contextual skills (loaded on demand).
+
+</required>
+
 ## Heading Hierarchy
 
 - Use consistent levels (no skipping H2 → H4)
