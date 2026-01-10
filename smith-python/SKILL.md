@@ -111,12 +111,26 @@ class Config:
     timeout: int = 30
 ```
 
+## Claude Code LSP (Experimental)
+
+<context>
+
+**LSP plugins exist but are currently broken** (race condition in initialization):
+- `pyright-lsp@claude-plugins-official`
+
+**When fixed**, LSP provides: goToDefinition, findReferences, hover, documentSymbol, getDiagnostics
+
+**Workaround**: Use Serena MCP for language server features (`find_symbol`, `find_referencing_symbols`)
+
+</context>
+
 <related>
 
 - @smith-principles/SKILL.md - Core principles
 - @smith-standards/SKILL.md - Universal coding standards
 - `@smith-tests/SKILL.md` - Testing standards (pytest patterns)
 - `@smith-dev/SKILL.md` - Development workflow
+- `@smith-serena/SKILL.md` - Serena MCP for language server features
 
 </related>
 
