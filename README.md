@@ -31,12 +31,22 @@ Or symlink to project root:
 ln -sf $HOME/.smith/AGENTS.md ./AGENTS.md
 ```
 
+### Claude Code Skills Directory
+
+Symlink smith as Claude Code skills for automatic discovery:
+
+```shell
+ln -sf $HOME/.smith $HOME/.claude/skills
+```
+
+Claude Code discovers skills and offers them based on task context. All skills use "smith-" prefix to avoid conflicts with built-in commands (`/context`, `/ide`, `/skills`, etc.).
+
 ## Structure
 
 ```text
 smith/
 ├── AGENTS.md              # Main entry point (agents.md standard)
-├── {skill-name}/
+├── smith-{skill-name}/
 │   └── SKILL.md           # Skill file (agentskills.io standard)
 └── ...
 ```
@@ -45,13 +55,13 @@ smith/
 
 | Category | Skills |
 |----------|--------|
-| **Core** | `principles`, `standards`, `guidance` |
-| **Context** | `context`, `context-claude`, `context-kiro`, `context-cursor`, `serena` |
-| **Reasoning** | `analysis`, `clarity`, `design`, `validation`, `postmortem` |
-| **Languages** | `python`, `typescript`, `nuxt` |
-| **Testing** | `tests` |
-| **Git/GitHub** | `git`, `gh-pr`, `gh-cli`, `style`, `stacks` |
-| **Other** | `prompts`, `xml`, `placeholder`, `tools`, `dev`, `ide`, `research`, `skills` |
+| **Core** | `smith-principles`, `smith-standards`, `smith-guidance` |
+| **Context** | `smith-ctx`, `smith-ctx-claude`, `smith-ctx-kiro`, `smith-ctx-cursor`, `smith-serena` |
+| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem` |
+| **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
+| **Testing** | `smith-tests` |
+| **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
+| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills` |
 
 ### SKILL.md Format
 
