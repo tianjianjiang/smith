@@ -47,6 +47,22 @@ See `@smith-style/SKILL.md` for naming conventions.
 - **`--no-ff`**: Preserve merge commit for feature branches (maintains history)
 - **`-S`**: GPG sign commits
 
+## Claude Code Plugin Integration
+
+<context>
+
+**When commit-commands plugin is available:**
+
+- **`/commit`**: Auto-generates commit message, stages files, creates commit
+- **`/clean_gone`**: Cleans up branches deleted from remote (including worktrees)
+
+**Manual commands still needed for:**
+- GPG signing (`-S` flag)
+- Interactive rebase
+- Force push with lease
+
+</context>
+
 <related>
 
 - `@smith-stacks/SKILL.md` - Stacked PR workflows (uses linear history, force-with-lease)
