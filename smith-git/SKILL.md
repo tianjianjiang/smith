@@ -67,18 +67,9 @@ See `@smith-style/SKILL.md` for naming conventions.
 
 <required>
 
-**Atomic commits mark iteration boundaries.**
+**Atomic commits mark iteration boundaries.** Include iteration number; enables `git bisect` for regressions.
 
-**Ralph commit pattern:**
-1. Complete iteration (test passes or hypothesis proven)
-2. Commit with iteration number: `fix(feature): iteration 3 - resolved null check`
-3. Continue to next iteration
-4. If regression, use `git bisect` to find breaking iteration
-
-**Benefits:**
-- Rollback to any iteration
-- Linear history for debugging
-- Recovery point if context compacts
+See `@smith-ralph/SKILL.md` for full commit patterns.
 
 </required>
 

@@ -74,60 +74,21 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 
 ## Core Serena Tools
 
-### Reading Files
+### Reading
 
-```python
-get_symbols_overview(relative_path, depth)
-```
-- Get high-level file structure first
-- Use `depth=1` for immediate children
-- **Use before diving into specific symbols**
+- `get_symbols_overview(path, depth=1)` - File structure first
+- `find_symbol(pattern, path, include_body=false)` - Locate symbols (`MyClass/get*`)
+- `search_for_pattern(regex, path)` - Content search with context
 
-```python
-find_symbol(name_path_pattern, relative_path, include_body)
-```
-- Find classes, functions, methods by name
-- Use `include_body=true` only when needed
-- Supports patterns: `MyClass/get*`, `*/test_*`
+### Writing
 
-```python
-search_for_pattern(substring_pattern, relative_path, context_lines_before, context_lines_after)
-```
-- Use regex patterns to find specific content
-- Returns matched lines with context
-- Far more efficient than loading entire files
-
-### Writing Files
-
-```python
-replace_content(relative_path, needle, repl, mode)
-```
-- `mode="regex"` for pattern matching (preferred)
-- `mode="literal"` for exact string match
-- Use `.*?` for non-greedy wildcards
-- Set `allow_multiple_occurrences=true` if needed
-
-```python
-replace_symbol_body(name_path, relative_path, body)
-```
-- Replace entire function/class body
-- Body includes signature line
-- Does NOT include preceding docstrings/imports
-
-```python
-insert_after_symbol(name_path, relative_path, body)
-insert_before_symbol(name_path, relative_path, body)
-```
-- Add new functions, methods, imports
-- Content starts on next line after symbol
+- `replace_content(path, needle, repl, mode="regex")` - Pattern replace
+- `replace_symbol_body(name, path, body)` - Replace function/class (includes signature)
+- `insert_after_symbol` / `insert_before_symbol` - Add new code
 
 ### Navigation
 
-```python
-find_referencing_symbols(name_path, relative_path)
-```
-- Find all references to a symbol
-- More accurate than text search
+- `find_referencing_symbols(name, path)` - All references to symbol
 
 ## Proactive Memory Workflow
 
@@ -229,23 +190,9 @@ list_memories()
 
 <required>
 
-**Serena memories persist Ralph state across compaction.**
+**Serena persists Ralph state**: `ralph_[task]_state` with iteration, hypotheses, test_results, next_action.
 
-**Memory structure for Ralph iterations:**
-```
-Memory: ralph_[task]_state
-- iteration: 5
-- hypotheses_tested: [H1: disproven, H2: disproven]
-- hypotheses_remaining: [H3, H4]
-- test_results: [pass: 12, fail: 2]
-- coverage: 78%
-- next_action: "Test H3 with integration test"
-```
-
-**Sync timing:**
-- After each successful iteration: `write_memory()`
-- Before compaction: `write_memory()` with full state
-- After compaction: `read_memory()` to resume
+**Sync**: After each iteration; before/after compaction. See `@smith-ralph/SKILL.md`.
 
 </required>
 

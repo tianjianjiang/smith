@@ -26,39 +26,13 @@ description: Universal context management with proactive recommendations. Agent 
 
 </required>
 
-## Platform Thresholds
+## Platform Reference
 
-**Claude Code**:
-- Warning: 60%
-- Critical: 70-75%
-- Auto-Action: `/compact` at 95%
-
-**Kiro**:
-- Warning: 70%
-- Critical: 80%
-- Auto-Action: Auto-summarize
-
-**Cursor**:
-- Warning: 70%
-- Critical: 80%
-- Auto-Action: `/summarize`
-
-## Compaction Commands
-
-**Claude Code**:
-- Inspect: `/context`
-- Compact: `/compact`
-- Clear: `/clear`
-
-**Kiro**:
-- Inspect: Context meter
-- Compact: Auto at 80%
-- Clear: New session
-
-**Cursor**:
-- Inspect: UI indicator
-- Compact: `/summarize`
-- Clear: New chat
+| Platform | Warning | Critical | Compact | Clear |
+|----------|---------|----------|---------|-------|
+| Claude Code | 60% | 70-75% | `/compact` | `/clear` |
+| Kiro | 70% | 80% | Auto | New session |
+| Cursor | 70% | 80% | `/summarize` | New chat |
 
 ## Progressive Disclosure
 
@@ -118,24 +92,9 @@ description: Universal context management with proactive recommendations. Agent 
 
 <required>
 
-**Ralph burns context rapidly.** Each iteration loads files, runs tests, analyzes output.
+**Ralph burns ~1-3.5k tokens/iteration.** At 70%, persist state to Serena memory before `/compact`.
 
-**Context cost per iteration:**
-- File reads: ~500-2000 tokens each
-- Test output: ~200-1000 tokens
-- Hypothesis analysis: ~300-500 tokens
-- Cumulative: 10 iterations ≈ 10-35k tokens
-
-**Ralph compaction strategy:**
-- At 60%: Prepare retention criteria, continue
-- At 70%: Recommend `/compact`, persist Ralph state to Serena memory
-- After compaction: Resume from memory, continue iterations
-
-**Essential retention for Ralph:**
-- Current iteration number
-- Hypotheses tested/remaining
-- Test results summary
-- File:line references
+See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
 </required>
 
