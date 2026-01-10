@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **31 skills** for AI-assisted development, following the [agentskills.io](https://agentskills.io)[[29]](#ref-29) specification and [AGENTS.md](https://agents.md)[[28]](#ref-28) standard.
+Smith is a collection of **31 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
