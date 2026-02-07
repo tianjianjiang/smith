@@ -63,9 +63,14 @@ Output <promise>COMPLETE</promise> after all phases.
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
 **Compaction strategy:**
-- At 60%: Prepare retention criteria, continue
-- At 70%: `/compact`, persist Ralph state to Serena memory
+- At 50%: Prepare retention criteria, continue
+- At 60%: `/compact`, persist Ralph state to Serena memory
 - After compaction: `read_memory()` to resume
+
+**Phase boundaries:** At phase boundaries, if context >50%,
+recommend `/clear` to user. Plan-claude auto-reloads via
+state-based detection. Always update plan file and write
+Serena memory before recommending `/clear`.
 
 **Essential retention:**
 - Iteration number

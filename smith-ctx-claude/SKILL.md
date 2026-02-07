@@ -1,13 +1,13 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /compact and /clear commands, CLAUDE.md persistence, and Tool Search optimization. Use when operating in Claude Code IDE or when context exceeds 60%. Activate for context optimization in Claude sessions.
+description: Claude Code context management with /compact and /clear commands, CLAUDE.md persistence, and Tool Search optimization. Use when operating in Claude Code IDE or when context exceeds 50%. Activate for context optimization in Claude sessions.
 ---
 
 # Claude Code Context Management
 
 <metadata>
 
-- **Load if**: Using Claude Code, context >60%
+- **Load if**: Using Claude Code, context >50%
 - **Prerequisites**: @smith-ctx/SKILL.md
 
 </metadata>
@@ -18,7 +18,7 @@ description: Claude Code context management with /compact and /clear commands, C
 
 **Agent prompts for context status**, then recommends action to user.
 
-**Thresholds**: 60% warning, 70% critical, 90% emergency (see @smith-ctx/SKILL.md)
+**Thresholds**: 50% warning, 60% critical, 90% emergency (see @smith-ctx/SKILL.md)
 
 **Decision tree:**
 - Same task, need space → `/compact keep [specifics]`
@@ -167,8 +167,8 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 
 **Proactive context management:**
 1. Prompt for context status
-2. At 60%: Recommend `/compact` with retention criteria
-3. At 70%: Warn of degradation, prepare criteria urgently
+2. At 50%: Recommend `/compact` with retention criteria
+3. At 60%: Warn of degradation, prepare criteria urgently
 4. At 90%: Recommend `/clear` or aggressive compaction
 
 **Agent RECOMMENDS - user executes the command.**

@@ -106,6 +106,34 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 </required>
 
+## Scope Verification and Progress Honesty
+
+<required>
+
+**Before multi-step operations:**
+1. Enumerate full scope (all items, branches, files)
+2. Present numbered list to user
+3. Get explicit scope approval before proceeding
+
+**After completing operations:**
+- Report what was done vs. what remains
+- Report what was not verified
+- Distinguish confirmed results from assumptions
+
+For stack operations, see `@smith-stacks/SKILL.md` Stack Scope Verification
+and `scripts/verify-stack-scope.sh`.
+
+</required>
+
+<forbidden>
+
+- NEVER report work as "done" without verification
+- NEVER process a subset without noting omissions
+- NEVER assume partial completion equals full completion
+- NEVER silently skip items with empty or unexpected results
+
+</forbidden>
+
 ## Ralph Loop as Exploration Workflow
 
 <context>

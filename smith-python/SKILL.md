@@ -24,6 +24,9 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 - NEVER execute directly: `.venv/bin/python -m pytest`
 - NEVER mix package managers in same project
 - NEVER use %-style formatting in log messages (use `extra=` parameter for structured logging)
+- NEVER add `# noqa` to silence ruff/flake8 without meeting
+  exception criteria in `@smith-validation/SKILL.md`
+- NEVER rename to `_` prefix to suppress F841 unused-variable
 
 </forbidden>
 
@@ -34,6 +37,10 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 - ALWAYS use function-based tests: `def test_should_<action>_when_<condition>():`
 - ALWAYS use virtual env runner: `poetry run` or `uv run`
 - ALWAYS use structured logging with `extra=` parameter for all log data
+- ALWAYS prefer moderate defaults for enum parameters
+  (e.g., "medium" not "low"/"high" unless spec requires)
+- When refactoring, preserve existing parameter values
+  and model references unless change is requested
 
 </required>
 
@@ -46,10 +53,12 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 ## Type Hints
 
 ```python
-from typing import Optional, List
-
-def process_docs(docs: List[str], max_count: Optional[int] = None) -> bool:
+# Python 3.10+ built-in syntax (preferred)
+def process_docs(docs: list[str], max_count: int | None = None) -> bool:
     pass
+
+# Python 3.9 compatibility: use __future__ annotations
+from __future__ import annotations
 ```
 
 ## Testing with Pytest

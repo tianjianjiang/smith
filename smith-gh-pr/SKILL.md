@@ -20,6 +20,8 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 - MUST ensure branch is up-to-date before requesting review or merging
 - MUST link to related issues
 - MUST have all CI checks passing before merge
+- MUST have explicit user request before creating PRs
+  -- listing is NOT consent to create
 
 </required>
 
