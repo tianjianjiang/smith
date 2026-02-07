@@ -24,6 +24,24 @@ description: Stacked pull request workflows for large features. Use when creatin
 
 </forbidden>
 
+## Stack Scope Verification
+
+<required>
+
+**Before stack-wide operations (rebase cascade, PR creation):**
+1. Load stack metadata from Serena memory (if available)
+2. Enumerate ALL branches with commit counts
+3. Present scope summary to user
+4. Get explicit scope approval before proceeding
+5. After completion, report status per branch
+
+**Empty rebase detection:**
+- If `git rebase` produces 0 new commits, STOP
+- Investigate why (already up-to-date? wrong base?)
+- Report the anomaly to user before continuing
+
+</required>
+
 <context>
 
 For large features, use stacked PRs to maintain atomic, reviewable changes.
@@ -252,5 +270,10 @@ git merge main
 2. Rebase child: `git rebase --onto origin/main feat/parent`
 3. Force push child: `git push --force-with-lease`
 4. Delete parent branch after child base updated
+
+**Verify stack scope before operations:**
+```shell
+./smith-stacks/scripts/verify-stack-scope.sh 'feat/PROJ-*'
+```
 
 </required>

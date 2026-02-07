@@ -94,8 +94,8 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 <required>
 
-- **At 60% context**: Recommend /compact, unload unused
-- **At 70% context**: CRITICAL - compact before degradation
+- **At 50% context**: Recommend /compact, unload unused
+- **At 60% context**: CRITICAL - compact before degradation
 
 </required>
 
@@ -136,6 +136,8 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 <!-- Workflow -->
 <skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
+<skill name="smith-plan" description="Plan tracking protocol (portable)">`@smith-plan/SKILL.md`</skill>
+<skill name="smith-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-plan-claude/SKILL.md`</skill>
 
 <!-- Other -->
 <skill name="smith-prompts" description="Prompt engineering">`@smith-prompts/SKILL.md`</skill>
@@ -157,7 +159,10 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
-**Git/GitHub**: Commits → `@smith-git/SKILL.md`, PRs → `@smith-gh-pr/SKILL.md`
+**Plan**: Plan execution → `@smith-plan/SKILL.md`,
+  Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
+**Git/GitHub**: Commits → `@smith-git/SKILL.md`,
+  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 

@@ -18,7 +18,7 @@ description: Universal context management with proactive recommendations. Agent 
 
 **Agent role**: Check context levels proactively, RECOMMEND actions to user.
 
-**Context lifecycle**: 0-50% (explore) → 50-70% (monitor) → 70-90% (compact) → 90%+ (emergency)
+**Context lifecycle**: 0-40% (explore) → 40-50% (monitor) → 50-60% (compact) → 60%+ (emergency)
 
 **To check context**: Prompt "What is the current context usage?" to get percentage.
 
@@ -28,7 +28,7 @@ description: Universal context management with proactive recommendations. Agent 
 
 ## Platform Reference
 
-- **Claude Code**: Warning 60%, Critical 70-75%, Compact `/compact`, Clear `/clear`
+- **Claude Code**: Warning 50%, Critical 60%, Compact `/compact`, Clear `/clear`
 - **Kiro**: Warning 70%, Critical 80%, Compact Auto, Clear New session
 - **Cursor**: Warning 70%, Critical 80%, Compact `/summarize`, Clear New chat
 
@@ -90,7 +90,7 @@ description: Universal context management with proactive recommendations. Agent 
 
 <required>
 
-**Ralph burns ~1-3.5k tokens/iteration.** At 70%, persist state to Serena memory before `/compact`.
+**Ralph burns ~1-3.5k tokens/iteration.** At 60%, persist state to Serena memory before `/compact`.
 
 See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
