@@ -57,6 +57,40 @@ A theory is scientific only if it can be proven false:
 
 </context>
 
+## Anti-Workaround Policy
+
+<forbidden>
+
+- NEVER add `# noqa`, `// NOLINT`, or similar inline
+  suppressions without meeting exception criteria below
+- NEVER increase timeouts without diagnosing root cause
+- NEVER use `_` prefix to suppress unused-variable warnings
+  without removing the actual dead code
+- NEVER disable warnings without documented justification
+
+</forbidden>
+
+<required>
+
+**When lint or test failures occur:**
+1. Apply 5 Whys to find root cause first
+2. Fix the underlying issue, not the symptom
+3. Suppressions allowed ONLY when all criteria are met:
+   - **Reason** (at least one):
+     - External library false positive (document which)
+     - Verified false positive (document why)
+     - Explicit user approval (cite the approval)
+   - **Mechanism**: prefer tool config (ruff.toml, .flake8)
+     for repo-wide patterns; inline comments only for
+     isolated cases with reason on the same line
+
+**Timeout changes require:**
+- Profiling evidence showing actual duration
+- Diagnosis of why the operation is slow
+- User approval before increasing
+
+</required>
+
 ## Root Cause Analysis
 
 <context>

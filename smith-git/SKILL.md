@@ -30,6 +30,25 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 </forbidden>
 
+## Operation Boundaries
+
+<forbidden>
+
+- NEVER interpret "list", "check", or "show" as
+  permission to create or modify
+- NEVER create branches or tags beyond what was requested
+
+</forbidden>
+
+<required>
+
+- Match action to request: list=list, create=create
+- State planned operations before multi-step workflows
+- For scope/approval rules, see @smith-guidance/SKILL.md
+- For PR creation rules, see `@smith-gh-pr/SKILL.md`
+
+</required>
+
 ## Branch Naming
 
 See `@smith-style/SKILL.md` for naming conventions.
