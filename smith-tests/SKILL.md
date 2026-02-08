@@ -82,6 +82,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 <related>
 
 - `@smith-python/SKILL.md` - Python testing patterns (pytest functions)
+- `@smith-playwright/SKILL.md` - Playwright failure monitoring
 - `@smith-dev/SKILL.md` - Development workflow (quality gates)
 - @smith-principles/SKILL.md - Core principles
 
