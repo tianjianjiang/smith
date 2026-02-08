@@ -1,6 +1,6 @@
 ---
 name: smith-ctx
-description: Universal context management with proactive recommendations. Agent checks context levels and recommends compaction/summarization to users. Always active as foundation for context optimization.
+description: Universal context management with proactive recommendations. Agent checks context levels and recommends context resets to users. Always active as foundation for context optimization.
 ---
 
 # Context Management
@@ -18,17 +18,17 @@ description: Universal context management with proactive recommendations. Agent 
 
 **Agent role**: Check context levels proactively, RECOMMEND actions to user.
 
-**Context lifecycle**: 0-40% (explore) → 40-50% (monitor) → 50-60% (compact) → 60%+ (emergency)
+**Context lifecycle**: explore → monitor → prepare (at warning threshold) → reset (at critical threshold)
 
 **To check context**: Prompt "What is the current context usage?" to get percentage.
 
-**Agent RECOMMENDS - user executes** the platform's compaction command.
+**Agent RECOMMENDS - user executes** the platform's context reset command.
 
 </required>
 
 ## Platform Reference
 
-- **Claude Code**: Warning 50%, Critical 60%, Compact `/compact`, Clear `/clear`
+- **Claude Code**: Warning 50%, Critical 60%, Action: `/clear` (stop hook enforced)
 - **Kiro**: Warning 70%, Critical 80%, Compact Auto, Clear New session
 - **Cursor**: Warning 70%, Critical 80%, Compact `/summarize`, Clear New chat
 
@@ -90,7 +90,7 @@ description: Universal context management with proactive recommendations. Agent 
 
 <required>
 
-**Ralph burns ~1-3.5k tokens/iteration.** At 60%, persist state to Serena memory before `/compact`.
+**Ralph burns ~1-3.5k tokens/iteration.** At critical threshold, persist state to Serena memory before context reset.
 
 See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
@@ -99,7 +99,7 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 <related>
 
 - @smith-guidance/SKILL.md - Core agent behavior
-- `@smith-ctx-claude/SKILL.md` - Claude Code: agent runs `/context`
+- `@smith-ctx-claude/SKILL.md` - Claude Code: `/clear` (stop hook enforced)
 - `@smith-ctx-cursor/SKILL.md` - Cursor: UI indicator, `/summarize`
 - `@smith-ctx-kiro/SKILL.md` - Kiro: 80% auto-summarize, Serena memory
 - `@smith-serena/SKILL.md` - Serena MCP for persistent memory
@@ -112,11 +112,11 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
 **Proactive context checks:**
 1. Periodically check context (platform-specific method)
-2. At warning threshold: Recommend compaction with retention criteria
+2. At warning threshold: Recommend context reset with retention criteria
 3. At critical threshold: Urgently recommend before degradation
 4. User executes command, agent continues with focused context
 
-**Before recommending compaction, prepare:**
+**Before recommending context reset, prepare:**
 - Task requirements summary
 - File paths with line numbers
 - Key design decisions
@@ -124,7 +124,7 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
 **Recommendation format:**
 ```text
-Context at [X]%. Recommend `/compact` (or `/summarize`).
+Context at [X]%. Recommend context reset (see platform skill for command).
 Keep: [task], [files], [decisions], [todos]
 ```
 
