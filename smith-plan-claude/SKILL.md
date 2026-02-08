@@ -83,7 +83,7 @@ $(date +%Y-%m-%dT%H:%M:%S%z)    <- line 3: ISO timestamp
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PLAN_CONTEXT_THRESHOLD_KB` | `500` | Transcript size threshold in KB (~50% of 200K context) |
+| `PLAN_CONTEXT_THRESHOLD_KB` | `500` | Transcript size threshold in KB (~60% of 200K context) |
 
 ## Ralph Loop Integration
 
@@ -108,7 +108,7 @@ This skill integrates with Ralph's autonomous loop in Claude Code:
 | Script | Hook Type | Purpose |
 |--------|-----------|---------|
 | `scripts/inject-plan.sh` | UserPromptSubmit | Auto-loads plan, flag detection, context detection |
-| `scripts/enforce-clear.sh` | Stop | Blocks stop when context high + pending tasks; auto-creates flag |
+| `scripts/enforce-clear.sh` | Stop | Blocks stop when context high + pending **plan** tasks; auto-creates **reload** flag |
 | `scripts/on-plan-exit.sh` | PostToolUse (ExitPlanMode) | Creates reload flag on plan mode exit |
 | `scripts/list-plans.sh` | Manual | List available plans |
 | `scripts/load-plan.sh` | Manual | Manually load a plan |
