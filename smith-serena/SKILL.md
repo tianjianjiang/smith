@@ -20,7 +20,7 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 
 1. **File I/O** - All file reading and writing operations
 2. **Language server features** - Symbols, references, navigation, semantic editing
-3. **Persistent memory** - Cross-session and cross-compaction context
+3. **Persistent memory** - Cross-session and cross-context-reset persistence
 
 **Tool Preference Order:**
 1. `find_symbol`, `get_symbols_overview` - Reading code (semantic)
@@ -49,7 +49,7 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 **Serena advantages:**
 - Semantic symbol operations reduce context usage by 99%+
 - Regex mode handles complex replacements reliably
-- Memory files persist across sessions and compaction
+- Memory files persist across sessions and context resets
 - Language server integration provides accurate navigation
 - No silent truncation or string-matching failures
 
@@ -94,7 +94,7 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 
 <required>
 
-**Memory files persist across sessions and compaction. Sync proactively at boundaries.**
+**Memory files persist across sessions and context resets. Sync proactively at boundaries.**
 
 **Location**: `.serena/memories/`
 
@@ -107,7 +107,7 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 - **After completing phase/todo**: `write_memory()` with findings, decisions, blockers
 - **On status change**: Update `task_completion` memory with progress
 
-**Before Compaction (at 70% context):**
+**Before Context Reset (at platform's critical threshold):**
 - `write_memory()` - Save full session state, current task, next steps
 
 **Session End:**
@@ -192,13 +192,13 @@ list_memories()
 
 **Serena persists Ralph state**: `ralph_[task]_state` with iteration, hypotheses, test_results, next_action.
 
-**Sync**: After each iteration; before/after compaction. See `@smith-ralph/SKILL.md`.
+**Sync**: After each iteration; before/after context reset. See `@smith-ralph/SKILL.md`.
 
 </required>
 
 <related>
 
-- @smith-ctx/SKILL.md - Context management thresholds (70% compaction trigger)
+- @smith-ctx/SKILL.md - Context management thresholds
 - @smith-guidance/SKILL.md - AI agent behavior patterns
 - `@smith-ctx-kiro/SKILL.md` - Kiro-specific: Serena is MANDATORY over native tools
 

@@ -38,7 +38,7 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - Which files are always-active vs on-demand
 - Notification format: "Loaded @file.md (reason)"
 - Deactivation trigger: "Unload after N turns unused"
-- Compaction thresholds: warn at 60%, critical at 70%
+- Context thresholds: Claude Code 50%/60%, Cursor/Kiro 70%/80%
 
 **Enforcement**: Reporting proves actual loading, not fake compliance
 
@@ -146,7 +146,8 @@ This distinguishes core skills (always in context) from contextual skills (loade
 **Good**: Reference data (bullet list preferred over table)
 ```markdown
 **Context thresholds:**
-- Claude: 60% warning, 70% critical
+- Claude Code: 50% warning, 60% critical
+- Cursor: 70% warning, 80% critical
 - Kiro: 70% warning, 80% critical
 ```
 
@@ -168,7 +169,7 @@ This distinguishes core skills (always in context) from contextual skills (loade
 1. Keep under 500 tokens
 2. Declare always-active files
 3. Define semantic activation triggers
-4. Add compaction thresholds
+4. Add context thresholds
 
 **When creating skill files:**
 1. Add `<metadata>` with Load if condition

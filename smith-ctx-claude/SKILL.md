@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /compact and /clear commands, CLAUDE.md persistence, and Tool Search optimization. Use when operating in Claude Code IDE or when context exceeds 50%. Activate for context optimization in Claude sessions.
+description: Claude Code context management with /clear command and stop hook enforcement at 60%. CLAUDE.md persistence and Tool Search optimization. Use when operating in Claude Code IDE or when context exceeds 50%. Activate for context optimization in Claude sessions.
 ---
 
 # Claude Code Context Management
@@ -18,66 +18,50 @@ description: Claude Code context management with /compact and /clear commands, C
 
 **Agent prompts for context status**, then recommends action to user.
 
-**Thresholds**: 50% warning, 60% critical, 90% emergency (see @smith-ctx/SKILL.md)
+**Thresholds**: 50% warning, 60% critical
 
-**Decision tree:**
-- Same task, need space → `/compact keep [specifics]`
-- New unrelated task → commit first, then `/clear`
-
-</required>
-
-## /compact - Selective Retention
-
-**Syntax**: `/compact keep [retention criteria]`
-
-<required>
-
-**Always specify what to keep:**
-- Task goals and requirements
-- File paths with line numbers (file:line)
-- Architectural decisions
-- Incomplete todos/next steps
-
-**Recommendation format:**
-```text
-/compact keep task requirements, files (auth.ts:234, tokens.ts:89), 
-design decisions, remaining todos
-```
+**Action**: Always `/clear`. Stop hook uses a KB-based heuristic (`CTX_CONTEXT_THRESHOLD_KB`, default 500KB) to block agent stop when context is high. Uses a one-shot flag pattern: first stop attempt blocked, second allowed.
 
 </required>
 
 <forbidden>
 
-- Claiming to execute `/compact` directly (user must run it)
-- Vague criteria like "important stuff"
-- Compacting away file:line references
-- Compacting away incomplete work
+- Using `/compact` (not supported for Claude Code)
+- `/clear` without checking uncommitted work
 
 </forbidden>
 
-## /clear - Full Reset
-
-**Use when**: Switching to unrelated task after committing work
+## /clear - Full Context Reset
 
 <required>
 
-**Before /clear:**
+**Before `/clear`:**
 1. Commit current work with detailed message
 2. Check for uncommitted changes
-3. Document session state
+3. Persist state to Serena memory with `write_memory()`
 
 **Preserved**: Project files, CLAUDE.md
 **Lost**: All conversation history
 
+**After `/clear`:**
+1. Use `read_memory()` to resume context
+2. Re-read relevant files as needed
+
 </required>
 
-<forbidden>
+## Stop Hook
 
-- `/clear` without checking uncommitted work
-- `/clear` mid-task (use `/compact` instead)
-- `/clear` when context <90%
+The `enforce-clear.sh` stop hook blocks the agent from stopping when context is high.
 
-</forbidden>
+**Behavior:**
+- Checks transcript size against `CTX_CONTEXT_THRESHOLD_KB` (default: 500KB, ~60% of 200K)
+- Below threshold: allows stop
+- Above threshold (first attempt): blocks stop, creates one-shot flag, outputs guidance
+- Above threshold (second attempt): flag exists, allows stop
+
+**Coexistence**: Both this hook and the plan-claude stop hook can fire on the same Stop event. Messages are complementary. Both use one-shot flag patterns so a second stop attempt passes both.
+
+**Script**: `smith-ctx-claude/scripts/enforce-clear.sh`
 
 ## CLAUDE.md Persistence
 
@@ -166,17 +150,10 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 <required>
 
 **Proactive context management:**
-1. Prompt for context status
-2. At 50%: Recommend `/compact` with retention criteria
-3. At 60%: Warn of degradation, prepare criteria urgently
-4. At 90%: Recommend `/clear` or aggressive compaction
+1. At 50%: Warn, prepare retention criteria
+2. At 60%: Commit work, persist to Serena with `write_memory()`, recommend `/clear` (stop hook enforces)
+3. After `/clear`: Use `read_memory()` to resume
 
 **Agent RECOMMENDS - user executes the command.**
-
-**Workflow:**
-1. Periodically prompt for context usage percentage
-2. Prepare retention criteria before hitting limits
-3. Recommend action with specific criteria
-4. Commit frequently for session recovery
 
 </required>
