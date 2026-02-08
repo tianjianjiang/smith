@@ -1,13 +1,13 @@
 ---
 name: smith-ralph
-description: Ralph Loop integration patterns for iterative AI development. Use when starting Ralph loops, managing iterations, or recovering from context compaction. Covers TDD, debugging, context management, and memory persistence.
+description: Ralph Loop integration patterns for iterative AI development. Use when starting Ralph loops, managing iterations, or recovering from context resets. Covers TDD, debugging, context management, and memory persistence.
 ---
 
 # Ralph Loop Integration
 
 <metadata>
 
-- **Load if**: Starting `/ralph-loop`, managing iterations, recovering from compaction
+- **Load if**: Starting `/ralph-loop`, managing iterations, recovering from context reset
 - **Prerequisites**: @smith-ctx/SKILL.md, `@smith-git/SKILL.md`, `@smith-serena/SKILL.md`
 
 </metadata>
@@ -22,7 +22,7 @@ description: Ralph Loop integration patterns for iterative AI development. Use w
 1. Clear completion criteria with `<promise>` tag
 2. `--max-iterations` as safety limit (always set)
 3. Atomic commits mark iteration boundaries
-4. Serena memory persists state across compaction
+4. Serena memory persists state across context resets
 
 </required>
 
@@ -62,13 +62,13 @@ Output <promise>COMPLETE</promise> after all phases.
 
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
-**Compaction strategy:**
-- At 50%: Prepare retention criteria, continue
-- At 60%: `/compact`, persist Ralph state to Serena memory
-- After compaction: `read_memory()` to resume
+**Context reset strategy:**
+- At warning threshold: Prepare retention criteria, continue
+- At critical threshold: Persist Ralph state to Serena memory, then context reset
+- After context reset: `read_memory()` to resume
 
-**Phase boundaries:** At phase boundaries, if context >50%,
-recommend `/clear` to user. Plan-claude auto-reloads via
+**Phase boundaries:** At phase boundaries, if context exceeds warning threshold,
+recommend context reset to user. Plan-claude auto-reloads via
 state-based detection. Always update plan file and write
 Serena memory before recommending `/clear`.
 
@@ -96,14 +96,14 @@ Serena memory before recommending `/clear`.
 
 <required>
 
-**Serena memories persist Ralph state across compaction.**
+**Serena memories persist Ralph state across context resets.**
 
 **Memory fields**: `ralph_[task]_state`
 - iteration, hypotheses (tested/remaining), test_results, next_action
 
 **Sync timing:**
 - After each iteration: `write_memory()`
-- Before/after compaction: `write_memory()` / `read_memory()`
+- Before/after context reset: `write_memory()` / `read_memory()`
 
 </required>
 
@@ -135,8 +135,8 @@ Serena memory before recommending `/clear`.
 4. Commit if progress made
 5. `write_memory()` after each iteration
 
-**On compaction:**
+**On context reset:**
 1. `write_memory()` with full state
-2. After `/compact`: `read_memory()` to resume
+2. After context reset: `read_memory()` to resume
 
 </required>

@@ -90,12 +90,12 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 </required>
 
-## Proactive Compaction
+## Proactive Context Management
 
 <required>
 
-- **At 50% context**: Recommend /compact, unload unused
-- **At 60% context**: CRITICAL - compact before degradation
+- **At warning threshold**: Warn, prepare retention criteria, unload unused skills
+- **At critical threshold**: CRITICAL - context reset required (see platform skill for thresholds and command)
 
 </required>
 
