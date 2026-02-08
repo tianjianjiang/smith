@@ -121,6 +121,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
+<skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
 
 <!-- Languages -->
 <skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
@@ -157,7 +158,8 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Load on task match, unload after 5 turns unused**:
 
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
-**Testing**: Tests/TDD → `@smith-tests/SKILL.md`
+**Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
+  Playwright → `@smith-playwright/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
