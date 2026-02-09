@@ -31,9 +31,11 @@ You receive:
 2. **Read** relevant source files before making changes
 3. **Implement** the task (write code, tests, configs as needed)
 4. **Validate** by running tests or other verification
-5. **Commit** with message: `feat(<scope>): iteration <N> - <task summary>`
+5. **Commit** with message: `<type>(<scope>): iteration <N> - <task summary>`
+   - Use `git commit -S -m "..."` to GPG-sign the commit
+   - Type should match the change: `feat`/`fix`/`docs`/etc per @smith-style
 6. **Mark** your task `[x]` in the plan file
-7. **Write** Serena memory (if available): `ralph_<task_slug>_iter_<N>`
+7. **Write** Serena memory (if available): `ralph_<task>_iter_<N>`
    - Include: what was done, files changed, test results, decisions made
 8. **Return** a concise completion summary (under 200 words)
 
