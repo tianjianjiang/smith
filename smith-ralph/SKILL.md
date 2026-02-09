@@ -62,21 +62,52 @@ Output <promise>COMPLETE</promise> after all phases.
 
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
-**Context reset strategy:**
-- At warning threshold: Prepare retention criteria, continue
-- At critical threshold: Persist Ralph state to Serena memory, then context reset
-- After context reset: `read_memory()` to resume
+**Reactive: Auto-exit at critical context (hook-managed):**
+- At 50%: Advisory. Save iteration state to Serena immediately.
+- At 60%: Loop auto-exits (max_iterations set to current).
+  Resume state saved. After /clear, loop auto-restarts via Skill tool.
 
-**Phase boundaries:** At phase boundaries, if context exceeds warning threshold,
-recommend context reset to user. Plan-claude auto-reloads via
-state-based detection. Always update plan file and write
-Serena memory before recommending `/clear`.
+**Proactive: Phase boundaries (ALWAYS clear, even at low context):**
+- After completing each phase's tasks (all [x] for current phase):
+  1. Output promise to exit Ralph
+  2. Save state: write_memory("ralph_<task>_phase_N")
+  3. Tell user: "Phase N complete. Run /clear for Phase N+1."
+  4. After /clear: loop auto-restarts for next phase
+- Rationale: Fresh context per phase prevents degradation even before threshold.
+
+**After /clear (both cases):**
+- Agent auto-invokes /ralph-loop via Skill tool (no user intervention)
+- Serena memory restored for iteration continuity
 
 **Essential retention:**
 - Iteration number
 - Hypotheses tested/remaining
 - Test results summary
 - File:line references
+
+</required>
+
+## Phase Boundary Protocol
+
+<required>
+
+**At EVERY phase boundary (regardless of context level):**
+1. Mark completed tasks [x] in plan file
+2. Commit current work
+3. Save phase state: `write_memory("ralph_<task>_phase_N")`
+4. Output the configured completion promise (default: `<promise>PHASE_COMPLETE</promise>`). Ensure this matches the Ralph loop's `--completion-promise` value.
+5. AFTER all tool calls, output:
+
+**Reload with:**
+- Plan: `<plan_path>`
+- Memory: `ralph_<task>_phase_N` (read via read_memory() after /clear)
+- Ralph: auto-restarts for next phase
+- Resume: Phase N+1 - <next phase description>
+
+6. Tell user to run /clear
+
+**Phase = group of tasks under the same ## heading in the plan.**
+If plan has no ## headings, each `- [ ]` task = one phase.
 
 </required>
 
@@ -107,6 +138,155 @@ Serena memory before recommending `/clear`.
 
 </required>
 
+## Orchestration Mode (Pattern B)
+
+<context>
+
+**Pattern B = subagent orchestration**: Parent stays light, workers get fresh 200k context each.
+
+```text
+User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
+```
+
+</context>
+
+<required>
+
+**Trigger**: "ralph orchestrate", "ralph orch", or "use orchestration mode"
+
+**When to use**: Multi-step plans (>3 tasks), complex features, tasks prone to context accumulation.
+
+**Parent orchestrator loop**:
+1. Read plan file, parse `- [ ]` tasks
+2. Select next unchecked task
+3. Build worker context (plan path, iteration number, task text, memory keys)
+4. Spawn worker:
+   ```
+   Task(subagent_type="general-purpose", prompt=<worker_prompt>)
+   ```
+   Worker prompt includes: plan path, task text, iteration N, memory keys for prior iterations, completion promise. See `agents/ralph-worker.md` for worker behavior.
+5. Read worker result + verify plan file updated (`[x]`)
+6. Optionally create/update Claude Code Task for UI tracking
+7. If worker succeeded: increment iteration, save state, loop to step 2
+8. If worker failed: ask user (retry / skip / modify / manual intervention)
+9. On all tasks complete: clean up state, output summary
+
+**Parent stays light by**:
+- NOT reading full source files (only plan diffs, memory keys)
+- NOT accumulating worker output (read summary, discard details)
+- Using Serena memory keys as references (read only when needed)
+- Periodically checking context %
+
+**Prompt-based fallback**: If `agents/ralph-worker.md` is not found, parent builds equivalent prompt inline for `Task(subagent_type="general-purpose", prompt=...)`.
+
+</required>
+
+### Orchestrator State File
+
+Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>`:
+
+```yaml
+---
+active: true
+mode: orchestration
+iteration: 3
+max_iterations: 20
+plan_path: "/path/to/plan.md"
+completion_promise: "DONE"
+current_task: "Implement auth API"
+started_at: "2026-02-10T12:00:00+00:00"
+---
+```
+
+Hook scripts detect this file to manage context cycling (save state before `/clear`, restore after).
+
+## Agent Teams Mode (Pattern C)
+
+<context>
+
+**Pattern C = agent teams**: Team lead coordinates, teammates get independent context.
+
+```text
+User -> "ralph team" -> Team Lead -> Teammates (own context, shared tasks)
+```
+
+Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+
+</context>
+
+<required>
+
+**Trigger**: "ralph team" or "use team mode"
+
+**Team lead workflow**:
+1. Read plan file, create shared task list from `- [ ]` items
+2. Set up dependencies (task 2 depends on task 1 if sequential)
+3. Spawn N teammates (each gets ralph-worker prompt + plan context)
+4. Enable **delegate mode** (Shift+Tab) - lead coordinates only
+5. Teammates self-claim unblocked tasks from shared list
+6. Lead monitors progress, handles failures, synthesizes results
+7. On completion: clean up team, output summary
+
+**Key features**:
+- **Plan approval mode**: Require teammates to plan before implementing for risky tasks
+- **Direct interaction**: User can message any teammate via Shift+Up/Down
+- **Quality gates**: `TeammateIdle` hook for standards, `TaskCompleted` hook to validate
+- **File ownership**: Each teammate owns different files (avoid conflicts)
+- **Context per teammate**: Fresh context, loads CLAUDE.md + MCP servers + skills
+
+**Parallel execution rules**:
+- Independent tasks (different files): parallel teammates OK
+- Sequential tasks (same files): use dependency tracking to serialize
+- Lead assigns file ownership to avoid conflicts
+
+</required>
+
+### Limitations
+
+- No session resumption for in-process teammates
+- No nested teams (teammates cannot spawn teams)
+- One team per session; lead is fixed for lifetime
+- Token-intensive (each teammate = separate Claude instance)
+- Experimental - API may change
+
+## Tasks Integration
+
+<context>
+
+Claude Code Tasks provide visual progress tracking. Used as optional UI layer for both patterns.
+
+</context>
+
+**Pattern B**:
+- Parent creates `TaskCreate` for each plan `- [ ]` item at orchestration start
+- `TaskUpdate(status="in_progress")` before spawning worker
+- `TaskUpdate(status="completed")` after worker succeeds
+
+**Pattern C**:
+- Agent Teams has built-in shared task list - no manual TaskCreate needed
+- Team lead creates tasks via team infrastructure
+- Dependencies tracked natively (blocks/blockedBy)
+
+**Both patterns**: Plan file `[x]` checkboxes remain source of truth. Tasks are supplementary UI. Known limitation: Tasks orphaned across sessions (bug #20797). Plan file is the durable state.
+
+## Pattern Decision Guide
+
+| Criteria | A (`/ralph-loop`) | B (`ralph orch`) | C (`ralph team`) |
+|---|---|---|---|
+| Task complexity | Simple, focused | Multi-step plans | Large, parallel-safe |
+| Iterations | <20 | 20-100+ | 10-50+ |
+| Context pressure | Moderate (1-3.5k/iter) | Low (parent light) | None (separate instances) |
+| Parallelism | No | No (sequential v1) | Yes (native) |
+| User interaction | Between iterations | Between workers | With any teammate |
+| Token cost | Low | Medium (subagent overhead) | High (per-teammate) |
+| Stability | Stable (official plugin) | Stable (Task tool) | Experimental |
+| Setup | None | None | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
+
+**Recommendation flow**:
+1. Simple TDD/debug loop -> Pattern A (`/ralph-loop`)
+2. Multi-step plan, sequential tasks -> Pattern B ("ralph orchestrate")
+3. Parallel-safe tasks, research/review -> Pattern C ("ralph team")
+
 <related>
 
 - `@smith-tests/SKILL.md` - TDD workflow
@@ -127,6 +307,12 @@ Serena memory before recommending `/clear`.
 ```shell
 /ralph-loop "[task]" --completion-promise "[DONE]" --max-iterations 20
 ```
+
+**Starting Orchestration (Pattern B):**
+Say "ralph orchestrate" with a plan file. Parent spawns workers via Task tool.
+
+**Starting Agent Teams (Pattern C):**
+Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
 **During iterations:**
 1. Read files before changes
