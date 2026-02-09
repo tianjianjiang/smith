@@ -16,8 +16,7 @@
 #
 # Auto-load:
 #   - Pending-reload flag (<1hr old, CWD-matched): loads flagged plan after /clear
-#   - CWD-based state file: transcript_path, size, staleness (60-min max age)
-#   - New session (no state file): NO auto-load (user must explicitly request)
+#   - on-session-clear.sh: fires after manual /clear (primary injection point)
 #
 # Clear-and-Reload:
 #   - Auto-reloads plan after /clear when CWD-specific flag file exists
@@ -41,6 +40,9 @@ if [[ -z "$PROMPT" ]]; then
     exit 0
 fi
 
+# Extract permission_mode for plan mode state saving
+PERMISSION_MODE=$(echo "$INPUT" | jq -r '.permission_mode // empty' 2>/dev/null || echo "")
+
 # Extract session ID, transcript path, and CWD
 CURRENT_SESSION=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
@@ -57,6 +59,21 @@ STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 find "$PLANS_DIR" -name ".pending-reload-*" -mmin +60 -delete 2>/dev/null || true
 rm -f "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
 find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
+find "$PLANS_DIR" -name ".ralph-resume-*" -mmin +60 -delete 2>/dev/null || true
+find "$PLANS_DIR" -name ".ralph-orch-resume-*" -mmin +60 -delete 2>/dev/null || true
+
+# --- Plan mode state saving ---
+# During plan mode (permission_mode: "plan"), save state on every prompt.
+# This ensures the state file has the plan path BEFORE the user exits plan mode.
+# Critical because PostToolUse:ExitPlanMode doesn't fire with "clear context
+# and auto-accept edits" (upstream bug #20397).
+if [[ "$PERMISSION_MODE" == "plan" ]]; then
+    CURRENT_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || CURRENT_PLAN=""
+    if [[ -n "$CURRENT_PLAN" ]] && [[ -f "$CURRENT_PLAN" ]]; then
+        PLAN_FILE="$CURRENT_PLAN"
+        save_injection_state
+    fi
+fi
 
 # Convert to lowercase for matching
 PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
@@ -82,8 +99,9 @@ if [[ -f "$FLAG_FILE" ]]; then
         PLAN_FILE="$FLAGGED_PLAN"
         LOAD_REASON="flag"
     else
-        # Expired flag (>1 hour old) or missing plan file, clean up
+        # Expired flag (>1 hour old) or missing plan file -- still offer Serena memory
         rm -f "$FLAG_FILE"
+        ACTION="serena_only"
     fi
 fi
 
@@ -109,15 +127,27 @@ if [[ -z "$ACTION" ]]; then
     fi
 fi
 
-# --- Context threshold detection ---
-THRESHOLD_KB=${PLAN_CONTEXT_THRESHOLD_KB:-500}
+# --- Context threshold detection (percentage-based) ---
+WARNING_PCT=${PLAN_CONTEXT_WARNING_PCT:-50}
+CRITICAL_PCT=${PLAN_CONTEXT_CRITICAL_PCT:-60}
 
 if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION" ]]; then
-    TRANSCRIPT_SIZE=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null || echo 0)
-    TRANSCRIPT_SIZE=$(echo "$TRANSCRIPT_SIZE" | tr -d '[:space:]')
-    THRESHOLD_BYTES=$((THRESHOLD_KB * 1024))
+    CONTEXT_PCT=$(get_context_percentage "$TRANSCRIPT_PATH" "$CONTEXT_WINDOW_TOKENS")
 
-    if [[ $TRANSCRIPT_SIZE -gt $THRESHOLD_BYTES ]]; then
+    # Ralph detection (before threshold check -- needed for both warning and critical)
+    RALPH_ACTIVE=false
+    RALPH_CWD="${HOOK_CWD:-${PWD:-}}"
+    if get_ralph_state "$RALPH_CWD"; then
+        RALPH_ACTIVE=true
+    fi
+
+    # Orchestrator detection (Pattern B)
+    ORCH_ACTIVE_MODE=false
+    if get_orchestrator_state "$CWD_KEY"; then
+        ORCH_ACTIVE_MODE=true
+    fi
+
+    if [[ $CONTEXT_PCT -ge $WARNING_PCT ]]; then
         # Prefer the plan recorded in the state file (session-specific)
         ACTIVE_PLAN=""
         if [[ -f "$STATE_FILE" ]]; then
@@ -126,92 +156,78 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
                 ACTIVE_PLAN="$prev_plan"
             fi
         fi
+
+        PENDING=0
         if [[ -n "$ACTIVE_PLAN" ]]; then
             PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
             PENDING=$(echo "$PENDING" | tr -d '[:space:]')
-            if [[ $PENDING -gt 0 ]] && [[ ! -f "$FLAG_FILE" ]]; then
+        fi
+
+        if [[ ! -f "$FLAG_FILE" ]]; then
+            # Create flag if plan active with pending tasks
+            if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
                 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
                 printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
-
-                SIZE_KB=$((TRANSCRIPT_SIZE / 1024))
-                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: Transcript %dKB (threshold: %dKB). Plan has %d pending tasks.\n\n**YOU MUST:**\n1. Update plan file with current progress\n2. Write Serena memory with session state\n3. Tell user to run /clear\n\nPlan will auto-reload on next prompt after /clear.' \
-                    "$SIZE_KB" "$THRESHOLD_KB" "$PENDING")
             fi
-        fi
-    fi
-fi
 
-# --- CWD state detection + auto-load (lowest priority) ---
-# Only auto-loads when CWD-keyed state file exists and is <60 min old.
-# New sessions (no state file) do NOT auto-load — user must explicitly request.
-#
-# Detects post-/clear using signals:
-#   1. Transcript path changed -> /clear created new transcript
-#   2. Transcript shrank by >50% -> /clear truncated file
-#   3. Transcript < 10KB -> small transcript
-#   4. State file stale (> PLAN_REFRESH_STALE_MIN) -> /clear without transcript change
-if [[ -z "$ACTION" ]]; then
-    NEW_CONTEXT_REASON=""
+            if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]] && [[ "$RALPH_ACTIVE" == "true" ]]; then
+                # CRITICAL + Ralph: force-exit Ralph and save resume state
+                save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
+                    "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
+                force_ralph_exit "$RALPH_CWD"
 
-    CURRENT_TRANSCRIPT_SIZE=0
-    if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
-        CURRENT_TRANSCRIPT_SIZE=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null | tr -d '[:space:]')
-    fi
+                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exiting (max_iterations set to current).' "$CONTEXT_PCT")
+                CONTEXT_MSG+="\n\n**YOU MUST do these steps NOW:**"
+                CONTEXT_MSG+="\n1. Save ALL Ralph state to Serena: write_memory() with full iteration context"
+                CONTEXT_MSG+="\n2. Update plan file with current progress (if plan active)"
+                CONTEXT_MSG+="\n3. Commit uncommitted work"
+                CONTEXT_MSG+="\n4. AFTER all tool calls, tell user to run /clear"
+                CONTEXT_MSG+="\n\nRalph loop will auto-resume after /clear."
+            elif [[ "$RALPH_ACTIVE" == "true" ]]; then
+                # WARNING + Ralph: preemptive resume save + advisory
+                save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
+                    "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
 
-    if [[ -f "$STATE_FILE" ]]; then
-        # Skip auto-load from stale state (>60 min = likely new session in same CWD)
-        STATE_FRESH=$(find "$STATE_FILE" -mmin -60 2>/dev/null)
-        if [[ -z "$STATE_FRESH" ]]; then
-            : # State too old, skip auto-load
-        else
-        # State file exists and fresh -> check for /clear signals.
-        prev_session_id=$(sed -n '1p' "$STATE_FILE" 2>/dev/null)
-        prev_path=$(sed -n '2p' "$STATE_FILE" 2>/dev/null)
-        prev_size=$(sed -n '3p' "$STATE_FILE" 2>/dev/null)
+                CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
+                CONTEXT_MSG+=$(printf '\nRalph loop active (iteration %s). Will auto-exit at critical threshold (%d%%).' "${RALPH_ITERATION:-?}" "$CRITICAL_PCT")
+                CONTEXT_MSG+="\nSave iteration state to Serena NOW: write_memory() with ralph_<task>_state."
+                if [[ -n "$ACTIVE_PLAN" ]]; then
+                    CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
+                fi
+            elif [[ "$ORCH_ACTIVE_MODE" == "true" ]]; then
+                # Orchestrator mode: save resume state for post-/clear restoration
+                save_orchestrator_resume "$CWD_KEY" "${ORCH_ITERATION:-0}" "${ORCH_MAX_ITERATIONS:-20}" \
+                    "${ORCH_PLAN_PATH:-${ACTIVE_PLAN:-}}" "${ORCH_COMPLETION_PROMISE:-}" "${ORCH_CURRENT_TASK:-}"
 
-        if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -n "$prev_path" ]] && \
-           [[ "$prev_path" != "$TRANSCRIPT_PATH" ]]; then
-            # Signal 1: Transcript path changed
-            NEW_CONTEXT_REASON="refresh"
-        elif [[ -n "$prev_size" ]] && [[ "$prev_size" =~ ^[0-9]+$ ]] && \
-             [[ "$prev_size" -gt 0 ]] && \
-             [[ $CURRENT_TRANSCRIPT_SIZE -lt $((prev_size / 2)) ]]; then
-            # Signal 2: Transcript shrank by >50%
-            NEW_CONTEXT_REASON="refresh"
-        elif [[ $CURRENT_TRANSCRIPT_SIZE -lt 10240 ]]; then
-            # Signal 3: Small transcript (post-/clear detection).
-            # Only trigger if same session (post-/clear) — different session_id = new session, skip.
-            if [[ -n "$prev_session_id" ]] && [[ "$prev_session_id" != "$CURRENT_SESSION" ]]; then
-                : # Different session in same CWD — skip auto-load
+                if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]]; then
+                    CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Orchestrator mode active (iteration %s).' "$CONTEXT_PCT" "${ORCH_ITERATION:-?}")
+                    CONTEXT_MSG+="\n\n**YOU MUST do these steps NOW:**"
+                    CONTEXT_MSG+="\n1. Save orchestrator state to Serena: write_memory() with iteration context"
+                    CONTEXT_MSG+="\n2. Update plan file with current progress"
+                    CONTEXT_MSG+="\n3. Commit uncommitted work"
+                    CONTEXT_MSG+="\n4. AFTER all tool calls, tell user to run /clear"
+                    CONTEXT_MSG+="\n\nOrchestrator will auto-resume after /clear."
+                else
+                    CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
+                    CONTEXT_MSG+=$(printf '\nOrchestrator mode active (iteration %s).' "${ORCH_ITERATION:-?}")
+                    CONTEXT_MSG+="\nSave orchestrator state to Serena NOW: write_memory() with orchestrator context."
+                    if [[ -n "$ACTIVE_PLAN" ]]; then
+                        CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
+                    fi
+                fi
             else
-                NEW_CONTEXT_REASON="refresh"
-            fi
-        else
-            # Signal 4: State file stale -> /clear likely happened
-            STALE_MIN=${PLAN_REFRESH_STALE_MIN:-3}
-            state_fresh=$(find "$STATE_FILE" -mmin -"$STALE_MIN" 2>/dev/null)
-            if [[ -z "$state_fresh" ]]; then
-                NEW_CONTEXT_REASON="refresh"
-            fi
-        fi
-        fi  # STATE_FRESH age guard
-    fi
-    # No state file (or stale >60 min) -> no auto-load (intentional)
-
-    if [[ -n "$NEW_CONTEXT_REASON" ]]; then
-        # Get plan from session state (no most-recent fallback for auto-load)
-        ACTIVE_PLAN=""
-        prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
-        if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
-            ACTIVE_PLAN="$prev_plan"
-        fi
-        if [[ -n "$ACTIVE_PLAN" ]]; then
-            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-            PENDING=$(echo "$PENDING" | tr -d '[:space:]')
-            if [[ $PENDING -gt 0 ]]; then
-                ACTION="load"
-                PLAN_FILE="$ACTIVE_PLAN"
-                LOAD_REASON="$NEW_CONTEXT_REASON"
+                # Non-Ralph: existing warning behavior
+                CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
+                if [[ -n "$ACTIVE_PLAN" ]]; then
+                    CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
+                fi
+                CONTEXT_MSG+=$(printf '\n\n**Recommended:**\n1. Update plan file with current progress (mark completed as [x])\n2. Commit uncommitted work\n3. If Serena MCP available: write_memory() with descriptive name (task, decisions, file:line refs)\n4. AFTER all tool calls complete, output this block:')
+                if [[ -n "$ACTIVE_PLAN" ]]; then
+                    CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Plan: `%s`\n- Memory: \`<name from step 3>\` (read via read_memory() after /clear)\n- Resume: <describe current task>' "$ACTIVE_PLAN")
+                else
+                    CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Memory: \`<name from step 3>\` (read via read_memory() after /clear)\n- Resume: <describe current task>')
+                fi
+                CONTEXT_MSG+=$(printf '\n\n5. Tell user to run /clear\n\nPlan auto-reloads after /clear.')
             fi
         fi
     fi
@@ -220,6 +236,37 @@ fi
 # If context warning was generated but no trigger matched, output warning only
 if [[ -z "$ACTION" ]] && [[ -n "$CONTEXT_MSG" ]]; then
     json_user_prompt_output "$CONTEXT_MSG"
+    exit 0
+fi
+
+# Serena-only fallback: flag existed but plan file was missing/expired
+if [[ "$ACTION" == "serena_only" ]]; then
+    # List available plans so the agent knows what exists
+    AVAILABLE_PLANS=""
+    if [[ -d "$PLANS_DIR" ]]; then
+        while IFS= read -r f; do
+            AVAILABLE_PLANS+="\n  - \`$(basename "$f")\` (\`$f\`)"
+        done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
+    fi
+
+    SERENA_DIRECTIVE="**ACTION REQUIRED - POST-CLEAR RESUME:**"
+    SERENA_DIRECTIVE+="\n\nYou MUST check for previous session state before responding."
+    if [[ -n "$FLAGGED_PLAN" ]]; then
+        SERENA_DIRECTIVE+="\n\n**Expected plan:** \`${FLAGGED_PLAN}\` (missing or expired)"
+    fi
+    if [[ -n "$AVAILABLE_PLANS" ]]; then
+        SERENA_DIRECTIVE+="\n\n**Available plans in \`${PLANS_DIR}\`:**${AVAILABLE_PLANS}"
+    else
+        SERENA_DIRECTIVE+="\n\n**Plans directory:** \`${PLANS_DIR}\` (no plan files found)"
+    fi
+    SERENA_DIRECTIVE+="\n\n1. If Serena MCP available: call list_memories() IMMEDIATELY"
+    SERENA_DIRECTIVE+="\n2. Scan memory names for recent session context (session, task, plan keywords)"
+    SERENA_DIRECTIVE+="\n3. Read relevant memories and report restored context to user"
+    SERENA_DIRECTIVE+="\n4. Offer to continue previous work or await new instructions"
+    SERENA_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
+    SERENA_DIRECTIVE+="\nIf user's message contains a different request, address that first but still restore context."
+    json_user_prompt_output "$(printf '%b' "$SERENA_DIRECTIVE")"
+    save_injection_state
     exit 0
 fi
 
@@ -256,7 +303,7 @@ find_plan_file() {
         fi
     else
         # No name specified -> return most recent plan (only used for explicit trigger words)
-        ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1
+        ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1 || true
     fi
 }
 
@@ -282,7 +329,7 @@ calculate_progress() {
 get_current_task() {
     local content="$1"
     local task
-    task=$(echo "$content" | grep -m1 '^[[:space:]]*- \[ \]' | sed 's/^[[:space:]]*- \[ \] //')
+    task=$(echo "$content" | grep -m1 '^[[:space:]]*- \[ \]' | sed 's/^[[:space:]]*- \[ \] //') || task=""
     echo "${task:-None}"
 }
 
@@ -310,7 +357,7 @@ list_plans() {
 save_injection_state() {
     local current_size=0
     if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
-        current_size=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null | tr -d '[:space:]')
+        current_size=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null | tr -d '[:space:]') || current_size=0
     fi
     printf '%s\n%s\n%s\n%s\n%s\n' \
         "${CURRENT_SESSION:-unknown}" \
@@ -382,11 +429,16 @@ if [[ -z "$PLAN_FILE" ]] || [[ ! -f "$PLAN_FILE" ]]; then
 fi
 
 # Read plan content (FRESH from disk - critical for Ralph loop!)
-PLAN_CONTENT=$(cat "$PLAN_FILE")
+if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
+    json_user_prompt_output "Error: Could not read plan file: $PLAN_FILE"
+    exit 0
+fi
 PLAN_BASENAME=$(basename "$PLAN_FILE")
 
 # Get modification time (macOS first, then Linux fallback)
-PLAN_MODIFIED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$PLAN_FILE" 2>/dev/null || stat -c %y "$PLAN_FILE" 2>/dev/null | cut -d'.' -f1 || echo "unknown")
+PLAN_MODIFIED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$PLAN_FILE" 2>/dev/null) || \
+    PLAN_MODIFIED=$(stat -c %y "$PLAN_FILE" 2>/dev/null | cut -d'.' -f1) || \
+    PLAN_MODIFIED="unknown"
 
 # Calculate progress
 PROGRESS=$(calculate_progress "$PLAN_CONTENT")
@@ -398,11 +450,27 @@ FULL_CONTENT=$(printf '## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Prog
 
 # Prepend action directive for auto-load scenarios (flag or /clear detection).
 # For trigger-word loads, the user's message IS the instruction — no directive needed.
-if [[ "$LOAD_REASON" == "flag" ]] || [[ "$LOAD_REASON" == "refresh" ]]; then
-    ACTION_DIRECTIVE="**ACTION REQUIRED:** This plan was auto-loaded after context clear."
-    ACTION_DIRECTIVE+=" Resume working on the current task listed below."
-    ACTION_DIRECTIVE+=" If the user's message contains a different request, address that first."
-    FULL_CONTENT=$(printf '%s\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
+if [[ "$LOAD_REASON" == "flag" ]]; then
+    ACTION_DIRECTIVE="**ACTION REQUIRED - POST-CLEAR RESUME:**"
+    ACTION_DIRECTIVE+="\n\n1. Reconstruct todos from plan checkboxes:"
+    ACTION_DIRECTIVE+="\n   - For each \`- [ ]\` task: TaskCreate(subject=task_text, description=\"From plan\", activeForm=\"Working on ...\")"
+    ACTION_DIRECTIVE+="\n   - Set first task: TaskUpdate(taskId, status=\"in_progress\")"
+    ACTION_DIRECTIVE+="\n2. Load skills: @smith-plan, @smith-plan-claude, @smith-ctx-claude"
+    ACTION_DIRECTIVE+="\n3. If Serena MCP available: list_memories() then read_memory() for session state"
+    ACTION_DIRECTIVE+="\n4. Resume current task: ${CURRENT_TASK}"
+
+    # Proactive phase resume: Ralph state file in CWD but no resume files
+    if check_ralph_recently_active "${HOOK_CWD:-.}"; then
+        ACTION_DIRECTIVE+="\n\n**RALPH LOOP PHASE RESUME:**"
+        ACTION_DIRECTIVE+="\nPrevious session used ralph-loop (state file found in CWD)."
+        ACTION_DIRECTIVE+="\n5. read_memory() for ralph_* state (phase progress, iteration context)"
+        ACTION_DIRECTIVE+="\n6. If phase work remains: auto-invoke Skill(skill: \"ralph-loop:ralph-loop\")"
+        ACTION_DIRECTIVE+="\n   Pass the original prompt and remaining iterations from memory"
+        ACTION_DIRECTIVE+="\n7. Do NOT ask user for permission - auto-invoke if ralph state found in memory"
+    fi
+
+    ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."
+    FULL_CONTENT=$(printf '%b\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
 fi
 
 # Append context warning if present

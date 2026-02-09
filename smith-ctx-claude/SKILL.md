@@ -20,7 +20,7 @@ description: Claude Code context management with /clear command and stop hook en
 
 **Thresholds**: 50% warning, 60% critical
 
-**Action**: Always `/clear`. Stop hook uses a KB-based heuristic (`CTX_CONTEXT_THRESHOLD_KB`, default 500KB) to block agent stop when context is high. Uses a one-shot flag pattern: first stop attempt blocked, second allowed.
+**Action**: Always `/clear`. Stop hook enforcement is handled by the unified `smith-plan-claude` stop hook, which covers both plan-active and non-plan contexts. Uses `stop_hook_active` (official best practice) instead of one-shot flags.
 
 </required>
 
@@ -36,32 +36,30 @@ description: Claude Code context management with /clear command and stop hook en
 <required>
 
 **Before `/clear`:**
-1. Commit current work with detailed message
-2. Check for uncommitted changes
-3. Persist state to Serena memory with `write_memory()`
+1. Update plan file with current progress (if active)
+2. Commit current work with detailed message
+3. Save state to Serena memory with `write_memory()`
+4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path if applicable, memory name, resume command)
 
-**Preserved**: Project files, CLAUDE.md
+**Preserved**: Project files, CLAUDE.md, plan files
 **Lost**: All conversation history
 
 **After `/clear`:**
-1. Use `read_memory()` to resume context
-2. Re-read relevant files as needed
+1. Plan auto-reloads with todo reconstruction (if active)
+2. If Serena MCP available: call list_memories(), read relevant memories for session state
+3. Re-read relevant files as needed
 
 </required>
 
-## Stop Hook
+## Stop Hook (Unified)
 
-The `enforce-clear.sh` stop hook blocks the agent from stopping when context is high.
+Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`. Uses real token counts from transcript JSONL (same data as Claude Code statusline) to calculate context percentage. A single unified hook covers both plan-active and non-plan contexts:
 
-**Behavior:**
-- Checks transcript size against `CTX_CONTEXT_THRESHOLD_KB` (default: 500KB, ~60% of 200K)
-- Below threshold: allows stop
-- Above threshold (first attempt): blocks stop, creates one-shot flag, outputs guidance
-- Above threshold (second attempt): flag exists, allows stop
+- **Real percentage**: Blocks at 60% context (from transcript token usage, not byte count)
+- **Three branches**: Plan+pending, plan+completed, no-plan (plan filepath shown first, Serena optional)
+- **Loop prevention**: Uses `stop_hook_active` field (official best practice)
 
-**Coexistence**: Both this hook and the plan-claude stop hook can fire on the same Stop event. Messages are complementary. Both use one-shot flag patterns so a second stop attempt passes both.
-
-**Script**: `smith-ctx-claude/scripts/enforce-clear.sh`
+**Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
 
 ## CLAUDE.md Persistence
 
@@ -150,9 +148,9 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 <required>
 
 **Proactive context management:**
-1. At 50%: Warn, prepare retention criteria
-2. At 60%: Commit work, persist to Serena with `write_memory()`, recommend `/clear` (stop hook enforces)
-3. After `/clear`: Use `read_memory()` to resume
+1. At 50%: Warn, prepare retention criteria (advisory from inject-plan.sh)
+2. At 60%: Commit work, update plan, save state to Serena (`session_<CWD_KEY>`), then AFTER all tool calls output self-contained "Reload with:" block, recommend `/clear` (stop hook blocks)
+3. After `/clear`: Plan auto-reloads; check Serena memories via list_memories()
 
 **Agent RECOMMENDS - user executes the command.**
 
