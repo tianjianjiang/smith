@@ -95,7 +95,7 @@ Output <promise>COMPLETE</promise> after all phases.
 1. Mark completed tasks [x] in plan file
 2. Commit current work
 3. Save phase state: `write_memory("ralph_<task>_phase_N")`
-4. Output `<promise>PHASE_COMPLETE</promise>` (or configured promise)
+4. Output the configured completion promise (default: `<promise>PHASE_COMPLETE</promise>`). Ensure this matches the Ralph loop's `--completion-promise` value.
 5. AFTER all tool calls, output:
 
 **Reload with:**
