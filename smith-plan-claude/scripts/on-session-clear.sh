@@ -145,6 +145,12 @@ if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
     ACTION_DIRECTIVE+="\n2. Scan memory names for recent session context (session, task, plan keywords)"
     ACTION_DIRECTIVE+="\n3. Read relevant memories and report restored context to user"
     ACTION_DIRECTIVE+="\n4. Offer to continue previous work or await new instructions"
+    if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
+        ACTION_DIRECTIVE+="$RALPH_RESUME_DIRECTIVE"
+    fi
+    if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
+        ACTION_DIRECTIVE+="$ORCH_RESUME_DIRECTIVE"
+    fi
     ACTION_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
     ACTION_DIRECTIVE+="\nIf user's message contains a specific request, address that first but still restore context."
     rm -f "$FLAG_FILE" 2>/dev/null
@@ -163,7 +169,6 @@ TOTAL=$(echo "$PLAN_CONTENT" | grep -c '^[[:space:]]*- \[.\]' || true)
 TOTAL=${TOTAL:-0}
 COMPLETED=$(echo "$PLAN_CONTENT" | grep -c '^[[:space:]]*- \[x\]' || true)
 COMPLETED=${COMPLETED:-0}
-PENDING=$((TOTAL - COMPLETED))
 
 if [[ $TOTAL -gt 0 ]]; then
     PERCENT=$((COMPLETED * 100 / TOTAL))

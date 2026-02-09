@@ -93,12 +93,18 @@ get_context_percentage() {
         | grep '^{' \
         | grep '"assistant"' | tail -1 \
         | jq -r '
+            # Total context consumption: input + cached + output (context window is shared)
             .message.usage
             | ((.input_tokens // 0) + (.cache_read_input_tokens // 0)
-               + (.cache_creation_input_tokens // 0))
+               + (.cache_creation_input_tokens // 0) + (.output_tokens // 0))
         ' 2>/dev/null) || total=""
 
     if [[ -z "$total" ]] || [[ "$total" == "null" ]] || ! [[ "$total" =~ ^[0-9]+$ ]]; then
+        echo "0"
+        return
+    fi
+
+    if [[ "$context_window" -le 0 ]]; then
         echo "0"
         return
     fi
@@ -269,7 +275,7 @@ force_ralph_exit() {
     fi
 
     # Set max_iterations = iteration so Ralph's stop hook allows exit
-    sed -i'' -e "s/^max_iterations:.*/max_iterations: ${iteration}/" "$state_file" 2>/dev/null
+    sed -i '' -e "s/^max_iterations:.*/max_iterations: ${iteration}/" "$state_file" 2>/dev/null
     return $?
 }
 

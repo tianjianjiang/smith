@@ -33,30 +33,29 @@ if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
     exit 0
 fi
 
+# Extract fields (CWD extracted once, reused for Ralph/orch/flag coordination)
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
+HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
+CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+
 # Ralph coordination: defer to inject-plan.sh + Ralph's own stop hook.
 # inject-plan.sh already saved resume state and set max_iterations.
 # We MUST NOT double-block or we create a deadlock.
-RALPH_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-RALPH_RESUME="${PLANS_DIR}/.ralph-resume-$(cwd_key "${RALPH_CWD:-${PWD:-}}")"
+RALPH_RESUME="${PLANS_DIR}/.ralph-resume-${CWD_KEY}"
 
-if [[ -f "${RALPH_CWD:-.}/.claude/${RALPH_STATE_FILENAME}" ]] || [[ -f "$RALPH_RESUME" ]]; then
+if [[ -f "${HOOK_CWD:-.}/.claude/${RALPH_STATE_FILENAME}" ]] || [[ -f "$RALPH_RESUME" ]]; then
     exit 0
 fi
 
 # Orchestrator coordination: defer to inject-plan.sh for context management.
 # inject-plan.sh saves orchestrator resume state at warning/critical thresholds.
-ORCH_CWD_KEY=$(cwd_key "${RALPH_CWD:-${PWD:-}}")
-ORCH_STATE="${PLANS_DIR}/${ORCH_STATE_PREFIX}${ORCH_CWD_KEY}"
-ORCH_RESUME="${PLANS_DIR}/.ralph-orch-resume-${ORCH_CWD_KEY}"
+ORCH_STATE="${PLANS_DIR}/${ORCH_STATE_PREFIX}${CWD_KEY}"
+ORCH_RESUME="${PLANS_DIR}/.ralph-orch-resume-${CWD_KEY}"
 
 if [[ -f "$ORCH_STATE" ]] || [[ -f "$ORCH_RESUME" ]]; then
     exit 0
 fi
-
-# Extract fields
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
-HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
     exit 0
@@ -69,8 +68,7 @@ if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
     exit 0
 fi
 
-# CWD-keyed identifiers
-CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+# CWD-keyed identifiers (CWD_KEY computed above with field extraction)
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 

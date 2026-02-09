@@ -149,7 +149,7 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 
 **Proactive context management:**
 1. At 50%: Warn, prepare retention criteria (advisory from inject-plan.sh)
-2. At 60%: Commit work, update plan, save state to Serena (`session_<CWD_KEY>`), then AFTER all tool calls output self-contained "Reload with:" block, recommend `/clear` (stop hook blocks)
+2. At 60%: Commit work, update plan, save state to Serena (descriptive name matching hooks' convention), then AFTER all tool calls output self-contained "Reload with:" block, recommend `/clear` (stop hook blocks)
 3. After `/clear`: Plan auto-reloads; check Serena memories via list_memories()
 
 **Agent RECOMMENDS - user executes the command.**

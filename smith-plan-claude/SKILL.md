@@ -74,7 +74,7 @@ Simulates Claude Code's "clear context and auto-accept edits" behavior for plan 
 
 Uses real token counts from transcript JSONL (same data as Claude Code statusline). The last assistant message's `usage` object provides `input_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens`. Context percentage = total input tokens / context window size.
 
-```
+```text
 Every prompt submission
     |
     v
@@ -160,7 +160,7 @@ When Ralph is active and context gets high, three hooks coordinate to prevent de
 ### Resume File Format
 
 `~/.claude/plans/.ralph-resume-<8-char-cwd-hash>`:
-```
+```text
 20                                  <- line 1: max_iterations
 5                                   <- line 2: current iteration
 TASK COMPLETE                       <- line 3: completion promise
@@ -169,7 +169,7 @@ TASK COMPLETE                       <- line 3: completion promise
 ```
 
 `~/.claude/plans/.ralph-resume-<8-char-cwd-hash>.prompt`:
-```
+```text
 Raw prompt text (may contain newlines)
 ```
 

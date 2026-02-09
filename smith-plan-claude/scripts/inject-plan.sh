@@ -80,7 +80,7 @@ PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
 
 # Determine action type
 ACTION=""
-PLAN_FILE=""
+PLAN_FILE=""  # Reset: plan-mode save (above) already persisted; normal flow re-discovers via flag/trigger
 CONTEXT_MSG=""
 LOAD_REASON=""
 

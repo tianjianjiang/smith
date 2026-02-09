@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 28 scenarios covering:
+# Runs 31 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -31,6 +31,9 @@
 #  26. enforce-clear + Ralph resume file only -> exit 0 (no block)
 #  27. on-session-clear + resume file -> plan + Ralph restart in output
 #  28. on-session-clear + resume, no plan -> Ralph restart only in output
+#  29. on-session-clear + ralph state (inactive, no resume) + plan -> RALPH LOOP PHASE RESUME
+#  30. on-session-clear + ralph state (no resume) + no plan -> RALPH LOOP PHASE RESUME
+#  31. inject-plan flag reload + ralph state (inactive, no resume) -> RALPH LOOP PHASE RESUME
 #
 
 set -e
@@ -624,7 +627,6 @@ rm -f "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 create_test_plan
 CWD_17="$TEST_DIR/worktree-17"
 mkdir -p "$CWD_17"
-CWD_17_KEY=$(compute_cwd_key "$CWD_17")
 # No state file for this CWD -> on-session-clear falls through to Serena-only path
 OUTPUT=$(echo '{"cwd":"'"$CWD_17"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "17" "$OUTPUT" "ACTION REQUIRED" && \
@@ -1229,7 +1231,6 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 
 RALPH_CWD_30="$TEST_DIR/worktree-ralph-30"
 mkdir -p "$RALPH_CWD_30/.claude"
-CWD_30_KEY=$(compute_cwd_key "$RALPH_CWD_30")
 
 # Ralph state: active=false, no plan, no resume files
 create_ralph_state "$RALPH_CWD_30" "false" "3" "15" "DONE" "Fix all bugs."
