@@ -74,7 +74,7 @@ fi
 # This covers the phase-boundary exit path where the agent exited Ralph
 # normally (via promise) and no context threshold was hit.
 if [[ -z "$RALPH_RESUME_DIRECTIVE" ]]; then
-    if check_ralph_recently_active "${HOOK_CWD:-.}"; then
+    if check_ralph_recently_active "${HOOK_CWD:-${PWD:-.}}"; then
         RALPH_RESUME_DIRECTIVE="\n\n**RALPH LOOP PHASE RESUME:**"
         RALPH_RESUME_DIRECTIVE+="\nPrevious session used ralph-loop (state file found in CWD)."
         RALPH_RESUME_DIRECTIVE+="\n1. read_memory() for ralph_* state (phase progress, iteration context)"
