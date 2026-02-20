@@ -63,6 +63,7 @@ Output <promise>COMPLETE</promise> after all phases.
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
 **Reactive: Auto-exit at critical context (hook-managed):**
+- At 40-50%: "Summarize from here" -- consolidate verbose output.
 - At 50%: Advisory. Save iteration state to Serena immediately.
 - At 60%: Loop auto-exits (max_iterations set to current).
   Resume state saved. After /clear, loop auto-restarts via Skill tool.
@@ -183,7 +184,7 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 
 ### Orchestrator State File
 
-Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>`:
+Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>` (16-char hash of `PPID:CWD` via `session_key()` in `lib-common.sh`):
 
 ```yaml
 ---
@@ -210,7 +211,8 @@ Hook scripts detect this file to manage context cycling (save state before `/cle
 User -> "ralph team" -> Team Lead -> Teammates (own context, shared tasks)
 ```
 
-Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+**Setup**: Set `"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}`
+in `~/.claude/settings.json` (or export before starting Claude Code).
 
 </context>
 
@@ -222,7 +224,7 @@ Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 1. Read plan file, create shared task list from `- [ ]` items
 2. Set up dependencies (task 2 depends on task 1 if sequential)
 3. Spawn N teammates (each gets ralph-worker prompt + plan context)
-4. Enable **delegate mode** (Shift+Tab) - lead coordinates only
+4. Lead coordinates (see Known Issues before using delegate mode)
 5. Teammates self-claim unblocked tasks from shared list
 6. Lead monitors progress, handles failures, synthesizes results
 7. On completion: clean up team, output summary
@@ -241,13 +243,91 @@ Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
 </required>
 
-### Limitations
+### Display Modes
 
+<context>
+
+**In-process** (default, any terminal):
+- Shift+Up/Down: Cycle between teammates
+- Enter: View teammate session
+- Escape: Interrupt teammate's current turn
+- Ctrl+T: Toggle shared task list
+
+**Split panes** (requires tmux or iTerm2):
+- Each teammate gets own pane, visible simultaneously
+- Click into pane to interact directly
+- Config: `"teammateMode": "tmux"` in settings.json
+- Override per-session: `claude --teammate-mode in-process`
+- Not supported: VS Code terminal, Windows Terminal, Ghostty
+
+**Default** (`"auto"`): Uses split panes if already in tmux,
+otherwise in-process.
+
+</context>
+
+### Known Issues
+
+<required>
+
+**Delegate mode permission bug** (Issue #25037):
+Teammates spawned after enabling delegate mode (Shift+Tab)
+inherit the lead's restricted permissions. Teammates lose
+file tools (Read, Write, Edit, Bash, Glob, Grep) and cannot
+write code.
+
+**Workaround**: Do NOT use delegate mode for code-writing teams.
+- Tell lead: "Wait for teammates to complete before proceeding"
+- Use **plan approval mode** instead for coordination control
+  (require teammates to plan before implementing)
+- If lead starts implementing, interrupt and redirect
+
+**Other limitations**:
 - No session resumption for in-process teammates
 - No nested teams (teammates cannot spawn teams)
 - One team per session; lead is fixed for lifetime
 - Token-intensive (each teammate = separate Claude instance)
 - Experimental - API may change
+
+</required>
+
+### Quality Gate Hooks
+
+<context>
+
+Hook matchers below are part of the experimental agent teams API
+and may change. Verify against current Claude Code docs if issues arise.
+
+**TeammateIdle** - Fires when teammate finishes and awaits
+next task. Exit code 2 sends feedback and keeps teammate working.
+
+```json
+{
+  "hooks": {
+    "TeammateIdle": [{
+      "type": "command",
+      "command": "echo 'Run tests before marking done'",
+      "timeout": 5
+    }]
+  }
+}
+```
+
+**TaskCompleted** - Fires when shared task marked complete.
+Exit code 2 prevents completion and sends feedback.
+
+```json
+{
+  "hooks": {
+    "TaskCompleted": [{
+      "type": "command",
+      "command": "echo 'Verify test coverage'",
+      "timeout": 5
+    }]
+  }
+}
+```
+
+</context>
 
 ## Tasks Integration
 
@@ -280,7 +360,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 | User interaction | Between iterations | Between workers | With any teammate |
 | Token cost | Low | Medium (subagent overhead) | High (per-teammate) |
 | Stability | Stable (official plugin) | Stable (Task tool) | Experimental |
-| Setup | None | None | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
+| Setup | None | None | settings.json env block (or export) |
 
 **Recommendation flow**:
 1. Simple TDD/debug loop -> Pattern A (`/ralph-loop`)
@@ -312,7 +392,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 Say "ralph orchestrate" with a plan file. Parent spawns workers via Task tool.
 
 **Starting Agent Teams (Pattern C):**
-Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (set via settings.json env block or shell export).
 
 **During iterations:**
 1. Read files before changes

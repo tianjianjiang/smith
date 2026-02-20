@@ -120,6 +120,11 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 - `{feature}_notes` - Feature-specific context
 - `{task}_context` - Task-specific discoveries and decisions
 
+**Relationship with auto memory:**
+Auto memory handles long-term project knowledge (patterns,
+conventions). Serena memory handles session state and cross-context
+continuity. See `@smith-ctx-claude/SKILL.md` for delineation.
+
 </required>
 
 ## Project Configuration

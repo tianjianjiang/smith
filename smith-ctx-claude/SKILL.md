@@ -16,17 +16,29 @@ description: Claude Code context management with /clear command and stop hook en
 
 <required>
 
-**Agent prompts for context status**, then recommends action to user.
+**Agent prompts for context status**, then recommends action.
 
-**Thresholds**: 50% warning, 60% critical
+**Thresholds and actions (graduated)**:
+- 40-50%: Consider "Summarize from here" (targeted compression)
+- 50%: Warning - recommend action (summarize or /clear)
+- 60%: Critical - /clear mandatory (stop hook enforced)
 
-**Action**: Always `/clear`. Stop hook enforcement is handled by the unified `smith-plan-claude` stop hook, which covers both plan-active and non-plan contexts. Uses `stop_hook_active` (official best practice) instead of one-shot flags.
+**"Summarize from here"** (preserves early context):
+- Access: Esc+Esc (or /rewind) -> select checkpoint -> Summarize
+- Keeps conversation before checkpoint intact
+- Compresses everything after checkpoint into summary
+- Optional: provide focus instructions for the summary
+- Best when early decisions matter but later exploration is verbose
+
+**"/clear"** (full reset, save state first):
+- Stop hook enforced at 60% via `smith-plan-claude`
+- Uses `stop_hook_active` (official best practice)
 
 </required>
 
 <forbidden>
 
-- Using `/compact` (not supported for Claude Code)
+- Using `/compact` (use "Summarize from here" or /clear instead)
 - `/clear` without checking uncommitted work
 
 </forbidden>
@@ -94,14 +106,17 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 <context>
 
-**Enable skill discovery:**
-```shell
+**Primary method (symlink, recommended for smith):**
+
+```bash
 ln -sf $HOME/.smith $HOME/.claude/skills
 ```
 
-Claude Code discovers skills matching your tasks and asks before loading.
+Claude Code discovers skills at `~/.claude/skills/smith-*/SKILL.md`.
+All skills prefixed with "smith-" to avoid conflicts.
 
-All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
+**Alternative**: `claude --add-dir /path/to/skills-repo` for
+cross-repo sharing (see `@smith-tools/SKILL.md` for details).
 
 </context>
 
@@ -117,6 +132,41 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 - Tool Search for on-demand tool loading
 
 </context>
+
+## Auto Memory (Claude Code Native)
+
+<context>
+
+**Claude Code auto memory** stores agent-generated notes at:
+`~/.claude/projects/<project-slug>/memory/`
+
+- `MEMORY.md` - First 200 lines auto-loaded every session
+- Topic files (e.g. `debugging.md`) - Read on demand
+- Browse: `/memory` command
+- Disable: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
+
+</context>
+
+<required>
+
+**Auto memory vs Serena memory - complementary, not competing:**
+
+**Auto memory** (long-lived project knowledge):
+- Project architecture and conventions
+- Recurring debugging patterns
+- User preferences discovered during sessions
+- Build/test/deploy quirks
+
+**Serena memory** (task-scoped continuity):
+- Session state (current task, progress, next steps)
+- Ralph loop state (iteration, hypotheses, test results)
+- Phase boundary checkpoints
+- Cross-context-reset continuity
+
+**No sync needed** - different lifecycles, different purposes.
+Auto memory accumulates knowledge. Serena handles continuity.
+
+</required>
 
 ## Plugin Discovery
 
@@ -148,9 +198,12 @@ All skills prefixed with "smith-" to avoid conflicts with 50+ built-in commands.
 <required>
 
 **Proactive context management:**
-1. At 50%: Warn, prepare retention criteria (advisory from inject-plan.sh)
-2. At 60%: Commit work, update plan, save state to Serena (descriptive name matching hooks' convention), then AFTER all tool calls output self-contained "Reload with:" block, recommend `/clear` (stop hook blocks)
-3. After `/clear`: Plan auto-reloads; check Serena memories via list_memories()
+1. At 40-50%: Try "Summarize from here" first
+   - Esc+Esc -> select checkpoint -> Summarize
+   - Guide: "Focus on [task], [decisions], [file:line refs]"
+2. At 50%: Warn, prepare retention criteria
+3. At 60%: Commit, update plan, save to Serena, "/clear"
+4. After /clear: Plan auto-reloads; check Serena memories
 
 **Agent RECOMMENDS - user executes the command.**
 

@@ -1,6 +1,6 @@
 ---
 name: smith-plan-claude
-description: Plan automation for Claude Code (hooks, scripts, auto-reload). Handles auto-resume after /clear, context threshold detection, and CWD-keyed isolation. Use when the user says "execute plan", "load plan", "start the plan", "run the plan", or wants to work from a previously created plan. IMPORTANT - Always update the plan file after completing tasks.
+description: Plan automation for Claude Code (hooks, scripts, auto-reload). Handles auto-resume after /clear, context threshold detection, and session-keyed isolation. Use when the user says "execute plan", "load plan", "start the plan", "run the plan", "reload", or wants to work from a previously created plan. IMPORTANT - Always update the plan file after completing tasks.
 license: MIT
 compatibility: Requires jq for JSON parsing. Designed for Claude Code plan mode files and Ralph loop integration.
 metadata:
@@ -11,7 +11,7 @@ metadata:
 
 # Plan Automation (Claude Code)
 
-Claude Code-specific automation for plan execution: hooks, auto-reload after `/clear`, context threshold detection, and CWD-keyed session isolation.
+Claude Code-specific automation for plan execution: hooks, auto-reload after `/clear`, context threshold detection, and session-keyed isolation.
 
 <metadata>
 
@@ -101,7 +101,7 @@ Stop hook (enforce-clear.sh) blocks at 60% (critical threshold).
 
 ### Flag File Format
 
-`~/.claude/plans/.pending-reload-<8-char-cwd-hash>`:
+`~/.claude/plans/.pending-reload-<session-hash>`:
 ```
 /absolute/path/to/plan.md       <- line 1: plan path
 session_abc123                   <- line 2: session ID
@@ -109,7 +109,7 @@ $(date +%Y-%m-%dT%H:%M:%S%z)    <- line 3: ISO timestamp
 /path/to/working/directory      <- line 4: CWD (for debugging)
 ```
 
-- **CWD-based isolation**: Each parallel session gets its own flag file keyed by md5 hash of `$PWD`
+- **Session-based isolation**: Each parallel session gets its own flag file keyed by hash of `PPID:CWD`
 - `$PWD` persists across `/clear` but differs between parallel sessions (worktrees)
 - Expired flags (>1 hour) auto-cleaned on each hook invocation
 - Legacy single `.pending-reload` file auto-cleaned (backward compatibility)
@@ -159,7 +159,7 @@ When Ralph is active and context gets high, three hooks coordinate to prevent de
 
 ### Resume File Format
 
-`~/.claude/plans/.ralph-resume-<8-char-cwd-hash>`:
+`~/.claude/plans/.ralph-resume-<session-hash>`:
 ```text
 20                                  <- line 1: max_iterations
 5                                   <- line 2: current iteration
@@ -168,7 +168,7 @@ TASK COMPLETE                       <- line 3: completion promise
 2026-02-10T14:30:45+0800            <- line 5: timestamp
 ```
 
-`~/.claude/plans/.ralph-resume-<8-char-cwd-hash>.prompt`:
+`~/.claude/plans/.ralph-resume-<session-hash>.prompt`:
 ```text
 Raw prompt text (may contain newlines)
 ```
@@ -184,6 +184,8 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 | `execute plan` | Load most recent plan |
 | `!load-plan` | Load most recent plan |
 | `!load-plan <name>` | Load specific plan |
+| `reload` | Load plan from state file (post-/clear shortcut) |
+| `reload plan` / `reload the plan` | Load plan from state file |
 | `!plan-status` | Show current progress |
 
 ## Scripts
@@ -203,14 +205,14 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 | Item | Path |
 |------|------|
 | Plans directory | `~/.claude/plans/` |
-| Active plan | Tracked in `.plan-state-<cwd-hash>` state file |
-| Reload flag | `~/.claude/plans/.pending-reload-<cwd-hash>` |
-| State file | `~/.claude/plans/.plan-state-<cwd-hash>` |
+| Active plan | Tracked in `.plan-state-<session-hash>` state file |
+| Reload flag | `~/.claude/plans/.pending-reload-<session-hash>` |
+| State file | `~/.claude/plans/.plan-state-<session-hash>` |
 | This skill | `~/.smith/smith-plan-claude/` |
 
 ## State File Format
 
-`~/.claude/plans/.plan-state-<8-char-cwd-hash>`:
+`~/.claude/plans/.plan-state-<session-hash>`:
 ```
 sess_abc123                   <- line 1: session ID
 /path/to/transcript.jsonl     <- line 2: transcript path
@@ -219,7 +221,7 @@ $(date +%Y-%m-%dT%H:%M:%S%z) <- line 4: ISO timestamp
 /path/to/plan.md              <- line 5: plan path
 ```
 
-- **CWD-keyed**: Same as flag files, keyed by md5 hash of `$PWD` (persists across `/clear`)
+- **Session-keyed**: Same as flag files, keyed by hash of `PPID:CWD` (persists across `/clear`)
 - **60-min auto-load window**: State files older than 60 minutes are skipped for auto-load (prevents loading old plan in new session)
 - **24-hour cleanup**: State files older than 24 hours are auto-cleaned on each hook invocation
 

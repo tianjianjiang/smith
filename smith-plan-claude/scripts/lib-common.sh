@@ -21,21 +21,23 @@ require_jq() {
     fi
 }
 
-# Compute CWD key hash for flag and state files that must survive /clear.
-# CWD persists across /clear (same terminal); session_id does not.
-# macOS: md5, Linux: md5sum
-cwd_key() {
-    local cwd="$1"
-    if [[ -z "$cwd" ]]; then
-        cwd="${PWD:-$(pwd)}"
-    fi
+# Compute session key hash for flag and state files that must survive /clear.
+# Hashes PPID:CWD for per-session isolation (concurrent sessions in same CWD
+# get different keys). PPID = Claude Code's PID, stable across /clear.
+# _SMITH_PPID env var overrides $PPID (for testing). macOS: md5, Linux: md5sum, POSIX: shasum/cksum.
+session_key() {
+    local ppid="${1:-${_SMITH_PPID:-$PPID}}"
+    local cwd="${2:-${PWD:-$(pwd)}}"
+    local input="${ppid}:${cwd}"
     local hash
-    hash=$(printf '%s' "$cwd" | md5 -q 2>/dev/null) || \
-    hash=$(printf '%s' "$cwd" | md5sum 2>/dev/null | cut -d' ' -f1) || {
-        echo "Warning: md5/md5sum not found, using constant fallback hash (CWD isolation disabled)" >&2
-        hash="00000000"
+    hash=$(printf '%s' "$input" | md5 -q 2>/dev/null) || \
+    hash=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | shasum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | cksum 2>/dev/null | cut -d' ' -f1) || {
+        echo "Warning: no hash command found, session isolation disabled" >&2
+        hash="0000000000000000"
     }
-    printf '%s' "${hash:0:8}"
+    printf '%s' "${hash:0:16}"
 }
 
 # Helper: output JSON for UserPromptSubmit hooks using jq for proper escaping
@@ -119,6 +121,27 @@ json_stop_block() {
         decision: "block",
         reason: $r
     }'
+}
+
+# Save state file for post-/clear plan restoration.
+# Records session_id, transcript_path, transcript_size, timestamp, and plan_path.
+# Used by both inject-plan.sh (on every prompt) and enforce-clear.sh (on block).
+# Args: $1=state_file, $2=session_id, $3=transcript_path, $4=plan_path
+save_state_file() {
+    local state_file="$1"
+    local session_id="${2:-unknown}"
+    local transcript_path="${3:-unknown}"
+    local plan_path="${4:-}"
+    local current_size=0
+    if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
+        current_size=$(wc -c < "$transcript_path" 2>/dev/null | tr -d '[:space:]') || current_size=0
+    fi
+    printf '%s\n%s\n%s\n%s\n%s\n' \
+        "$session_id" \
+        "$transcript_path" \
+        "$current_size" \
+        "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+        "$plan_path" > "$state_file"
 }
 
 # --- Ralph Loop helpers ---
