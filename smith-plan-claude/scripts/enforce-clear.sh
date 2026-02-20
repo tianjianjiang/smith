@@ -6,8 +6,8 @@
 # Uses real token counts from transcript JSONL (same as statusline).
 # Uses stop_hook_active (official best practice) for loop prevention.
 #
-# Session Isolation: Uses CWD-based flag files so parallel Claude Code
-# sessions (in different worktrees) don't interfere with each other.
+# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
+# sessions (even in the same CWD) don't interfere with each other.
 #
 # Conditions to block:
 #   1. stop_hook_active is false (not already continuing from a stop hook)
@@ -37,7 +37,7 @@ fi
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
-CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 
 # Ralph coordination: defer to inject-plan.sh + Ralph's own stop hook.
 # inject-plan.sh already saved resume state and set max_iterations.
@@ -90,6 +90,11 @@ if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
     printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
         "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
 fi
+
+# Refresh state file NOW so on-session-clear.sh finds fresh state after /clear.
+# Critical: inject-plan.sh (UserPromptSubmit) stops firing mid-session (known bug),
+# so the state file may be stale. This Stop hook is the last reliable write point.
+save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN"
 
 # Build message (plan-first, Serena optional)
 if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
