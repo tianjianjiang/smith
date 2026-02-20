@@ -63,6 +63,7 @@ Output <promise>COMPLETE</promise> after all phases.
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
 **Reactive: Auto-exit at critical context (hook-managed):**
+- At 40-50%: "Summarize from here" -- consolidate verbose output.
 - At 50%: Advisory. Save iteration state to Serena immediately.
 - At 60%: Loop auto-exits (max_iterations set to current).
   Resume state saved. After /clear, loop auto-restarts via Skill tool.
@@ -183,7 +184,7 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 
 ### Orchestrator State File
 
-Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>`:
+Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>` (16-char hash of `PPID:CWD` via `session_key()` in `lib-common.sh`):
 
 ```yaml
 ---
@@ -302,13 +303,10 @@ next task. Exit code 2 sends feedback and keeps teammate working.
 ```json
 {
   "hooks": {
-    "Notification": [{
-      "matcher": "TeammateIdle",
-      "hooks": [{
-        "type": "command",
-        "command": "echo 'Run tests before marking done'",
-        "timeout": 5000
-      }]
+    "TeammateIdle": [{
+      "type": "command",
+      "command": "echo 'Run tests before marking done'",
+      "timeout": 5
     }]
   }
 }
@@ -320,13 +318,10 @@ Exit code 2 prevents completion and sends feedback.
 ```json
 {
   "hooks": {
-    "Notification": [{
-      "matcher": "TaskCompleted",
-      "hooks": [{
-        "type": "command",
-        "command": "echo 'Verify test coverage'",
-        "timeout": 5000
-      }]
+    "TaskCompleted": [{
+      "type": "command",
+      "command": "echo 'Verify test coverage'",
+      "timeout": 5
     }]
   }
 }
@@ -365,7 +360,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 | User interaction | Between iterations | Between workers | With any teammate |
 | Token cost | Low | Medium (subagent overhead) | High (per-teammate) |
 | Stability | Stable (official plugin) | Stable (Task tool) | Experimental |
-| Setup | None | None | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
+| Setup | None | None | settings.json env block (or export) |
 
 **Recommendation flow**:
 1. Simple TDD/debug loop -> Pattern A (`/ralph-loop`)
@@ -397,7 +392,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 Say "ralph orchestrate" with a plan file. Parent spawns workers via Task tool.
 
 **Starting Agent Teams (Pattern C):**
-Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (set via settings.json env block or shell export).
 
 **During iterations:**
 1. Read files before changes

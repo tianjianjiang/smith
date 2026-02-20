@@ -22,7 +22,7 @@ HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
-# CWD-keyed state file (survives /clear; tracks plan, transcript state)
+# Session-keyed state file (survives /clear; tracks plan, transcript state)
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 ACTIVE_PLAN=""
 if [[ -f "$STATE_FILE" ]]; then
@@ -42,13 +42,8 @@ fi
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
 printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
 
-# Write state file so future hooks find the active plan via CWD-keyed state
-printf '%s\n%s\n%s\n%s\n%s\n' \
-    "${SESSION_ID:-unknown}" \
-    "unknown" \
-    "0" \
-    "$TIMESTAMP" \
-    "$ACTIVE_PLAN" > "$STATE_FILE"
+# Write state file so future hooks find the active plan via session-keyed state
+save_state_file "$STATE_FILE" "${SESSION_ID:-unknown}" "unknown" "$ACTIVE_PLAN"
 
 BASENAME=$(basename "$ACTIVE_PLAN")
 MSG=$(printf '**PLAN EXIT - CLEAR-AND-RESUME READY**\n\nPlan: `%s`\nFile: `%s`\n\n**Next steps:**\n1. Update plan if needed: `%s`\n2. Commit uncommitted work\n3. If Serena MCP available: write_memory() with descriptive name (task, decisions, next steps)\n4. AFTER all tool calls complete, output this block:\n\n**Reload with:**\n- Plan: `%s`\n- Resume: <describe current task>\n\n5. Run /clear to free context\n6. Type any prompt - plan auto-reloads with todos and skills, Serena memory auto-restores via list_memories()\n\n**Note:** If you selected "clear context and auto-accept edits", plan will auto-reload on next prompt.' \

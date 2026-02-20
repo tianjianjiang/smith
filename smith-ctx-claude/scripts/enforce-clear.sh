@@ -71,7 +71,7 @@ HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 
 # Session-keyed flag file (distinct from plan-claude's .pending-reload-*)
-CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "${_SMITH_PPID:-$PPID}" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${FLAGS_DIR}/.ctx-clear-${CWD_KEY}"
 
 # If flag exists, this is the second attempt -> allow stop

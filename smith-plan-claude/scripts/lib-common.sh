@@ -24,16 +24,17 @@ require_jq() {
 # Compute session key hash for flag and state files that must survive /clear.
 # Hashes PPID:CWD for per-session isolation (concurrent sessions in same CWD
 # get different keys). PPID = Claude Code's PID, stable across /clear.
-# _SMITH_PPID env var overrides $PPID (for testing). macOS: md5, Linux: md5sum.
+# _SMITH_PPID env var overrides $PPID (for testing). macOS: md5, Linux: md5sum, POSIX: shasum/cksum.
 session_key() {
     local ppid="${1:-${_SMITH_PPID:-$PPID}}"
     local cwd="${2:-${PWD:-$(pwd)}}"
     local input="${ppid}:${cwd}"
     local hash
     hash=$(printf '%s' "$input" | md5 -q 2>/dev/null) || \
-    hash=$(printf '%s' "$input" | md5sum 2>/dev/null \
-        | cut -d' ' -f1) || {
-        echo "Warning: md5 not found" >&2
+    hash=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | shasum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | cksum 2>/dev/null | cut -d' ' -f1) || {
+        echo "Warning: no hash command found, session isolation disabled" >&2
         hash="0000000000000000"
     }
     printf '%s' "${hash:0:16}"

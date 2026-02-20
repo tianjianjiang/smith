@@ -46,8 +46,8 @@ fi
 # Without this, completed plans from previous tasks stay loaded indefinitely.
 # Skip validation if flag exists (explicit reload intent from on-plan-exit).
 if [[ -n "$PLAN_FILE" ]] && [[ ! -f "$FLAG_FILE" ]]; then
-    PENDING_TASKS=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || echo 0)
-    PENDING_TASKS=$(echo "$PENDING_TASKS" | tr -d '[:space:]')
+    PENDING_TASKS=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || true)
+    PENDING_TASKS=${PENDING_TASKS:-0}
     if [[ "$PENDING_TASKS" -eq 0 ]]; then
         PLAN_FILE=""  # Stale — fall through to "no plan" path
     fi
@@ -64,12 +64,12 @@ if [[ -f "$STATE_FILE" ]]; then
         _state_age=$(( ($(date +%s) - _state_mtime) / 60 ))
     fi
     if [[ -n "$PLAN_FILE" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || echo 0)
-        _pending=$(echo "$_pending" | tr -d '[:space:]')
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || true)
+        _pending=${_pending:-0}
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan:-unknown}")\`, pending: ${_pending} tasks, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]] && [[ -f "$_state_plan" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || echo 0)
-        _pending=$(echo "$_pending" | tr -d '[:space:]')
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || true)
+        _pending=${_pending:-0}
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan}")\`, pending: ${_pending} tasks — not loaded, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]]; then
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan}")\` — file missing, age: ${_state_age}m)"
@@ -159,14 +159,18 @@ if [[ -z "$PLAN_FILE" ]]; then
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
 
-    ACTION_DIRECTIVE="**State check (CWD-keyed):**"
+    ACTION_DIRECTIVE="**State check (session-keyed):**"
     ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
     ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
     ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"
     ACTION_DIRECTIVE+="\n\n<required>"
     ACTION_DIRECTIVE+="\n\n**Fresh start — no active plan with pending tasks.**"
     ACTION_DIRECTIVE+="\nThe hook already verified: no plan needs resuming. Trust this decision."
-    ACTION_DIRECTIVE+="\n\nDo NOT read Serena memories. Do NOT read plan files. Do NOT explore."
+    if [[ -z "$RALPH_RESUME_DIRECTIVE" ]] && [[ -z "$ORCH_RESUME_DIRECTIVE" ]]; then
+        ACTION_DIRECTIVE+="\n\nDo NOT read Serena memories. Do NOT read plan files. Do NOT explore."
+    else
+        ACTION_DIRECTIVE+="\n\nDo NOT read plan files or explore for plan context."
+    fi
     ACTION_DIRECTIVE+="\n\nReport to user in this EXACT format and STOP:"
     ACTION_DIRECTIVE+="\n\`\`\`"
     ACTION_DIRECTIVE+="\nFresh start. No active plan."
@@ -194,7 +198,7 @@ fi
 if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
     # Plan file unreadable -- fall through with plan path hint + Serena directive
     ACTION_DIRECTIVE="STOP. Read this entire block before responding."
-    ACTION_DIRECTIVE+="\n\n**State check (CWD-keyed):**"
+    ACTION_DIRECTIVE+="\n\n**State check (session-keyed):**"
     ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
     ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
     ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"
@@ -253,7 +257,7 @@ PENDING=$((TOTAL - COMPLETED))
 # Build injection content
 # The hook already validated: plan exists, has pending tasks, state is fresh.
 # Serena check is advisory (useful for restoring context) not a blocking gate.
-ACTION_DIRECTIVE="**State check (CWD-keyed):**"
+ACTION_DIRECTIVE="**State check (session-keyed):**"
 ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
 ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
 ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"

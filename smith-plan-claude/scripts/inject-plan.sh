@@ -53,7 +53,7 @@ HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
-# CWD-keyed state file (survives /clear; tracks plan, transcript state)
+# Session-keyed state file (survives /clear; tracks plan, transcript state)
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 
 # Save injection state for post-/clear detection.
@@ -65,6 +65,7 @@ save_injection_state() {
 # Clean up expired flags (>1 hour old) and legacy single-flag format
 find "$PLANS_DIR" -name ".pending-reload-*" -mmin +60 -delete 2>/dev/null || true
 rm -f "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
+# 24h: state files live longer than flags (matches freshness window in on-session-clear.sh)
 find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-resume-*" -mmin +60 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-orch-resume-*" -mmin +60 -delete 2>/dev/null || true
@@ -169,8 +170,8 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
 
         PENDING=0
         if [[ -n "$ACTIVE_PLAN" ]]; then
-            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-            PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || true)
+            PENDING=${PENDING:-0}
         fi
 
         if [[ ! -f "$FLAG_FILE" ]]; then
@@ -290,8 +291,8 @@ if [[ -z "$ACTION" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
             if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
                 # Only refresh if plan has pending tasks (prevents perpetuating stale plans)
-                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || echo 0)
-                pending=$(echo "$pending" | tr -d '[:space:]')
+                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || true)
+                pending=${pending:-0}
                 if [[ "$pending" -gt 0 ]]; then
                     PLAN_FILE="$prev_plan"
                     save_injection_state

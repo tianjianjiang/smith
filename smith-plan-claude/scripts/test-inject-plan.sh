@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 31 scenarios covering:
+# Runs 36 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -71,7 +71,7 @@ trap cleanup EXIT
 # Uses _SMITH_PPID (exported above) to match what hooks will compute.
 compute_session_key() {
     local cwd="$1"
-    local ppid="$$"
+    local ppid="${_SMITH_PPID:-$$}"
     local input="${ppid}:${cwd}"
     local hash
     hash=$(printf '%s' "$input" | md5 -q 2>/dev/null) || \
