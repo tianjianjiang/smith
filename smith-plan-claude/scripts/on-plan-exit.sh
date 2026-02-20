@@ -5,8 +5,8 @@
 # Creates a CWD-specific .pending-reload flag file when Claude exits plan mode,
 # enabling auto-reload of the plan after /clear.
 #
-# Session Isolation: Uses CWD-based flag files so parallel Claude Code
-# sessions (in different worktrees) don't interfere with each other.
+# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
+# sessions (even in the same CWD) don't interfere with each other.
 #
 
 source "$(dirname "$0")/lib-common.sh"
@@ -18,8 +18,8 @@ INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 
-# CWD-keyed flag file (survives /clear; CWD persists, session_id does not)
-CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+# Session-keyed flag file (survives /clear; PPID:CWD persists, session_id does not)
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # CWD-keyed state file (survives /clear; tracks plan, transcript state)

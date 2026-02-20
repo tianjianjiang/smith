@@ -1,6 +1,6 @@
 ---
 name: smith-plan-claude
-description: Plan automation for Claude Code (hooks, scripts, auto-reload). Handles auto-resume after /clear, context threshold detection, and CWD-keyed isolation. Use when the user says "execute plan", "load plan", "start the plan", "run the plan", or wants to work from a previously created plan. IMPORTANT - Always update the plan file after completing tasks.
+description: Plan automation for Claude Code (hooks, scripts, auto-reload). Handles auto-resume after /clear, context threshold detection, and CWD-keyed isolation. Use when the user says "execute plan", "load plan", "start the plan", "run the plan", "reload", or wants to work from a previously created plan. IMPORTANT - Always update the plan file after completing tasks.
 license: MIT
 compatibility: Requires jq for JSON parsing. Designed for Claude Code plan mode files and Ralph loop integration.
 metadata:
@@ -184,6 +184,8 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 | `execute plan` | Load most recent plan |
 | `!load-plan` | Load most recent plan |
 | `!load-plan <name>` | Load specific plan |
+| `reload` | Load plan from state file (post-/clear shortcut) |
+| `reload plan` / `reload the plan` | Load plan from state file |
 | `!plan-status` | Show current progress |
 
 ## Scripts

@@ -5,13 +5,14 @@
 # Ralph Loop Compatible: Reads fresh from disk on EVERY invocation.
 # This ensures each iteration gets the latest plan with updated progress.
 #
-# Session Isolation: Uses CWD-based flag files so parallel Claude Code
-# sessions (in different worktrees) don't interfere with each other.
-# CWD persists across /clear; session_id does not.
+# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
+# sessions (even in the same CWD) don't interfere with each other.
+# PPID persists across /clear (Claude Code doesn't restart); session_id does not.
 #
 # Triggers:
 #   - "execute-plan", "!load-plan", "!plan"
 #   - "execute the plan", "load the plan", "run the plan", "start the plan"
+#   - "reload" (exact), "reload plan", "reload the plan"
 #   - "!plan-status" (shows progress summary)
 #
 # Auto-load:
@@ -48,12 +49,18 @@ CURRENT_SESSION=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || ec
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 
-# CWD-keyed flag file (survives /clear; CWD persists, session_id does not)
-CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+# Session-keyed flag file (survives /clear; PPID:CWD persists, session_id does not)
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # CWD-keyed state file (survives /clear; tracks plan, transcript state)
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
+
+# Save injection state for post-/clear detection.
+# Thin wrapper around shared save_state_file() from lib-common.sh.
+save_injection_state() {
+    save_state_file "$STATE_FILE" "${CURRENT_SESSION:-unknown}" "${TRANSCRIPT_PATH:-unknown}" "${PLAN_FILE:-}"
+}
 
 # Clean up expired flags (>1 hour old) and legacy single-flag format
 find "$PLANS_DIR" -name ".pending-reload-*" -mmin +60 -delete 2>/dev/null || true
@@ -121,7 +128,10 @@ if [[ -z "$ACTION" ]]; then
          [[ "$PROMPT_LOWER" == *"start the plan"* ]] || \
          [[ "$PROMPT_LOWER" == *"continue with the plan"* ]] || \
          [[ "$PROMPT_LOWER" == *"continue the plan"* ]] || \
-         [[ "$PROMPT_LOWER" == *"resume the plan"* ]]; then
+         [[ "$PROMPT_LOWER" == *"resume the plan"* ]] || \
+         [[ "$PROMPT_LOWER" == "reload" ]] || \
+         [[ "$PROMPT_LOWER" == *"reload plan"* ]] || \
+         [[ "$PROMPT_LOWER" == *"reload the plan"* ]]; then
         ACTION="load"
         LOAD_REASON="trigger"
     fi
@@ -270,8 +280,25 @@ if [[ "$ACTION" == "serena_only" ]]; then
     exit 0
 fi
 
-# Exit if no matching action
+# Exit if no matching action.
+# Before exiting, refresh the state file if a plan is active (keeps it fresh
+# for post-/clear detection even without explicit trigger words).
 if [[ -z "$ACTION" ]]; then
+    if [[ -f "$STATE_FILE" ]]; then
+        STATE_FRESH=$(find "$STATE_FILE" -mmin -60 2>/dev/null)
+        if [[ -n "$STATE_FRESH" ]]; then
+            prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
+            if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
+                # Only refresh if plan has pending tasks (prevents perpetuating stale plans)
+                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || echo 0)
+                pending=$(echo "$pending" | tr -d '[:space:]')
+                if [[ "$pending" -gt 0 ]]; then
+                    PLAN_FILE="$prev_plan"
+                    save_injection_state
+                fi
+            fi
+        fi
+    fi
     exit 0
 fi
 
@@ -349,22 +376,6 @@ list_plans() {
         result+=$(printf '  - %s (modified: %s)\n' "$name" "$modified")
     done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     printf '%s' "$result"
-}
-
-# Save injection state for post-/clear detection.
-# Records session_id, transcript_path, transcript_size, timestamp, and plan_path
-# so the next invocation can detect context changes and reload the correct plan.
-save_injection_state() {
-    local current_size=0
-    if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
-        current_size=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null | tr -d '[:space:]') || current_size=0
-    fi
-    printf '%s\n%s\n%s\n%s\n%s\n' \
-        "${CURRENT_SESSION:-unknown}" \
-        "${TRANSCRIPT_PATH:-unknown}" \
-        "$current_size" \
-        "$(date +%Y-%m-%dT%H:%M:%S%z)" \
-        "${PLAN_FILE:-}" > "$STATE_FILE"
 }
 
 # Handle status action

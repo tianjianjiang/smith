@@ -8,8 +8,8 @@
 # This hook is independent of plan-claude (no plan awareness).
 # Both hooks can fire on the same Stop event; messages are complementary.
 #
-# Session Isolation: Uses CWD-based flag files so parallel Claude Code
-# sessions (in different worktrees) don't interfere with each other.
+# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
+# sessions (even in the same CWD) don't interfere with each other.
 #
 # Conditions to block:
 #   1. Transcript size > threshold
@@ -40,21 +40,22 @@ INPUT=$(cat)
 
 # --- Inlined helpers (no lib-common.sh dependency) ---
 
-# Compute CWD key hash (8-char). macOS: md5, Linux: md5sum, POSIX: shasum/cksum
-cwd_key() {
-    local cwd="$1"
-    if [[ -z "$cwd" ]]; then
-        cwd="${PWD:-$(pwd)}"
-    fi
+# Compute session key hash (16-char). Hashes PPID:CWD for per-session isolation.
+# _SMITH_PPID env var overrides $PPID (for testing).
+# macOS: md5, Linux: md5sum, POSIX: shasum/cksum
+session_key() {
+    local ppid="${1:-${_SMITH_PPID:-$PPID}}"
+    local cwd="${2:-${PWD:-$(pwd)}}"
+    local input="${ppid}:${cwd}"
     local hash
-    hash=$(printf '%s' "$cwd" | md5 -q 2>/dev/null) || \
-    hash=$(printf '%s' "$cwd" | md5sum 2>/dev/null | cut -d' ' -f1) || \
-    hash=$(printf '%s' "$cwd" | shasum 2>/dev/null | cut -d' ' -f1) || \
-    hash=$(printf '%s' "$cwd" | cksum 2>/dev/null | cut -d' ' -f1) || {
-        echo "Warning: no hash command found (md5/md5sum/shasum/cksum), CWD isolation is disabled" >&2
-        hash="00000000"
+    hash=$(printf '%s' "$input" | md5 -q 2>/dev/null) || \
+    hash=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | shasum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$input" | cksum 2>/dev/null | cut -d' ' -f1) || {
+        echo "Warning: no hash command found, session isolation disabled" >&2
+        hash="0000000000000000"
     }
-    printf '%s' "${hash:0:8}"
+    printf '%s' "${hash:0:16}"
 }
 
 # Output JSON for Stop hook block decisions (jq required, checked at top)
@@ -69,8 +70,8 @@ json_stop_block() {
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 
-# CWD-keyed flag file (distinct from plan-claude's .pending-reload-*)
-CWD_KEY=$(cwd_key "${HOOK_CWD:-${PWD:-}}")
+# Session-keyed flag file (distinct from plan-claude's .pending-reload-*)
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${FLAGS_DIR}/.ctx-clear-${CWD_KEY}"
 
 # If flag exists, this is the second attempt -> allow stop

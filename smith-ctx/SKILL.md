@@ -28,7 +28,9 @@ description: Universal context management with proactive recommendations. Agent 
 
 ## Platform Reference
 
-- **Claude Code**: Warning 50%, Critical 60%, Action: `/clear` (stop hook enforced)
+- **Claude Code**: Warning 50%, Critical 60%,
+  Targeted: "Summarize from here" (Esc+Esc),
+  Action: `/clear` (stop hook enforced)
 - **Kiro**: Warning 70%, Critical 80%, Compact Auto, Clear New session
 - **Cursor**: Warning 70%, Critical 80%, Compact `/summarize`, Clear New chat
 
