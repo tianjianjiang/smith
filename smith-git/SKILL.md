@@ -54,9 +54,11 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 <required>
 
-- Before running dev servers, tests, or making changes: verify with `git rev-parse --show-toplevel`
-- If multiple worktrees exist, confirm you are in the correct one before any operation
-- Worktree location: `~/Projects/worktrees/<repo>-<topic>/`
+- Before running dev servers, tests, or making changes: verify location with `git rev-parse --show-toplevel`
+- Check that the returned path matches your intended working directory
+- If multiple worktrees exist, confirm you are in the correct one before any write operation (commits, pushes, branch creation)
+- If in wrong worktree: stop, use `git worktree list` to find the correct one, then `cd` to it
+- Example worktree location pattern: `~/Projects/worktrees/<repo>-<topic>/` (adjust to your environment)
 
 </required>
 

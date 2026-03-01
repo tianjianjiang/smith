@@ -23,7 +23,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - MUST write tests BEFORE implementation (TDD)
 - MUST run full test suite after changes
 - MUST run tests proactively after code changes — do not wait for the user to ask
-- MUST use the module's quality gate (`make quality` or equivalent) before reporting completion
+- MUST use the module's quality gate (`make quality` or equivalent: linting, type checks, tests) before reporting completion
 
 </required>
 
