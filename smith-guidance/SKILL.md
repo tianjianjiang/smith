@@ -121,7 +121,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - Distinguish confirmed results from assumptions
 
 For stack operations, see `@smith-stacks/SKILL.md` Stack Scope Verification
-and `scripts/verify-stack-scope.sh`.
+and `smith-stacks/scripts/verify-stack-scope.sh`.
 
 </required>
 
