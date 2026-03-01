@@ -81,6 +81,9 @@ docs: update deployment guide
 
 </forbidden>
 
+**Special prefixes** (outside conventional commits):
+- `#WIP` — Work-in-progress checkpoint, not a conventional commit (used by auto-commit rules)
+
 ## Branch Names
 
 <required>

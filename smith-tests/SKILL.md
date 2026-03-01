@@ -93,16 +93,13 @@ See `@smith-ralph/SKILL.md` for full patterns.
 
 <required>
 
-**Run tests (Poetry):**
+**Run tests** (use project's virtual env runner):
 ```shell
-poetry run pytest tests/unit/ -v
-poetry run pytest tests/integration/ -v
+VENV_RUNNER pytest tests/unit/ -v
+VENV_RUNNER pytest tests/integration/ -v
 ```
 
-**Run tests (uv):**
-```shell
-uv run pytest tests/unit/ -v
-```
+`VENV_RUNNER` = `poetry run`, `uv run`, etc. — check project CLAUDE.md or `pyproject.toml`.
 
 **Success criteria:**
 - All new functionality has tests

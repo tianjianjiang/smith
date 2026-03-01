@@ -63,6 +63,16 @@ description: Claude Code context management with /clear command and stop hook en
 
 </required>
 
+## Commit-Early Pattern
+
+<required>
+
+- Do not batch commits to end of session — context resets lose uncommitted work
+- If 15+ tool calls pass without a commit, commit with `#WIP` prefix to preserve progress
+- Before destructive operations (rebase, `/clear`), commit or stash current work
+
+</required>
+
 ## Stop Hook (Unified)
 
 Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`. Uses real token counts from transcript JSONL (same data as Claude Code statusline) to calculate context percentage. A single unified hook covers both plan-active and non-plan contexts:
@@ -184,22 +194,14 @@ Auto memory accumulates knowledge. Serena handles continuity.
 
 </context>
 
-## Commit-Early Pattern
-
-<required>
-
-- Do not batch commits to end of session — context resets lose uncommitted work
-- If 15+ tool calls pass without a commit, commit with `#WIP` prefix to preserve progress
-- Before destructive operations (rebase, `/clear`), commit or stash current work
-
-</required>
-
 <related>
 
 - @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
 - `@smith-ctx-kiro/SKILL.md` - Kiro platform context
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
+- `@smith-git/SKILL.md` - Git commits, branch verification
+- `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
 
 </related>
 
