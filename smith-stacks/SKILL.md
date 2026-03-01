@@ -167,12 +167,16 @@ main ──●──●──●──M
 
 </required>
 
+<context>
+
 **Why squash merge requires extra steps**:
 
 Squash merge creates a single commit, destroying commit ancestry. Child branches still contain parent's original commits, causing:
 - Duplicate commits in child PR
 - Merge conflicts when rebasing
 - Git unable to recognize commits already in main
+
+</context>
 
 <examples>
 

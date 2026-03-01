@@ -75,6 +75,8 @@ description: Claude Code context management with /clear command and stop hook en
 
 ## Stop Hook (Unified)
 
+<context>
+
 Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`. Uses real token counts from transcript JSONL (same data as Claude Code statusline) to calculate context percentage. A single unified hook covers both plan-active and non-plan contexts:
 
 - **Real percentage**: Blocks at 60% context (from transcript token usage, not byte count)
@@ -82,6 +84,8 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 - **Loop prevention**: Uses `stop_hook_active` field (official best practice)
 
 **Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
+
+</context>
 
 ## CLAUDE.md Persistence
 
