@@ -22,6 +22,8 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - MUST use virtual env runner for pytest (`poetry run` or `uv run`)
 - MUST write tests BEFORE implementation (TDD)
 - MUST run full test suite after changes
+- MUST run tests proactively after code changes — do not wait for the user to ask
+- MUST use the module's quality gate (`make quality` or equivalent) before reporting completion
 
 </required>
 
@@ -30,6 +32,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - NEVER use `pytest -m "not integration"` if folder structure is mirrored (import conflicts)
 - NEVER write implementation before tests
 - NEVER skip running tests after changes
+- NEVER report task completion without running relevant tests
 
 </forbidden>
 

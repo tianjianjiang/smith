@@ -212,6 +212,8 @@ git merge feat/auth-base
 git push
 ```
 
+- After each cascade rebase step, verify the branch tip with `git log --oneline -3` before proceeding downstream
+
 </required>
 
 <forbidden>

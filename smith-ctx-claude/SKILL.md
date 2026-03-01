@@ -184,6 +184,16 @@ Auto memory accumulates knowledge. Serena handles continuity.
 
 </context>
 
+## Commit-Early Pattern
+
+<required>
+
+- Commit after completing each logical unit of work — do not batch to end of session
+- If context is growing long (15+ tool calls without commit), commit immediately with `WIP:` prefix
+- Front-load commits before verification steps (tests, rebases)
+
+</required>
+
 <related>
 
 - @smith-ctx/SKILL.md - Universal context strategies
