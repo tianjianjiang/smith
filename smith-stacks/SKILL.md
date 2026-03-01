@@ -212,7 +212,7 @@ git merge feat/auth-base
 git push
 ```
 
-- After each cascade step (merge or rebase), verify the branch tip with `git log --oneline -3` before proceeding downstream
+- After each cascade step, run `git log --oneline -3` and confirm the tip commit is the merge/rebase you just performed before proceeding downstream
 
 </required>
 

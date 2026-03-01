@@ -188,9 +188,9 @@ Auto memory accumulates knowledge. Serena handles continuity.
 
 <required>
 
-- Commit after completing each logical unit of work — do not batch to end of session
-- If context is growing long (15+ tool calls without commit), commit immediately with `WIP:` prefix
-- Front-load commits before verification steps (tests, rebases)
+- Do not batch commits to end of session — context resets lose uncommitted work
+- If 15+ tool calls pass without a commit, commit with `chore(wip):` prefix to preserve progress
+- Before destructive operations (rebase, `/clear`), commit or stash current work
 
 </required>
 

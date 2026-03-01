@@ -19,7 +19,7 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 - MUST use `git mv` for renames (preserves history)
 - MUST GPG sign all commits: `git commit -S -m "..."`
 - MUST keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-stacks/SKILL.md`
-- MUST verify current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase`
+- MUST verify current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase` — confirm it matches the branch you intend to modify
 
 </required>
 
@@ -54,11 +54,9 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 <required>
 
-- Before running dev servers, tests, or making changes: verify location with `git rev-parse --show-toplevel`
-- Check that the returned path matches your intended working directory
-- If multiple worktrees exist, confirm you are in the correct one before any write operation (commits, pushes, branch creation)
-- If in wrong worktree: stop, use `git worktree list` to find the correct one, then `cd` to it
-- Example worktree location pattern: `~/Projects/worktrees/<repo>-<topic>/` (adjust to your environment)
+- Before write operations (commits, pushes, dev servers, tests): verify `git rev-parse --show-toplevel` matches your intended working directory
+- If multiple worktrees exist, use `git worktree list` to identify the correct one
+- If in wrong worktree: stop, `cd` to the correct one before proceeding
 
 </required>
 
