@@ -21,7 +21,8 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
 - MUST use virtual env runner for pytest (`poetry run` or `uv run`)
 - MUST write tests BEFORE implementation (TDD)
-- MUST run full test suite after changes
+- MUST run full test suite proactively after code changes — do not wait for the user to ask
+- MUST run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
 
 </required>
 
@@ -92,16 +93,13 @@ See `@smith-ralph/SKILL.md` for full patterns.
 
 <required>
 
-**Run tests (Poetry):**
+**Run tests** (use project's virtual env runner):
 ```shell
-poetry run pytest tests/unit/ -v
-poetry run pytest tests/integration/ -v
+VENV_RUNNER pytest tests/unit/ -v
+VENV_RUNNER pytest tests/integration/ -v
 ```
 
-**Run tests (uv):**
-```shell
-uv run pytest tests/unit/ -v
-```
+`VENV_RUNNER` = `poetry run`, `uv run`, etc. — check project CLAUDE.md or `pyproject.toml`.
 
 **Success criteria:**
 - All new functionality has tests
