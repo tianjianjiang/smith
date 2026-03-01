@@ -189,7 +189,7 @@ Auto memory accumulates knowledge. Serena handles continuity.
 <required>
 
 - Do not batch commits to end of session — context resets lose uncommitted work
-- If 15+ tool calls pass without a commit, commit with `chore(wip):` prefix to preserve progress
+- If 15+ tool calls pass without a commit, commit with `#WIP` prefix to preserve progress
 - Before destructive operations (rebase, `/clear`), commit or stash current work
 
 </required>
