@@ -22,7 +22,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - MUST use virtual env runner for pytest (`poetry run` or `uv run`)
 - MUST write tests BEFORE implementation (TDD)
 - MUST run full test suite proactively after code changes — do not wait for the user to ask
-- MUST run the module's quality gate before reporting completion (`make quality` > project CI script > run tests + linter individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
+- MUST run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
 
 </required>
 

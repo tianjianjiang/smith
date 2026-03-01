@@ -68,7 +68,7 @@ description: Claude Code context management with /clear command and stop hook en
 <required>
 
 - Do not batch commits to end of session — context resets lose uncommitted work
-- If 15+ tool calls pass without a commit, commit with `#WIP` prefix to preserve progress
+- If 15+ tool calls pass without a commit and there are uncommitted changes, commit with `#WIP` prefix to preserve progress
 - Before destructive operations (rebase, `/clear`), commit or stash current work
 
 </required>
