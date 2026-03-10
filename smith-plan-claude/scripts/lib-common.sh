@@ -34,8 +34,8 @@ session_key() {
     hash=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -d' ' -f1) || \
     hash=$(printf '%s' "$input" | shasum 2>/dev/null | cut -d' ' -f1) || \
     hash=$(printf '%s' "$input" | cksum 2>/dev/null | cut -d' ' -f1) || {
-        echo "Warning: no hash command found, session isolation disabled" >&2
-        hash="0000000000000000"
+        echo "Error: no hash command found, cannot ensure session isolation" >&2
+        return 1
     }
     printf '%s' "${hash:0:16}"
 }
@@ -298,8 +298,18 @@ force_ralph_exit() {
     fi
 
     # Set max_iterations = iteration so Ralph's stop hook allows exit
-    sed -i '' -e "s/^max_iterations:.*/max_iterations: ${iteration}/" "$state_file" 2>/dev/null
-    return $?
+    # Cross-platform: sed -i '' is macOS-only; use temp file instead
+    local tmp
+    tmp=$(mktemp "${state_file}.XXXXXX") || return 1
+    if sed -e "s/^max_iterations:.*/max_iterations: ${iteration}/" "$state_file" > "$tmp" 2>/dev/null; then
+        if ! mv "$tmp" "$state_file"; then
+            rm -f "$tmp"
+            return 1
+        fi
+    else
+        rm -f "$tmp"
+        return 1
+    fi
 }
 
 # --- Ralph Orchestrator helpers ---
