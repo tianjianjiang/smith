@@ -108,7 +108,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 <!-- Context (platform-specific) -->
 <skill name="smith-ctx-kiro" description="Kiro-specific rules">`@smith-ctx-kiro/SKILL.md`</skill>
-<skill name="smith-ctx-claude" description="Claude Code rules">`@smith-ctx-claude/SKILL.md`</skill>
+<skill name="smith-ctx-claude" description="Claude Code context, hooks, permissions, agents, model routing">`@smith-ctx-claude/SKILL.md`</skill>
 <skill name="smith-ctx-cursor" description="Cursor rules">`@smith-ctx-cursor/SKILL.md`</skill>
 <skill name="smith-serena" description="Serena MCP integration">`@smith-serena/SKILL.md`</skill>
 
@@ -129,8 +129,8 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-nuxt" description="Nuxt.js framework">`@smith-nuxt/SKILL.md`</skill>
 
 <!-- Git/GitHub -->
-<skill name="smith-git" description="Git commits, merges, rebases">`@smith-git/SKILL.md`</skill>
-<skill name="smith-gh-pr" description="PR creation and review">`@smith-gh-pr/SKILL.md`</skill>
+<skill name="smith-git" description="Git commits, merges, rebases, worktrees">`@smith-git/SKILL.md`</skill>
+<skill name="smith-gh-pr" description="PR creation, review, automated monitoring">`@smith-gh-pr/SKILL.md`</skill>
 <skill name="smith-gh-cli" description="GitHub CLI usage">`@smith-gh-cli/SKILL.md`</skill>
 <skill name="smith-style" description="Commit message conventions">`@smith-style/SKILL.md`</skill>
 <skill name="smith-stacks" description="Stacked PR workflows">`@smith-stacks/SKILL.md`</skill>
@@ -144,7 +144,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-prompts" description="Prompt engineering">`@smith-prompts/SKILL.md`</skill>
 <skill name="smith-xml" description="XML tag patterns for AI">`@smith-xml/SKILL.md`</skill>
 <skill name="smith-placeholder" description="Documentation placeholders">`@smith-placeholder/SKILL.md`</skill>
-<skill name="smith-tools" description="Development tools">`@smith-tools/SKILL.md`</skill>
+<skill name="smith-tools" description="Development tools, MCP lifecycle">`@smith-tools/SKILL.md`</skill>
 <skill name="smith-dev" description="Development workflow">`@smith-dev/SKILL.md`</skill>
 <skill name="smith-ide" description="IDE configuration">`@smith-ide/SKILL.md`</skill>
 <skill name="smith-research" description="Research methodology">`@smith-research/SKILL.md`</skill>
@@ -163,8 +163,11 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
-**Git/GitHub**: Commits → `@smith-git/SKILL.md`,
+**Git/GitHub**: Commits → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
+  Worktrees → `@smith-git/SKILL.md`,
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md`
+**Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
+  MCP setup/lifecycle → `@smith-tools/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 

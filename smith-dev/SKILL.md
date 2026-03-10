@@ -34,7 +34,7 @@ This document defines development workflow standards and code quality requiremen
 
 <required>
 
-- MUST run formatters and linters before commits
+- MUST run formatters and linters before commits (ideally after each file edit — use PostToolUse hooks when available, see `@smith-ctx-claude/SKILL.md`)
 - MUST run tests before commits
 - MUST fix all linting errors
 

@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /clear command and stop hook enforcement at 60%. CLAUDE.md persistence and Tool Search optimization. Use when operating in Claude Code IDE or when context exceeds 50%. Activate for context optimization in Claude sessions.
+description: Claude Code context management with /clear command, stop hook enforcement at 60%, hooks reference (15 events), permission modes, agent features (subagents, teams), and model routing. Use when operating in Claude Code IDE, configuring hooks, managing agents, or when context exceeds 50%.
 ---
 
 # Claude Code Context Management
@@ -57,7 +57,7 @@ description: Claude Code context management with /clear command and stop hook en
 **Lost**: All conversation history
 
 **After `/clear`:**
-1. Plan auto-reloads with todo reconstruction (if active)
+1. Plan auto-reloads with todo reconstruction ONLY if a flag file exists (explicit reload intent from enforce-clear or on-plan-exit). State file alone = informational, not auto-resume.
 2. If Serena MCP available: call list_memories(), read relevant memories for session state
 3. Re-read relevant files as needed
 
@@ -84,6 +84,137 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 - **Loop prevention**: Uses `stop_hook_active` field (official best practice)
 
 **Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
+
+</context>
+
+## Recommended Linting Hooks
+
+<context>
+
+**PostToolUse auto-format** — runs formatter after every Edit/Write (strongest enforcement, zero friction):
+
+```json
+{
+  "PostToolUse": [
+    {
+      "matcher": "Edit|Write",
+      "hooks": [{
+        "type": "command",
+        "command": "file=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // .content.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
+        "timeout": 10000
+      }]
+    }
+  ]
+}
+```
+
+**Adapt per project**: Replace `ruff format`/`prettier` with project's formatter. Add to project-level `.claude/settings.json`.
+
+**Why not just instructions?** Research shows agents treat "always run lint" as suggestions. PostToolUse hooks are invisible and automatic — the strongest enforcement layer. See [Anthropic best practices](https://www.anthropic.com/engineering/claude-code-best-practices) and [claude-format-hook](https://github.com/ryanlewis/claude-format-hook).
+
+</context>
+
+## Hooks Reference
+
+<context>
+
+**15 hook events** (3 handler types: command, prompt, agent):
+
+**Tool lifecycle:**
+- PreToolUse — before tool runs; exit 2 = reject
+- PostToolUse — after tool succeeds; format, validate
+- PostToolUseFailure — after tool fails; recovery
+
+**Session lifecycle:**
+- SessionStart — session begins; init, context inject
+- Stop — session ends; save state, cleanup
+- UserPromptSubmit — user sends message; transform
+- InstructionsLoaded — CLAUDE.md/skills loaded
+
+**Multi-agent:**
+- SubagentStart/SubagentStop — subagent lifecycle
+- TeammateIdle — teammate awaits task; quality gate
+- TaskCompleted — shared task done; exit 2 = reject
+
+**Infrastructure:**
+- WorktreeCreate/WorktreeRemove — worktree lifecycle
+- Notification — system notification
+- PermissionRequest — permission prompt
+
+**Handler types:**
+- command — shell script; exit 0=allow, 2=reject
+- prompt — sends text to Claude as user message
+- agent — spawns subagent with prompt
+
+**Config:** `.claude/settings.json` (project) or
+`~/.claude/settings.json` (global). Project overrides
+global. Matchers filter by tool name. Timeout 60s default.
+
+Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
+
+</context>
+
+## Permission Modes
+
+<context>
+
+**5 modes (affect tool approval):**
+- Normal — approve each tool call individually
+- Auto-Accept (Shift+Tab) — approve all calls
+- Plan — read-only; agent plans but cannot execute
+- Don't Ask — approve all, persists across sessions
+- Bypass — `--dangerously-skip-permissions` flag
+
+**When to use:**
+- Plan for research, architecture review
+- Auto-Accept for trusted execution (tests green)
+- Normal for unfamiliar codebases
+- Don't Ask for CI/automation only
+
+</context>
+
+## Agent Features
+
+<context>
+
+**Subagents** (`Agent` tool):
+- Fresh 200k context per subagent
+- `run_in_background: true` for async work
+- `isolation: "worktree"` for repo isolation
+- `model` parameter overrides model per subagent
+
+**Custom agents** (`/agents` or `.claude/agents/*.md`):
+- Frontmatter: model, tools, permissions, memory
+- Loaded via `subagent_type` parameter
+- Project-scoped or user-scoped (`~/.claude/agents/`)
+
+**Agent Teams** (experimental):
+- Enable: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Team lead + teammates, independent context each
+- `SendMessage` for inter-agent communication
+- Shared task list with dependency tracking
+- See `@smith-ralph/SKILL.md` Pattern C for full workflow
+
+</context>
+
+## Model Routing
+
+<context>
+
+**Model selection guidance:**
+- Opus — orchestration, complex reasoning
+- Sonnet — focused subagents, code generation
+- Haiku — quick lookups, classification
+
+**Commands:**
+- `/model` — switch model mid-session
+- `model` param on Agent tool — per-subagent
+- `opusplan` alias — Opus for planning
+
+**Cost-aware patterns:**
+- Orchestrator (Opus) spawns workers (Sonnet)
+- Haiku for repetitive/mechanical subtasks
+- Match model to task complexity, not habit
 
 </context>
 
@@ -203,8 +334,10 @@ Auto memory accumulates knowledge. Serena handles continuity.
 - @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
 - `@smith-ctx-kiro/SKILL.md` - Kiro platform context
+- `@smith-plan-claude/SKILL.md` - Plan-specific hooks
+- `@smith-ralph/SKILL.md` - Orchestration patterns (B/C)
+- `@smith-git/SKILL.md` - Git commits, worktrees
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
-- `@smith-git/SKILL.md` - Git commits, branch verification
 - `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
 
 </related>
