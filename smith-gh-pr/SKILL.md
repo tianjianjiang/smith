@@ -84,7 +84,20 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
+- **Attribution**: When posting review comments, explicitly state you are commenting on the user's behalf (e.g., "Commenting on behalf of @username")
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
+
+**Review reply tone and style:**
+- **Concise**: Lead with the action taken or answer; no filler
+- **Evidence-based**: Cite commit SHA, file:line, docs URL, or
+  test output as proof — strongest evidence available
+- **Grateful**: Thank the reviewer for catching the issue
+  (e.g., "Good catch — fixed in abc1234")
+- **Humble**: If uncertain, say so; don't over-explain or
+  defend — ask for guidance instead
+- **Gentle**: When disagreeing, present evidence respectfully
+  (e.g., "I kept X because [reason] — happy to change if
+  you see it differently")
 
 </required>
 
@@ -162,6 +175,41 @@ git rebase --onto origin/main feat/parent_branch
 git push --force-with-lease
 git push origin --delete feat/parent_branch
 ```
+
+## Automated PR Review Monitoring
+
+<context>
+
+**`/loop` for review cycles** — periodically poll for
+new review comments and auto-address them:
+
+```shell
+/loop 5m /smith-gh-pr:check-reviews
+```
+
+Note: `check-reviews` is a conceptual pattern, not a
+built-in sub-command. Implement the workflow below manually
+or as a custom skill.
+
+**Auto-address workflow:**
+1. Fetch unresolved comments:
+   `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
+2. Classify each: code change vs clarification vs resolved
+3. High-confidence fixes: implement, commit, reply with SHA
+4. Low-confidence: draft reply, ask user before posting
+5. Re-check after CI passes
+
+**Proactive self-review** — before reviewer sees changes:
+- Run CodeRabbit review via configured integration (e.g. `coderabbit:review` skill or GitHub App) after pushing
+- Address mechanical feedback (lint, naming, tests)
+  before human review begins
+
+**When to use:**
+- Long review cycles with multiple rounds
+- Mechanical feedback (formatting, naming, missing tests)
+- Large PRs with many inline comments
+
+</context>
 
 ## Claude Code Plugin Integration
 
