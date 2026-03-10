@@ -75,11 +75,11 @@ if [[ -f "$STATE_FILE" ]]; then
         _state_age=$(( ($(date +%s) - _state_mtime) / 60 ))
     fi
     if [[ -n "$PLAN_FILE" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || echo 0)
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || true)
         _pending=$(echo "$_pending" | tr -d '[:space:]')
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan:-unknown}")\`, pending: ${_pending} tasks, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]] && [[ -f "$_state_plan" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || echo 0)
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || true)
         _pending=$(echo "$_pending" | tr -d '[:space:]')
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan}")\`, pending: ${_pending} tasks — not loaded, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]]; then
@@ -244,6 +244,19 @@ STATE_OUTPUT+="\n- Signal: resume"
 
 FULL_CONTENT=$(printf '%b\n\n---\n\n## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Progress:** %s\n**Current task:** %s\n\n**IMPORTANT:** After completing tasks, UPDATE this plan file at `%s` to track progress.\n\n---\n\n%s' \
     "$STATE_OUTPUT" "$PLAN_BASENAME" "$PLAN_FILE" "$PLAN_MODIFIED" "$PROGRESS" "$CURRENT_TASK" "$PLAN_FILE" "$PLAN_CONTENT")
+
+# Add ACTION REQUIRED directive for plan-pending (mirrors inject-plan.sh lines 473-494)
+if [[ "$FLAG_TYPE" == "plan-pending" ]] && [[ $PENDING -gt 0 ]]; then
+    ACTION_DIRECTIVE="**ACTION REQUIRED - POST-CLEAR RESUME:**"
+    ACTION_DIRECTIVE+="\n\n1. Reconstruct todos from plan checkboxes:"
+    ACTION_DIRECTIVE+="\n   - For each \`- [ ]\` task: TaskCreate(subject=task_text, description=\"From plan\", activeForm=\"Working on ...\")"
+    ACTION_DIRECTIVE+="\n   - Set first task: TaskUpdate(taskId, status=\"in_progress\")"
+    ACTION_DIRECTIVE+="\n2. Load skills: @smith-plan, @smith-plan-claude, @smith-ctx-claude"
+    ACTION_DIRECTIVE+="\n3. If Serena MCP available: list_memories() then read_memory() for session state"
+    ACTION_DIRECTIVE+="\n4. Resume current task: ${CURRENT_TASK}"
+    ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."
+    FULL_CONTENT=$(printf '%b\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
+fi
 
 # Append Ralph resume directive if present
 if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
