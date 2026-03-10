@@ -182,6 +182,31 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 
 </required>
 
+### Delegation Best Practices
+
+<required>
+
+**Well-scoped worker prompts MUST include:**
+- Specific task description (what, not how)
+- Success criteria (testable outcome)
+- File scope (which files to read/modify)
+- Constraints (don't touch X, preserve Y)
+
+**Failure recovery:**
+- Worker fails once: retry with more context
+- Worker fails twice: escalate to user
+- Worker produces wrong output: revert, rephrase task
+
+**When to parallelize vs serialize:**
+- Parallel: independent files, no shared state
+- Serial: shared files, output of A feeds into B
+- Hybrid: parallel batch, then serial integration
+
+**Model routing for workers:**
+See `@smith-ctx-claude/SKILL.md` Model Routing.
+
+</required>
+
 ### Orchestrator State File
 
 Persists at `~/.claude/plans/.ralph-orchestrator-<CWD_KEY>` (16-char hash of `PPID:CWD` via `session_key()` in `lib-common.sh`):
@@ -351,16 +376,9 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 
 ## Pattern Decision Guide
 
-| Criteria | A (`/ralph-loop`) | B (`ralph orch`) | C (`ralph team`) |
-|---|---|---|---|
-| Task complexity | Simple, focused | Multi-step plans | Large, parallel-safe |
-| Iterations | <20 | 20-100+ | 10-50+ |
-| Context pressure | Moderate (1-3.5k/iter) | Low (parent light) | None (separate instances) |
-| Parallelism | No | No (sequential v1) | Yes (native) |
-| User interaction | Between iterations | Between workers | With any teammate |
-| Token cost | Low | Medium (subagent overhead) | High (per-teammate) |
-| Stability | Stable (official plugin) | Stable (Task tool) | Experimental |
-| Setup | None | None | settings.json env block (or export) |
+- **Pattern A** (`/ralph-loop`): Simple focused tasks, <20 iterations, moderate context (1-3.5k/iter), no parallelism, interaction between iterations, low token cost, stable (official plugin), no setup
+- **Pattern B** (`ralph orch`): Multi-step plans, 20-100+ iterations, low context (parent light), sequential (v1), interaction between workers, medium token cost, stable (Task tool), no setup
+- **Pattern C** (`ralph team`): Large parallel-safe tasks, 10-50+ iterations, no context pressure (separate instances), native parallelism, interaction with any teammate, high token cost, experimental, requires settings.json env block (or export)
 
 **Recommendation flow**:
 1. Simple TDD/debug loop -> Pattern A (`/ralph-loop`)
