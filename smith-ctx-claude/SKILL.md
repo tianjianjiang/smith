@@ -95,18 +95,24 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 ```json
 {
-  "PostToolUse": [
-    {
-      "matcher": "Edit|Write",
-      "hooks": [{
-        "type": "command",
-        "command": "file=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // .content.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
-        "timeout": 10000
-      }]
-    }
-  ]
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{
+          "type": "command",
+          "command": "file=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // .content.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
+          "timeout": 10000
+        }]
+      }
+    ]
+  }
 }
 ```
+
+**Prerequisites**: Requires `jq` for JSON parsing (`brew install jq` / `apt install jq`). The `2>/dev/null` and `|| true` suppress errors for non-matching file types; remove them when debugging hook setup.
+
+**Timeout unit**: All hook timeouts are in **milliseconds** (10000 = 10s).
 
 **Adapt per project**: Replace `ruff format`/`prettier` with project's formatter. Add to project-level `.claude/settings.json`.
 
