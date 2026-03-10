@@ -182,6 +182,10 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
                 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
                 printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-pending" > "$FLAG_FILE"
             fi
+        elif [[ -f "$FLAG_FILE" ]] && [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -eq 0 ]]; then
+            # Update stale plan-pending flag to plan-completed when no tasks remain
+            TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
+            printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
 
             if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]] && [[ "$RALPH_ACTIVE" == "true" ]]; then
                 # CRITICAL + Ralph: force-exit Ralph and save resume state

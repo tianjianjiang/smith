@@ -165,8 +165,8 @@ if [[ -z "$PLAN_FILE" ]]; then
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
 
-    # Determine signal: flag present means reload was intended (even without plan)
-    if [[ -n "$FLAG_TYPE" ]]; then
+    # Determine signal: flag or Ralph/orchestrator resume means reload intent
+    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$RALPH_RESUME_DIRECTIVE" ]] || [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
         SIGNAL="resume"
     else
         SIGNAL="fresh-start"
