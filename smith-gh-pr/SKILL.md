@@ -193,14 +193,14 @@ or as a custom skill.
 
 **Auto-address workflow:**
 1. Fetch unresolved comments:
-   `gh pr-review threads list --pr {N} -R {o}/{r} --unresolved`
+   `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
 3. High-confidence fixes: implement, commit, reply with SHA
 4. Low-confidence: draft reply, ask user before posting
 5. Re-check after CI passes
 
 **Proactive self-review** — before reviewer sees changes:
-- Run `coderabbit:review` after pushing
+- Run CodeRabbit review via configured integration (e.g. `coderabbit:review` skill or GitHub App) after pushing
 - Address mechanical feedback (lint, naming, tests)
   before human review begins
 
