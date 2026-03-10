@@ -19,7 +19,9 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo ""
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 
 # Session-keyed flag file (survives /clear; PPID:CWD persists, session_id does not)
-CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: session_key failed" >&2; exit 1
+}
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # Session-keyed state file (survives /clear; tracks plan, transcript state)
@@ -38,9 +40,11 @@ if [[ -z "$ACTIVE_PLAN" ]] || [[ ! -f "$ACTIVE_PLAN" ]]; then
     exit 0
 fi
 
-# Write flag file (4 lines: plan path, session ID, timestamp, CWD)
+# Write flag file (5 lines: plan path, session ID, timestamp, CWD, flag type)
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
+PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
+FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
+printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
 
 # Write state file so future hooks find the active plan via session-keyed state
 save_state_file "$STATE_FILE" "${SESSION_ID:-unknown}" "unknown" "$ACTIVE_PLAN"

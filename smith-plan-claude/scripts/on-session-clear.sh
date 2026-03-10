@@ -23,7 +23,9 @@ INPUT=$(cat)
 
 # Extract CWD from hook input
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: session_key failed" >&2; exit 1
+}
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
@@ -33,7 +35,10 @@ if [[ -f "$STATE_FILE" ]]; then
     # 24h freshness: PPID-keyed state is process-scoped, so stale = process restarted.
     # 60 min was too short — UserPromptSubmit stops firing mid-session (known bug),
     # so state may not be refreshed. enforce-clear.sh now refreshes on block.
-    STATE_FRESH=$(find "$STATE_FILE" -mmin -1440 2>/dev/null)
+    # Validate STATE_FRESHNESS_MIN: must be a positive integer, default 1440 (24h)
+    _sfm="${STATE_FRESHNESS_MIN:-1440}"
+    [[ "$_sfm" =~ ^[0-9]+$ ]] || _sfm=1440
+    STATE_FRESH=$(find "$STATE_FILE" -mmin -"${_sfm}" 2>/dev/null)
     if [[ -n "$STATE_FRESH" ]]; then
         PLAN_FILE=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
         if [[ -n "$PLAN_FILE" ]] && [[ ! -f "$PLAN_FILE" ]]; then
@@ -42,15 +47,21 @@ if [[ -f "$STATE_FILE" ]]; then
     fi
 fi
 
-# Validate plan is still active (has pending tasks) before auto-loading.
-# Without this, completed plans from previous tasks stay loaded indefinitely.
-# Skip validation if flag exists (explicit reload intent from on-plan-exit).
+# Read flag type (line 5) if flag exists. Old flags without line 5 default to
+# "plan-pending" for backward compatibility.
+FLAG_TYPE=""
+if [[ -f "$FLAG_FILE" ]]; then
+    FLAG_TYPE=$(sed -n '5p' "$FLAG_FILE" 2>/dev/null)
+    FLAG_TYPE=${FLAG_TYPE:-plan-pending}
+fi
+
+# Only auto-load plan if a flag file exists (explicit reload intent from
+# enforce-clear or on-plan-exit). The state file alone is informational —
+# it records which plan was active but does NOT mean the user wants to resume.
+# Without this gate, every /clear for 24 hours forces plan resume, even when
+# the user wants to work on something else.
 if [[ -n "$PLAN_FILE" ]] && [[ ! -f "$FLAG_FILE" ]]; then
-    PENDING_TASKS=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || true)
-    PENDING_TASKS=${PENDING_TASKS:-0}
-    if [[ "$PENDING_TASKS" -eq 0 ]]; then
-        PLAN_FILE=""  # Stale — fall through to "no plan" path
-    fi
+    PLAN_FILE=""  # No flag = no auto-resume. Fall through to no-plan path.
 fi
 
 # Compute state/flag metadata for directive output (replaces "may be STALE" guessing)
@@ -60,16 +71,16 @@ if [[ -f "$STATE_FILE" ]]; then
     _state_mtime=$(stat -f %m "$STATE_FILE" 2>/dev/null) || \
         _state_mtime=$(stat -c %Y "$STATE_FILE" 2>/dev/null) || _state_mtime=""
     _state_age="?"
-    if [[ -n "$_state_mtime" ]]; then
+    if [[ -n "$_state_mtime" ]] && [[ "$_state_mtime" =~ ^[0-9]+$ ]]; then
         _state_age=$(( ($(date +%s) - _state_mtime) / 60 ))
     fi
     if [[ -n "$PLAN_FILE" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || true)
-        _pending=${_pending:-0}
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$PLAN_FILE" 2>/dev/null || echo 0)
+        _pending=$(echo "$_pending" | tr -d '[:space:]')
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan:-unknown}")\`, pending: ${_pending} tasks, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]] && [[ -f "$_state_plan" ]]; then
-        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || true)
-        _pending=${_pending:-0}
+        _pending=$(grep -c '^[[:space:]]*- \[ \]' "$_state_plan" 2>/dev/null || echo 0)
+        _pending=$(echo "$_pending" | tr -d '[:space:]')
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan}")\`, pending: ${_pending} tasks — not loaded, age: ${_state_age}m)"
     elif [[ -n "$_state_plan" ]]; then
         STATE_META_STATE="- State file: found (plan: \`$(basename "${_state_plan}")\` — file missing, age: ${_state_age}m)"
@@ -80,11 +91,6 @@ else
     STATE_META_STATE="- State file: not found"
 fi
 STATE_META_FLAG="- Flag file: $([ -f "$FLAG_FILE" ] && echo "found" || echo "not found")"
-if [[ -n "$PLAN_FILE" ]]; then
-    STATE_META_DECISION="- Decision: reload (active plan)"
-else
-    STATE_META_DECISION="- Decision: fresh start (no active plan with pending tasks)"
-fi
 
 # --- Ralph resume detection (shared by both plan and no-plan paths) ---
 RALPH_RESUME_DIRECTIVE=""
@@ -146,9 +152,9 @@ if read_orchestrator_resume "$CWD_KEY"; then
     rm -f "${PLANS_DIR}/.ralph-orch-resume-${CWD_KEY}" 2>/dev/null
 fi
 
-# No plan found -- still offer plan listing + Serena memory restoration
+# No plan found — output state data for SKILL.md to interpret
 if [[ -z "$PLAN_FILE" ]]; then
-    # List only the 5 most recent plans (not 100+) to avoid burying instructions
+    # List only the 5 most recent plans (not 100+)
     AVAILABLE_PLANS=""
     PLAN_COUNT=0
     if [[ -d "$PLANS_DIR" ]]; then
@@ -159,75 +165,52 @@ if [[ -z "$PLAN_FILE" ]]; then
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
 
-    ACTION_DIRECTIVE="**State check (session-keyed):**"
-    ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
-    ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
-    ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"
-    ACTION_DIRECTIVE+="\n\n<required>"
-    ACTION_DIRECTIVE+="\n\n**Fresh start — no active plan with pending tasks.**"
-    ACTION_DIRECTIVE+="\nThe hook already verified: no plan needs resuming. Trust this decision."
-    if [[ -z "$RALPH_RESUME_DIRECTIVE" ]] && [[ -z "$ORCH_RESUME_DIRECTIVE" ]]; then
-        ACTION_DIRECTIVE+="\n\nDo NOT read Serena memories. Do NOT read plan files. Do NOT explore."
+    # Determine signal: flag or Ralph/orchestrator resume means reload intent
+    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$RALPH_RESUME_DIRECTIVE" ]] || [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
+        SIGNAL="resume"
     else
-        ACTION_DIRECTIVE+="\n\nDo NOT read plan files or explore for plan context."
+        SIGNAL="fresh-start"
     fi
-    ACTION_DIRECTIVE+="\n\nReport to user in this EXACT format and STOP:"
-    ACTION_DIRECTIVE+="\n\`\`\`"
-    ACTION_DIRECTIVE+="\nFresh start. No active plan."
-    ACTION_DIRECTIVE+="\n\`\`\`"
-    ACTION_DIRECTIVE+="\nThen ask: \"What would you like to work on?\""
-    ACTION_DIRECTIVE+="\n\n</required>"
+
+    STATE_OUTPUT="**State check (session-keyed):**"
+    STATE_OUTPUT+="\n${STATE_META_STATE}"
+    STATE_OUTPUT+="\n${STATE_META_FLAG}"
+    STATE_OUTPUT+="\n- Flag type: ${FLAG_TYPE:-none}"
+    STATE_OUTPUT+="\n- Signal: ${SIGNAL}"
     if [[ -n "$AVAILABLE_PLANS" ]]; then
-        ACTION_DIRECTIVE+="\n\nRecent plans (for reference if user asks):"
-        ACTION_DIRECTIVE+="${AVAILABLE_PLANS}"
+        STATE_OUTPUT+="\n\nRecent plans (for reference if user asks):"
+        STATE_OUTPUT+="${AVAILABLE_PLANS}"
     fi
     if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
-        ACTION_DIRECTIVE+="$RALPH_RESUME_DIRECTIVE"
+        STATE_OUTPUT+="$RALPH_RESUME_DIRECTIVE"
     fi
     if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
-        ACTION_DIRECTIVE+="$ORCH_RESUME_DIRECTIVE"
+        STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
     fi
-    ACTION_DIRECTIVE+="\n\nIf user's message contains a specific request, address that instead."
-    rm -f "$FLAG_FILE" 2>/dev/null
 
-    json_session_start_output "$(printf '%b' "$ACTION_DIRECTIVE")"
+    rm -f "$FLAG_FILE" 2>/dev/null
+    json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
     exit 0
 fi
 
 # Read plan content fresh from disk
 if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
-    # Plan file unreadable -- fall through with plan path hint + Serena directive
-    ACTION_DIRECTIVE="STOP. Read this entire block before responding."
-    ACTION_DIRECTIVE+="\n\n**State check (session-keyed):**"
-    ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
-    ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
-    ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"
-    ACTION_DIRECTIVE+="\n\n<required>"
-    ACTION_DIRECTIVE+="\n\n**MANDATORY FIRST ACTION — Serena Memory Check:**"
-    ACTION_DIRECTIVE+="\nPlan file unreadable. Serena memory is the authoritative source of current work."
-    ACTION_DIRECTIVE+="\n1. Use ToolSearch to load \`mcp__serena__list_memories\`, then call it"
-    ACTION_DIRECTIVE+="\n2. Call \`read_memory()\` for the most recent session memory (look for names containing \"session\", the current date, or recent task keywords)"
-    ACTION_DIRECTIVE+="\n3. Report what Serena memory says the current task is"
-    ACTION_DIRECTIVE+="\n\nDo NOT skip this. Do NOT say \"Ready.\" Do NOT proceed until you have reported Serena memory contents."
-    ACTION_DIRECTIVE+="\n\n</required>"
-    ACTION_DIRECTIVE+="\n\n**Step 2:** Report to user in this EXACT format:"
-    ACTION_DIRECTIVE+="\n\`\`\`"
-    ACTION_DIRECTIVE+="\nReload with:"
-    ACTION_DIRECTIVE+="\n  - Plan: \`${PLAN_FILE}\` (unreadable)"
-    ACTION_DIRECTIVE+="\n  - Memory: <memory_name> (read via read_memory() after /clear)"
-    ACTION_DIRECTIVE+="\n  - Resume: <1-2 sentence summary from memory of current task and state>"
-    ACTION_DIRECTIVE+="\n\`\`\`"
-    ACTION_DIRECTIVE+="\n\n**Plans directory:** \`${PLANS_DIR}\`"
-    ACTION_DIRECTIVE+="\n\n**Step 3:** Offer to continue previous work or load a plan."
+    # Plan file unreadable — output state data with plan path hint
+    STATE_OUTPUT="**State check (session-keyed):**"
+    STATE_OUTPUT+="\n${STATE_META_STATE}"
+    STATE_OUTPUT+="\n${STATE_META_FLAG}"
+    STATE_OUTPUT+="\n- Flag type: ${FLAG_TYPE:-plan-pending}"
+    STATE_OUTPUT+="\n- Signal: resume"
+    STATE_OUTPUT+="\n- Plan file: \`${PLAN_FILE}\` (unreadable)"
+    STATE_OUTPUT+="\n- Plans directory: \`${PLANS_DIR}\`"
     if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
-        ACTION_DIRECTIVE+="$RALPH_RESUME_DIRECTIVE"
+        STATE_OUTPUT+="$RALPH_RESUME_DIRECTIVE"
     fi
     if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
-        ACTION_DIRECTIVE+="$ORCH_RESUME_DIRECTIVE"
+        STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
     fi
-    ACTION_DIRECTIVE+="\n\nIf user's message contains a specific request, address that first but still restore context."
     rm -f "$FLAG_FILE" 2>/dev/null
-    json_session_start_output "$(printf '%b' "$ACTION_DIRECTIVE")"
+    json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
     exit 0
 fi
 PLAN_BASENAME=$(basename "$PLAN_FILE")
@@ -239,9 +222,7 @@ PLAN_MODIFIED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$PLAN_FILE" 2>/dev/null) |
 
 # Calculate progress
 TOTAL=$(echo "$PLAN_CONTENT" | grep -c '^[[:space:]]*- \[.\]' || true)
-TOTAL=${TOTAL:-0}
 COMPLETED=$(echo "$PLAN_CONTENT" | grep -c '^[[:space:]]*- \[x\]' || true)
-COMPLETED=${COMPLETED:-0}
 
 if [[ $TOTAL -gt 0 ]]; then
     PERCENT=$((COMPLETED * 100 / TOTAL))
@@ -254,25 +235,15 @@ CURRENT_TASK=$(echo "$PLAN_CONTENT" | grep -m1 '^[[:space:]]*- \[ \]' | sed 's/^
 CURRENT_TASK=${CURRENT_TASK:-None}
 PENDING=$((TOTAL - COMPLETED))
 
-# Build injection content
-# The hook already validated: plan exists, has pending tasks, state is fresh.
-# Serena check is advisory (useful for restoring context) not a blocking gate.
-ACTION_DIRECTIVE="**State check (session-keyed):**"
-ACTION_DIRECTIVE+="\n${STATE_META_STATE}"
-ACTION_DIRECTIVE+="\n${STATE_META_FLAG}"
-ACTION_DIRECTIVE+="\n${STATE_META_DECISION}"
-ACTION_DIRECTIVE+="\n\n<required>"
-ACTION_DIRECTIVE+="\n\n**POST-CLEAR RESUME — active plan confirmed (${PENDING} pending tasks).**"
-ACTION_DIRECTIVE+="\n\n1. Reconstruct todos from plan checkboxes:"
-ACTION_DIRECTIVE+="\n   - For each \`- [ ]\` task: TaskCreate(subject=task_text, description=\"From plan\", activeForm=\"Working on ...\")"
-ACTION_DIRECTIVE+="\n   - Set first task: TaskUpdate(taskId, status=\"in_progress\")"
-ACTION_DIRECTIVE+="\n2. If Serena MCP available: read_memory() for session state (recommended for context)"
-ACTION_DIRECTIVE+="\n3. Resume current task: ${CURRENT_TASK}"
-ACTION_DIRECTIVE+="\n\n</required>"
-ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."
+# Build injection content — state data + plan content (Ralph/orchestrator directives appended below if active)
+STATE_OUTPUT="**State check (session-keyed):**"
+STATE_OUTPUT+="\n${STATE_META_STATE}"
+STATE_OUTPUT+="\n${STATE_META_FLAG}"
+STATE_OUTPUT+="\n- Flag type: ${FLAG_TYPE:-plan-pending}"
+STATE_OUTPUT+="\n- Signal: resume"
 
 FULL_CONTENT=$(printf '%b\n\n---\n\n## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Progress:** %s\n**Current task:** %s\n\n**IMPORTANT:** After completing tasks, UPDATE this plan file at `%s` to track progress.\n\n---\n\n%s' \
-    "$ACTION_DIRECTIVE" "$PLAN_BASENAME" "$PLAN_FILE" "$PLAN_MODIFIED" "$PROGRESS" "$CURRENT_TASK" "$PLAN_FILE" "$PLAN_CONTENT")
+    "$STATE_OUTPUT" "$PLAN_BASENAME" "$PLAN_FILE" "$PLAN_MODIFIED" "$PROGRESS" "$CURRENT_TASK" "$PLAN_FILE" "$PLAN_CONTENT")
 
 # Append Ralph resume directive if present
 if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
