@@ -203,7 +203,7 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 - Hybrid: parallel batch, then serial integration
 
 **Model routing for workers:**
-See `@smith-ctx-claude/SKILL.md` Model Routing.
+See `@smith-ctx-claude/SKILL.md` for model routing guidance (added in PR #60).
 
 </required>
 

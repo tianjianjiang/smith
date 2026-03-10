@@ -88,8 +88,10 @@ git worktree remove ../feature-branch
 **Claude Code integration:**
 - `isolation: "worktree"` in Agent tool — auto-creates
   worktree for subagent, cleaned up when done
-- `EnterWorktree`/`ExitWorktree` tools for manual control
-- WorktreeCreate/WorktreeRemove hooks for lifecycle events
+- Manual worktree tools may be available depending on the
+  agent platform (see platform docs for exact tool names)
+- Worktree lifecycle hooks (create/remove) fire on
+  worktree operations for custom automation
 - Agent worktrees auto-cleanup; persistent ones need
   manual `git worktree remove`
 
@@ -152,7 +154,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 - `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands
 - `@smith-style/SKILL.md` - Naming conventions, conventional commits
-- `@smith-ctx-claude/SKILL.md` - Agent worktree isolation
+- `@smith-ctx-claude/SKILL.md` - Claude Code agent features and context management
 
 </related>
 
