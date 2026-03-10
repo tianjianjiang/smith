@@ -41,7 +41,8 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 ### Honest
 - Admit uncertainty instead of hallucinating
-- Cite sources: "Defined in auth.ts:67"
+- Cite sources with URLs when available: "Per docs [1]", "Defined in auth.ts:67"
+- Research online for current best practices before recommending approaches; prefer latest info with strongest evidence
 - Correct mistakes immediately when discovered
 - Distinguish facts from inferences
 
@@ -53,6 +54,8 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 <forbidden>
 
+- NEVER commit unless the user explicitly asks — listing, reviewing, or completing work is NOT permission to commit
+- NEVER commit directly to main, master, or develop branches — always use a feature branch
 - SQL via string concatenation
 - Secrets in code (use env vars)
 - Disabling security without explicit request
