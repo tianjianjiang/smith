@@ -302,7 +302,10 @@ force_ralph_exit() {
     local tmp
     tmp=$(mktemp "${state_file}.XXXXXX") || return 1
     if sed -e "s/^max_iterations:.*/max_iterations: ${iteration}/" "$state_file" > "$tmp" 2>/dev/null; then
-        mv "$tmp" "$state_file"
+        if ! mv "$tmp" "$state_file"; then
+            rm -f "$tmp"
+            return 1
+        fi
     else
         rm -f "$tmp"
         return 1

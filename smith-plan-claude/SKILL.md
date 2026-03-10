@@ -36,7 +36,7 @@ but does NOT auto-resume. New sessions require an explicit request
 
 ### Post-/clear Resume Protocol
 
-The SessionStart:clear hook outputs **state data only** (flag type, plan metadata, signal). The agent interprets this data and follows the protocol below.
+The SessionStart:clear hook outputs **state metadata** (flag type, plan metadata, signal) plus plan content and optional Ralph/orchestrator resume directives. The agent interprets this data and follows the protocol below.
 
 **When hook signal = `resume` with flag type `plan-pending`:**
 (Flag file exists = explicit reload intent from enforce-clear or on-plan-exit)
@@ -214,7 +214,7 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 
 - `scripts/inject-plan.sh` (UserPromptSubmit) — Auto-loads plan (flag/trigger), context % warning (50%), plan mode state saving
 - `scripts/enforce-clear.sh` (Stop) — Unified stop hook: blocks at 60% context, three branches (uses `stop_hook_active`)
-- `scripts/on-session-clear.sh` (SessionStart:clear) — Reliable post-`/clear` plan injection with todo/skill instructions
+- `scripts/on-session-clear.sh` (SessionStart:clear) — Reliable post-`/clear` plan auto-load using state/flag data
 - `scripts/on-plan-exit.sh` (PostToolUse:ExitPlanMode) — Creates reload flag on plan mode exit
 - `scripts/list-plans.sh` (Manual) — List available plans
 - `scripts/load-plan.sh` (Manual) — Manually load a plan

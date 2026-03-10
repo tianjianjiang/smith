@@ -35,7 +35,10 @@ if [[ -f "$STATE_FILE" ]]; then
     # 24h freshness: PPID-keyed state is process-scoped, so stale = process restarted.
     # 60 min was too short — UserPromptSubmit stops firing mid-session (known bug),
     # so state may not be refreshed. enforce-clear.sh now refreshes on block.
-    STATE_FRESH=$(find "$STATE_FILE" -mmin -${STATE_FRESHNESS_MIN:-1440} 2>/dev/null)
+    # Validate STATE_FRESHNESS_MIN: must be a positive integer, default 1440 (24h)
+    _sfm="${STATE_FRESHNESS_MIN:-1440}"
+    [[ "$_sfm" =~ ^[0-9]+$ ]] || _sfm=1440
+    STATE_FRESH=$(find "$STATE_FILE" -mmin -"${_sfm}" 2>/dev/null)
     if [[ -n "$STATE_FRESH" ]]; then
         PLAN_FILE=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
         if [[ -n "$PLAN_FILE" ]] && [[ ! -f "$PLAN_FILE" ]]; then
@@ -232,7 +235,7 @@ CURRENT_TASK=$(echo "$PLAN_CONTENT" | grep -m1 '^[[:space:]]*- \[ \]' | sed 's/^
 CURRENT_TASK=${CURRENT_TASK:-None}
 PENDING=$((TOTAL - COMPLETED))
 
-# Build injection content — state data + plan content (no agent directives)
+# Build injection content — state data + plan content (Ralph/orchestrator directives appended below if active)
 STATE_OUTPUT="**State check (session-keyed):**"
 STATE_OUTPUT+="\n${STATE_META_STATE}"
 STATE_OUTPUT+="\n${STATE_META_FLAG}"
