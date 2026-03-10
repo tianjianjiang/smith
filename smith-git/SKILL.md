@@ -1,6 +1,6 @@
 ---
 name: smith-git
-description: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, or rebasing. Covers GPG signing, atomic commits, and safety flags.
+description: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, rebasing, or worktree operations. Covers GPG signing, atomic commits, worktree patterns, and safety flags.
 ---
 
 # Git Workflow Gotchas
@@ -28,6 +28,8 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 - NEVER force push to main or shared branches
 - NEVER commit directly to main branch
 - NEVER rebase shared branches (only personal feature branches)
+- NEVER use `--no-verify` to bypass git hooks
+- NEVER use `--no-gpg-sign` to skip commit signing
 
 </forbidden>
 
@@ -57,6 +59,49 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 - Before write operations (commits, pushes, dev servers, tests): verify `git rev-parse --show-toplevel` matches your intended working directory
 - If multiple worktrees exist, use `git worktree list` to identify the correct one
 - If in wrong worktree: stop, `cd` to the correct one before proceeding
+
+</required>
+
+## Worktree Patterns
+
+<context>
+
+**Git worktree basics:**
+
+```shell
+git worktree add ../feature-branch feat/feature
+```
+
+```shell
+git worktree list
+```
+
+```shell
+git worktree remove ../feature-branch
+```
+
+**Parallel branch work:**
+- Each worktree = independent working directory
+- Share same `.git` — branches, stash, reflog shared
+- Useful for: hotfix while mid-feature, parallel reviews
+
+**Claude Code integration:**
+- `isolation: "worktree"` in Agent tool — auto-creates
+  worktree for subagent, cleaned up when done
+- Manual worktree tools may be available depending on the
+  agent platform (see platform docs for exact tool names)
+- Worktree lifecycle hooks (create/remove) fire on
+  worktree operations for custom automation
+- Agent worktrees auto-cleanup; persistent ones need
+  manual `git worktree remove`
+
+</context>
+
+<required>
+
+- ALWAYS verify worktree path before write operations
+- NEVER leave orphaned worktrees (check `git worktree list`)
+- Clean up persistent worktrees after branch is merged
 
 </required>
 
@@ -109,6 +154,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 - `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands
 - `@smith-style/SKILL.md` - Naming conventions, conventional commits
+- `@smith-ctx-claude/SKILL.md` - Claude Code agent features and context management
 
 </related>
 
