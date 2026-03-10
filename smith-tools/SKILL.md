@@ -84,6 +84,44 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
+## MCP Server Lifecycle
+
+<context>
+
+**Installation:**
+
+```shell
+claude mcp add --transport stdio --scope user server-name -- command args
+```
+
+Scopes: `--scope local` (default, `~/.claude.json`), `--scope project` (`.mcp.json` in repo root), `--scope user` (`~/.claude.json`)
+
+**Discovery:**
+
+```shell
+claude mcp list
+```
+
+**Removal:**
+
+```shell
+claude mcp remove server-name
+```
+
+**Debugging failures:**
+- Check logs: `~/.claude/logs/mcp-*.log`
+- Startup timeout: relaunch Claude Code with a higher `MCP_TIMEOUT` env var
+- Restart: remove + re-add the server
+- Config reload: restart Claude Code session after
+  changes to `.mcp.json` or settings
+
+**Common issues:**
+- Server not found: verify command path is absolute
+- Permission denied: check executable permissions
+- Startup timeout: increase `MCP_TIMEOUT` for slow servers
+
+</context>
+
 ## Configuration Hierarchy
 
 - `$HOME/.smith/` - Global personal standards (symlinked to projects)
