@@ -50,7 +50,9 @@ TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null 
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 
 # Session-keyed flag file (survives /clear; PPID:CWD persists, session_id does not)
-CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: session_key failed" >&2; exit 1
+}
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # Session-keyed state file (survives /clear; tracks plan, transcript state)
@@ -170,24 +172,26 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
 
         PENDING=0
         if [[ -n "$ACTIVE_PLAN" ]]; then
-            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || true)
-            PENDING=${PENDING:-0}
+            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
+            PENDING=$(echo "$PENDING" | tr -d '[:space:]')
         fi
 
         if [[ ! -f "$FLAG_FILE" ]]; then
             # Create flag if plan active with pending tasks
             if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
                 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-                printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
+                printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-pending" > "$FLAG_FILE"
             fi
 
             if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]] && [[ "$RALPH_ACTIVE" == "true" ]]; then
                 # CRITICAL + Ralph: force-exit Ralph and save resume state
                 save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
                     "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
-                force_ralph_exit "$RALPH_CWD"
-
-                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exiting (max_iterations set to current).' "$CONTEXT_PCT")
+                if ! force_ralph_exit "$RALPH_CWD"; then
+                    CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exit FAILED. Manual /clear may be needed.' "$CONTEXT_PCT")
+                else
+                    CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exiting (max_iterations set to current).' "$CONTEXT_PCT")
+                fi
                 CONTEXT_MSG+="\n\n**YOU MUST do these steps NOW:**"
                 CONTEXT_MSG+="\n1. Save ALL Ralph state to Serena: write_memory() with full iteration context"
                 CONTEXT_MSG+="\n2. Update plan file with current progress (if plan active)"
@@ -291,8 +295,8 @@ if [[ -z "$ACTION" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
             if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
                 # Only refresh if plan has pending tasks (prevents perpetuating stale plans)
-                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || true)
-                pending=${pending:-0}
+                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || echo 0)
+                pending=$(echo "$pending" | tr -d '[:space:]')
                 if [[ "$pending" -gt 0 ]]; then
                     PLAN_FILE="$prev_plan"
                     save_injection_state

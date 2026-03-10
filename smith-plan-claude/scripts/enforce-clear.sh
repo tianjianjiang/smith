@@ -37,23 +37,24 @@ fi
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
-CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}")
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: session_key failed" >&2; exit 1
+}
 
 # Ralph coordination: defer to inject-plan.sh + Ralph's own stop hook.
 # inject-plan.sh already saved resume state and set max_iterations.
 # We MUST NOT double-block or we create a deadlock.
 RALPH_RESUME="${PLANS_DIR}/.ralph-resume-${CWD_KEY}"
 
-if [[ -f "${HOOK_CWD:-.}/.claude/${RALPH_STATE_FILENAME}" ]] || [[ -f "$RALPH_RESUME" ]]; then
+if get_ralph_state "${HOOK_CWD:-.}" || [[ -f "$RALPH_RESUME" ]]; then
     exit 0
 fi
 
 # Orchestrator coordination: defer to inject-plan.sh for context management.
 # inject-plan.sh saves orchestrator resume state at warning/critical thresholds.
-ORCH_STATE="${PLANS_DIR}/${ORCH_STATE_PREFIX}${CWD_KEY}"
 ORCH_RESUME="${PLANS_DIR}/.ralph-orch-resume-${CWD_KEY}"
 
-if [[ -f "$ORCH_STATE" ]] || [[ -f "$ORCH_RESUME" ]]; then
+if get_orchestrator_state "$CWD_KEY" || [[ -f "$ORCH_RESUME" ]]; then
     exit 0
 fi
 
@@ -84,12 +85,19 @@ if [[ -f "$STATE_FILE" ]]; then
     fi
 fi
 
-# Create pending-reload flag if plan active with pending tasks
+# Always create pending-reload flag when blocking (type field tells SKILL.md
+# what resume behavior to use). Without this, completed-plan and no-plan
+# sessions lose context after /clear (flag missing → fresh-start path).
+TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
 if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
-    TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-    printf '%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
-        "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE"
+    FLAG_TYPE="plan-pending"
+elif [[ -n "$ACTIVE_PLAN" ]]; then
+    FLAG_TYPE="plan-completed"
+else
+    FLAG_TYPE="no-plan"
 fi
+printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
+    "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
 
 # Refresh state file NOW so on-session-clear.sh finds fresh state after /clear.
 # Critical: inject-plan.sh (UserPromptSubmit) stops firing mid-session (known bug),

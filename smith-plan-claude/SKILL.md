@@ -28,9 +28,34 @@ to resume the current task. This overrides Claude Code's default
 passive treatment of additionalContext. For trigger-word loads, no
 directive is added since the user's message IS the instruction.
 
-Plans only auto-load via `/clear` (SessionStart:clear or flag file)
-or trigger words. New sessions in the same directory require an
-explicit request (e.g. "execute plan", "!load-plan").
+Plans only auto-load when a **flag file** exists (explicit reload intent
+from enforce-clear.sh or on-plan-exit.sh) or via trigger words. A state
+file alone (no flag) is informational — the agent mentions the plan exists
+but does NOT auto-resume. New sessions require an explicit request
+(e.g. "execute plan", "!load-plan").
+
+### Post-/clear Resume Protocol
+
+The SessionStart:clear hook outputs **state data only** (flag type, plan metadata, signal). The agent interprets this data and follows the protocol below.
+
+**When hook signal = `resume` with flag type `plan-pending`:**
+(Flag file exists = explicit reload intent from enforce-clear or on-plan-exit)
+1. Reconstruct todos from plan checkboxes: for each `- [ ]` task, TaskCreate(subject=task_text, description="From plan")
+2. Set first pending task: TaskUpdate(taskId, status="in_progress")
+3. If Serena MCP available: read_memory() for session state (context restoration)
+4. Resume current task from plan
+
+**When hook signal = `resume` with flag type `plan-completed` or `no-plan`:**
+1. If Serena MCP available: list_memories() then read_memory() for most recent session memory
+2. Report restored context to user
+3. Ask if user wants to continue previous work or start something new
+
+**When hook signal = `fresh-start`** (no flag file):
+1. If state file mentions a plan ("not loaded"), briefly note it exists but do NOT auto-resume
+2. If Serena MCP available: list_memories() for any relevant context
+3. Ask: "What would you like to work on?" (mention available plan if state file shows one)
+
+If the user's message contains a specific request, address that instead of the protocol above.
 
 ## Unified Stop Hook
 
@@ -103,11 +128,14 @@ Stop hook (enforce-clear.sh) blocks at 60% (critical threshold).
 
 `~/.claude/plans/.pending-reload-<session-hash>`:
 ```
-/absolute/path/to/plan.md       <- line 1: plan path
+/absolute/path/to/plan.md       <- line 1: plan path (empty if no plan)
 session_abc123                   <- line 2: session ID
 $(date +%Y-%m-%dT%H:%M:%S%z)    <- line 3: ISO timestamp
 /path/to/working/directory      <- line 4: CWD (for debugging)
+plan-pending                     <- line 5: type (plan-pending|plan-completed|no-plan)
 ```
+
+- **Backward compatibility**: Old flags without line 5 default to `plan-pending`
 
 - **Session-based isolation**: Each parallel session gets its own flag file keyed by hash of `PPID:CWD`
 - `$PWD` persists across `/clear` but differs between parallel sessions (worktrees)
@@ -117,11 +145,9 @@ $(date +%Y-%m-%dT%H:%M:%S%z)    <- line 3: ISO timestamp
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PLAN_CONTEXT_WARNING_PCT` | `50` | Advisory warning threshold (% of context window) |
-| `PLAN_CONTEXT_CRITICAL_PCT` | `60` | Stop hook blocking threshold (% of context window) |
-| `CONTEXT_WINDOW_TOKENS` | `200000` | Context window size in tokens |
+- `PLAN_CONTEXT_WARNING_PCT` (default: `50`) — Advisory warning threshold (% of context window)
+- `PLAN_CONTEXT_CRITICAL_PCT` (default: `60`) — Stop hook blocking threshold (% of context window)
+- `CONTEXT_WINDOW_TOKENS` (default: `200000`) — Context window size in tokens
 
 ## Serena Memory Convention
 
@@ -151,11 +177,9 @@ This skill integrates with Ralph's autonomous loop in Claude Code:
 
 When Ralph is active and context gets high, three hooks coordinate to prevent deadlock:
 
-| Hook | Role |
-|------|------|
-| `inject-plan.sh` | Detects Ralph + high context. At 50%: saves resume preemptively. At 60%: forces exit (sets max_iterations = iteration), saves resume. |
-| `enforce-clear.sh` | Detects Ralph state file or resume file and defers (exit 0). Prevents double-blocking. |
-| `on-session-clear.sh` | After /clear: detects resume file, injects plan + Ralph auto-invoke instruction. Agent restarts loop via Skill tool. |
+- `inject-plan.sh` — Detects Ralph + high context. At 50%: saves resume preemptively. At 60%: forces exit (sets max_iterations = iteration), saves resume.
+- `enforce-clear.sh` — Detects Ralph state file or resume file and defers (exit 0). Prevents double-blocking.
+- `on-session-clear.sh` — After /clear: detects resume file, injects plan + Ralph auto-invoke instruction. Agent restarts loop via Skill tool.
 
 ### Resume File Format
 
@@ -179,36 +203,30 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 
 ## Usage Triggers
 
-| Trigger | Action |
-|---------|--------|
-| `execute plan` | Load most recent plan |
-| `!load-plan` | Load most recent plan |
-| `!load-plan <name>` | Load specific plan |
-| `reload` | Load plan from state file (post-/clear shortcut) |
-| `reload plan` / `reload the plan` | Load plan from state file |
-| `!plan-status` | Show current progress |
+- `execute plan` — Load most recent plan
+- `!load-plan` — Load most recent plan
+- `!load-plan <name>` — Load specific plan
+- `reload` — Load plan from state file (post-/clear shortcut)
+- `reload plan` / `reload the plan` — Load plan from state file
+- `!plan-status` — Show current progress
 
 ## Scripts
 
-| Script | Hook Type | Purpose |
-|--------|-----------|---------|
-| `scripts/inject-plan.sh` | UserPromptSubmit | Auto-loads plan (flag/trigger), context % warning (50%), plan mode state saving |
-| `scripts/enforce-clear.sh` | Stop | Unified stop hook: blocks at 60% context, three branches (uses `stop_hook_active`) |
-| `scripts/on-session-clear.sh` | SessionStart:clear | Reliable post-`/clear` plan injection with todo/skill instructions |
-| `scripts/on-plan-exit.sh` | PostToolUse (ExitPlanMode) | Creates reload flag on plan mode exit |
-| `scripts/list-plans.sh` | Manual | List available plans |
-| `scripts/load-plan.sh` | Manual | Manually load a plan |
-| `scripts/plan-status.sh` | Manual | Show progress summary |
+- `scripts/inject-plan.sh` (UserPromptSubmit) — Auto-loads plan (flag/trigger), context % warning (50%), plan mode state saving
+- `scripts/enforce-clear.sh` (Stop) — Unified stop hook: blocks at 60% context, three branches (uses `stop_hook_active`)
+- `scripts/on-session-clear.sh` (SessionStart:clear) — Reliable post-`/clear` plan injection with todo/skill instructions
+- `scripts/on-plan-exit.sh` (PostToolUse:ExitPlanMode) — Creates reload flag on plan mode exit
+- `scripts/list-plans.sh` (Manual) — List available plans
+- `scripts/load-plan.sh` (Manual) — Manually load a plan
+- `scripts/plan-status.sh` (Manual) — Show progress summary
 
 ## File Locations
 
-| Item | Path |
-|------|------|
-| Plans directory | `~/.claude/plans/` |
-| Active plan | Tracked in `.plan-state-<session-hash>` state file |
-| Reload flag | `~/.claude/plans/.pending-reload-<session-hash>` |
-| State file | `~/.claude/plans/.plan-state-<session-hash>` |
-| This skill | `~/.smith/smith-plan-claude/` |
+- Plans directory — `~/.claude/plans/`
+- Active plan — Tracked in `.plan-state-<session-hash>` state file
+- Reload flag — `~/.claude/plans/.pending-reload-<session-hash>`
+- State file — `~/.claude/plans/.plan-state-<session-hash>`
+- This skill — `~/.smith/smith-plan-claude/`
 
 ## State File Format
 
