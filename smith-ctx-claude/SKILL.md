@@ -101,8 +101,8 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
         "matcher": "Edit|Write",
         "hooks": [{
           "type": "command",
-          "command": "file=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // .content.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
-          "timeout": 10000
+          "command": "input=$(cat) && file=$(printf '%s' \"$input\" | jq -r '.tool_input.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
+          "timeout": 10
         }]
       }
     ]
@@ -112,7 +112,7 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 **Prerequisites**: Requires `jq` for JSON parsing (`brew install jq` / `apt install jq`). The `2>/dev/null` and `|| true` suppress errors for non-matching file types; remove them when debugging hook setup.
 
-**Timeout unit**: All hook timeouts are in **milliseconds** (10000 = 10s).
+**Timeout unit**: All hook timeouts are in **seconds** (10 = 10s, default 600s for command hooks).
 
 **Adapt per project**: Replace `ruff format`/`prettier` with project's formatter. Add to project-level `.claude/settings.json`.
 
@@ -124,7 +124,7 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 <context>
 
-**15 hook events** (3 handler types: command, prompt, agent):
+**17 hook events** (4 handler types: command, http, prompt, agent):
 
 **Tool lifecycle:**
 - PreToolUse — before tool runs; exit 2 = reject
@@ -133,9 +133,11 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 **Session lifecycle:**
 - SessionStart — session begins; init, context inject
-- Stop — session ends; save state, cleanup
+- SessionEnd — session ends; final cleanup
+- Stop — context limit reached; save state
 - UserPromptSubmit — user sends message; transform
 - InstructionsLoaded — CLAUDE.md/skills loaded
+- PreCompact — before context compaction
 
 **Multi-agent:**
 - SubagentStart/SubagentStop — subagent lifecycle
@@ -146,15 +148,18 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 - WorktreeCreate/WorktreeRemove — worktree lifecycle
 - Notification — system notification
 - PermissionRequest — permission prompt
+- ConfigChange — settings.json changed
 
 **Handler types:**
-- command — shell script; exit 0=allow, 2=reject
-- prompt — sends text to Claude as user message
-- agent — spawns subagent with prompt
+- command — shell script; event JSON on stdin; exit 0=allow, 2=reject
+- http — HTTP POST to endpoint; event JSON as body
+- prompt — sends text to Claude model (Haiku default)
+- agent — spawns subagent with prompt + event JSON
 
 **Config:** `.claude/settings.json` (project) or
 `~/.claude/settings.json` (global). Project overrides
-global. Matchers filter by tool name. Timeout 60s default.
+global. Matchers filter by tool name. Timeout: command 600s,
+prompt 30s, agent 60s (defaults).
 
 Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
@@ -164,18 +169,20 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
 <context>
 
-**5 modes (affect tool approval):**
-- Normal — approve each tool call individually
-- Auto-Accept (Shift+Tab) — approve all calls
-- Plan — read-only; agent plans but cannot execute
-- Don't Ask — approve all, persists across sessions
-- Bypass — `--dangerously-skip-permissions` flag
+**5 permission modes** (`permissions.defaultMode` in settings):
+- `default` — approve each tool call individually
+- `acceptEdits` — auto-approves file edits/writes; Bash still requires approval
+- `plan` — read-only; agent plans but cannot execute
+- `dontAsk` — approve all, persists across sessions (TypeScript SDK)
+- `bypassPermissions` — `--dangerously-skip-permissions` flag
+
+**Note:** "Yes, don't ask again" is a per-tool approval behavior (remembered per directory/command), not a global mode. Permission rules (`allow`/`ask`/`deny`) are evaluated deny-first.
 
 **When to use:**
-- Plan for research, architecture review
-- Auto-Accept for trusted execution (tests green)
-- Normal for unfamiliar codebases
-- Don't Ask for CI/automation only
+- `plan` for research, architecture review
+- `acceptEdits` for trusted execution (tests green)
+- `default` for unfamiliar codebases
+- `bypassPermissions` for CI/automation only
 
 </context>
 

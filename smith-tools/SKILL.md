@@ -91,10 +91,10 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 **Installation:**
 
 ```shell
-claude mcp add server-name -s user -- command args
+claude mcp add --transport stdio --scope user server-name -- command args
 ```
 
-Scopes: `-s user` (global), `-s project` (`.claude/settings.json`)
+Scopes: `--scope local` (default, `~/.claude.json`), `--scope project` (`.mcp.json` in repo root), `--scope user` (`~/.claude.json`)
 
 **Discovery:**
 
@@ -105,20 +105,20 @@ claude mcp list
 **Removal:**
 
 ```shell
-claude mcp remove server-name -s user
+claude mcp remove server-name
 ```
 
 **Debugging failures:**
 - Check logs: `~/.claude/logs/mcp-*.log`
-- Timeout issues: increase `timeout` in server config
+- Startup timeout: relaunch Claude Code with a higher `MCP_TIMEOUT` env var
 - Restart: remove + re-add the server
 - Config reload: restart Claude Code session after
-  changes to `.claude/settings.json`
+  changes to `.mcp.json` or settings
 
 **Common issues:**
 - Server not found: verify command path is absolute
 - Permission denied: check executable permissions
-- Timeout: default 60s; increase for slow servers
+- Startup timeout: increase `MCP_TIMEOUT` for slow servers
 
 </context>
 
