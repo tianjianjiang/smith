@@ -86,8 +86,8 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
         # Workaround for #20397: on-plan-exit.sh doesn't fire on "clear context
         # and auto-accept edits". Create flag preemptively so on-session-clear.sh
         # or inject-plan.sh (next prompt) can auto-resume.
-        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$CURRENT_PLAN" 2>/dev/null || echo 0)
-        PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$CURRENT_PLAN" 2>/dev/null || true)
+        PENDING=${PENDING:-0}
         FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
         TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
         printf '%s\n%s\n%s\n%s\n%s\n' "$CURRENT_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
@@ -181,8 +181,8 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
 
         PENDING=0
         if [[ -n "$ACTIVE_PLAN" ]]; then
-            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-            PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || true)
+            PENDING=${PENDING:-0}
         fi
 
         # Block 1: Flag management (create or update)
@@ -310,8 +310,8 @@ if [[ -z "$ACTION" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
             if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
                 # Only refresh if plan has pending tasks (prevents perpetuating stale plans)
-                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || echo 0)
-                pending=$(echo "$pending" | tr -d '[:space:]')
+                pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || true)
+                pending=${pending:-0}
                 if [[ "$pending" -gt 0 ]]; then
                     PLAN_FILE="$prev_plan"
                     save_injection_state
