@@ -265,9 +265,11 @@ mkdir -p "$CWD_3"
 CWD_3_KEY=$(compute_session_key "$CWD_3")
 # Create state file pointing to test plan
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_3" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_3_KEY}"
+# Create flag file (required for auto-resume gate)
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_3" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_3" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_3_KEY}"
 OUTPUT=$(echo '{"cwd":"'"$CWD_3"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-if assert_contains "3" "$OUTPUT" "POST-CLEAR RESUME" && \
-   assert_contains "3" "$OUTPUT" "active plan confirmed" && \
+if assert_contains "3" "$OUTPUT" "ACTION REQUIRED" && \
+   assert_contains "3" "$OUTPUT" "POST-CLEAR RESUME" && \
    assert_contains "3" "$OUTPUT" "Task 2"; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -641,8 +643,8 @@ CWD_17="$TEST_DIR/worktree-17"
 mkdir -p "$CWD_17"
 # No state file for this CWD -> on-session-clear falls through to fresh start path
 OUTPUT=$(echo '{"cwd":"'"$CWD_17"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-if assert_contains "17" "$OUTPUT" "Fresh start" && \
-   assert_contains "17" "$OUTPUT" "Trust this decision"; then
+if assert_contains "17" "$OUTPUT" "fresh-start" && \
+   assert_contains "17" "$OUTPUT" "Signal"; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
@@ -658,7 +660,7 @@ CWD_18_KEY=$(compute_session_key "$CWD_18")
 # Create state pointing to a plan file that does not exist
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_18" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/nonexistent-plan.md" > "$PLANS_DIR/.plan-state-${CWD_18_KEY}"
 OUTPUT=$(echo '{"cwd":"'"$CWD_18"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-if assert_contains "18" "$OUTPUT" "Fresh start" && \
+if assert_contains "18" "$OUTPUT" "fresh-start" && \
    assert_contains "18" "$OUTPUT" "file missing"; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -698,6 +700,9 @@ PLAN
 # plan-b is now newer. Create state files linking each CWD to its own plan.
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_a19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A19_KEY}"
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_b19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B19_KEY}"
+# Create flag files (required for auto-resume gate)
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/plan-a.md" "sess_a19" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WORKTREE_A19" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_A19_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/plan-b.md" "sess_b19" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WORKTREE_B19" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_B19_KEY}"
 
 # Simulate /clear in worktree A -> on-session-clear should load plan-a
 OUTPUT_A=$(echo '{"cwd":"'"$WORKTREE_A19"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -1071,6 +1076,8 @@ printf 'Run test suite and fix failures.' > "$PLANS_DIR/.ralph-resume-${CWD_27_K
 
 # Create state file pointing to plan
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_27" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_27_KEY}"
+# Create flag file (required for auto-resume gate)
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_27" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$RALPH_CWD_27" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_27_KEY}"
 
 OUTPUT=$(echo '{"cwd":"'"$RALPH_CWD_27"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 
@@ -1198,6 +1205,8 @@ create_ralph_state "$RALPH_CWD_29" "false" "5" "20" "PHASE_COMPLETE" "Execute th
 
 # State file pointing to plan (simulates previous session had a plan)
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_29" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_29_KEY}"
+# Create flag file (required for auto-resume gate)
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_29" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$RALPH_CWD_29" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_29_KEY}"
 
 # No resume files -- this is the proactive path
 OUTPUT=$(echo '{"cwd":"'"$RALPH_CWD_29"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -1441,8 +1450,8 @@ printf '%s\n%s\n%s\n%s\n%s\n' "sess_35" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S
 OUTPUT=$(echo '{"cwd":"'"$CWD_35"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 
 T35_PASS=true
-# Should get "no plan" path (stale plan rejected)
-if ! assert_contains "35" "$OUTPUT" "No active plan"; then
+# Should get "no plan" path (stale plan rejected) — state shows "not loaded"
+if ! assert_contains "35" "$OUTPUT" "not loaded"; then
     T35_PASS=false
 fi
 # Should NOT show completed plan's task content
@@ -1451,7 +1460,7 @@ if echo "$OUTPUT" | grep -q "Completed Plan"; then
     T35_PASS=false
 fi
 # Should contain state metadata showing fresh start decision
-if ! assert_contains "35" "$OUTPUT" "fresh start"; then
+if ! assert_contains "35" "$OUTPUT" "fresh-start"; then
     T35_PASS=false
 fi
 # Should contain state metadata showing 0 pending tasks
@@ -1489,26 +1498,22 @@ PLAN
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_36" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-36.md" > "$PLANS_DIR/.plan-state-${CWD_36_KEY}"
 
 # Create flag file (explicit reload intent overrides staleness check)
-printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-36.md" "sess_36" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_36" > "$PLANS_DIR/.pending-reload-${CWD_36_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-36.md" "sess_36" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_36" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_36_KEY}"
 
 OUTPUT=$(echo '{"cwd":"'"$CWD_36"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 
 T36_PASS=true
-# Should load the plan (flag overrides staleness check)
-if ! assert_contains "36" "$OUTPUT" "POST-CLEAR RESUME"; then
+# Should load the plan (flag overrides staleness check) — Signal: resume
+if ! assert_contains "36" "$OUTPUT" "resume"; then
     T36_PASS=false
 fi
 # Should contain plan content (loaded despite being completed)
 if ! assert_contains "36" "$OUTPUT" "Completed Plan 36"; then
     T36_PASS=false
 fi
-# Should show "reload" in metadata (flag = explicit intent)
-if ! assert_contains "36" "$OUTPUT" "reload"; then
-    T36_PASS=false
-fi
-# Should NOT show "fresh start" (plan was loaded, not rejected)
-if echo "$OUTPUT" | grep -q "fresh start"; then
-    echo "  Got 'fresh start' decision but plan should have been loaded (flag overrides)"
+# Should NOT show "fresh-start" (plan was loaded, not rejected)
+if echo "$OUTPUT" | grep -q "fresh-start"; then
+    echo "  Got 'fresh-start' signal but plan should have been loaded (flag overrides)"
     T36_PASS=false
 fi
 
