@@ -68,11 +68,11 @@ The stop hook (`enforce-clear.sh`) handles both plan-active and non-plan context
 
 ## SessionStart:clear Hook
 
-The `on-session-clear.sh` hook fires after manual `/clear` and reliably injects plan content with skill/todo reconstruction instructions. This is the primary injection point for post-/clear plan restoration. When no plan state exists, it still emits a Serena memory restoration directive (graceful degradation).
+The `on-session-clear.sh` hook fires after manual `/clear` and reliably injects plan content with skill/todo reconstruction instructions. When flag type is `plan-pending` with pending tasks, it prepends an ACTION REQUIRED directive (mirroring `inject-plan.sh`'s flag-load behavior) to ensure the agent actively resumes rather than passively acknowledging. This is the primary injection point for post-/clear plan restoration. When no plan state exists, it still emits a Serena memory restoration directive (graceful degradation).
 
 ## Plan Mode State Saving
 
-During plan mode (`permission_mode: "plan"`), `inject-plan.sh` saves state on every prompt submission. This ensures the state file has the plan path BEFORE the user exits plan mode -- critical because PostToolUse:ExitPlanMode doesn't fire with "clear context and auto-accept edits" (upstream bug [#20397](https://github.com/anthropics/claude-code/issues/20397)).
+During plan mode (`permission_mode: "plan"`), `inject-plan.sh` saves state AND creates a preemptive flag file on every prompt submission. This ensures both the state file and flag exist BEFORE the user exits plan mode -- critical because PostToolUse:ExitPlanMode doesn't fire with "clear context and auto-accept edits" (upstream bug [#20397](https://github.com/anthropics/claude-code/issues/20397)). The flag is not consumed during plan mode (guarded by permission_mode check), so it persists for the next session to pick up.
 
 ## Clear-and-Reload (Context Management)
 
@@ -91,8 +91,8 @@ Simulates Claude Code's "clear context and auto-accept edits" behavior for plan 
 
 ### Known Limitations (upstream bugs)
 
-- Plan mode "clear context and auto-accept edits" does not fire PostToolUse:ExitPlanMode ([#20397](https://github.com/anthropics/claude-code/issues/20397))
-- Plan mode "clear context" does not fire SessionStart:clear ([#20900](https://github.com/anthropics/claude-code/issues/20900))
+- Plan mode "clear context and auto-accept edits" does not fire PostToolUse:ExitPlanMode ([#20397](https://github.com/anthropics/claude-code/issues/20397)) -- mitigated by preemptive flag creation in inject-plan.sh during plan mode
+- Plan mode "clear context" may not fire SessionStart:clear ([#20900](https://github.com/anthropics/claude-code/issues/20900)) -- docs now list `clear` as valid matcher; may be fixed. Preemptive flag ensures auto-resume regardless via inject-plan.sh fallback
 - Tasks are orphaned across session boundaries ([#20797](https://github.com/anthropics/claude-code/issues/20797)) -- todo reconstruction from plan checkboxes is the workaround
 
 ### Workflow: Context Threshold Auto-Detection
