@@ -109,7 +109,7 @@ git worktree remove ../feature-branch
 
 **Pattern**: `type/descriptive_name` — type MUST match commit type
 
-**Separators** (from `@smith-style/SKILL.md`):
+**Separators** (abbreviated quick-ref; see `@smith-style/SKILL.md` for full rules):
 - **Underscore (_)**: Multi-word single concept → `fix/query_processor`
 - **Hyphen (-)**: Hierarchy/variant/ticket → `feat/auth-login`, `fix/JIRA-1234-query_processor`
 
