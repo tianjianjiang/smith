@@ -73,6 +73,13 @@ fi
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 
+# If ExitPlanMode just fired, on-plan-exit.sh left a marker. Allow the stop.
+EXIT_MARKER="${FLAG_FILE}.exit-marker"
+if [[ -f "$EXIT_MARKER" ]]; then
+    rm -f "$EXIT_MARKER"
+    exit 0
+fi
+
 # Check for active plan
 ACTIVE_PLAN=""
 PENDING=0

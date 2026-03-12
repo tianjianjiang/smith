@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 36 scenarios covering:
+# Runs 37 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -39,6 +39,7 @@
 #  34. "reload the plan" (substring) triggers plan load from state file
 #  35. Stale plan: state with completed plan (0 pending) + no flag -> no-plan path
 #  36. Stale plan: state with completed plan + flag -> loads plan (flag overrides)
+#  37. enforce-clear + exit-marker -> exit 0 (no block)
 #
 
 set -e
@@ -60,7 +61,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=36
+TOTAL=37
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -1518,6 +1519,52 @@ if echo "$OUTPUT" | grep -q "fresh-start"; then
 fi
 
 if [[ "$T36_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 37: enforce-clear + exit-marker -> exit 0 (no block) ---
+echo "Test 37: enforce-clear + exit-marker -> exit 0 (no block)"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-*
+
+# Create state file and flag file (simulate active plan at high context)
+CWD_37="/tmp/test-worktree-37"
+CWD_37_KEY=$(printf '%s' "$$:${CWD_37}" | md5 -q 2>/dev/null || printf '%s' "$$:${CWD_37}" | md5sum | cut -d' ' -f1)
+CWD_37_KEY=${CWD_37_KEY:0:16}
+FLAG_37="$PLANS_DIR/.pending-reload-${CWD_37_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_37" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_37" "plan-pending" > "$FLAG_37"
+
+# Create exit-marker (as on-plan-exit.sh would)
+touch "${FLAG_37}.exit-marker"
+
+# Create transcript at 65% context
+TRANSCRIPT_37=$(create_transcript_pct 65 "t37")
+
+OUTPUT=$(echo '{"session_id":"sess_37","transcript_path":"'"$TRANSCRIPT_37"'","cwd":"'"$CWD_37"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh" 2>/dev/null)
+EXIT_CODE=$?
+
+T37_PASS=true
+# Should exit 0 (no block) because exit-marker was present
+if [[ $EXIT_CODE -ne 0 ]]; then
+    echo "  Exit code was $EXIT_CODE, expected 0"
+    T37_PASS=false
+fi
+# Output should be empty (allowed to stop)
+if [[ -n "$OUTPUT" ]]; then
+    echo "  Got output but expected empty (stop should be allowed)"
+    T37_PASS=false
+fi
+# Exit-marker should be consumed (deleted)
+if [[ -f "${FLAG_37}.exit-marker" ]]; then
+    echo "  Exit-marker was NOT consumed"
+    T37_PASS=false
+fi
+
+if [[ "$T37_PASS" == "true" ]]; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
