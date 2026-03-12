@@ -132,7 +132,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-git" description="Git commits, merges, rebases, worktrees">`@smith-git/SKILL.md`</skill>
 <skill name="smith-gh-pr" description="PR creation, review, automated monitoring">`@smith-gh-pr/SKILL.md`</skill>
 <skill name="smith-gh-cli" description="GitHub CLI usage">`@smith-gh-cli/SKILL.md`</skill>
-<skill name="smith-style" description="Commit message conventions">`@smith-style/SKILL.md`</skill>
+<skill name="smith-style" description="Commit messages and branch naming conventions">`@smith-style/SKILL.md`</skill>
 <skill name="smith-stacks" description="Stacked PR workflows">`@smith-stacks/SKILL.md`</skill>
 
 <!-- Workflow -->
@@ -163,9 +163,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
-**Git/GitHub**: Commits → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
+**Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
   Worktrees → `@smith-git/SKILL.md`,
-  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md`
+  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-style/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
