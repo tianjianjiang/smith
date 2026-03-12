@@ -95,6 +95,29 @@ Simulates Claude Code's "clear context and auto-accept edits" behavior for plan 
 - Plan mode "clear context" may not fire SessionStart:clear ([#20900](https://github.com/anthropics/claude-code/issues/20900)) -- docs now list `clear` as valid matcher; may be fixed. Preemptive flag ensures auto-resume regardless via inject-plan.sh fallback
 - Tasks are orphaned across session boundaries ([#20797](https://github.com/anthropics/claude-code/issues/20797)) -- todo reconstruction from plan checkboxes is the workaround
 
+### ExitPlanMode Rejection Handling
+
+ExitPlanMode rejection has three scenarios -- handle each differently:
+
+1. **Rejection WITH user feedback** (normal revision flow):
+   - Read the user's feedback from the rejection message
+   - Revise the plan file based on their feedback
+   - Call ExitPlanMode again with the updated plan
+   - Never call ExitPlanMode twice without making changes between calls
+
+2. **Rejection WITHOUT feedback + "Re-entering Plan Mode"** (silent redirect):
+   - This is a known Claude Code issue where ExitPlanMode bounces back
+   - Do NOT enter an infinite edit-and-retry loop
+   - Use AskUserQuestion to tell the user: "ExitPlanMode was silently redirected.
+     Please exit plan mode manually (Escape or Shift+Tab), then tell me to proceed."
+
+3. **Session ends after ExitPlanMode** (auto-accept and clear):
+   - User clicked "auto-accept and clear context" -- session is killed
+   - Preemptive flag from inject-plan.sh ensures plan auto-reload in next session
+   - No agent action needed (agent doesn't see this -- session already ended)
+
+[#20397]: https://github.com/anthropics/claude-code/issues/20397
+
 ### Workflow: Context Threshold Auto-Detection
 
 Uses real token counts from transcript JSONL (same data as Claude Code statusline). The last assistant message's `usage` object provides `input_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens`. Context percentage = total input tokens / context window size.

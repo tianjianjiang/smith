@@ -71,6 +71,7 @@ rm -f "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
 find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-resume-*" -mmin +60 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-orch-resume-*" -mmin +60 -delete 2>/dev/null || true
+find "$PLANS_DIR" -name ".pending-reload-*.exit-marker" -mmin +5 -delete 2>/dev/null || true
 
 # --- Plan mode state saving ---
 # During plan mode (permission_mode: "plan"), save state on every prompt.
