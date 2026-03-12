@@ -107,7 +107,11 @@ git worktree remove ../feature-branch
 
 ## Branch Naming
 
-See `@smith-style/SKILL.md` for naming conventions.
+**Pattern**: `type/descriptive_name` — type MUST match commit type
+
+**Separators** (abbreviated quick-ref; see `@smith-style/SKILL.md` for full rules):
+- **Underscore (_)**: Multi-word single concept → `fix/query_processor`
+- **Hyphen (-)**: Hierarchy/variant/ticket → `feat/auth-login`, `fix/JIRA-1234-query_processor`
 
 ## Commit Standards
 
