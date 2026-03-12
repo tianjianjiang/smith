@@ -165,7 +165,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
 **Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
   Worktrees → `@smith-git/SKILL.md`,
-  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-style/SKILL.md`
+  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
