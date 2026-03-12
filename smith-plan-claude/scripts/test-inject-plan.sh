@@ -1572,8 +1572,8 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# --- Test 38: enforce-clear + stale exit-marker (>30s) -> still blocks ---
-echo "Test 38: enforce-clear + stale exit-marker (>30s) -> still blocks"
+# --- Test 38: enforce-clear + old exit-marker (session match) -> exit 0 (no block) ---
+echo "Test 38: enforce-clear + old exit-marker (session match) -> exit 0 (no block)"
 create_test_plan
 rm -f "$PLANS_DIR"/.pending-reload-*
 
@@ -1583,7 +1583,7 @@ CWD_38_KEY=$(compute_session_key "$CWD_38")
 FLAG_38="$PLANS_DIR/.pending-reload-${CWD_38_KEY}"
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_38" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_38" "plan-pending" > "$FLAG_38"
 
-# Create exit-marker and backdate it to 60s ago
+# Create exit-marker and backdate it to 60s ago (no longer matters — freshness removed)
 touch "${FLAG_38}.exit-marker"
 touch -t "$(date -v-60S +%Y%m%d%H%M.%S 2>/dev/null || date -d '60 seconds ago' +%Y%m%d%H%M.%S 2>/dev/null)" "${FLAG_38}.exit-marker"
 
@@ -1593,12 +1593,16 @@ OUTPUT=$(echo '{"session_id":"sess_38","transcript_path":"'"$TRANSCRIPT_38"'","c
 EXIT_CODE=$?
 
 T38_PASS=true
-# Should block (output contains "block") because marker is stale
-if ! echo "$OUTPUT" | grep -q '"block"'; then
-    echo "  Output missing 'block' decision (stale marker should not bypass)"
+# Should exit 0 (no block) because session matches — marker age is irrelevant
+if [[ $EXIT_CODE -ne 0 ]]; then
+    echo "  Exit code was $EXIT_CODE, expected 0"
     T38_PASS=false
 fi
-# Exit-marker should still be consumed (always removed)
+if [[ -n "$OUTPUT" ]]; then
+    echo "  Got output but expected empty (stop should be allowed)"
+    T38_PASS=false
+fi
+# Exit-marker should be consumed (deleted)
 if [[ -f "${FLAG_38}.exit-marker" ]]; then
     echo "  Exit-marker was NOT consumed"
     T38_PASS=false
