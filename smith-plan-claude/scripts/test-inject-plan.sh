@@ -61,7 +61,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=37
+TOTAL=40
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -1532,7 +1532,8 @@ create_test_plan
 rm -f "$PLANS_DIR"/.pending-reload-*
 
 # Create state file and flag file (simulate active plan at high context)
-CWD_37="/tmp/test-worktree-37"
+CWD_37="$TEST_DIR/worktree-37"
+mkdir -p "$CWD_37"
 CWD_37_KEY=$(compute_session_key "$CWD_37")
 FLAG_37="$PLANS_DIR/.pending-reload-${CWD_37_KEY}"
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_37" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_37" "plan-pending" > "$FLAG_37"
@@ -1564,6 +1565,122 @@ if [[ -f "${FLAG_37}.exit-marker" ]]; then
 fi
 
 if [[ "$T37_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 38: enforce-clear + stale exit-marker (>30s) -> still blocks ---
+echo "Test 38: enforce-clear + stale exit-marker (>30s) -> still blocks"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-*
+
+CWD_38="$TEST_DIR/worktree-38"
+mkdir -p "$CWD_38"
+CWD_38_KEY=$(compute_session_key "$CWD_38")
+FLAG_38="$PLANS_DIR/.pending-reload-${CWD_38_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_38" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_38" "plan-pending" > "$FLAG_38"
+
+# Create exit-marker and backdate it to 60s ago
+touch "${FLAG_38}.exit-marker"
+touch -t "$(date -v-60S +%Y%m%d%H%M.%S 2>/dev/null || date -d '60 seconds ago' +%Y%m%d%H%M.%S 2>/dev/null)" "${FLAG_38}.exit-marker"
+
+TRANSCRIPT_38=$(create_transcript_pct 65 "t38")
+
+OUTPUT=$(echo '{"session_id":"sess_38","transcript_path":"'"$TRANSCRIPT_38"'","cwd":"'"$CWD_38"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh" 2>/dev/null)
+EXIT_CODE=$?
+
+T38_PASS=true
+# Should block (output contains "block") because marker is stale
+if ! echo "$OUTPUT" | grep -q '"block"'; then
+    echo "  Output missing 'block' decision (stale marker should not bypass)"
+    T38_PASS=false
+fi
+# Exit-marker should still be consumed (always removed)
+if [[ -f "${FLAG_38}.exit-marker" ]]; then
+    echo "  Exit-marker was NOT consumed"
+    T38_PASS=false
+fi
+
+if [[ "$T38_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 39: enforce-clear + exit-marker with session mismatch -> still blocks ---
+echo "Test 39: enforce-clear + exit-marker with session mismatch -> still blocks"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-*
+
+CWD_39="$TEST_DIR/worktree-39"
+mkdir -p "$CWD_39"
+CWD_39_KEY=$(compute_session_key "$CWD_39")
+FLAG_39="$PLANS_DIR/.pending-reload-${CWD_39_KEY}"
+# Flag file has session "sess_39_other" but input will have "sess_39"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_39_other" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_39" "plan-pending" > "$FLAG_39"
+
+touch "${FLAG_39}.exit-marker"
+
+TRANSCRIPT_39=$(create_transcript_pct 65 "t39")
+
+OUTPUT=$(echo '{"session_id":"sess_39","transcript_path":"'"$TRANSCRIPT_39"'","cwd":"'"$CWD_39"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh" 2>/dev/null)
+EXIT_CODE=$?
+
+T39_PASS=true
+# Should block (output contains "block") because session doesn't match
+if ! echo "$OUTPUT" | grep -q '"block"'; then
+    echo "  Output missing 'block' decision (session mismatch should not bypass)"
+    T39_PASS=false
+fi
+# Exit-marker should still be consumed
+if [[ -f "${FLAG_39}.exit-marker" ]]; then
+    echo "  Exit-marker was NOT consumed"
+    T39_PASS=false
+fi
+
+if [[ "$T39_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 40: enforce-clear + exit-marker without flag file -> still blocks ---
+echo "Test 40: enforce-clear + exit-marker without flag file -> still blocks"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-*
+
+CWD_40="$TEST_DIR/worktree-40"
+mkdir -p "$CWD_40"
+CWD_40_KEY=$(compute_session_key "$CWD_40")
+FLAG_40="$PLANS_DIR/.pending-reload-${CWD_40_KEY}"
+# Only create exit-marker, NO flag file
+touch "${FLAG_40}.exit-marker"
+
+TRANSCRIPT_40=$(create_transcript_pct 65 "t40")
+
+OUTPUT=$(echo '{"session_id":"sess_40","transcript_path":"'"$TRANSCRIPT_40"'","cwd":"'"$CWD_40"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh" 2>/dev/null)
+EXIT_CODE=$?
+
+T40_PASS=true
+# Should block (output contains "block") because flag file is missing (sed returns empty, won't match)
+if ! echo "$OUTPUT" | grep -q '"block"'; then
+    echo "  Output missing 'block' decision (missing flag file should not bypass)"
+    T40_PASS=false
+fi
+# Exit-marker should still be consumed
+if [[ -f "${FLAG_40}.exit-marker" ]]; then
+    echo "  Exit-marker was NOT consumed"
+    T40_PASS=false
+fi
+
+if [[ "$T40_PASS" == "true" ]]; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
