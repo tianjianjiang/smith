@@ -1533,8 +1533,7 @@ rm -f "$PLANS_DIR"/.pending-reload-*
 
 # Create state file and flag file (simulate active plan at high context)
 CWD_37="/tmp/test-worktree-37"
-CWD_37_KEY=$(printf '%s' "$$:${CWD_37}" | md5 -q 2>/dev/null || printf '%s' "$$:${CWD_37}" | md5sum | cut -d' ' -f1)
-CWD_37_KEY=${CWD_37_KEY:0:16}
+CWD_37_KEY=$(compute_session_key "$CWD_37")
 FLAG_37="$PLANS_DIR/.pending-reload-${CWD_37_KEY}"
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_37" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_37" "plan-pending" > "$FLAG_37"
 
