@@ -107,10 +107,13 @@ When blocking, the hook **auto-creates the `.pending-reload` flag** before retur
 
 ### on-plan-exit.sh (PostToolUse: ExitPlanMode)
 
-Fires after ExitPlanMode tool is used. Creates `.pending-reload-<CWD_KEY>` flag with the most recently modified plan, enabling auto-reload after `/clear`.
+Fires after ExitPlanMode tool is used. Locates the active plan by first checking `.plan-state-<CWD_KEY>` (line 5: plan path) and only falling back to the most recently modified `*.md` in the plans directory when state is missing. Creates/updates `.pending-reload-<CWD_KEY>` flag with the resolved plan, enabling auto-reload after `/clear`. Output is minimal (non-actionable) to prevent Claude from following numbered "next steps" instead of exiting. Also creates an `.exit-marker` file that signals `enforce-clear.sh` to allow the stop, preventing the Stop hook from blocking the turn after ExitPlanMode. The marker is validated for freshness (mtime within 30s) and session match before being honored.
+
+**ExitPlanMode rejection context.** ExitPlanMode rejection has three scenarios: (1) user gives revision feedback (normal -- agent revises and retries), (2) silent redirect back to plan mode without feedback (known issue -- agent should ask user to exit manually), (3) "auto-accept and clear" kills session before PostToolUse fires ([#20397](https://github.com/anthropics/claude-code/issues/20397)). For scenarios 2-3, on-plan-exit.sh never fires, making it **defense-in-depth** only. The **primary reliability mechanism** is the preemptive flag created by inject-plan.sh during plan mode, which ensures plan auto-reload regardless of ExitPlanMode outcome.
 
 **Input JSON fields used:**
 - `session_id` - Current session identifier
+- `cwd` - Working directory (used to derive `CWD_KEY` via `session_key()` for `.plan-state-<CWD_KEY>` lookup)
 
 ## Flag File Format
 
