@@ -41,6 +41,21 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2; exit 1
 }
 
+# CWD-keyed flag file (needed early for exit-marker check)
+FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
+
+# If ExitPlanMode just fired, on-plan-exit.sh left a marker. Allow the stop.
+# Consumed before early-exit paths so it can't leak to a later unrelated stop.
+# Session match prevents cross-session reuse; consume-on-read prevents permanent bypass.
+EXIT_MARKER="${FLAG_FILE}.exit-marker"
+if [[ -f "$EXIT_MARKER" ]]; then
+    marker_session=$(sed -n '2p' "$FLAG_FILE" 2>/dev/null || true)
+    rm -f "$EXIT_MARKER"
+    if [[ "$marker_session" == "$SESSION_ID" ]]; then
+        exit 0
+    fi
+fi
+
 # Ralph coordination: defer to inject-plan.sh + Ralph's own stop hook.
 # inject-plan.sh already saved resume state and set max_iterations.
 # We MUST NOT double-block or we create a deadlock.
@@ -69,33 +84,7 @@ if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
     exit 0
 fi
 
-# CWD-keyed identifiers (CWD_KEY computed above with field extraction)
-FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
-
-# If ExitPlanMode just fired, on-plan-exit.sh left a marker. Allow the stop.
-# Validate freshness (mtime within 30s) and session match to prevent stale reuse.
-EXIT_MARKER="${FLAG_FILE}.exit-marker"
-if [[ -f "$EXIT_MARKER" ]]; then
-    marker_fresh=false
-    now_ts=$(date +%s 2>/dev/null || echo "")
-    if [[ -n "$now_ts" ]]; then
-        if mtime_ts=$(stat -f '%m' "$EXIT_MARKER" 2>/dev/null) || \
-           mtime_ts=$(stat -c '%Y' "$EXIT_MARKER" 2>/dev/null); then
-            age=$(( now_ts - mtime_ts ))
-            if (( age >= 0 && age <= 30 )); then
-                marker_fresh=true
-            fi
-        fi
-    fi
-    # Also verify session matches the flag file
-    marker_session=$(sed -n '2p' "$FLAG_FILE" 2>/dev/null || true)
-    # Always consume the marker to prevent reuse
-    rm -f "$EXIT_MARKER"
-    if [[ "$marker_fresh" == "true" ]] && [[ "$marker_session" == "$SESSION_ID" ]]; then
-        exit 0
-    fi
-fi
 
 # Check for active plan
 ACTIVE_PLAN=""
