@@ -11,6 +11,44 @@ set -o pipefail
 PLANS_DIR="${HOME}/.claude/plans"
 CONTEXT_WINDOW_TOKENS=${CONTEXT_WINDOW_TOKENS:-200000}
 RALPH_STATE_FILENAME="ralph-loop.local.md"
+
+# Map model ID to context window size in tokens.
+# Handles both SessionStart format (with [1m] suffix) and transcript format (without).
+model_to_context_window() {
+    local model="${1:-}"
+    case "$model" in
+        *\[1[mM]\]*)                    echo 1000000 ;;
+        claude-haiku-*|claude-sonnet-*)  echo 200000  ;;
+        *)                               echo "${CONTEXT_WINDOW_TOKENS}" ;;
+    esac
+}
+
+# Save model ID to session-keyed file for cross-hook sharing.
+save_session_model() {
+    local cwd_key="$1" model="$2"
+    [[ -n "$model" ]] && printf '%s\n' "$model" > "${PLANS_DIR}/.model-${cwd_key}"
+}
+
+# Read model ID from session-keyed file.
+read_session_model() {
+    local cwd_key="$1"
+    local f="${PLANS_DIR}/.model-${cwd_key}"
+    [[ -f "$f" ]] && cat "$f" 2>/dev/null
+}
+
+# Resolve context percentage with session-model priority.
+# Args: $1 = transcript path, $2 = CWD key
+resolve_context_percentage() {
+    local transcript="$1" cwd_key="$2"
+    local session_model
+    session_model=$(read_session_model "$cwd_key")
+    if [[ -n "$session_model" ]]; then
+        get_context_percentage "$transcript" "$(model_to_context_window "$session_model")"
+    else
+        get_context_percentage "$transcript"
+    fi
+}
+
 ORCH_STATE_PREFIX=".ralph-orchestrator-"
 
 # Check for jq dependency (required for JSON parsing)
@@ -80,7 +118,7 @@ json_session_start_output() {
 # Usage: pct=$(get_context_percentage "/path/to/transcript.jsonl")
 get_context_percentage() {
     local transcript="$1"
-    local context_window="${2:-$CONTEXT_WINDOW_TOKENS}"
+    local context_window="${2:-}"
 
     if [[ ! -f "$transcript" ]]; then
         echo "0"
@@ -89,21 +127,39 @@ get_context_percentage() {
 
     # Read last 200KB, filter for complete JSON lines only (grep '^{' skips
     # the truncated first line from tail -c byte-boundary cut).
-    # || total="" prevents set -eo pipefail from killing the script on grep/jq failure.
-    local total
-    total=$(tail -c 204800 "$transcript" 2>/dev/null \
+    # || last_line="" guards against callers that run with set -e and prevents
+    # non-zero pipeline exit from interrupting execution.
+    local last_line
+    last_line=$(tail -c 204800 "$transcript" 2>/dev/null \
         | grep '^{' \
-        | grep '"assistant"' | tail -1 \
-        | jq -r '
-            # Total context consumption: input + cached + output (context window is shared)
-            .message.usage
-            | ((.input_tokens // 0) + (.cache_read_input_tokens // 0)
-               + (.cache_creation_input_tokens // 0) + (.output_tokens // 0))
-        ' 2>/dev/null) || total=""
+        | grep '"assistant"' | tail -1) || last_line=""
+
+    if [[ -z "$last_line" ]]; then
+        echo "0"
+        return
+    fi
+
+    local total
+    total=$(echo "$last_line" | jq -r '
+        .message.usage
+        | ((.input_tokens // 0) + (.cache_read_input_tokens // 0)
+           + (.cache_creation_input_tokens // 0) + (.output_tokens // 0))
+    ' 2>/dev/null) || total=""
 
     if [[ -z "$total" ]] || [[ "$total" == "null" ]] || ! [[ "$total" =~ ^[0-9]+$ ]]; then
         echo "0"
         return
+    fi
+
+    # Auto-detect context window from model if not explicitly provided
+    if [[ -z "$context_window" ]]; then
+        local model
+        model=$(echo "$last_line" | jq -r '.message.model // empty' 2>/dev/null) || model=""
+        if [[ -n "$model" ]]; then
+            context_window=$(model_to_context_window "$model")
+        else
+            context_window="$CONTEXT_WINDOW_TOKENS"
+        fi
     fi
 
     if [[ "$context_window" -le 0 ]]; then

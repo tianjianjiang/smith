@@ -286,7 +286,7 @@ cross-repo sharing (see `@smith-tools/SKILL.md` for details).
 - Web search for current information
 - Browser automation for testing
 - MCP server integration (including Serena)
-- 200k token context window
+- Up to 1M token context window (model-dependent)
 - Tool Search for on-demand tool loading
 
 </context>
