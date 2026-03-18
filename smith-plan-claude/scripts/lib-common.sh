@@ -17,7 +17,7 @@ RALPH_STATE_FILENAME="ralph-loop.local.md"
 model_to_context_window() {
     local model="${1:-}"
     case "$model" in
-        *\[1[mM]\]*)                    echo 1000000 ;;
+        *\[1[mM]\]*|claude-opus-4*)     echo 1000000 ;;
         claude-haiku-*|claude-sonnet-*)  echo 200000  ;;
         *)                               echo "${CONTEXT_WINDOW_TOKENS}" ;;
     esac

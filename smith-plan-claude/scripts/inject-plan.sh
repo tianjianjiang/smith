@@ -80,7 +80,18 @@ find "$PLANS_DIR" -name ".model-*" -mmin +1440 -delete 2>/dev/null || true
 # Critical because PostToolUse:ExitPlanMode doesn't fire with "clear context
 # and auto-accept edits" (upstream bug #20397).
 if [[ "$PERMISSION_MODE" == "plan" ]]; then
-    CURRENT_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || CURRENT_PLAN=""
+    CURRENT_PLAN=""
+    # Prefer session's own plan from state file (prevents cross-session contamination)
+    if [[ -f "$STATE_FILE" ]]; then
+        prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
+        if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
+            CURRENT_PLAN="$prev_plan"
+        fi
+    fi
+    # Fallback: most recently modified (only for first prompt in new plan mode session)
+    if [[ -z "$CURRENT_PLAN" ]]; then
+        CURRENT_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || CURRENT_PLAN=""
+    fi
     if [[ -n "$CURRENT_PLAN" ]] && [[ -f "$CURRENT_PLAN" ]]; then
         PLAN_FILE="$CURRENT_PLAN"
         save_injection_state

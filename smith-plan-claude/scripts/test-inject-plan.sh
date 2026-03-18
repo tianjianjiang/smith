@@ -1727,8 +1727,8 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# --- Test 43: Opus (no [1m] suffix) transcript at 55% -> maps to CONTEXT_WINDOW_TOKENS default -> returns ~55 ---
-echo "Test 43: Opus (no [1m] suffix) transcript at 55% -> CONTEXT_WINDOW_TOKENS default -> returns ~55"
+# --- Test 43: Opus (no [1m] suffix) transcript at 55% -> maps to 1M -> returns ~55 ---
+echo 'Test 43: Opus (no [1m] suffix) transcript at 55% -> 1M window -> returns ~55'
 TRANSCRIPT_43=$(create_transcript_pct 55 "t43" "claude-opus-4-6")
 PCT_43=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_43")
 if [[ $PCT_43 -ge 54 ]] && [[ $PCT_43 -le 56 ]]; then
@@ -1822,8 +1822,8 @@ if [[ "$CTX_HAIKU" != "200000" ]]; then
     echo "  haiku -> expected 200000, got $CTX_HAIKU"
     T47_PASS=false
 fi
-if [[ "$CTX_OPUS" != "200000" ]]; then
-    echo "  opus (no suffix) -> expected 200000 (conservative default), got $CTX_OPUS"
+if [[ "$CTX_OPUS" != "1000000" ]]; then
+    echo "  opus (no suffix) -> expected 1000000, got $CTX_OPUS"
     T47_PASS=false
 fi
 if [[ "$T47_PASS" == "true" ]]; then
