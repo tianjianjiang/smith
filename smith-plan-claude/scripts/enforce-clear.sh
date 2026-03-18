@@ -17,7 +17,7 @@
 #
 # Env vars:
 #   PLAN_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
-#   CONTEXT_WINDOW_TOKENS - Context window size in tokens (default: 200000)
+#   CONTEXT_WINDOW_TOKENS - Fallback context window size in tokens (default: 200000); auto-detected from model when possible
 #
 
 source "$(dirname "$0")/lib-common.sh"
@@ -78,7 +78,7 @@ if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
 fi
 
 # Real context percentage from transcript token usage
-CONTEXT_PCT=$(get_context_percentage "$TRANSCRIPT_PATH" "$CONTEXT_WINDOW_TOKENS")
+CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
 
 if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
     exit 0
