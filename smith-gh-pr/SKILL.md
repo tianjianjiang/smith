@@ -84,7 +84,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
-- **Attribution**: When posting review comments, explicitly state you are commenting on the user's behalf (e.g., "Commenting on behalf of @username")
+- **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"). Omit when the user manually authors the comment.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 
 **Review reply tone and style:**
