@@ -61,7 +61,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=40
+TOTAL=48
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -120,16 +120,18 @@ PLAN
 }
 
 # Create transcript JSONL that returns approximately the given percentage.
-# Uses CONTEXT_WINDOW_TOKENS=200000 (the default).
-# Args: $1 = percentage (0-100), $2 = optional name suffix
+# Args: $1 = percentage (0-100), $2 = optional name suffix, $3 = optional model
 # Returns: path to the transcript file
 create_transcript_pct() {
     local pct=$1
     local name="${2:-default}"
+    local model="${3:-claude-opus-4-6}"
     local path="$TEST_DIR/transcript-${name}.jsonl"
-    local tokens=$(( pct * 200000 / 100 ))
-    # Write a valid JSONL line that get_context_percentage() can parse
-    printf '{"type":"assistant","message":{"usage":{"input_tokens":%d,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' "$tokens" > "$path"
+    # Source lib-common.sh to get model_to_context_window (use patched version)
+    local context_window
+    context_window=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "$model")
+    local tokens=$(( pct * context_window / 100 ))
+    printf '{"type":"assistant","message":{"model":"%s","usage":{"input_tokens":%d,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' "$model" "$tokens" > "$path"
     echo "$path"
 }
 
@@ -1691,6 +1693,175 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
+
+# ============================================================================
+# MODEL AUTO-DETECTION TESTS (41-47)
+# ============================================================================
+
+echo ""
+echo "--- Model Auto-Detection Tests ---"
+echo ""
+
+# --- Test 41: Sonnet transcript at 55% -> 200K auto-detected -> returns ~55 ---
+echo "Test 41: Sonnet transcript at 55% -> 200K auto-detected -> returns ~55"
+TRANSCRIPT_41=$(create_transcript_pct 55 "t41" "claude-sonnet-4-6")
+# Source patched lib-common.sh to call get_context_percentage directly
+PCT_41=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_41")
+if [[ $PCT_41 -ge 54 ]] && [[ $PCT_41 -le 56 ]]; then
+    echo "  PASS (got ${PCT_41}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~55%, got ${PCT_41}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 42: Haiku transcript at 55% -> 200K auto-detected -> returns ~55 ---
+echo "Test 42: Haiku transcript at 55% -> 200K auto-detected -> returns ~55"
+TRANSCRIPT_42=$(create_transcript_pct 55 "t42" "claude-haiku-4-5-20251001")
+PCT_42=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_42")
+if [[ $PCT_42 -ge 54 ]] && [[ $PCT_42 -le 56 ]]; then
+    echo "  PASS (got ${PCT_42}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~55%, got ${PCT_42}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 43: Opus (no [1m] suffix) transcript at 55% -> maps to CONTEXT_WINDOW_TOKENS default -> returns ~55 ---
+echo "Test 43: Opus (no [1m] suffix) transcript at 55% -> CONTEXT_WINDOW_TOKENS default -> returns ~55"
+TRANSCRIPT_43=$(create_transcript_pct 55 "t43" "claude-opus-4-6")
+PCT_43=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_43")
+if [[ $PCT_43 -ge 54 ]] && [[ $PCT_43 -le 56 ]]; then
+    echo "  PASS (got ${PCT_43}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~55%, got ${PCT_43}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 44: Explicit $2 override bypasses auto-detection ---
+echo "Test 44: Explicit context_window arg bypasses model auto-detection"
+# Create a Sonnet transcript (200K window) but pass 1M explicitly -> should return ~11%
+TRANSCRIPT_44=$(create_transcript_pct 55 "t44" "claude-sonnet-4-6")
+PCT_44=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_44" "1000000")
+# 55% of 200K = 110K tokens. 110K / 1M = 11%
+if [[ $PCT_44 -ge 10 ]] && [[ $PCT_44 -le 12 ]]; then
+    echo "  PASS (got ${PCT_44}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~11%, got ${PCT_44}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 45: No model field -> falls back to CONTEXT_WINDOW_TOKENS ---
+echo "Test 45: No model field in transcript -> falls back to CONTEXT_WINDOW_TOKENS"
+# Create transcript without model field (old format)
+TRANSCRIPT_45="$TEST_DIR/transcript-t45.jsonl"
+printf '{"type":"assistant","message":{"usage":{"input_tokens":110000,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' > "$TRANSCRIPT_45"
+PCT_45=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_45")
+# 110K / 200K = 55%
+if [[ $PCT_45 -ge 54 ]] && [[ $PCT_45 -le 56 ]]; then
+    echo "  PASS (got ${PCT_45}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~55%, got ${PCT_45}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 46: SessionStart model file used by inject-plan for context detection ---
+echo "Test 46: SessionStart model file used by inject-plan for Opus[1m] context detection"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+
+CWD_46="$TEST_DIR/worktree-46"
+mkdir -p "$CWD_46"
+CWD_46_KEY=$(compute_session_key "$CWD_46")
+
+# Create session model file (as on-session-clear.sh would)
+printf 'claude-opus-4-6[1m]\n' > "$PLANS_DIR/.model-${CWD_46_KEY}"
+
+# Create transcript with Sonnet model at 55% of 200K = 110K tokens
+# But since session model has [1m], it should use 1M -> 110K/1M = 11% (below 50% warning)
+TRANSCRIPT_46=$(create_transcript_pct 55 "t46" "claude-sonnet-4-6")
+
+# Set up state file
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_46" "$TRANSCRIPT_46" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_46_KEY}"
+
+# Should NOT trigger context warning (11% < 50%) because session model overrides
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_46","transcript_path":"'"$TRANSCRIPT_46"'","cwd":"'"$CWD_46"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if [[ -z "$OUTPUT" ]]; then
+    echo "  PASS (no warning at 11%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected no output, got: $(echo "$OUTPUT" | head -3))"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR/.model-${CWD_46_KEY}"
+
+# --- Test 47: model_to_context_window maps [1m] suffix correctly ---
+echo "Test 47: model_to_context_window maps [1m] suffix -> 1M"
+T47_PASS=true
+CTX_1M=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1m]")
+CTX_1M_UPPER=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1M]")
+CTX_SONNET=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-6")
+CTX_HAIKU=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-haiku-4-5-20251001")
+CTX_OPUS=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6")
+if [[ "$CTX_1M" != "1000000" ]]; then
+    echo "  [1m] -> expected 1000000, got $CTX_1M"
+    T47_PASS=false
+fi
+if [[ "$CTX_1M_UPPER" != "1000000" ]]; then
+    echo "  [1M] -> expected 1000000, got $CTX_1M_UPPER"
+    T47_PASS=false
+fi
+if [[ "$CTX_SONNET" != "200000" ]]; then
+    echo "  sonnet -> expected 200000, got $CTX_SONNET"
+    T47_PASS=false
+fi
+if [[ "$CTX_HAIKU" != "200000" ]]; then
+    echo "  haiku -> expected 200000, got $CTX_HAIKU"
+    T47_PASS=false
+fi
+if [[ "$CTX_OPUS" != "200000" ]]; then
+    echo "  opus (no suffix) -> expected 200000 (conservative default), got $CTX_OPUS"
+    T47_PASS=false
+fi
+if [[ "$T47_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 48: Plain Sonnet session model -> 200K window -> warning at 55% ---
+echo "Test 48: Plain Sonnet session model -> 200K window triggers warning at 55%"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+
+CWD_48="$TEST_DIR/worktree-48"
+mkdir -p "$CWD_48"
+CWD_48_KEY=$(compute_session_key "$CWD_48")
+
+# Create session model file with plain Sonnet (no [1m] suffix)
+printf 'claude-sonnet-4-6\n' > "$PLANS_DIR/.model-${CWD_48_KEY}"
+
+# Create transcript with Sonnet model at 55% of 200K = 110K tokens
+TRANSCRIPT_48=$(create_transcript_pct 55 "t48" "claude-sonnet-4-6")
+
+# Set up state file with plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_48" "$TRANSCRIPT_48" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48_KEY}"
+
+# Should trigger context warning (55% >= 50%) because plain Sonnet uses 200K window
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48","transcript_path":"'"$TRANSCRIPT_48"'","cwd":"'"$CWD_48"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
+    echo "  PASS (warning triggered at 55% of 200K)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected CONTEXT WARNING, got: $(echo "$OUTPUT" | head -3))"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"
 
 # --- Summary ---
 echo ""

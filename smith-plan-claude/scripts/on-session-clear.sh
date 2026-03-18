@@ -29,6 +29,12 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
+# Capture model from SessionStart input (only hook event with model field)
+_hook_model=$(echo "$INPUT" | jq -r '.model // empty' 2>/dev/null) || _hook_model=""
+if [[ -n "$_hook_model" ]]; then
+    save_session_model "$CWD_KEY" "$_hook_model"
+fi
+
 # Try to find plan from state file
 PLAN_FILE=""
 if [[ -f "$STATE_FILE" ]]; then
