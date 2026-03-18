@@ -72,6 +72,7 @@ find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-resume-*" -mmin +60 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".ralph-orch-resume-*" -mmin +60 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".pending-reload-*.exit-marker" -mmin +5 -delete 2>/dev/null || true
+find "$PLANS_DIR" -name ".model-*" -mmin +1440 -delete 2>/dev/null || true
 
 # --- Plan mode state saving ---
 # During plan mode (permission_mode: "plan"), save state on every prompt.
@@ -155,7 +156,7 @@ WARNING_PCT=${PLAN_CONTEXT_WARNING_PCT:-50}
 CRITICAL_PCT=${PLAN_CONTEXT_CRITICAL_PCT:-60}
 
 if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION" ]]; then
-    CONTEXT_PCT=$(get_context_percentage "$TRANSCRIPT_PATH" "$CONTEXT_WINDOW_TOKENS")
+    CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
 
     # Ralph detection (before threshold check -- needed for both warning and critical)
     RALPH_ACTIVE=false
