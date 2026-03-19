@@ -70,6 +70,13 @@ if [[ -n "$PLAN_FILE" ]] && [[ ! -f "$FLAG_FILE" ]]; then
     PLAN_FILE=""  # No flag = no auto-resume. Fall through to no-plan path.
 fi
 
+# Defense-in-depth: if flag type is not plan-pending (i.e., plan-completed or
+# no-plan), don't auto-load the plan. The flag TYPE is the source of truth for
+# intent — completed/absent plans should not be re-loaded after /clear.
+if [[ -n "$PLAN_FILE" ]] && [[ -f "$FLAG_FILE" ]] && [[ "$FLAG_TYPE" != "plan-pending" ]]; then
+    PLAN_FILE=""
+fi
+
 # Compute state/flag metadata for directive output (replaces "may be STALE" guessing)
 STATE_META_STATE=""
 if [[ -f "$STATE_FILE" ]]; then
