@@ -39,8 +39,8 @@ fi
 
 # Write flag file (5 lines: plan path, session ID, timestamp, CWD, flag type)
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || true)
+PENDING=${PENDING:-0}
 FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
 # Use empty plan path for completed plans (consistent with enforce-clear/inject-plan)
 FLAG_PLAN_PATH=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$ACTIVE_PLAN" || echo "")
