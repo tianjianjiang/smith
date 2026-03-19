@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 37 scenarios covering:
+# Runs 54 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -38,8 +38,10 @@
 #  33. "reload plan" (substring) triggers plan load from state file
 #  34. "reload the plan" (substring) triggers plan load from state file
 #  35. Stale plan: state with completed plan (0 pending) + no flag -> no-plan path
-#  36. Stale plan: state with completed plan + flag -> loads plan (flag overrides)
+#  36. Stale plan: completed plan + plan-completed flag (empty path) -> no-plan path with resume
 #  37. enforce-clear + exit-marker -> exit 0 (no block)
+#  ... (38-54 cover exit-marker edge cases, model auto-detection,
+#       plan-completed flag consistency, and no-state-file regression)
 #
 
 set -e
@@ -61,7 +63,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=48
+TOTAL=54
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -108,15 +110,7 @@ create_patched_scripts() {
 
 # Create a test plan with pending tasks
 create_test_plan() {
-    cat > "$PLANS_DIR/test-plan.md" <<'PLAN'
-# Test Plan
-
-## Tasks
-
-- [x] Task 1: Done
-- [ ] Task 2: Pending
-- [ ] Task 3: Pending
-PLAN
+    printf '%s\n' '# Test Plan' '' '## Tasks' '' '- [x] Task 1: Done' '- [ ] Task 2: Pending' '- [ ] Task 3: Pending' > "$PLANS_DIR/test-plan.md"
 }
 
 # Create transcript JSONL that returns approximately the given percentage.
@@ -376,7 +370,9 @@ CWD_B_KEY=$(compute_session_key "$WORKTREE_B")
 # --- Test 9: on-plan-exit creates CWD-specific flag (worktree A) ---
 echo "Test 9: on-plan-exit.sh creates flag keyed to worktree A's CWD"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+# Create state file so on-plan-exit finds the plan (ls -t fallback removed)
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
 # Run on-plan-exit.sh with worktree A's CWD
 OUTPUT=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
 # Flag should exist for worktree A's CWD hash, NOT worktree B's
@@ -493,13 +489,7 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 TRANSCRIPT_SMALL=$(create_transcript_pct 2 "t13-small")
 
 # Create plan-a (worktree A's plan)
-cat > "$PLANS_DIR/plan-a.md" <<'PLAN'
-# Plan A - Worktree A's work
-
-## Tasks
-- [x] Task A1: Done
-- [ ] Task A2: Worktree A pending work
-PLAN
+printf '%s\n' '# Plan A - Worktree A'\''s work' '' '## Tasks' '- [x] Task A1: Done' '- [ ] Task A2: Worktree A pending work' > "$PLANS_DIR/plan-a.md"
 
 # Create state file for session A pointing to plan-a
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
@@ -510,13 +500,7 @@ _OUTPUT_EXIT_A=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "
 sleep 1  # ensure different mtime
 
 # Now create plan-b (worktree B's plan) making it newer than plan-a
-cat > "$PLANS_DIR/plan-b.md" <<'PLAN'
-# Plan B - Worktree B's work
-
-## Tasks
-- [x] Task B1: Done
-- [ ] Task B2: Worktree B pending work
-PLAN
+printf '%s\n' '# Plan B - Worktree B'\''s work' '' '## Tasks' '- [x] Task B1: Done' '- [ ] Task B2: Worktree B pending work' > "$PLANS_DIR/plan-b.md"
 
 # Create state file for session B pointing to plan-b
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY}"
@@ -684,21 +668,11 @@ CWD_A19_KEY=$(compute_session_key "$WORKTREE_A19")
 CWD_B19_KEY=$(compute_session_key "$WORKTREE_B19")
 
 # Create plan-a and plan-b
-cat > "$PLANS_DIR/plan-a.md" <<'PLAN'
-# Plan A
-## Tasks
-- [x] Task A1: Done
-- [ ] Task A2: Session A work
-PLAN
+printf '%s\n' '# Plan A' '## Tasks' '- [x] Task A1: Done' '- [ ] Task A2: Session A work' > "$PLANS_DIR/plan-a.md"
 
 sleep 1
 
-cat > "$PLANS_DIR/plan-b.md" <<'PLAN'
-# Plan B
-## Tasks
-- [x] Task B1: Done
-- [ ] Task B2: Session B work
-PLAN
+printf '%s\n' '# Plan B' '## Tasks' '- [x] Task B1: Done' '- [ ] Task B2: Session B work' > "$PLANS_DIR/plan-b.md"
 
 # plan-b is now newer. Create state files linking each CWD to its own plan.
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_a19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A19_KEY}"
@@ -1437,14 +1411,7 @@ mkdir -p "$CWD_35"
 CWD_35_KEY=$(compute_session_key "$CWD_35")
 
 # Create plan with NO pending tasks (all completed)
-cat > "$PLANS_DIR/completed-plan.md" <<'PLAN'
-# Completed Plan
-
-## Tasks
-
-- [x] Task 1: Done
-- [x] Task 2: Done
-PLAN
+printf '%s\n' '# Completed Plan' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan.md"
 
 # Create state file pointing to completed plan
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_35" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan.md" > "$PLANS_DIR/.plan-state-${CWD_35_KEY}"
@@ -1479,8 +1446,8 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# --- Test 36: on-session-clear + state with completed plan + flag -> loads plan (flag overrides) ---
-echo "Test 36: on-session-clear + state with completed plan + flag -> loads plan (flag = explicit intent)"
+# --- Test 36: on-session-clear + state with completed plan + plan-completed flag (empty path) -> no-plan path ---
+echo "Test 36: on-session-clear + completed plan + plan-completed flag (empty path) -> no-plan path with resume signal"
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_36="$TEST_DIR/worktree-36"
@@ -1488,35 +1455,28 @@ mkdir -p "$CWD_36"
 CWD_36_KEY=$(compute_session_key "$CWD_36")
 
 # Create plan with NO pending tasks (all completed)
-cat > "$PLANS_DIR/completed-plan-36.md" <<'PLAN'
-# Completed Plan 36
-
-## Tasks
-
-- [x] Task 1: Done
-- [x] Task 2: Done
-PLAN
+printf '%s\n' '# Completed Plan 36' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-36.md"
 
 # Create state file pointing to completed plan
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_36" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-36.md" > "$PLANS_DIR/.plan-state-${CWD_36_KEY}"
 
-# Create flag file (explicit reload intent overrides staleness check)
-printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-36.md" "sess_36" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_36" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_36_KEY}"
+# Create flag file with empty plan path (as enforce-clear now does for completed plans)
+printf '%s\n%s\n%s\n%s\n%s\n' "" "sess_36" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_36" "plan-completed" > "$PLANS_DIR/.pending-reload-${CWD_36_KEY}"
 
 OUTPUT=$(echo '{"cwd":"'"$CWD_36"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 
 T36_PASS=true
-# Should load the plan (flag overrides staleness check) — Signal: resume
+# Should show resume signal (flag exists = reload intent)
 if ! assert_contains "36" "$OUTPUT" "resume"; then
     T36_PASS=false
 fi
-# Should contain plan content (loaded despite being completed)
-if ! assert_contains "36" "$OUTPUT" "Completed Plan 36"; then
+# Should NOT load the completed plan content (empty plan path in flag)
+if echo "$OUTPUT" | grep -q "Completed Plan 36"; then
+    echo "  Got plan content but should NOT load completed plan (empty path in flag)"
     T36_PASS=false
 fi
-# Should NOT show "fresh-start" (plan was loaded, not rejected)
-if echo "$OUTPUT" | grep -q "fresh-start"; then
-    echo "  Got 'fresh-start' signal but plan should have been loaded (flag overrides)"
+# Should show state metadata
+if ! assert_contains "36" "$OUTPUT" "State check"; then
     T36_PASS=false
 fi
 
@@ -1862,6 +1822,261 @@ else
     FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"
+
+# --- Test 49: enforce-clear with completed plan writes empty plan path in flag and state ---
+echo "Test 49: enforce-clear + completed plan -> empty plan path in flag and state"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_49="$TEST_DIR/worktree-49"
+mkdir -p "$CWD_49"
+CWD_49_KEY=$(compute_session_key "$CWD_49")
+
+# Create completed plan (0 pending)
+printf '%s\n' '# Completed Plan 49' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-49.md"
+
+# Create state file with completed plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_49" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-49.md" > "$PLANS_DIR/.plan-state-${CWD_49_KEY}"
+
+TRANSCRIPT_49=$(create_transcript_pct 65 "t49")
+
+OUTPUT=$(echo '{"session_id":"sess_49","transcript_path":"'"$TRANSCRIPT_49"'","cwd":"'"$CWD_49"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh" 2>/dev/null)
+
+T49_PASS=true
+# Flag file should have empty plan path (line 1)
+FLAG_49="$PLANS_DIR/.pending-reload-${CWD_49_KEY}"
+if [[ -f "$FLAG_49" ]]; then
+    FLAG_PLAN_49=$(sed -n '1p' "$FLAG_49")
+    if [[ -n "$FLAG_PLAN_49" ]]; then
+        echo "  Flag line 1 should be empty but got: $FLAG_PLAN_49"
+        T49_PASS=false
+    fi
+    FLAG_TYPE_49=$(sed -n '5p' "$FLAG_49")
+    if [[ "$FLAG_TYPE_49" != "plan-completed" ]]; then
+        echo "  Flag type should be plan-completed but got: $FLAG_TYPE_49"
+        T49_PASS=false
+    fi
+else
+    echo "  Flag file not created"
+    T49_PASS=false
+fi
+# State file should also have empty plan path (line 5)
+STATE_49="$PLANS_DIR/.plan-state-${CWD_49_KEY}"
+if [[ -f "$STATE_49" ]]; then
+    STATE_PLAN_49=$(sed -n '5p' "$STATE_49")
+    if [[ -n "$STATE_PLAN_49" ]]; then
+        echo "  State line 5 should be empty but got: $STATE_PLAN_49"
+        T49_PASS=false
+    fi
+else
+    echo "  State file not found"
+    T49_PASS=false
+fi
+
+if [[ "$T49_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 50: inject-plan plan-mode with existing state file (empty plan) -> ls -t fallback should NOT fire ---
+echo "Test 50: inject-plan plan-mode + state file with empty plan -> no ls -t fallback"
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_50="$TEST_DIR/worktree-50"
+mkdir -p "$CWD_50"
+CWD_50_KEY=$(compute_session_key "$CWD_50")
+
+# Create a plan that could be picked up by ls -t
+printf '%s\n' '# Decoy Plan 50' '' '## Tasks' '' '- [ ] Task A: Should not be loaded' > "$PLANS_DIR/decoy-plan-50.md"
+
+# Create state file with EMPTY plan path (simulating post-completed state)
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_50" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${CWD_50_KEY}"
+
+TRANSCRIPT_50=$(create_transcript_pct 10 "t50")
+
+# Run in plan mode (permission_mode=plan)
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_50","transcript_path":"'"$TRANSCRIPT_50"'","cwd":"'"$CWD_50"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+
+T50_PASS=true
+# State file should NOT have adopted the decoy plan
+STATE_50="$PLANS_DIR/.plan-state-${CWD_50_KEY}"
+if [[ -f "$STATE_50" ]]; then
+    STATE_PLAN_50=$(sed -n '5p' "$STATE_50")
+    if [[ "$STATE_PLAN_50" == *"decoy-plan-50"* ]]; then
+        echo "  State file adopted decoy plan via ls -t fallback (should not happen)"
+        T50_PASS=false
+    fi
+fi
+
+if [[ "$T50_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 51: inject-plan context threshold updating flag to plan-completed writes empty plan path ---
+echo "Test 51: inject-plan context threshold + 0 pending -> plan-completed flag with empty plan path"
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_51="$TEST_DIR/worktree-51"
+mkdir -p "$CWD_51"
+CWD_51_KEY=$(compute_session_key "$CWD_51")
+
+# Create completed plan
+printf '%s\n' '# Completed Plan 51' '' '## Tasks' '' '- [x] Task 1: Done' > "$PLANS_DIR/completed-plan-51.md"
+
+# Create state file with completed plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_51" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-51.md" > "$PLANS_DIR/.plan-state-${CWD_51_KEY}"
+
+# Create an existing flag (plan-pending) that should be updated to plan-completed
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-51.md" "sess_51" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_51" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_51_KEY}"
+
+TRANSCRIPT_51=$(create_transcript_pct 55 "t51")
+
+# Use permission_mode=plan so the flag survives to the context threshold section
+# (without plan mode, the auto-reload path consumes the flag first)
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_51","transcript_path":"'"$TRANSCRIPT_51"'","cwd":"'"$CWD_51"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+
+T51_PASS=true
+FLAG_51="$PLANS_DIR/.pending-reload-${CWD_51_KEY}"
+if [[ -f "$FLAG_51" ]]; then
+    FLAG_PLAN_51=$(sed -n '1p' "$FLAG_51")
+    FLAG_TYPE_51=$(sed -n '5p' "$FLAG_51")
+    if [[ -n "$FLAG_PLAN_51" ]]; then
+        echo "  Flag plan path should be empty but got: $FLAG_PLAN_51"
+        T51_PASS=false
+    fi
+    if [[ "$FLAG_TYPE_51" != "plan-completed" ]]; then
+        echo "  Flag type should be plan-completed but got: $FLAG_TYPE_51"
+        T51_PASS=false
+    fi
+else
+    echo "  Flag file not found"
+    T51_PASS=false
+fi
+
+if [[ "$T51_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 52: on-session-clear defense-in-depth: plan-completed flag with plan path still set -> no-plan path ---
+echo "Test 52: on-session-clear defense-in-depth: plan-completed flag with plan path -> no-plan path"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_52="$TEST_DIR/worktree-52"
+mkdir -p "$CWD_52"
+CWD_52_KEY=$(compute_session_key "$CWD_52")
+
+# Create completed plan
+printf '%s\n' '# Completed Plan 52' '' '## Tasks' '' '- [x] Task 1: Done' > "$PLANS_DIR/completed-plan-52.md"
+
+# Create state file with completed plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_52" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-52.md" > "$PLANS_DIR/.plan-state-${CWD_52_KEY}"
+
+# Create flag with plan-completed type BUT still has plan path (legacy or edge case)
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-52.md" "sess_52" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_52" "plan-completed" > "$PLANS_DIR/.pending-reload-${CWD_52_KEY}"
+
+OUTPUT=$(echo '{"cwd":"'"$CWD_52"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+
+T52_PASS=true
+# Defense-in-depth should prevent loading the completed plan
+if echo "$OUTPUT" | grep -q "Completed Plan 52"; then
+    echo "  Defense-in-depth failed: loaded completed plan content"
+    T52_PASS=false
+fi
+# Should still show resume signal (flag exists)
+if ! assert_contains "52" "$OUTPUT" "resume"; then
+    T52_PASS=false
+fi
+
+if [[ "$T52_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 53: on-plan-exit with completed plan writes empty plan path in flag ---
+echo "Test 53: on-plan-exit.sh with completed plan writes empty plan path"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_53="$TEST_DIR/worktree-53"
+mkdir -p "$CWD_53"
+CWD_53_KEY=$(compute_session_key "$CWD_53")
+
+# Create completed plan (0 pending)
+printf '%s\n' '# Completed Plan 53' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-53.md"
+
+# Create state file with completed plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_53" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-53.md" > "$PLANS_DIR/.plan-state-${CWD_53_KEY}"
+
+OUTPUT=$(echo '{"session_id":"sess_53","cwd":"'"$CWD_53"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
+
+T53_PASS=true
+FLAG_53="$PLANS_DIR/.pending-reload-${CWD_53_KEY}"
+if [[ -f "$FLAG_53" ]]; then
+    FLAG_PLAN_53=$(sed -n '1p' "$FLAG_53")
+    if [[ -n "$FLAG_PLAN_53" ]]; then
+        echo "  Flag line 1 should be empty but got: $FLAG_PLAN_53"
+        T53_PASS=false
+    fi
+    FLAG_TYPE_53=$(sed -n '5p' "$FLAG_53")
+    if [[ "$FLAG_TYPE_53" != "plan-completed" ]]; then
+        echo "  Flag type should be plan-completed but got: $FLAG_TYPE_53"
+        T53_PASS=false
+    fi
+else
+    echo "  Flag file not created"
+    T53_PASS=false
+fi
+
+if [[ "$T53_PASS" == "true" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 54: on-plan-exit with NO state file at all -> exits without writing reload flag ---
+echo 'Test 54: on-plan-exit with no state file -> no flag file created'
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+CWD_54="$TEST_DIR/worktree-54"
+mkdir -p "$CWD_54"
+CWD_54_KEY=$(compute_session_key "$CWD_54")
+
+# Create a plan file but NO state file (simulates first ExitPlanMode for brand-new plan)
+printf '%s\n' '# Brand New Plan 54' '' '## Tasks' '' '- [ ] Task 1: Pending' > "$PLANS_DIR/brand-new-plan-54.md"
+
+# No .plan-state-* file exists for this CWD
+
+OUTPUT=$(echo '{"session_id":"sess_54","cwd":"'"$CWD_54"'"}' | bash "$TEST_DIR/on-plan-exit.sh" 2>/dev/null)
+
+T54_PASS=true
+# Flag file should NOT be created (no state file = no active plan knowledge)
+FLAG_54="$PLANS_DIR/.pending-reload-${CWD_54_KEY}"
+if [[ -f "$FLAG_54" ]]; then
+    echo '  Flag file was created despite no state file (should not happen)'
+    T54_PASS=false
+fi
+
+if [[ "$T54_PASS" == "true" ]]; then
+    echo '  PASS'
+    PASS=$((PASS + 1))
+else
+    echo '  FAIL'
+    FAIL=$((FAIL + 1))
+fi
 
 # --- Summary ---
 echo ""
