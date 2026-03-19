@@ -88,8 +88,10 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
             CURRENT_PLAN="$prev_plan"
         fi
     fi
-    # Fallback: most recently modified (only for first prompt in new plan mode session)
-    if [[ -z "$CURRENT_PLAN" ]]; then
+    # Fallback: most recently modified, ONLY if no state file exists (first plan
+    # mode in this terminal). If state exists with empty plan, don't adopt a
+    # random plan — the previous work explicitly had no plan or it was cleared.
+    if [[ -z "$CURRENT_PLAN" ]] && [[ ! -f "$STATE_FILE" ]]; then
         CURRENT_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || CURRENT_PLAN=""
     fi
     if [[ -n "$CURRENT_PLAN" ]] && [[ -f "$CURRENT_PLAN" ]]; then
@@ -103,7 +105,9 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
         PENDING=${PENDING:-0}
         FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
         TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-        printf '%s\n%s\n%s\n%s\n%s\n' "$CURRENT_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
+        # Use empty plan path for completed plans (consistent with enforce-clear/on-plan-exit)
+        PLAN_PATH_FOR_FLAG=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$CURRENT_PLAN" || echo "")
+        printf '%s\n%s\n%s\n%s\n%s\n' "$PLAN_PATH_FOR_FLAG" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
     fi
 fi
 
@@ -207,8 +211,9 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             fi
         elif [[ -f "$FLAG_FILE" ]] && [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -eq 0 ]]; then
             # Update stale plan-pending flag to plan-completed when no tasks remain
+            # Write empty plan path so completed plan isn't re-loaded after /clear
             TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-            printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
+            printf '%s\n%s\n%s\n%s\n%s\n' "" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
         fi
 
         # Block 2: Context messages (independent of flag state)

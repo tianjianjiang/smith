@@ -33,9 +33,6 @@ if [[ -f "$STATE_FILE" ]]; then
         ACTIVE_PLAN="$prev_plan"
     fi
 fi
-if [[ -z "$ACTIVE_PLAN" ]]; then
-    ACTIVE_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || ACTIVE_PLAN=""
-fi
 if [[ -z "$ACTIVE_PLAN" ]] || [[ ! -f "$ACTIVE_PLAN" ]]; then
     exit 0
 fi
@@ -43,8 +40,11 @@ fi
 # Write flag file (5 lines: plan path, session ID, timestamp, CWD, flag type)
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
 PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
+PENDING=$(echo "$PENDING" | tr -d '[:space:]')
 FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
-printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
+# Use empty plan path for completed plans (consistent with enforce-clear/inject-plan)
+FLAG_PLAN_PATH=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$ACTIVE_PLAN" || echo "")
+printf '%s\n%s\n%s\n%s\n%s\n' "$FLAG_PLAN_PATH" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
 
 # Write state file so future hooks find the active plan via session-keyed state
 save_state_file "$STATE_FILE" "${SESSION_ID:-unknown}" "unknown" "$ACTIVE_PLAN"

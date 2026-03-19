@@ -102,10 +102,13 @@ fi
 # what resume behavior to use). Without this, completed-plan and no-plan
 # sessions lose context after /clear (flag missing → fresh-start path).
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
+COMPLETED_PLAN=""
 if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
     FLAG_TYPE="plan-pending"
 elif [[ -n "$ACTIVE_PLAN" ]]; then
     FLAG_TYPE="plan-completed"
+    COMPLETED_PLAN="$ACTIVE_PLAN"
+    ACTIVE_PLAN=""  # Don't perpetuate completed plan into flag/state
 else
     FLAG_TYPE="no-plan"
 fi
@@ -118,7 +121,8 @@ printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
 save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN"
 
 # Build message (plan-first, Serena optional)
-if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
+# Use FLAG_TYPE (canonical, unambiguous) instead of testing variable emptiness
+if [[ "$FLAG_TYPE" == "plan-pending" ]]; then
     json_stop_block "Context at ${CONTEXT_PCT}% with ${PENDING} pending tasks.
 
 **YOU MUST do these steps NOW (before user runs /clear):**
@@ -131,7 +135,7 @@ if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
 - Plan: \`${ACTIVE_PLAN}\`
 - Memory: \`<name from step 3>\` (read via read_memory() after /clear)
 - Resume: <describe current task>"
-elif [[ -n "$ACTIVE_PLAN" ]]; then
+elif [[ "$FLAG_TYPE" == "plan-completed" ]]; then
     # Plan exists but no pending tasks
     json_stop_block "Context at ${CONTEXT_PCT}%. Plan completed.
 
@@ -141,7 +145,7 @@ elif [[ -n "$ACTIVE_PLAN" ]]; then
 3. AFTER all tool calls complete, output this block:
 
 **Reload with:**
-- Plan: \`${ACTIVE_PLAN}\` (completed)
+- Plan: \`${COMPLETED_PLAN}\` (completed)
 - Memory: \`<name from step 3>\` (read via read_memory() after /clear)
 - Resume: <describe completed work>"
 else
