@@ -396,6 +396,19 @@ Auto memory accumulates knowledge. Serena handles continuity.
 
 </context>
 
+## Session-Analytics Surfaces
+
+<context>
+
+Two complementary tools for analyzing what's happening in this Claude Code instance:
+
+- **`/insights`** — Anthropic-side qualitative report (workflow patterns, friction categories, suggestions). 5-week-ish window. Saves an HTML report under `~/.claude/usage-data/`. Best when the question is "what's slowing me down" or "what should I codify next." Don't search the filesystem to verify it exists — just invoke it; see `@smith-ctx-claude/SKILL.md` Slash Command Invocation.
+- **`session-report:session-report`** (bundled plugin) — Quantitative report (tokens, cache hits, subagent costs, top prompts) from `~/.claude/projects/*.jsonl`. Default 7-day window; configurable via `--since`. Best when the question is "where are the tokens going" or "which prompts are most expensive."
+
+The two are complementary, not redundant. `/insights` answers WHY; `session-report` answers HOW MUCH. Pair them when reshaping the smith-skills backlog (see `mem:backlog_smith_skills_2026_05_21_post_session_report` for the 2026-05-21 example).
+
+</context>
+
 ## System Reminders (Auto-Injected Context)
 
 <context>
