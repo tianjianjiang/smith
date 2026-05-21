@@ -171,7 +171,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md`,
-  Auto-mode classifier denial OR classifier-sensitive action (force-push, prod deploy, IAM grant, external-content duplication) → `@smith-auto-mode/SKILL.md`
+  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto-mode/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 
