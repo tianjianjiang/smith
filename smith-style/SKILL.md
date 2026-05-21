@@ -92,23 +92,61 @@ docs: update deployment guide
 
 <required>
 
-**Pattern**: `type/descriptive_name`
+**Patterns** (in order of frequency in this repo):
 
-**Examples:**
-- `feat/user_authentication` (underscore: single concept)
-- `feat/auth-login` (hyphen: login is part of auth)
-- `fix/JIRA-1234-query_processor`
+1. **Compound** (most common): `type/<hierarchical-scope>_<single-concept-description>`
+   - Hyphens preserve the hierarchical scope (matches the commit scope).
+   - A single `_` separates scope from description.
+   - Underscores inside the description treat the whole phrase as one concept.
 
-Branch type MUST match commit type
+2. **Description-only**: `type/<single-concept-description>` — when there's no
+   meaningful hierarchical scope, just underscored words.
+
+3. **Scope-only-hierarchy**: `type/<hierarchical-scope>-<sub-hierarchy>` — when
+   the whole name is hierarchy (e.g. `smith-tools-ext`).
+
+**Real examples from merged PRs:**
+- `fix/plan-claude_model_detection_improvements` (scope: plan→claude; desc: "model detection improvements" → all underscores)
+- `fix/plan-claude-review_polish` (scope: plan→claude→review; desc: "polish")
+- `docs/gh-pr-attribution_wording` (scope: gh→pr; desc: "attribution wording")
+- `fix/smith_convention_renames` (no hierarchy; desc only: "smith convention renames")
+- `feat/smith-ctx-claude-ext` (all hierarchy: smith→ctx→claude→ext, no description)
+- `feat/smith-automation_skill` (scope: smith→automation; desc: "skill")
+
+Branch type MUST match commit type. Prefer full words over abbreviations
+(`cmd`, `cfg`, `auth`) unless the full word exceeds 15 chars OR the
+abbreviation is a domain-standard term in this repo (`gh` = GitHub,
+`pr` = pull request, `ci` = continuous integration, `mcp` = Model Context
+Protocol). `command`, `configuration`, `authentication` all fit — spell
+them out.
 
 </required>
 
 <forbidden>
 
-- `feat/user-authentication` (should be underscore)
-- `feat/auth_login` (should be hyphen)
+- `feat/user-authentication` — multi-word single concept; should be `feat/user_authentication`
+- `feat/auth_login` — hierarchy (login is part of auth); should be `feat/auth-login`
+- `feat/ctx-claude-slash-cmd-rule` — three errors in one: (a) `slash-cmd` should be `slash_command` (multi-word single concept); (b) `cmd` is an unnecessary abbreviation; (c) the separator between scope `ctx-claude` and description should be `_`, not `-`. Correct: `feat/ctx-claude_slash_command_rule`.
 
 </forbidden>
+
+<context>
+
+**Pre-push checklist (use this before every `git push`):**
+
+1. Read the branch name out loud.
+2. For each `-` and `_` in the name, justify it:
+   - `-` ← "this is hierarchy or a parallel variant"
+   - `_` ← "this is a multi-word single concept" OR "this separates the scope from the description"
+3. If any separator can't be justified — the name is wrong; rename before push.
+4. If the branch name contains an abbreviation, ask: "is the full word ≤15 chars AND not a domain-standard term (`gh`, `pr`, `ci`, `mcp`)? If yes, use the full word."
+
+This checklist exists because the same underscore-vs-hyphen mistake has recurred
+across multiple PRs (#71/#72 skill names, #80 branch name) — both rounds
+required follow-up fixes. The rule itself was always documented; the failure
+mode was not pausing to apply it before pushing.
+
+</context>
 
 <related>
 
