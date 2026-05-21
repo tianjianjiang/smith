@@ -28,9 +28,35 @@ description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwri
 - **chrome-devtools-mcp**: omit `--executablePath`; let the package resolve **Chrome for Testing** automatically. CfT is Google's automation-only build, distinct from consumer Chrome — typically not flagged by corporate Jamf rules that block consumer Chrome / Edge.
 - **chrome-devtools-mcp**: pass `--isolated` so every run gets a fresh user-data-dir. Avoids cross-run profile collisions.
 - **Playwright MCP**: rely on Playwright's bundled Chromium (no `--executable-path` override).
-- **Pre-flight** before the first browser MCP call in a session: read the active config (`~/.claude/settings.json`, `.mcp.json`, plus any per-project override) and confirm no Vivaldi/Edge/consumer-Chrome path is set. If one is found, recommend removing the override before proceeding.
+- **Pre-flight** at session start (not just before the first MCP call): inspect all four MCP configuration locations (see "MCP Configuration Locations" below) and confirm no Vivaldi/Edge/consumer-Chrome `--executablePath` / `--executable-path` is set on `chrome-devtools-mcp` or `@playwright/mcp`. Run `claude mcp list` first as the authoritative live view; then locate the offending entry by file via the table when a violation is found.
 
 </required>
+
+## MCP Configuration Locations (Pre-flight Scope)
+
+<context>
+
+The Vivaldi / non-Chrome override can live in any of four places. The
+2026-05-21 recurrence was a pair of `*-cft` registrations in `~/.claude.json`
+that the previous (settings.json + .mcp.json only) preflight rule never
+mentioned. Check all four:
+
+| # | Location | Set by | How to inspect |
+| --- | --- | --- | --- |
+| 1 | `~/.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers' ~/.claude/settings.json` |
+| 2 | Project `.mcp.json` | hand-edit | `jq '.mcpServers' <project>/.mcp.json` |
+| 3 | Project `.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers' <project>/.claude/settings.json` |
+| 4 | `~/.claude.json#mcpServers` | `claude mcp add … -s user` | `jq '.mcpServers' ~/.claude.json` |
+| — | live composite of 1–4 + plugin-installed | — | `claude mcp list` |
+
+`claude mcp list` is authoritative — it shows everything currently registered
+across scopes, including plugin-installed servers. The file-by-file checks
+tell you WHERE to apply the fix once a violation is found (e.g. an entry
+showing up in `claude mcp list` but absent from #1–#3 is in #4).
+
+To remove a user-scope CLI registration: `claude mcp remove <name> -s user`.
+
+</context>
 
 ## Failure Signatures → Diagnosis
 
@@ -130,10 +156,11 @@ Incident history (2026-04 → 2026-05): Vivaldi launches via `--executablePath` 
 
 <required>
 
-**Before first browser MCP call in a session:**
-1. Read active MCP config; reject any non-CfT `--executablePath` for chrome-devtools-mcp
-2. Confirm `--isolated` is set on chrome-devtools-mcp
-3. Confirm Playwright MCP has no `--executable-path` override
+**At session start (not just before first browser MCP call):**
+1. Run `claude mcp list` — reject any non-CfT `--executablePath` / `--executable-path` on chrome-devtools-mcp or @playwright/mcp
+2. If a violation is found, locate it in one of the four MCP configuration locations (see table above) and remove the override; for user-scope CLI registrations use `claude mcp remove <name> -s user`
+3. Confirm `--isolated` is set on chrome-devtools-mcp
+4. Confirm Playwright MCP has no `--executable-path` override
 
 **On browser MCP failure:**
 1. Match stderr against the failure signatures above
