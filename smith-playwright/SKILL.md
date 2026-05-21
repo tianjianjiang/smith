@@ -63,7 +63,7 @@ description: Playwright testing patterns including proactive failure monitoring,
   port conflicts, missing configuration
 - **Browser executable mismatch**: MCP launched a non-Chrome
   Chromium (Vivaldi, Brave, Arc, Opera) via `--executablePath`
-  override -- see `@smith-browser-mcp/SKILL.md`
+  override -- see `@smith-browser_mcp/SKILL.md`
 - **Test data/state**: database not seeded, stale
   fixtures, previous test side effects
 
@@ -101,7 +101,7 @@ tools before first use.
 - `@smith-tests/SKILL.md` - Testing standards, TDD workflow
 - `@smith-validation/SKILL.md` - Root cause analysis
 - `@smith-nuxt/SKILL.md` - Nuxt testing patterns
-- `@smith-browser-mcp/SKILL.md` - Browser MCP plugin reliability (chrome-devtools-mcp, Playwright MCP)
+- `@smith-browser_mcp/SKILL.md` - Browser MCP plugin reliability (chrome-devtools-mcp, Playwright MCP)
 
 </related>
 
