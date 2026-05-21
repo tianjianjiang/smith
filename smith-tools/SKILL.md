@@ -99,31 +99,103 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 claude mcp add --transport stdio --scope user server-name -- command args
 ```
 
-Scopes: `--scope local` (default, `~/.claude.json`), `--scope project` (`.mcp.json` in repo root), `--scope user` (`~/.claude.json`)
+**Option ordering matters**: all flags (`--transport`, `--env`, `--scope`, `--header`) must come **before** the server name; `--` (double dash) separates the server name from the command + args passed to the server. Wrong ordering causes flag conflicts.
 
-**Discovery:**
+**Scopes** (set via `--scope`):
+- `local` (default) — current project, just you (was `project` in older versions); written to `~/.claude.json` per-project section
+- `project` — shared with team via `.mcp.json` at repo root
+- `user` — across all your projects (was `global` in older versions); written to `~/.claude.json` top-level
+
+**Transports** in `.mcp.json` / `claude mcp add-json`:
+- `stdio` — local process spawned by Claude Code; ideal for tools needing direct system access
+- `http` (alias `streamable-http`) — remote HTTP server
+- `sse` — Server-Sent Events; **deprecated**, prefer `http`
+
+**Discovery + management:**
 
 ```shell
 claude mcp list
+claude mcp get <name>
+claude mcp remove <name>
 ```
 
-**Removal:**
+In-session: `/mcp` shows tool count per server, flags servers advertising the tools capability but exposing none, and authenticates remote OAuth 2.0 servers.
 
-```shell
-claude mcp remove server-name
-```
+**Env vars affecting MCP runtime:**
+- `MCP_TIMEOUT=10000 claude` — raise startup timeout (default low; bump for slow servers)
+- `MAX_MCP_OUTPUT_TOKENS=50000` — raise per-tool-call output cap (default warns at 10k)
+
+**Path variables in server config:**
+- `${CLAUDE_PROJECT_DIR}` — project root. Claude Code substitutes `${VAR}` (and `${VAR:-default}`) in `.mcp.json` `command`/`args` before spawning the server. **BUT** `CLAUDE_PROJECT_DIR` itself is set only in the spawned server's process env, not in Claude Code's own env — so in user/project `.mcp.json` reference it with a fallback default like `${CLAUDE_PROJECT_DIR:-.}`. Plugin-provided MCP configs substitute it directly (no default needed).
+- `${CLAUDE_PLUGIN_ROOT}` — plugin asset root; only available in plugin-provided MCP configs
+
+**Server-connecting waits:** Claude waits for in-flight server connections before running tools that need them. With tool search enabled (default), the wait happens inside `ToolSearch`; otherwise (Vertex AI, custom `ANTHROPIC_BASE_URL`, `ENABLE_TOOL_SEARCH=false`) `WaitForMcpServers` is used.
 
 **Debugging failures:**
 - Check logs: `~/.claude/logs/mcp-*.log`
-- Startup timeout: relaunch Claude Code with a higher `MCP_TIMEOUT` env var
-- Restart: remove + re-add the server
-- Config reload: restart Claude Code session after
-  changes to `.mcp.json` or settings
+- Startup timeout → raise `MCP_TIMEOUT`
+- Restart: remove + re-add the server, or restart the Claude Code session
+- Config reload: restart session after edits to `.mcp.json` or settings (MCP server list isn't hot-reloaded)
 
 **Common issues:**
-- Server not found: verify command path is absolute
-- Permission denied: check executable permissions
-- Startup timeout: increase `MCP_TIMEOUT` for slow servers
+- Server not found → verify command path is absolute
+- Permission denied → check executable permissions
+- Startup timeout → increase `MCP_TIMEOUT`
+- Option ordering → flags before server name, `--` before server command
+
+</context>
+
+## Plugin Marketplaces
+
+<context>
+
+A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plugins. Anyone can host one (git repo, local path, URL); the smith-* ecosystem treats `anthropics/claude-plugins-official` as the canonical official marketplace.
+
+**Install a marketplace + plugin:**
+
+```shell
+/plugin marketplace add <git-url-or-path>
+/plugin install <plugin-name>@<marketplace-name>
+/plugin marketplace update
+/plugin list
+```
+
+**marketplace.json** structure:
+
+```json
+{
+  "name": "my-plugins",
+  "owner": { "name": "Your Name" },
+  "plugins": [
+    { "name": "quality-review-plugin",
+      "source": "./plugins/quality-review-plugin",
+      "description": "..." }
+  ]
+}
+```
+
+**plugin.json** (per-plugin, at `<plugin>/.claude-plugin/plugin.json`):
+
+```json
+{ "name": "quality-review-plugin",
+  "description": "...",
+  "version": "1.0.0" }
+```
+
+- **Version**: omit to use git-commit-as-version (every push is a new version); set explicitly to control update cadence — users only pull when this field changes.
+- **Plugin caching**: plugins are copied to a cache dir on install. Plugin code **cannot** reference `../sibling` paths; use symlinks if cross-plugin sharing is needed.
+- **Plugin dependencies** (v2.1.143+): `claude plugin disable` refuses if another enabled plugin depends on the target.
+
+**Plugin-provided MCP servers**: declared in `.mcp.json` at plugin root OR inline in `plugin.json` under `mcpServers`. Start automatically when the plugin is enabled. Use `${CLAUDE_PLUGIN_ROOT}` to reference plugin assets. Plugin MCP servers appear in `/mcp` alongside user-configured ones.
+
+**enabledPlugins** in `~/.claude/settings.json` controls per-user enable state:
+
+```json
+{ "enabledPlugins": {
+    "<plugin>@<marketplace>": true,
+    ...
+  } }
+```
 
 </context>
 
