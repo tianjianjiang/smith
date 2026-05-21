@@ -1,5 +1,5 @@
 ---
-name: smith-browser-mcp
+name: smith-browser_mcp
 description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Default to Chrome for Testing; Vivaldi/Edge/consumer-Chrome overrides are forbidden. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, or triaging browser MCP launch failures.
 ---
 

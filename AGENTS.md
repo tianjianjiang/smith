@@ -110,7 +110,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-ctx-kiro" description="Kiro-specific rules">`@smith-ctx-kiro/SKILL.md`</skill>
 <skill name="smith-ctx-claude" description="Claude Code context, hooks, permissions, agents, model routing">`@smith-ctx-claude/SKILL.md`</skill>
 <skill name="smith-ctx-cursor" description="Cursor rules">`@smith-ctx-cursor/SKILL.md`</skill>
-<skill name="smith-auto-mode" description="Auto-mode classifier denial recovery">`@smith-auto-mode/SKILL.md`</skill>
+<skill name="smith-auto_mode" description="Auto-mode classifier denial recovery">`@smith-auto_mode/SKILL.md`</skill>
 <skill name="smith-serena" description="Serena MCP integration">`@smith-serena/SKILL.md`</skill>
 
 <!-- Reasoning -->
@@ -123,7 +123,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
 <skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
-<skill name="smith-browser-mcp" description="Browser MCP reliability: Chrome for Testing default, non-CfT overrides forbidden">`@smith-browser-mcp/SKILL.md`</skill>
+<skill name="smith-browser_mcp" description="Browser MCP reliability: Chrome for Testing default, non-CfT overrides forbidden">`@smith-browser_mcp/SKILL.md`</skill>
 
 <!-- Languages -->
 <skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
@@ -164,7 +164,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
   Playwright → `@smith-playwright/SKILL.md`
-**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation OR browser MCP launch failure → `@smith-browser-mcp/SKILL.md`
+**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation OR browser MCP launch failure → `@smith-browser_mcp/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
@@ -175,7 +175,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md`,
-  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto-mode/SKILL.md`
+  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 

@@ -85,7 +85,7 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 **Browser MCP plugins (chrome-devtools-mcp, @playwright/mcp)**:
 - Purpose: Drive a real browser via Chrome DevTools Protocol
 - Configuration: Browser-channel choice is constrained — default to Chrome for Testing for chrome-devtools-mcp; bundled Chromium for Playwright MCP
-- Avoid: `--executablePath` pointing at Vivaldi / Edge / consumer Chrome — see `@smith-browser-mcp/SKILL.md`
+- Avoid: `--executablePath` pointing at Vivaldi / Edge / consumer Chrome — see `@smith-browser_mcp/SKILL.md`
 
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
@@ -226,7 +226,7 @@ A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plug
 - `@smith-prompts/SKILL.md` - Structured output patterns
 - `@smith-python/SKILL.md` - Virtual environment, pytest patterns
 - `@smith-ide/SKILL.md` - IDE-specific path syntax
-- `@smith-browser-mcp/SKILL.md` - Browser MCP plugin reliability
+- `@smith-browser_mcp/SKILL.md` - Browser MCP plugin reliability
 
 </related>
 

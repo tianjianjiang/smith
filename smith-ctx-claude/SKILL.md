@@ -173,7 +173,7 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 - `default` — approve each tool call individually
 - `acceptEdits` — auto-approves file edits/writes + common filesystem Bash (mkdir, touch, rm, mv, cp, sed) inside the working directory; other Bash still prompts
 - `plan` — read-only; agent plans but cannot execute
-- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-auto-mode/SKILL.md` for the denial-recovery protocol.
+- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-auto_mode/SKILL.md` for the denial-recovery protocol.
 - `dontAsk` — auto-denies prompts; only pre-approved `allow` rules + read-only Bash execute
 - `bypassPermissions` — `--dangerously-skip-permissions` flag; skips all checks including protected paths
 
@@ -406,7 +406,7 @@ Respond to the underlying event only when action is required. The skills-availab
 - `@smith-git/SKILL.md` - Git commits, worktrees
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
 - `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
-- `@smith-auto-mode/SKILL.md` - Auto-mode classifier denial recovery
+- `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
 - `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard, squash-merge sync
 - `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule scheduling primitives
 
