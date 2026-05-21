@@ -180,7 +180,7 @@ git push origin --delete feat/parent_branch
 
 <context>
 
-`/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than local `/review`: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
+`/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than the built-in single-pass `/review` slash command: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
 
 **Invocation:**
 
@@ -194,7 +194,7 @@ git push origin --delete feat/parent_branch
 
 **Track:** `/tasks` shows running reviews. Stopping a review archives the cloud session and doesn't return partial findings; a stopped/failed run still consumes a free run.
 
-**When to recommend over local `/review`:** before merging a substantial change where pre-merge confidence matters; not for quick iterative feedback. Source: https://code.claude.com/docs/en/ultrareview
+**When to recommend over the built-in `/review`:** before merging a substantial change where pre-merge confidence matters; not for quick iterative feedback. Source: https://code.claude.com/docs/en/ultrareview
 
 </context>
 
