@@ -176,6 +176,28 @@ git push --force-with-lease
 git push origin --delete feat/parent_branch
 ```
 
+## /ultrareview — Cloud Deep-Review
+
+<context>
+
+`/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than the built-in single-pass `/review` slash command: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
+
+**Invocation:**
+
+- `/ultrareview` — review diff between current branch and default branch (includes uncommitted/staged)
+- `/ultrareview <PR>` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
+- `claude ultrareview [<PR>|<base>]` — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout <minutes>`
+
+**Requires:** authenticated with claude.ai (run `/login`), not available on Bedrock/Vertex/Foundry or for Zero Data Retention organizations.
+
+**Billing:** Pro/Max get 3 one-time free runs; after that, billed as usage credits (~$5–$20/run by change size). Team/Enterprise has no free runs. Account must have usage credits enabled (`/usage-credits` to check). User-invoked only — agent does not start one on its own.
+
+**Track:** `/tasks` shows running reviews. Stopping a review archives the cloud session and doesn't return partial findings; a stopped/failed run still consumes a free run.
+
+**When to recommend over the built-in `/review`:** before merging a substantial change where pre-merge confidence matters; not for quick iterative feedback. Source: https://code.claude.com/docs/en/ultrareview
+
+</context>
+
 ## Automated PR Review Monitoring
 
 <context>
@@ -189,7 +211,7 @@ new review comments and auto-address them:
 
 Note: `check-reviews` is a conceptual pattern, not a
 built-in sub-command. Implement the workflow below manually
-or as a custom skill.
+or as a custom skill. For `/loop` semantics see `@smith-automation/SKILL.md`.
 
 **Auto-address workflow:**
 1. Fetch unresolved comments:
@@ -204,10 +226,20 @@ or as a custom skill.
 - Address mechanical feedback (lint, naming, tests)
   before human review begins
 
-**When to use:**
-- Long review cycles with multiple rounds
-- Mechanical feedback (formatting, naming, missing tests)
-- Large PRs with many inline comments
+**`/autofix-pr` — cloud auto-fix loop**
+
+Run `/autofix-pr` while on the PR's branch. Claude Code detects the open PR with `gh`, spawns a Claude Code on the web session, and turns on auto-fix for that PR in one step. The web session subscribes to GitHub events (CI checks, review comments) and pushes fixes for high-confidence cases; ambiguous changes prompt instead of pushing.
+
+**Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
+
+**Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
+
+Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-requests
+
+**When to use the monitoring loop pattern (above) vs `/autofix-pr`:**
+
+- Loop pattern: terminal stays attached; agent under the user's direct supervision; user controls each push
+- `/autofix-pr`: terminal can close; runs autonomously in cloud; for PRs where you're confident in unattended fixing
 
 </context>
 
