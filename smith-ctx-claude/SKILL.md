@@ -169,20 +169,23 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
 <context>
 
-**5 permission modes** (`permissions.defaultMode` in settings):
+**6 permission modes** (`permissions.defaultMode` in settings):
 - `default` — approve each tool call individually
-- `acceptEdits` — auto-approves file edits/writes; Bash still requires approval
+- `acceptEdits` — auto-approves file edits/writes + common filesystem Bash (mkdir, touch, rm, mv, cp, sed) inside the working directory; other Bash still prompts
 - `plan` — read-only; agent plans but cannot execute
-- `dontAsk` — approve all, persists across sessions (TypeScript SDK)
-- `bypassPermissions` — `--dangerously-skip-permissions` flag
+- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-auto-mode/SKILL.md` for the denial-recovery protocol.
+- `dontAsk` — auto-denies prompts; only pre-approved `allow` rules + read-only Bash execute
+- `bypassPermissions` — `--dangerously-skip-permissions` flag; skips all checks including protected paths
 
 **Note:** "Yes, don't ask again" is a per-tool approval behavior (remembered per directory/command), not a global mode. Permission rules (`allow`/`ask`/`deny`) are evaluated deny-first.
 
 **When to use:**
 - `plan` for research, architecture review
 - `acceptEdits` for trusted execution (tests green)
+- `auto` for long autonomous tasks where the classifier's deny on destructive actions is acceptable
 - `default` for unfamiliar codebases
-- `bypassPermissions` for CI/automation only
+- `dontAsk` for locked-down CI / scripts with pre-defined allow rules
+- `bypassPermissions` for isolated containers / VMs only
 
 </context>
 
@@ -352,6 +355,7 @@ Auto memory accumulates knowledge. Serena handles continuity.
 - `@smith-git/SKILL.md` - Git commits, worktrees
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
 - `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
+- `@smith-auto-mode/SKILL.md` - Auto-mode classifier denial recovery
 
 </related>
 
