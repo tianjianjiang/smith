@@ -211,6 +211,36 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 - Shared task list with dependency tracking
 - See `@smith-ralph/SKILL.md` Pattern C for full workflow
 
+**Agent View (`claude agents`)** (research preview, v2.1.139+):
+- One screen for background sessions: dispatch, peek (`Space`), attach (`→`/`Enter`), detach (`←`)
+- States: Working / Needs input / Idle / Completed / Failed / Stopped
+- Dispatch from shell: `claude --bg "<prompt>"`, with `--agent`, `--name`, `--model`, `--permission-mode`
+- Background a current session: `/background` or `/bg`
+- Shell-side mgmt: `claude attach`, `claude logs`, `claude stop`, `claude respawn`, `claude rm`
+- `claude agents --json` — print live sessions as JSON (pid, cwd, kind, sessionId, name, status, startedAt)
+- `claude agents --cwd <path>` — filter by project (v2.1.141+)
+- Background sessions auto-isolate edits via worktree under `.claude/worktrees/` (see `@smith-worktree/SKILL.md`)
+- Disable via `disableAgentView: true` or `CLAUDE_CODE_DISABLE_AGENT_VIEW`
+
+</context>
+
+## /goal — Autonomous Completion Conditions
+
+<context>
+
+`/goal <condition>` (v2.1.139+) sets a session-scoped completion condition. After each turn a small fast model (defaults to Haiku) checks whether the condition holds. "No" feeds the reason back as guidance and starts another turn; "yes" clears the goal. Persistent autonomous work without per-turn prompting.
+
+Distinguish from `/loop` and Stop hooks:
+- `/goal` — fires after every turn; session-scoped; condition typed once; clears when met
+- `/loop` — fires on an interval; session-scoped; re-runs a prompt (see `@smith-automation/SKILL.md`)
+- Stop hook — fires after every turn; settings-scoped; deterministic script or model-prompt
+
+**Write conditions Claude's output can demonstrate** — the evaluator reads the conversation, doesn't run tools or read files. Good: "all tests in test/auth pass and lint exits 0". Bad: "the API is well-designed".
+
+**Bound runtime** with a turn/time clause inside the condition (e.g. "or stop after 20 turns"). One goal active per session; `/goal clear` (aliases: `stop`/`off`/`reset`/`none`/`cancel`) cancels; `/clear` also clears. Resumes restored on `--resume`/`--continue`; turn count, timer, and token baseline reset on resume.
+
+Requires accepted trust dialog; unavailable when `disableAllHooks` or `allowManagedHooksOnly` is set. Non-interactive: `claude -p "/goal ..."`.
+
 </context>
 
 ## Model Routing
@@ -224,6 +254,7 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
 **Commands:**
 - `/model` — switch model mid-session
+- `/fast` — fast mode toggle; defaults to **Opus 4.7** (v2.1.142+; was 4.6 previously)
 - `model` param on Agent tool — per-subagent
 - `opusplan` alias — Opus for planning
 
@@ -345,6 +376,26 @@ Auto memory accumulates knowledge. Serena handles continuity.
 
 </context>
 
+## System Reminders (Auto-Injected Context)
+
+<context>
+
+Claude Code auto-injects system-reminder blocks in response to events. They look like user messages but are NOT user input — don't treat them as acknowledgements or replies. Common triggers:
+
+- **Task tools idle nudge** — fires when `TaskCreate`/`TaskUpdate` are present but unused for a while ("If you're working on tasks that would benefit from tracking progress, consider using TaskCreate...")
+- **File modification notice** — fires when a file the agent touched changed outside its tool calls ("Note: <file> was modified, either by the user or by a linter. This change was intentional...")
+- **Skills available list** — periodic re-enumeration of Skill tool entries
+- **Plan-mode transitions** — fires on `EnterPlanMode`/`ExitPlanMode` and after `/clear` when an auto-resume flag exists (see `@smith-plan-claude/SKILL.md`)
+- **Auto-memory staleness** — fires when reading a memory file flagged as old ("This memory is N days old. Memories are point-in-time observations, not live state — verify against current code before asserting")
+- **Background task completion** — fires when a `Bash(run_in_background)` task ends ("Background command ... completed (exit code N)")
+- **Date change** — fires when local date rolls over ("The date has changed. Today's date is now YYYY-MM-DD")
+- **Auto mode active** — fires when the session is in auto mode ("Auto Mode Active. Work without stopping for clarifying questions")
+- **bg-isolation guard refusal** — fires on the first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
+
+Respond to the underlying event only when action is required. The skills-available list, for example, is informational; the bg-isolation guard requires `EnterWorktree`.
+
+</context>
+
 <related>
 
 - @smith-ctx/SKILL.md - Universal context strategies
@@ -356,6 +407,8 @@ Auto memory accumulates knowledge. Serena handles continuity.
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
 - `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
 - `@smith-auto-mode/SKILL.md` - Auto-mode classifier denial recovery
+- `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard, squash-merge sync
+- `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule scheduling primitives
 
 </related>
 
