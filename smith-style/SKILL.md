@@ -113,8 +113,12 @@ docs: update deployment guide
 - `feat/smith-ctx-claude-ext` (all hierarchy: smith→ctx→claude→ext, no description)
 - `feat/smith-automation_skill` (scope: smith→automation; desc: "skill")
 
-Branch type MUST match commit type. Avoid abbreviations (`cmd`, `cfg`, `auth`)
-when the full word fits — prefer `command`, `configuration`, `authentication`.
+Branch type MUST match commit type. Prefer full words over abbreviations
+(`cmd`, `cfg`, `auth`) unless the full word exceeds 15 chars OR the
+abbreviation is a domain-standard term in this repo (`gh` = GitHub,
+`pr` = pull request, `ci` = continuous integration, `mcp` = Model Context
+Protocol). `command`, `configuration`, `authentication` all fit — spell
+them out.
 
 </required>
 
@@ -135,7 +139,7 @@ when the full word fits — prefer `command`, `configuration`, `authentication`.
    - `-` ← "this is hierarchy or a parallel variant"
    - `_` ← "this is a multi-word single concept" OR "this separates the scope from the description"
 3. If any separator can't be justified — the name is wrong; rename before push.
-4. If the branch name contains an abbreviation, ask: "is the full word shorter than 12 chars? If yes, use it."
+4. If the branch name contains an abbreviation, ask: "is the full word ≤15 chars AND not a domain-standard term (`gh`, `pr`, `ci`, `mcp`)? If yes, use the full word."
 
 This checklist exists because the same underscore-vs-hyphen mistake has recurred
 across multiple PRs (#71/#72 skill names, #80 branch name) — both rounds
