@@ -126,8 +126,8 @@ In-session: `/mcp` shows tool count per server, flags servers advertising the to
 - `MAX_MCP_OUTPUT_TOKENS=50000` — raise per-tool-call output cap (default warns at 10k)
 
 **Path variables in server config:**
-- `${CLAUDE_PROJECT_DIR}` — project root. Set in the spawned server's env; in user/project `.mcp.json` use `${CLAUDE_PROJECT_DIR:-.}` (with default) since shell expansion doesn't see it
-- `${CLAUDE_PLUGIN_ROOT}` — plugin asset root; only in plugin-provided MCP configs
+- `${CLAUDE_PROJECT_DIR}` — project root. Claude Code substitutes `${VAR}` (and `${VAR:-default}`) in `.mcp.json` `command`/`args` before spawning the server. **BUT** `CLAUDE_PROJECT_DIR` itself is set only in the spawned server's process env, not in Claude Code's own env — so in user/project `.mcp.json` reference it with a fallback default like `${CLAUDE_PROJECT_DIR:-.}`. Plugin-provided MCP configs substitute it directly (no default needed).
+- `${CLAUDE_PLUGIN_ROOT}` — plugin asset root; only available in plugin-provided MCP configs
 
 **Server-connecting waits:** Claude waits for in-flight server connections before running tools that need them. With tool search enabled (default), the wait happens inside `ToolSearch`; otherwise (Vertex AI, custom `ANTHROPIC_BASE_URL`, `ENABLE_TOOL_SEARCH=false`) `WaitForMcpServers` is used.
 
