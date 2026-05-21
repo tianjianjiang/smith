@@ -294,6 +294,26 @@ Requires accepted trust dialog; unavailable when `disableAllHooks` or `allowMana
 
 </required>
 
+## Slash Command Invocation
+
+<required>
+
+When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invoke it directly via the `Skill` tool. The user naming the command IS the confirmation it exists. A failed `Skill` call costs one round-trip; an exhaustive existence audit costs dozens of tool calls plus a confidently wrong conclusion.
+
+</required>
+
+<forbidden>
+
+- Searching `~/.claude/plugins/`, marketplace catalogs, or plugin cache to "prove" a slash command exists before invoking it
+- Grepping transcript JSONL files for prior invocations as existence proof
+- Concluding a slash command "doesn't exist on this system" without trying `Skill(skill="<name>")` first
+
+</forbidden>
+
+**If the `Skill` call fails** with "skill not found": surface the error, ask the user to confirm the name or install the plugin. Do not escalate to filesystem search.
+
+This is a specific case of the broader "stop after one workaround, ask the user" rule for tool capability ceilings.
+
 ## Skills Directory Integration
 
 <context>
