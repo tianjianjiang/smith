@@ -88,8 +88,9 @@ git worktree remove ../feature-branch
 **Claude Code integration:**
 - `isolation: "worktree"` in Agent tool — auto-creates
   worktree for subagent, cleaned up when done
-- Manual worktree tools may be available depending on the
-  agent platform (see platform docs for exact tool names)
+- For `EnterWorktree` / `ExitWorktree`, `bgIsolation`,
+  `worktree.baseRef`, and the squash-merge sync protocol
+  see `@smith-worktree/SKILL.md`
 - Worktree lifecycle hooks (create/remove) fire on
   worktree operations for custom automation
 - Agent worktrees auto-cleanup; persistent ones need
@@ -159,6 +160,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands
 - `@smith-style/SKILL.md` - Naming conventions, conventional commits
 - `@smith-ctx-claude/SKILL.md` - Claude Code agent features and context management
+- `@smith-worktree/SKILL.md` - Claude Code worktree tools, bgIsolation, squash-merge sync
 
 </related>
 
