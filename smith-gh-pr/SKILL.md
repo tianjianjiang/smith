@@ -108,6 +108,39 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 </forbidden>
 
+## Review Convergence Protocol
+
+<required>
+
+**Decide-and-proceed defaults (do NOT ask between obvious steps):**
+- CR finding is Critical/Warning + high-confidence: fix, commit, push silently
+- CR finding is Info/Nitpick: reply-and-resolve or skip with one-line reason
+- After pushing a fix: re-run review immediately
+- 0 actionable findings: merge (`gh pr merge --squash --delete-branch`)
+- Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
+  (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
+
+**Must-ask criteria (only interruption triggers):**
+- Finding requires scope change beyond the PR's stated goal
+- Finding contradicts an existing smith-skill rule (meta-question)
+- Auto-mode classifier denial without a documented escape pattern
+- CI fails after a CR-driven fix (regression vs flake ambiguity)
+- User explicitly said "pause" or "wait" in recent turns
+
+**Convergence criteria:**
+- Clean round (0 Critical/Warning findings): ready to merge
+- Diminishing returns (2 consecutive rounds with only Info/Nitpick): merge
+- Flip-flop (reviewer alternates contradicting verdicts without
+  new evidence): escalate trade-off analysis to user, stop iterating
+
+**External write rule (Notion, Slack, Jira, GitHub comments):**
+- Draft content inline in conversation first
+- State intent: "posting to [medium]" — user can interrupt
+- Post unless user objects within that turn
+- Always include attribution line per medium convention
+
+</required>
+
 ## Fetching Review Comments
 
 <required>
@@ -213,7 +246,8 @@ Note: `check-reviews` is a conceptual pattern, not a
 built-in sub-command. Implement the workflow below manually
 or as a custom skill. For `/loop` semantics see `@smith-automation/SKILL.md`.
 
-**Auto-address workflow:**
+**Auto-address workflow** (see "Review Convergence Protocol"
+above for decide-vs-ask criteria and convergence rules):
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
