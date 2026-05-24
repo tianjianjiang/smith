@@ -30,6 +30,10 @@ description: Claude Code worktree tooling — EnterWorktree/ExitWorktree, the bg
 
 - For multi-file edits in a background session, the bg-isolation guard will refuse the first `Edit` and tell the agent to `EnterWorktree`. Comply on the first refusal — do not try alternative edit paths.
 - After a squash-merge of a worktree branch, the local copy of that feature branch is an **orphan** (its commit is not in main's history under the same SHA). `git branch -d` will refuse it with "not fully merged"; use `git branch -D` (force) once the squash commit is confirmed on main.
+- **Branch naming:** `EnterWorktree` auto-names the branch
+  `worktree-<name>` which violates `@smith-style/SKILL.md`. MUST
+  rename before pushing: `git branch -m <type>/<scope>_<description>`
+  Alternative: create branch first, then `EnterWorktree({path: ...})`
 
 </required>
 
@@ -114,12 +118,11 @@ git pull --ff-only
 <required>
 
 **On bg-isolation guard refusal:**
-1. `EnterWorktree({name: "<convention>"})` — pick a name matching the eventual PR branch convention (e.g. `feat-smith-foo_skill` for `feat/smith-foo_skill`)
-2. Rename the branch after entry if needed: `git branch -m feat/<name>`
-3. Mirror prior uncommitted changes from the main copy via `cp` only when the user has asked for "evaluate-in-place"
-
-**Before pushing the worktree's branch:**
-- Confirm the local branch name matches the intended PR branch convention (`smith-style` for naming)
+1. `EnterWorktree({name: "<short-slug>"})` — any short name works
+2. Rename branch per primacy-zone rule above:
+   `git branch -m <type>/<scope>_<description>`
+3. Mirror prior uncommitted changes from the main copy via `cp`
+   only when the user has asked for "evaluate-in-place"
 
 **After squash-merge:**
 - `ExitWorktree` (remove + discard) → `git pull --ff-only` on main → `git branch -D feat/<name>` to clear the orphan
