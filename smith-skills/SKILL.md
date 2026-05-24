@@ -68,9 +68,22 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - Rule loading protocol
 
 **SKILL.md** (Agent Skills format):
-- YAML frontmatter: `name` (kebab-case, max 64 chars), `description` (max 1024 chars)
-- Optional: `license`, `compatibility`, `metadata`
-- Body: <500 lines recommended
+- YAML frontmatter (required fields):
+  - `name`: kebab-case, max 64 chars, must match directory name (e.g., `smith-guidance`)
+  - `description`: max 1024 chars, starts with noun phrase,
+    ends with trigger conditions ("Use when...")
+- YAML frontmatter (optional fields — include only when publishing externally):
+  - `version`: semver (for published/shared skills)
+  - `license`: SPDX identifier
+  - `compatibility`: minimum tool version
+- Body structure:
+  - `<metadata>` block: Scope, Load if, Prerequisites
+  - Primacy zone (first 20%): `<required>`, `<forbidden>` rules
+  - Middle: `<context>`, examples, reference details
+  - Recency zone (last 10%): `<related>` links, then ACTION section
+- Size: <500 lines recommended (~5000 tokens max)
+- Internal smith skills: omit `version`, `license`, `compatibility`
+  (noise without value for project-scoped skills)
 
 **Steering files** (.md):
 - Metadata block at start

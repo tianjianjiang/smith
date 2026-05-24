@@ -148,6 +148,33 @@ mode was not pausing to apply it before pushing.
 
 </context>
 
+## External Communication Standards
+
+<required>
+
+**Language matching:**
+- Match the language of the source context
+  (English PR → English reply; zh-Hant Notion → zh-Hant reply)
+- Code artifacts always English: variable names, commits, branch names, inline code comments
+- Default for user-facing explanations when context is ambiguous: zh-Hant (user preference)
+- Never switch language unprompted — if unsure, ask once
+
+**Slack formatting (mrkdwn, not Markdown):**
+- Links: `<https://url|display text>` (not `[text](url)`)
+- Emphasis: `*bold*`, `_italic_`, `` `code` ``
+- Mentions: `<@USERID>` format, never display names
+- Thread replies for follow-ups; avoid walls of text in channels
+
+**Wiki-link leakage prevention:**
+- `[[Page Title]]` renders as broken literal text outside Notion
+- When copying to Slack/GitHub/Jira: convert to plain name or full URL
+
+**Issue format (Job Story):**
+- "When [situation], I want to [motivation], so I can [expected outcome]"
+- Describe the problem and outcome, not the implementation approach
+
+</required>
+
 <related>
 
 - `@smith-git/SKILL.md` - Branch and commit workflows
