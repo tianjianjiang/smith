@@ -141,6 +141,30 @@ Editing `~/.claude/settings.json` from inside a project session almost always tr
 
 </context>
 
+## Pre-approved Operation Patterns
+
+<context>
+
+**Reducing classifier friction for known-safe operations**
+via `~/.claude/settings.json`:
+
+`permissions.allow` accepts `{ "tool": "Bash", "command": "<glob>" }`.
+Common patterns that reduce denial loops without compromising safety:
+- `git push --force-with-lease origin feat/*` — session branches
+- `gh pr merge --squash *` — gh handles its own confirmations
+- `rm -rf .claude/worktrees/*` — session artifact cleanup
+
+**Principle:** Pre-approve only operations bounded by session-local
+state (branches you created, worktrees you own). Never pre-approve
+operations on shared state (main, production, IAM).
+
+**Note:** `AskUserQuestion` authorization is conversational — the
+classifier does not recognize it as a persistent permission grant.
+For repeat ops, the fix is `permissions.allow` in settings, not
+asking again each time.
+
+</context>
+
 <related>
 
 - `@smith-ctx-claude/SKILL.md` - Permission modes overview (this skill is the deep-dive for the `auto` mode)

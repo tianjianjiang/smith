@@ -224,6 +224,34 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
 </context>
 
+## Agent Dispatch Protocol
+
+<required>
+
+**Default: work in parent context.** Escalate to subagent when:
+- Research needs >2 sequential search/read operations on unknown paths
+- Exploration breadth exceeds current task scope (broad audit, multi-file comparison)
+- Work is parallelizable across independent axes (e.g., review Standards + Content simultaneously)
+
+**Dispatch sizing:**
+- Single lookup or known-path read: parent context, no dispatch
+- 2-5 reads on a known path: parent context
+- Broad exploration (unknown path, >5 reads expected): subagent with `"quick"` breadth by default
+- Multi-axis validation: parallel subagents or Agent Team, one axis per agent
+
+**Handoff compaction (dispatching or returning results):**
+- Reference artifacts by path/URL, not content (target: 200-500 tokens per handoff)
+- Include: goal, relevant file:line refs, decisions already made, suggested skills for next step
+- Exclude: verbose tool output, failed exploration paths, full file contents
+- Pattern: `Completed: [what]. Key refs: [paths]. Next: [goal]. Budget: [constraint].`
+
+**Explore subagent breadth:**
+- `"quick"` (default): single-target lookup, one grep, one file read
+- `"medium"`: comparison across 2-5 files, pattern matching
+- `"very thorough"`: codebase-wide audit, architecture survey — reserve for genuine unknowns
+
+</required>
+
 ## /goal — Autonomous Completion Conditions
 
 <context>
