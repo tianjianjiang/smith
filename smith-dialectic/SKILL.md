@@ -77,6 +77,15 @@ Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules through
 
 </context>
 
+<related>
+
+- @smith-guidance/SKILL.md - Socratic Method, Anti-Sycophancy (foundation)
+- `@smith-analysis/SKILL.md` - Constructive reasoning (complement)
+- `@smith-clarity/SKILL.md` - Cognitive traps (defensive complement)
+- `@smith-validation/SKILL.md` - Hypothesis testing (code-level complement)
+
+</related>
+
 ## ACTION (Recency Zone)
 
 <required>
@@ -90,12 +99,3 @@ Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules through
 6. Continue until shared understanding is reached
 
 </required>
-
-<related>
-
-- @smith-guidance/SKILL.md - Socratic Method, Anti-Sycophancy (foundation)
-- `@smith-analysis/SKILL.md` - Constructive reasoning (complement)
-- `@smith-clarity/SKILL.md` - Cognitive traps (defensive complement)
-- `@smith-validation/SKILL.md` - Hypothesis testing (code-level complement)
-
-</related>
