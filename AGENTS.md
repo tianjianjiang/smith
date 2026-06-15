@@ -154,6 +154,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-ide" description="IDE configuration">`@smith-ide/SKILL.md`</skill>
 <skill name="smith-research" description="Research methodology">`@smith-research/SKILL.md`</skill>
 <skill name="smith-skills" description="Skill authoring">`@smith-skills/SKILL.md`</skill>
+
+<!-- Hiring -->
+<skill name="smith-hiring" description="Hands-on IC engineer resume/CV screening: 4-gate rubric, evidence-quoting procedure, submission safety">`@smith-hiring/SKILL.md`</skill>
 </available_skills>
 
 ## Semantic Activation
@@ -181,6 +184,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
+**Hiring**: Resume/CV screening, candidate grading, hands-on/IC vs PM/lead judgment, scout/ATS batch review → `@smith-hiring/SKILL.md`
 
 </required>
 
