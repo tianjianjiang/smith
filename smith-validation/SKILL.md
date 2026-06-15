@@ -55,6 +55,8 @@ A theory is scientific only if it can be proven false:
 **Anti-pattern**: Only running tests you expect to pass
 **Good practice**: Actively try to break your own code
 
+**Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check. (Triggered 2026-06: proposed two Slack-MCP OAuth setups as if they'd work; both failed; a 30-second search would have found the closed-as-not-planned regression that made the whole route impossible.)
+
 </context>
 
 ## Anti-Workaround Policy
