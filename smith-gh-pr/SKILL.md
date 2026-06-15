@@ -116,7 +116,8 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - CR finding is Critical/Warning + high-confidence: fix, commit, push silently
 - CR finding is Info/Nitpick: reply-and-resolve or skip with one-line reason
 - After pushing a fix: re-run review immediately
-- 0 actionable findings: merge (`gh pr merge --squash --delete-branch`)
+- 0 actionable findings: merge (`gh pr merge --squash --delete-branch`);
+  for a stacked PR with an open child, OMIT `--delete-branch` (see Stacked PRs)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
@@ -201,7 +202,8 @@ URL patterns map to API endpoints:
 
 ## Stacked PRs
 
-For stacked PRs, merge parent WITHOUT `--delete-branch`, then:
+For stacked PRs, merge parent WITHOUT `--delete-branch` — via the gh CLI it
+closes the open child instead of retargeting it (cli/cli#1168). Then:
 ```shell
 gh pr edit {CHILD} --base main
 git rebase --onto origin/main feat/parent_branch
