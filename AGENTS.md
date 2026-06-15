@@ -175,8 +175,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
   Worktrees (Claude Code tools: EnterWorktree/ExitWorktree, bgIsolation, squash-merge sync) → `@smith-worktree/SKILL.md`,
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
-  MCP setup/lifecycle → `@smith-tools/SKILL.md`,
+  MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
   Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`
+**External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
