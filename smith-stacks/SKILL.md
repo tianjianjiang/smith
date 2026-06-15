@@ -20,7 +20,13 @@ description: Stacked pull request workflows for large features. Use when creatin
 - NEVER merge child PR before parent
 - NEVER merge main directly into child branch
 - NEVER create stacks deeper than 3-4 levels
-- NEVER use squash merge for non-final PRs in a stack
+- NEVER `gh pr merge --delete-branch` a parent/middle PR while a child PR
+  still targets its branch — via the gh CLI this CLOSES the child instead of
+  retargeting it (cli/cli#1168, still open; the web-UI delete auto-retargets).
+  Retarget the child first, delete the parent branch after.
+- NEVER squash-merge a non-final stacked PR without the cascade-sync below
+  (rebase child `--onto`, retarget, then delete the parent branch) — squash
+  itself is allowed; see Squash Merge with Stacked PRs.
 
 </forbidden>
 
@@ -160,6 +166,11 @@ main ──●──●──●──M
 
 **Squash merge IS allowed** if you follow the branch deletion process for stacked PRs.
 
+Delete a parent branch only AFTER its child is retargeted, and delete it
+manually (`git push origin --delete`), never with `gh pr merge --delete-branch`
+— the gh CLI closes the still-pointing child instead of retargeting it
+(cli/cli#1168). The web-UI merge+delete auto-retargets; the CLI does not.
+
 **Merge Strategy by PR Position**:
 - **Parent (has children)**: Squash OK with process, delete after child base updated
 - **Middle**: Squash OK with process, delete after child base updated
@@ -272,10 +283,12 @@ git merge main
 <required>
 
 **Merge stacked PRs bottom-up:**
-1. Merge parent PR first
-2. Rebase child: `git rebase --onto origin/main feat/parent`
-3. Force push child: `git push --force-with-lease`
-4. Delete parent branch after child base updated
+1. Merge parent PR first, WITHOUT `--delete-branch` (the gh CLI would close
+   the child instead of retargeting it — cli/cli#1168)
+2. Retarget child base: `gh pr edit {child} --base main`
+3. Rebase child: `git rebase --onto origin/main feat/parent`
+4. Force push child: `git push --force-with-lease`
+5. Delete the parent branch only now: `git push origin --delete feat/parent`
 
 **Verify stack scope before operations:**
 ```shell
