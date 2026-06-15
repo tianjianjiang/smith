@@ -24,6 +24,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
 - Best practices queries ("recommended way in [current year]")
 - Technology assessment ("should I use X or Y")
 - Unfamiliar technology (not in training data)
+- **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way I think" — that reframe is the trigger.
 
 </required>
 
