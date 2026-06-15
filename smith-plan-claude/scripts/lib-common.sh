@@ -14,12 +14,16 @@ RALPH_STATE_FILENAME="ralph-loop.local.md"
 
 # Map model ID to context window size in tokens.
 # Handles both SessionStart format (with [1m] suffix) and transcript format (without).
+# Flagships (Opus/Fable) default to 1M and the [1m] suffix is authoritative;
+# Haiku/Sonnet have no automatic 1M; unknown IDs fall back to CONTEXT_WINDOW_TOKENS.
+# Ordering matters: the [1m] branch precedes *sonnet* so sonnet[1m] resolves to 1M.
 model_to_context_window() {
     local model="${1:-}"
     case "$model" in
-        *\[1[mM]\]*|claude-opus-4*)     echo 1000000 ;;
-        claude-haiku-*|claude-sonnet-*)  echo 200000  ;;
-        *)                               echo "${CONTEXT_WINDOW_TOKENS}" ;;
+        *\[1[mM]\])         echo 1000000 ;;  # explicit terminal suffix
+        *haiku*|*sonnet*)   echo 200000  ;;  # no automatic 1M
+        *claude-opus-*|*claude-fable-*) echo 1000000 ;;  # flagships -> 1M
+        *)                  echo "${CONTEXT_WINDOW_TOKENS}" ;;  # safe fallback
     esac
 }
 
