@@ -287,10 +287,12 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 
 - **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
 - **`/commit-push-pr`**: Commits, pushes, and creates PR in one step
-- **pr-review-toolkit agents**: Specialized review via Task tool
-  - `code-reviewer` - CLAUDE.md compliance, style, bugs
-  - `silent-failure-hunter` - Error handling issues
-  - `pr-test-analyzer` - Test coverage gaps
+- **`pr-review-toolkit:review-pr`**: the SINGLE entry point for multi-agent
+  review — it orchestrates its own 6 subagents. NEVER hand-pick or invoke the
+  individual agents (`code-reviewer`, `silent-failure-hunter`,
+  `pr-test-analyzer`, etc.) directly via the Task tool. A HIGH finding from one
+  agent needs >=2-of-6 corroboration; a solo HIGH downgrades to
+  medium-for-user-review.
 
 **Plugin commands complement** (not replace) manual `gh` workflows.
 
