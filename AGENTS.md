@@ -6,7 +6,7 @@ AI agent skills for development with progressive disclosure.
 
 - **Always loaded**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
 - **Load condition**: Session start (all platforms)
-- **Token budget**: This file ~500 tokens, per-skill <2000 tokens
+- **Token budget**: per-skill <2000 tokens; keep this always-loaded index minimal
 
 </metadata>
 
@@ -61,11 +61,9 @@ See `@smith-serena/SKILL.md` for tool-preference and memory-sync rules.
 
 ## Core Principles
 
-- **DRY**: Don't Repeat Yourself
-- **KISS**: Keep It Simple, Stupid
-- **YAGNI**: You Aren't Gonna Need It
-- **SOLID**: Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion
-- **HHH**: Helpful, Honest, Harmless (see @smith-guidance/SKILL.md)
+DRY, KISS, YAGNI, SOLID, HHH — defined in @smith-principles/SKILL.md
+(force-loaded) and @smith-guidance/SKILL.md (HHH). Not restated here, to
+avoid duplicating the force-loaded source.
 
 ## Skill Loading
 
