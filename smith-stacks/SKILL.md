@@ -171,6 +171,12 @@ manually (`git push origin --delete`), never with `gh pr merge --delete-branch`
 — the gh CLI closes the still-pointing child instead of retargeting it
 (cli/cli#1168). The web-UI merge+delete auto-retargets; the CLI does not.
 
+Retarget every child to `main` (or the next surviving base) BEFORE merging its
+parent — not only after. If the repo has "automatically delete head branches"
+enabled, merging the parent deletes its branch immediately and GitHub
+auto-CLOSES (does not retarget) any child still based on it; recovery is
+reopen/recreate. Pre-retargeting avoids the race.
+
 **Merge Strategy by PR Position**:
 - **Parent (has children)**: Squash OK with process, delete after child base updated
 - **Middle**: Squash OK with process, delete after child base updated

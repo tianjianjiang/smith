@@ -103,6 +103,10 @@ git worktree remove ../feature-branch
 - ALWAYS verify worktree path before write operations
 - NEVER leave orphaned worktrees (check `git worktree list`)
 - Clean up persistent worktrees after branch is merged
+- NEVER `git checkout <other-branch>` in the PRIMARY working dir to inspect or
+  test another branch — it tramples IDE/dev-server/test state in place. Use a
+  worktree (`git worktree add` / `EnterWorktree`), which fails loudly if the
+  branch is already checked out elsewhere.
 
 </required>
 
