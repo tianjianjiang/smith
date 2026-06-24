@@ -56,6 +56,13 @@ showing up in `claude mcp list` but absent from #1–#3 is in #4).
 
 To remove a user-scope CLI registration: `claude mcp remove <name> -s user`.
 
+**Tool-namespace divergence by install path**: the SAME browser server exposes
+different tool names depending on how it was added — plugin-installed gives
+`mcp__plugin_<plugin>_<server>__*`; `claude mcp add -s user` gives
+`mcp__<name>-cft__*`. The two can also carry DIFFERENT launch defaults (e.g.
+Chrome for Testing vs bundled Chromium), so confirm which registration is live
+(`claude mcp list`) before assuming a browser variant.
+
 </context>
 
 ## Failure Signatures → Diagnosis
