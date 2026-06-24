@@ -78,8 +78,9 @@ management; read the section you need and unload it.
 
 **Config:** `.claude/settings.json` (project) or
 `~/.claude/settings.json` (global). Project overrides
-global. Matchers filter by tool name. Timeout: command 600s,
-prompt 30s, agent 60s (defaults).
+global. Matchers filter by tool name. Timeout: command handlers default 600s;
+prompt/agent handlers default to shorter limits (values vary by version —
+check current docs).
 
 **Reliability caveat — multiple PreToolUse hooks on one tool:** when more than
 one PreToolUse hook matches the same tool, an `updatedInput` (and by extension
@@ -201,7 +202,7 @@ Requires accepted trust dialog; unavailable when `disableAllHooks` or `allowMana
 
 ## Tool Search Tool
 
-85% token reduction - tools loaded on-demand, not upfront.
+Substantial token reduction (vendor-cited ~85%) — tools loaded on-demand, not upfront.
 
 - Rely on Tool Search for documentation
 - Use specific tool names for better retrieval

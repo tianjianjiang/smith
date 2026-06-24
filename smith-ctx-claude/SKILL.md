@@ -191,9 +191,10 @@ Respond to the underlying event only when action is required.
 
 <required>
 
-The AskUserQuestion UI shows the user only the question text plus each
-option's label and description — the surrounding prose in your message is NOT
-rendered beside the dialog. Put every decision-critical fact (trade-offs,
+The AskUserQuestion UI surfaces the question text plus each option's label and
+description; surrounding prose in your message may be clipped or hidden beside
+the dialog and can't be relied on to reach the user. Put every
+decision-critical fact (trade-offs,
 recommendation, what each choice commits to) INSIDE the question and option
 fields, never only in the message body. Recommendation goes as the first
 option labelled "… (Recommended)". (Pairs with one-scope-decision-per-turn.)
