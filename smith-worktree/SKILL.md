@@ -68,6 +68,16 @@ Two correct responses:
 
 </context>
 
+## Editing Inside a Worktree (MCP write blind spot)
+
+<context>
+
+The bg-isolation guard catches only built-in `Edit`/`Write` — NOT MCP file operations. Serena MCP writes (`replace_content`, `replace_symbol_body`, `insert_*`) target the MAIN repo checkout, not the worktree, because `activate_project` binds at session start and does not follow `EnterWorktree`. So Serena edits land silently in the wrong tree.
+
+- After `EnterWorktree`, use built-in `Edit`/`Write` with worktree ABSOLUTE paths for all writes; use Serena for reads / symbol lookup only.
+
+</context>
+
 ## `worktree.baseRef` — `fresh` vs `head`
 
 <context>
@@ -102,6 +112,15 @@ git checkout -- <tracked-files-from-the-PR>
 rm -rf <new-untracked-dirs-from-the-PR>
 git pull --ff-only
 ```
+
+</context>
+
+## Operational Worktree Gotchas
+
+<context>
+
+- Worktree `.env` and `node_modules` are often SYMLINKS to the main repo. A blanket `git add -A` / `git add .` then stages the symlink itself. Stage explicit paths only; never blanket-add inside a worktree.
+- `gh pr create` run from a non-primary worktree resets the shell CWD back to the first worktree after it returns. Use `git -C <worktree>` for follow-on git ops rather than trusting CWD persistence.
 
 </context>
 
