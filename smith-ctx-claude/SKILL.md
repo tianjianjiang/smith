@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /clear command, stop hook enforcement at 60%, hooks reference (15 events), permission modes, agent features (subagents, teams), and model routing. Use when operating in Claude Code IDE, configuring hooks, managing agents, or when context exceeds 50%.
+description: Claude Code context management with /clear, /compact mechanics, stop hook enforcement at 60%, JSONL state recall, tool-output hygiene, auto memory, and system reminders. Reference dumps (hooks, permission modes, agent features, model routing) live in companion REFERENCE.md. Use when operating in Claude Code IDE or when context exceeds 50%.
 ---
 
 # Claude Code Context Management
@@ -9,6 +9,11 @@ description: Claude Code context management with /clear command, stop hook enfor
 
 - **Load if**: Using Claude Code, context >50%
 - **Prerequisites**: @smith-ctx/SKILL.md
+- **Companion (Layer 3, read on demand)**: `smith-ctx-claude/REFERENCE.md` —
+  hooks reference, recommended linting hooks, permission modes, agent
+  features + dispatch, /goal, model routing, tool search, plugin discovery,
+  session analytics. Read it only when configuring those surfaces; it is not
+  needed for routine context management.
 
 </metadata>
 
@@ -38,10 +43,49 @@ description: Claude Code context management with /clear command, stop hook enfor
 
 <forbidden>
 
-- Using `/compact` (use "Summarize from here" or /clear instead)
 - `/clear` without checking uncommitted work
 
 </forbidden>
+
+## /compact — Mechanics and When to Avoid
+
+<context>
+
+`/compact` summarizes the **entire** conversation into a model-written
+summary and continues in the **same** session (contrast `/clear`, which wipes
+history). Auto-compact also fires automatically near the context limit unless
+disabled. The `PreCompact` hook fires first (use it to persist state).
+
+**Prefer "Summarize from here" or /clear** because /compact is lossy and
+non-deterministic about what it keeps — you cannot pick the checkpoint, and
+file:line refs / decisions can silently drop. "Summarize from here" lets you
+choose the boundary and give focus instructions; /clear gives a known-clean
+reset after an explicit **Reload with:** block.
+
+If /compact does run (manual or auto): pass focus instructions where the UI
+allows, and treat the result as lossy — re-verify file:line refs and open
+decisions against the repo afterward.
+
+</context>
+
+## Tool-Output Hygiene
+
+<required>
+
+Every byte a tool returns persists in context for the rest of the session and
+is itself re-summarized on compaction. Large spills (full file reads,
+verbose command output, subagent transcripts) are the main avoidable context
+cost.
+
+- Process, don't dump: filter/aggregate noisy output in a sandbox
+  (context-mode `ctx_execute`/`ctx_batch_execute`) so only the derived answer
+  enters context.
+- Delegate noisy investigation (grep sweeps, log trawls) to a subagent; keep
+  only its findings.
+- Reference artifacts by `file:line` / path, not pasted content.
+- Read targeted ranges, not whole files, when a section suffices.
+
+</required>
 
 ## /clear - Full Context Reset
 
@@ -60,6 +104,12 @@ description: Claude Code context management with /clear command, stop hook enfor
 1. Plan auto-reloads with todo reconstruction ONLY if a flag file exists (explicit reload intent from enforce-clear or on-plan-exit). State file alone = informational, not auto-resume.
 2. If Serena MCP available: call list_memories(), read relevant memories for session state
 3. Re-read relevant files as needed
+
+**JSONL state recall (recovery when no memory was saved):** the transcript is
+preserved at `~/.claude/projects/<project-slug>/*.jsonl` and survives /clear
+and compaction. Prior user prompts, decisions, and errors are recoverable from
+it — `ctx_search(sort: "timeline")` indexes it, or grep the JSONL directly.
+Use this to reconstruct intent before asking the user to repeat themselves.
 
 </required>
 
@@ -87,238 +137,67 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 </context>
 
-## Recommended Linting Hooks
+## Auto Memory (Claude Code Native)
 
 <context>
 
-**PostToolUse auto-format** — runs formatter after every Edit/Write (strongest enforcement, zero friction):
+**Claude Code auto memory** stores agent-generated notes at:
+`~/.claude/projects/<project-slug>/memory/`
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [{
-          "type": "command",
-          "command": "input=$(cat) && file=$(printf '%s' \"$input\" | jq -r '.tool_input.file_path // empty') && [ -n \"$file\" ] && { case \"$file\" in *.py) ruff format \"$file\" 2>/dev/null;; *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"$file\" 2>/dev/null;; esac; } || true",
-          "timeout": 10
-        }]
-      }
-    ]
-  }
-}
-```
-
-**Prerequisites**: Requires `jq` for JSON parsing (`brew install jq` / `apt install jq`). The `2>/dev/null` and `|| true` suppress errors for non-matching file types; remove them when debugging hook setup.
-
-**Timeout unit**: All hook timeouts are in **seconds** (10 = 10s, default 600s for command hooks).
-
-**Adapt per project**: Replace `ruff format`/`prettier` with project's formatter. Add to project-level `.claude/settings.json`.
-
-**Why not just instructions?** Research shows agents treat "always run lint" as suggestions. PostToolUse hooks are invisible and automatic — the strongest enforcement layer. See [Anthropic best practices](https://www.anthropic.com/engineering/claude-code-best-practices) and [claude-format-hook](https://github.com/ryanlewis/claude-format-hook).
+- `MEMORY.md` - First 200 lines auto-loaded every session
+- Topic files (e.g. `debugging.md`) - Read on demand
+- Browse: `/memory` command
+- Disable: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
 
 </context>
-
-## Hooks Reference
-
-<context>
-
-**17 hook events** (4 handler types: command, http, prompt, agent):
-
-**Tool lifecycle:**
-- PreToolUse — before tool runs; exit 2 = reject
-- PostToolUse — after tool succeeds; format, validate
-- PostToolUseFailure — after tool fails; recovery
-
-**Session lifecycle:**
-- SessionStart — session begins; init, context inject
-- SessionEnd — session ends; final cleanup
-- Stop — context limit reached; save state
-- UserPromptSubmit — user sends message; transform
-- InstructionsLoaded — CLAUDE.md/skills loaded
-- PreCompact — before context compaction
-
-**Multi-agent:**
-- SubagentStart/SubagentStop — subagent lifecycle
-- TeammateIdle — teammate awaits task; quality gate
-- TaskCompleted — shared task done; exit 2 = reject
-
-**Infrastructure:**
-- WorktreeCreate/WorktreeRemove — worktree lifecycle
-- Notification — system notification
-- PermissionRequest — permission prompt
-- ConfigChange — settings.json changed
-
-**Handler types:**
-- command — shell script; event JSON on stdin; exit 0=allow, 2=reject
-- http — HTTP POST to endpoint; event JSON as body
-- prompt — sends text to Claude model (Haiku default)
-- agent — spawns subagent with prompt + event JSON
-
-**Config:** `.claude/settings.json` (project) or
-`~/.claude/settings.json` (global). Project overrides
-global. Matchers filter by tool name. Timeout: command 600s,
-prompt 30s, agent 60s (defaults).
-
-Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
-
-</context>
-
-## Permission Modes
-
-<context>
-
-**6 permission modes** (`permissions.defaultMode` in settings):
-- `default` — approve each tool call individually
-- `acceptEdits` — auto-approves file edits/writes + common filesystem Bash (mkdir, touch, rm, mv, cp, sed) inside the working directory; other Bash still prompts
-- `plan` — read-only; agent plans but cannot execute
-- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-auto_mode/SKILL.md` for the denial-recovery protocol.
-- `dontAsk` — auto-denies prompts; only pre-approved `allow` rules + read-only Bash execute
-- `bypassPermissions` — `--dangerously-skip-permissions` flag; skips all checks including protected paths
-
-**Note:** "Yes, don't ask again" is a per-tool approval behavior (remembered per directory/command), not a global mode. Permission rules (`allow`/`ask`/`deny`) are evaluated deny-first.
-
-**When to use:**
-- `plan` for research, architecture review
-- `acceptEdits` for trusted execution (tests green)
-- `auto` for long autonomous tasks where the classifier's deny on destructive actions is acceptable
-- `default` for unfamiliar codebases
-- `dontAsk` for locked-down CI / scripts with pre-defined allow rules
-- `bypassPermissions` for isolated containers / VMs only
-
-</context>
-
-## Agent Features
-
-<context>
-
-**Subagents** (`Agent` tool):
-- Fresh 200k context per subagent
-- `run_in_background: true` for async work
-- `isolation: "worktree"` for repo isolation
-- `model` parameter overrides model per subagent
-
-**Custom agents** (`/agents` or `.claude/agents/*.md`):
-- Frontmatter: model, tools, permissions, memory
-- Loaded via `subagent_type` parameter
-- Project-scoped or user-scoped (`~/.claude/agents/`)
-
-**Agent Teams** (experimental):
-- Enable: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
-- Team lead + teammates, independent context each
-- `SendMessage` for inter-agent communication
-- Shared task list with dependency tracking
-- See `@smith-ralph/SKILL.md` Pattern C for full workflow
-
-**Agent View (`claude agents`)** (research preview, v2.1.139+):
-- One screen for background sessions: dispatch, peek (`Space`), attach (`→`/`Enter`), detach (`←`)
-- States: Working / Needs input / Idle / Completed / Failed / Stopped
-- Dispatch from shell: `claude --bg "<prompt>"`, with `--agent`, `--name`, `--model`, `--permission-mode`
-- Background a current session: `/background` or `/bg`
-- Shell-side mgmt: `claude attach`, `claude logs`, `claude stop`, `claude respawn`, `claude rm`
-- `claude agents --json` — print live sessions as JSON (pid, cwd, kind, sessionId, name, status, startedAt)
-- `claude agents --cwd <path>` — filter by project (v2.1.141+)
-- Background sessions auto-isolate edits via worktree under `.claude/worktrees/` (see `@smith-worktree/SKILL.md`)
-- Disable via `disableAgentView: true` or `CLAUDE_CODE_DISABLE_AGENT_VIEW`
-
-</context>
-
-## Agent Dispatch Protocol
 
 <required>
 
-**Default: work in parent context.** Escalate to subagent when:
-- Research needs >2 sequential search/read operations on unknown paths
-- Exploration breadth exceeds current task scope (broad audit, multi-file comparison)
-- Work is parallelizable across independent axes (e.g., review Standards + Content simultaneously)
+**Auto memory vs Serena memory - complementary, not competing:**
 
-**Dispatch sizing:**
-- Single lookup or known-path read: parent context, no dispatch
-- 2-5 reads on a known path: parent context
-- Broad exploration (unknown path, >5 reads expected): subagent with `"quick"` breadth by default
-- Multi-axis validation: parallel subagents or Agent Team, one axis per agent
+**Auto memory** (long-lived project knowledge): architecture, conventions,
+recurring debugging patterns, discovered user preferences, build/test quirks.
 
-**Handoff compaction (dispatching or returning results):**
-- Reference artifacts by path/URL, not content (target: 200-500 tokens per handoff)
-- Include: goal, relevant file:line refs, decisions already made, suggested skills for next step
-- Exclude: verbose tool output, failed exploration paths, full file contents
-- Pattern: `Completed: [what]. Key refs: [paths]. Next: [goal]. Budget: [constraint].`
+**Serena memory** (task-scoped continuity): session state, current task +
+next steps, Ralph loop state, phase-boundary checkpoints, cross-reset
+continuity.
 
-**Explore subagent breadth:**
-- `"quick"` (default): single-target lookup, one grep, one file read
-- `"medium"`: comparison across 2-5 files, pattern matching
-- `"very thorough"`: codebase-wide audit, architecture survey — reserve for genuine unknowns
+**No sync needed** - different lifecycles. Auto memory accumulates knowledge;
+Serena handles continuity.
 
 </required>
 
-## /goal — Autonomous Completion Conditions
+## System Reminders (Auto-Injected Context)
 
 <context>
 
-`/goal <condition>` (v2.1.139+) sets a session-scoped completion condition. After each turn a small fast model (defaults to Haiku) checks whether the condition holds. "No" feeds the reason back as guidance and starts another turn; "yes" clears the goal. Persistent autonomous work without per-turn prompting.
+Claude Code auto-injects system-reminder blocks in response to events. They look like user messages but are NOT user input — don't treat them as acknowledgements or replies. Common triggers:
 
-Distinguish from `/loop` and Stop hooks:
-- `/goal` — fires after every turn; session-scoped; condition typed once; clears when met
-- `/loop` — fires on an interval; session-scoped; re-runs a prompt (see `@smith-automation/SKILL.md`)
-- Stop hook — fires after every turn; settings-scoped; deterministic script or model-prompt
+- **Task tools idle nudge** — `TaskCreate`/`TaskUpdate` present but unused
+- **File modification notice** — a touched file changed outside the agent's tool calls
+- **Skills available list** — periodic re-enumeration of Skill entries (informational)
+- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
+- **Auto-memory staleness** — reading a memory flagged old (verify against current code before asserting)
+- **Background task completion** — a `Bash(run_in_background)` task ended
+- **Date change** — local date rolled over
+- **Auto mode active** — session is in auto mode (see `@smith-auto_mode/SKILL.md`)
+- **bg-isolation guard refusal** — first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
 
-**Write conditions Claude's output can demonstrate** — the evaluator reads the conversation, doesn't run tools or read files. Good: "all tests in test/auth pass and lint exits 0". Bad: "the API is well-designed".
-
-**Bound runtime** with a turn/time clause inside the condition (e.g. "or stop after 20 turns"). One goal active per session; `/goal clear` (aliases: `stop`/`off`/`reset`/`none`/`cancel`) cancels; `/clear` also clears. An active goal is restored on `--resume`/`--continue`; turn count, timer, and token baseline reset on resume.
-
-Requires accepted trust dialog; unavailable when `disableAllHooks` or `allowManagedHooksOnly` is set. Non-interactive: `claude -p "/goal ..."`.
-
-</context>
-
-## Model Routing
-
-<context>
-
-**Model selection guidance:**
-- Opus — orchestration, complex reasoning
-- Sonnet — focused subagents, code generation
-- Haiku — quick lookups, classification
-
-**Commands:**
-- `/model` — switch model mid-session
-- `/fast` — fast mode toggle; defaults to **Opus 4.7** (v2.1.142+; was 4.6 previously)
-- `model` param on Agent tool — per-subagent
-- `opusplan` alias — Opus for planning
-
-**Cost-aware patterns:**
-- Orchestrator (Opus) spawns workers (Sonnet)
-- Haiku for repetitive/mechanical subtasks
-- Match model to task complexity, not habit
+Respond to the underlying event only when action is required.
 
 </context>
 
-## CLAUDE.md Persistence
-
-**Location**: `$WORKSPACE_ROOT/.claude/CLAUDE.md` or `$HOME/.claude/CLAUDE.md`
+## AskUserQuestion — Body Prose Is Hidden
 
 <required>
 
-**Put in CLAUDE.md** (always active):
-- Critical guardrails (NEVER/ALWAYS)
-- Reference to @AGENTS.md
-- Project-specific preferences
-
-**Put in skill files** (context-triggered):
-- Detailed technical guidelines
-- Platform-specific patterns
-
-</required>
-
-## Tool Search Tool
-
-85% token reduction - tools loaded on-demand, not upfront.
-
-<required>
-
-- Rely on Tool Search for documentation
-- Use specific tool names for better retrieval
-- Don't request full tool documentation dumps
+The AskUserQuestion UI surfaces the question text plus each option's label and
+description; surrounding prose in your message may be clipped or hidden beside
+the dialog and can't be relied on to reach the user. Put every
+decision-critical fact (trade-offs,
+recommendation, what each choice commits to) INSIDE the question and option
+fields, never only in the message body. Recommendation goes as the first
+option labelled "… (Recommended)". (Pairs with one-scope-decision-per-turn.)
 
 </required>
 
@@ -340,136 +219,34 @@ When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invok
 
 **If the `Skill` call fails** with "skill not found": surface the error, ask the user to confirm the name or install the plugin. Do not escalate to filesystem search.
 
-This is a specific case of the broader "stop after one workaround, ask the user" rule for tool capability ceilings.
+## CLAUDE.md Persistence
 
-## Skills Directory Integration
-
-<context>
-
-**Primary method (symlink, recommended for smith):**
-
-```bash
-ln -sf $HOME/.smith $HOME/.claude/skills
-```
-
-Claude Code discovers skills at `~/.claude/skills/smith-*/SKILL.md`.
-All skills prefixed with "smith-" to avoid conflicts.
-
-**Alternative**: `claude --add-dir /path/to/skills-repo` for
-cross-repo sharing (see `@smith-tools/SKILL.md` for details).
-
-</context>
-
-## Claude Code Features
-
-<context>
-
-**Unique capabilities:**
-- Web search for current information
-- Browser automation for testing
-- MCP server integration (including Serena)
-- Up to 1M token context window (model-dependent)
-- Tool Search for on-demand tool loading
-
-</context>
-
-## Auto Memory (Claude Code Native)
-
-<context>
-
-**Claude Code auto memory** stores agent-generated notes at:
-`~/.claude/projects/<project-slug>/memory/`
-
-- `MEMORY.md` - First 200 lines auto-loaded every session
-- Topic files (e.g. `debugging.md`) - Read on demand
-- Browse: `/memory` command
-- Disable: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
-
-</context>
+**Location**: `$WORKSPACE_ROOT/.claude/CLAUDE.md` or `$HOME/.claude/CLAUDE.md`
 
 <required>
 
-**Auto memory vs Serena memory - complementary, not competing:**
+**Put in CLAUDE.md** (always active): critical guardrails (NEVER/ALWAYS),
+reference to @AGENTS.md, project-specific preferences.
 
-**Auto memory** (long-lived project knowledge):
-- Project architecture and conventions
-- Recurring debugging patterns
-- User preferences discovered during sessions
-- Build/test/deploy quirks
-
-**Serena memory** (task-scoped continuity):
-- Session state (current task, progress, next steps)
-- Ralph loop state (iteration, hypotheses, test results)
-- Phase boundary checkpoints
-- Cross-context-reset continuity
-
-**No sync needed** - different lifecycles, different purposes.
-Auto memory accumulates knowledge. Serena handles continuity.
+**Put in skill files** (context-triggered): detailed technical guidelines,
+platform-specific patterns.
 
 </required>
-
-## Plugin Discovery
-
-<context>
-
-**Available plugin commands:**
-- `/code-review` - Automated PR review with 4 parallel agents
-- `/commit` - Auto-commit with message generation
-- `/commit-push-pr` - Full PR workflow
-- `/clean_gone` - Branch cleanup
-
-**Check installed plugins:** `/plugins` or `cat ~/.claude/plugins/installed_plugins.json`
-
-**Official marketplace:** `anthropics/claude-plugins-official`
-
-</context>
-
-## Session-Analytics Surfaces
-
-<context>
-
-Two complementary tools for analyzing what's happening in this Claude Code instance:
-
-- **`/insights`** — Anthropic-side qualitative report (workflow patterns, friction categories, suggestions). 5-week-ish window. Saves an HTML report under `~/.claude/usage-data/`. Best when the question is "what's slowing me down" or "what should I codify next." Don't search the filesystem to verify it exists — just invoke it; see `@smith-ctx-claude/SKILL.md` Slash Command Invocation.
-- **`session-report:session-report`** (bundled plugin) — Quantitative report (tokens, cache hits, subagent costs, top prompts) from `~/.claude/projects/*.jsonl`. Default 7-day window; configurable via `--since`. Best when the question is "where are the tokens going" or "which prompts are most expensive."
-
-The two are complementary, not redundant. `/insights` answers WHY; `session-report` answers HOW MUCH. Pair them when reshaping the smith-skills backlog (see `mem:backlog_smith_skills_2026_05_21_post_session_report` for the 2026-05-21 example).
-
-</context>
-
-## System Reminders (Auto-Injected Context)
-
-<context>
-
-Claude Code auto-injects system-reminder blocks in response to events. They look like user messages but are NOT user input — don't treat them as acknowledgements or replies. Common triggers:
-
-- **Task tools idle nudge** — fires when `TaskCreate`/`TaskUpdate` are present but unused for a while ("If you're working on tasks that would benefit from tracking progress, consider using TaskCreate...")
-- **File modification notice** — fires when a file the agent touched changed outside its tool calls ("Note: <file> was modified, either by the user or by a linter. This change was intentional...")
-- **Skills available list** — periodic re-enumeration of Skill tool entries
-- **Plan-mode transitions** — fires on `EnterPlanMode`/`ExitPlanMode` and after `/clear` when an auto-resume flag exists (see `@smith-plan-claude/SKILL.md`)
-- **Auto-memory staleness** — fires when reading a memory file flagged as old ("This memory is N days old. Memories are point-in-time observations, not live state — verify against current code before asserting")
-- **Background task completion** — fires when a `Bash(run_in_background)` task ends ("Background command ... completed (exit code N)")
-- **Date change** — fires when local date rolls over ("The date has changed. Today's date is now YYYY-MM-DD")
-- **Auto mode active** — fires when the session is in auto mode ("Auto Mode Active. Work without stopping for clarifying questions")
-- **bg-isolation guard refusal** — fires on the first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
-
-Respond to the underlying event only when action is required. The skills-available list, for example, is informational; the bg-isolation guard requires `EnterWorktree`.
-
-</context>
 
 <related>
 
 - @smith-ctx/SKILL.md - Universal context strategies
+- `smith-ctx-claude/REFERENCE.md` - Hooks, permission modes, agent features, model routing (Layer-3 dumps)
 - `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
 - `@smith-ctx-kiro/SKILL.md` - Kiro platform context
 - `@smith-plan-claude/SKILL.md` - Plan-specific hooks
 - `@smith-ralph/SKILL.md` - Orchestration patterns (B/C)
 - `@smith-git/SKILL.md` - Git commits, worktrees
 - `@smith-prompts/SKILL.md` - Prompt caching optimization
-- `@smith-style/SKILL.md` - Commit message conventions, `#WIP` prefix
+- `@smith-style/SKILL.md` - Commit conventions, `#WIP` prefix
 - `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
-- `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard, squash-merge sync
-- `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule scheduling primitives
+- `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard
+- `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule
 
 </related>
 
@@ -483,7 +260,9 @@ Respond to the underlying event only when action is required. The skills-availab
    - Guide: "Focus on [task], [decisions], [file:line refs]"
 2. At 50%: Warn, prepare retention criteria
 3. At 60%: Commit, update plan, save to Serena, "/clear"
-4. After /clear: Plan auto-reloads; check Serena memories
+4. After /clear: Plan auto-reloads; check Serena memories; recall from JSONL if no memory saved
+
+**Throughout:** keep tool-output spill out of context (sandbox-process, delegate, reference by path).
 
 **Agent RECOMMENDS - user executes the command.**
 
