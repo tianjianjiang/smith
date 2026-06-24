@@ -68,6 +68,16 @@ Two correct responses:
 
 </context>
 
+## Editing Inside a Worktree (MCP write blind spot)
+
+<context>
+
+The bg-isolation guard catches only built-in `Edit`/`Write` — NOT MCP file operations. Serena MCP writes (`replace_content`, `replace_symbol_body`, `insert_*`) target the MAIN repo checkout, not the worktree, because `activate_project` binds at session start and does not follow `EnterWorktree`. So Serena edits land silently in the wrong tree.
+
+- After `EnterWorktree`, use built-in `Edit`/`Write` with worktree ABSOLUTE paths for all writes; use Serena for reads / symbol lookup only.
+
+</context>
+
 ## `worktree.baseRef` — `fresh` vs `head`
 
 <context>
