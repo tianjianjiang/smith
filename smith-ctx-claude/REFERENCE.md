@@ -44,7 +44,7 @@ management; read the section you need and unload it.
 
 ## Hooks Reference
 
-**17 hook events** (4 handler types: command, http, prompt, agent):
+**Hook events** (4 handler types: command, http, prompt, agent):
 
 **Tool lifecycle:**
 - PreToolUse — before tool runs; exit 2 = reject
@@ -54,7 +54,7 @@ management; read the section you need and unload it.
 **Session lifecycle:**
 - SessionStart — session begins; init, context inject
 - SessionEnd — session ends; final cleanup
-- Stop — context limit reached; save state
+- Stop — agent finished responding (fires every turn); save state / enforce limits (smith gates at 60% in the handler)
 - UserPromptSubmit — user sends message; transform
 - InstructionsLoaded — CLAUDE.md/skills loaded
 - PreCompact — before context compaction
@@ -190,7 +190,7 @@ Requires accepted trust dialog; unavailable when `disableAllHooks` or `allowMana
 
 **Commands:**
 - `/model` — switch model mid-session
-- `/fast` — fast mode toggle; defaults to **Opus 4.7** (v2.1.142+; was 4.6 previously)
+- `/fast` — fast mode toggle; uses the latest **Opus** tier with faster output, NOT a smaller model (distinct from `ANTHROPIC_SMALL_FAST_MODEL`, the Haiku background model)
 - `model` param on Agent tool — per-subagent
 - `opusplan` alias — Opus for planning
 
