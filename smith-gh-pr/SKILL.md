@@ -134,6 +134,12 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Flip-flop (reviewer alternates contradicting verdicts without
   new evidence): escalate trade-off analysis to user, stop iterating
 
+**CodeRabbit fails OPEN — absence of review is NOT a pass:**
+- CodeRabbit silently skips review on exhausted credits / the hourly
+  rate-limit (Pro = 1 review/hr): "Review limit reached". It also skips PRs
+  whose base is not the default branch (stacked PRs) and a PR closed mid-review.
+- Confirm a CR review actually ran before treating "0 findings" as clean.
+
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - Draft content inline in conversation first
 - State intent: "posting to [medium]" — user can interrupt
@@ -287,10 +293,12 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 
 - **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
 - **`/commit-push-pr`**: Commits, pushes, and creates PR in one step
-- **pr-review-toolkit agents**: Specialized review via Task tool
-  - `code-reviewer` - CLAUDE.md compliance, style, bugs
-  - `silent-failure-hunter` - Error handling issues
-  - `pr-test-analyzer` - Test coverage gaps
+- **`pr-review-toolkit:review-pr`**: the SINGLE entry point for multi-agent
+  review — it orchestrates its own 6 subagents. NEVER hand-pick or invoke the
+  individual agents (`code-reviewer`, `silent-failure-hunter`,
+  `pr-test-analyzer`, etc.) directly via the Task tool. A HIGH finding from one
+  agent needs >=2-of-6 corroboration; a solo HIGH downgrades to
+  medium-for-user-review.
 
 **Plugin commands complement** (not replace) manual `gh` workflows.
 
