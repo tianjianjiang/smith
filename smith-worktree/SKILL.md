@@ -115,6 +115,15 @@ git pull --ff-only
 
 </context>
 
+## Operational Worktree Gotchas
+
+<context>
+
+- Worktree `.env` and `node_modules` are often SYMLINKS to the main repo. A blanket `git add -A` / `git add .` then stages the symlink itself. Stage explicit paths only; never blanket-add inside a worktree.
+- `gh pr create` run from a non-primary worktree resets the shell CWD back to the first worktree after it returns. Use `git -C <worktree>` for follow-on git ops rather than trusting CWD persistence.
+
+</context>
+
 <related>
 
 - `@smith-git/SKILL.md` - Git fundamentals; raw `git worktree` for cases outside the Claude Code tools
