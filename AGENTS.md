@@ -42,17 +42,18 @@ All skills use "smith-" prefix to avoid conflicts with Claude Code built-in comm
 
 ## Serena MCP Integration (If Available)
 
-<required>
+<context>
 
-**If Serena MCP server is available, at session start:**
+When Serena MCP is available, prefer Serena tools for file I/O and semantic
+edits, and use Serena project memories for durable cross-session context.
+See `@smith-serena/SKILL.md` for tool-preference and memory-sync rules.
 
-1. Load memory: `agents_md_loading_protocol` - Contains complete AGENTS.md loading protocol
-   - Use: `read_memory("agents_md_loading_protocol")` (Serena MCP tool)
-   - This memory documents how to load all workspace AGENTS.md files and skills
+**Loading protocol** (self-contained — no external memory required):
+- On entry, read each workspace `AGENTS.md` / `CLAUDE.md`. Claude Code
+  auto-loads `CLAUDE.md` (not a bare `AGENTS.md`) — see `@smith-skills/SKILL.md`.
+- Load applicable smith skills via the Semantic Activation triggers below.
 
-2. Follow the protocol in that memory for loading workspace-specific AGENTS.md files
-
-</required>
+</context>
 
 ## Always Load
 
