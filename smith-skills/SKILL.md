@@ -120,6 +120,25 @@ This distinguishes core skills (always in context) from contextual skills (loade
 
 </required>
 
+## Skill Loading Mechanics
+
+<context>
+
+How Claude Code actually loads skills (non-obvious; governs why smith works):
+
+- Claude Code does NOT auto-execute skill-loading instructions written in
+  CLAUDE.md / AGENTS.md - the agent must proactively Read the skill files.
+  Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
+- Auto-triggering is description/shape-match in the MAIN thread only.
+  Task/Workflow subagents do NOT auto-load skills or AGENTS.md - pass the
+  needed rules inline in the subagent prompt.
+- Claude Code auto-loads `CLAUDE.md` (including nested CLAUDE.md) but NOT a
+  bare `AGENTS.md`. A repo whose root ships only AGENTS.md silently fails to
+  load its catalog in CC - keep a root `CLAUDE.md` -> `AGENTS.md` symlink
+  (AGENTS.md-native tools load AGENTS.md directly and are unaffected).
+
+</context>
+
 ## Heading Hierarchy
 
 - Use consistent levels (no skipping H2 → H4)
