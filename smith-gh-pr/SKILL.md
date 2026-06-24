@@ -134,6 +134,12 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Flip-flop (reviewer alternates contradicting verdicts without
   new evidence): escalate trade-off analysis to user, stop iterating
 
+**CodeRabbit fails OPEN — absence of review is NOT a pass:**
+- CodeRabbit silently skips review on exhausted credits / the hourly
+  rate-limit (Pro = 1 review/hr): "Review limit reached". It also skips PRs
+  whose base is not the default branch (stacked PRs) and a PR closed mid-review.
+- Confirm a CR review actually ran before treating "0 findings" as clean.
+
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - Draft content inline in conversation first
 - State intent: "posting to [medium]" — user can interrupt
