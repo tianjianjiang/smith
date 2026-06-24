@@ -51,6 +51,15 @@ In PR descriptions:
 - `Fixes #123` - Same as Closes
 - `Relates to #123` - Links without closing
 
+## Resolving Identities and Reviewer Eligibility
+
+- A corporate-email commit author does NOT map 1:1 to a GitHub login. Resolve
+  from source: `gh api 'repos/{owner}/{repo}/commits?author={email}' --jq
+  '.[0].author.login'`.
+- A review approval clears a CODEOWNERS rule ONLY if the approver is a named
+  owner of that path. Check CODEOWNERS before recommending a reviewer —
+  "wrote it" does not imply "can approve it".
+
 <related>
 
 - `@smith-gh-pr/SKILL.md` - PR workflows, review comment fetching
