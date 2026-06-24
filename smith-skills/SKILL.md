@@ -59,6 +59,23 @@ Skills and rules follow 3-tier loading to minimize token usage:
 
 </required>
 
+## Self-Contained Committed Config (Primacy Zone)
+
+<required>
+
+Skills, subagents, and hooks committed into a repo's `.claude/` MUST work in
+any operator's session — never depend on the author's machine:
+
+- No references to local Serena/auto-memory slugs (e.g. `read_memory(...)`)
+  or dangling memory refs from a committed SKILL.md or `.claude/agents/*.md`
+- No hardcoded home paths (e.g. `/Users/<name>/...`) - inline the rule instead
+- No hooks reading `$CLAUDE_TOOL_INPUT` / `$CLAUDE_TOOL_INPUT_FILE_PATH`
+  (these never existed; input is JSON on stdin, `$CLAUDE_PROJECT_DIR` is the
+  only path var) - such hooks exit 0 and silently do nothing
+- Verify a committed hook actually fires; a silent exit-0 looks like "passed"
+
+</required>
+
 ## File Structure
 
 **AGENTS.md** (entry point, <500 tokens):
@@ -85,6 +102,11 @@ Skills and rules follow 3-tier loading to minimize token usage:
 - Internal smith skills: omit `version`, `license`, `compatibility`
   (noise without value for project-scoped skills)
 
+**SKILL.md frontmatter dual-spec**: a SKILL.md legitimately carries BOTH the
+agentskills.io YAML frontmatter (`name`/`description`, for discovery/registry)
+AND the smith XML `<metadata>` block (Scope/Load if/Prerequisites). They are
+complementary - never strip one in favor of the other.
+
 **Steering files** (.md):
 - Metadata block at start
 - Critical rules in first 20% (primacy zone)
@@ -102,6 +124,25 @@ Skills and rules follow 3-tier loading to minimize token usage:
 This distinguishes core skills (always in context) from contextual skills (loaded on demand).
 
 </required>
+
+## Skill Loading Mechanics
+
+<context>
+
+How Claude Code actually loads skills (non-obvious; governs why smith works):
+
+- Claude Code does NOT auto-execute skill-loading instructions written in
+  CLAUDE.md / AGENTS.md - the agent must proactively Read the skill files.
+  Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
+- Auto-triggering is description/shape-match in the MAIN thread only.
+  Task/Workflow subagents do NOT auto-load skills or AGENTS.md - pass the
+  needed rules inline in the subagent prompt.
+- Claude Code auto-loads `CLAUDE.md` (including nested CLAUDE.md) but NOT a
+  bare `AGENTS.md`. A repo whose root ships only AGENTS.md silently fails to
+  load its catalog in CC - keep a root `CLAUDE.md` -> `AGENTS.md` symlink
+  (AGENTS.md-native tools load AGENTS.md directly and are unaffected).
+
+</context>
 
 ## Heading Hierarchy
 
