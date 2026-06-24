@@ -102,6 +102,11 @@ any operator's session — never depend on the author's machine:
 - Internal smith skills: omit `version`, `license`, `compatibility`
   (noise without value for project-scoped skills)
 
+**SKILL.md frontmatter dual-spec**: a SKILL.md legitimately carries BOTH the
+agentskills.io YAML frontmatter (`name`/`description`, for discovery/registry)
+AND the smith XML `<metadata>` block (Scope/Load if/Prerequisites). They are
+complementary - never strip one in favor of the other.
+
 **Steering files** (.md):
 - Metadata block at start
 - Critical rules in first 20% (primacy zone)
