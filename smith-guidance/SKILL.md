@@ -211,6 +211,7 @@ findings in the main thread. Prefer targeted reads over whole-file/whole-dir.
 
 - @smith-principles/SKILL.md - DRY, KISS, YAGNI, SOLID
 - @smith-ctx/SKILL.md - Context management
+- `@smith-subagents/SKILL.md` - Subagent spawning + return discipline
 
 </related>
 
