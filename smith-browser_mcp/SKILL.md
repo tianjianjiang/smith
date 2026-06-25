@@ -44,8 +44,8 @@ mentioned. Check all four:
 | # | Location | Set by | How to inspect |
 | --- | --- | --- | --- |
 | 1 | `~/.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers' ~/.claude/settings.json` |
-| 2 | Project `.mcp.json` | hand-edit | `jq '.mcpServers' <project>/.mcp.json` |
-| 3 | Project `.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers' <project>/.claude/settings.json` |
+| 2 | Project `.mcp.json` | hand-edit | `jq '.mcpServers' [project]/.mcp.json` |
+| 3 | Project `.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers' [project]/.claude/settings.json` |
 | 4 | `~/.claude.json#mcpServers` | `claude mcp add … -s user` | `jq '.mcpServers' ~/.claude.json` |
 | — | live composite of 1–4 + plugin-installed | — | `claude mcp list` |
 
@@ -54,12 +54,12 @@ across scopes, including plugin-installed servers. The file-by-file checks
 tell you WHERE to apply the fix once a violation is found (e.g. an entry
 showing up in `claude mcp list` but absent from #1–#3 is in #4).
 
-To remove a user-scope CLI registration: `claude mcp remove <name> -s user`.
+To remove a user-scope CLI registration: `claude mcp remove [name] -s user`.
 
 **Tool-namespace divergence by install path**: the SAME browser server exposes
 different tool names depending on how it was added — plugin-installed gives
-`mcp__plugin_<plugin>_<server>__*`; `claude mcp add -s user` gives
-`mcp__<name>-cft__*`. The two can also carry DIFFERENT launch defaults (e.g.
+`mcp__plugin_[plugin]_[server]__*`; `claude mcp add -s user` gives
+`mcp__[name]-cft__*`. The two can also carry DIFFERENT launch defaults (e.g.
 Chrome for Testing vs bundled Chromium), so confirm which registration is live
 (`claude mcp list`) before assuming a browser variant.
 
@@ -165,7 +165,7 @@ Incident history (2026-04 → 2026-05): Vivaldi launches via `--executablePath` 
 
 **At session start (not just before first browser MCP call):**
 1. Run `claude mcp list` — reject any non-CfT `--executablePath` / `--executable-path` on chrome-devtools-mcp or @playwright/mcp
-2. If a violation is found, locate it in one of the four MCP configuration locations (see table above) and remove the override; for user-scope CLI registrations use `claude mcp remove <name> -s user`
+2. If a violation is found, locate it in one of the four MCP configuration locations (see table above) and remove the override; for user-scope CLI registrations use `claude mcp remove [name] -s user`
 3. Confirm `--isolated` is set on chrome-devtools-mcp
 4. Confirm Playwright MCP has no `--executable-path` override
 

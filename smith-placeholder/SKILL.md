@@ -25,15 +25,18 @@ Code blocks within documents follow their own language conventions.
 
 <required>
 
-**Inline Markdown** (primary):
+**`[placeholder]` brackets are the standard form in EVERY context** — prose,
+inline-backtick spans, and fenced code blocks. One rule, no nesting conflicts.
 
-- Backticks: `placeholder_name`, `PLACEHOLDER_NAME`
-- Renders as monospace, visually distinct
+- Prose / inline token: `[placeholder]`, e.g. `claude mcp remove [name]`
+- Placeholder as a segment of a backtick path or command:
+  `` `~/.claude/projects/[project-slug]/memory/` ``, `` `feat/[name]` ``
+- Compound tokens: `[plugin]@[marketplace]`, `type/[scope]_[description]`
+- Inside fenced code blocks: `[placeholder]` too (e.g. `claude mcp remove [name]`).
+  Reach for a literal UPPER_SNAKE value (`YOUR_API_KEY`) only when the value is
+  an in-place identifier the user edits, not a substituted argument.
 
-**Inside code blocks** (when backticks nest):
-
-- Brackets: `[placeholder]`
-- Or language-native: `PLACEHOLDER` as literal identifier
+Keep the token name descriptive (`[project-slug]`, not `[x]`).
 
 </required>
 
@@ -72,8 +75,8 @@ const apiKey = "YOUR_API_KEY";
 <required>
 
 **When writing placeholders:**
-1. Use backticks for inline markdown: `placeholder_name`
-2. Use brackets inside code blocks: `[placeholder]`
+1. Use `[placeholder]` brackets in all contexts (prose, inline backticks, code blocks)
+2. Keep the token name descriptive: `[project-slug]`, `[plugin]@[marketplace]`
 3. Avoid Jinja2 `{{}}`, f-string `{}`, and XML `<>` syntax
 
 </required>

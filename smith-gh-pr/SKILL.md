@@ -226,8 +226,8 @@ git push origin --delete feat/parent_branch
 **Invocation:**
 
 - `/ultrareview` — review diff between current branch and default branch (includes uncommitted/staged)
-- `/ultrareview <PR>` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
-- `claude ultrareview [<PR>|<base>]` — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout <minutes>`
+- `/ultrareview [PR]` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
+- `claude ultrareview [PR]` (or `[base]`) — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout [minutes]`
 
 **Requires:** authenticated with claude.ai (run `/login`), not available on Bedrock/Vertex/Foundry or for Zero Data Retention organizations.
 
