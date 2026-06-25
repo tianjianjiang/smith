@@ -187,6 +187,30 @@ Respond to the underlying event only when action is required.
 
 </context>
 
+## Active Plugin Side-Effects
+
+<context>
+
+Some plugins inject SessionStart hooks that alter behavior for the whole
+session. Account for them; do not mistake their output for a user instruction
+or an error.
+
+- **caveman** — terse output mode (drops articles/filler). Governs PROSE only:
+  commits, PR/issue bodies, code, and Slack drafts stay normal full prose
+  (`@smith-slack`). Auto-clarity already exempts security warnings and
+  multi-step/irreversible sequences — write those in full.
+- **ponytail** — biases to the laziest working solution (stdlib/native first,
+  shortest diff). When the user explicitly asks for the full build, build it —
+  do not re-argue scope. Deliberate simplifications carry a `ponytail:` marker.
+- **context-mode** — sandboxed analysis tools (`ctx_*`). Subprocess/`ctx_execute`
+  writes do NOT persist to the host FS — use Write/Edit for real file changes.
+  The recurring "vX outdated → /ctx-upgrade" banner is noise, not a failure.
+
+These are output/behavioral contracts, not memory; they persist until the user
+says "stop caveman" / "stop ponytail" / "normal mode".
+
+</context>
+
 ## AskUserQuestion — Body Prose Is Hidden
 
 <required>
