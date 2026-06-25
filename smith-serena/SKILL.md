@@ -153,7 +153,7 @@ continuity. See `@smith-ctx-claude/SKILL.md` for delineation.
 **Stores are not a uniform layout — do not assume one path scheme:**
 
 - Serena: `.serena/memories/*.md` (flat dir; naming = memory key).
-- Claude Code auto memory: `~/.claude/projects/[project-slug]/memory/` — flat
+- Claude Code auto memory: `~/.claude/projects/«project-slug»/memory/` — flat
   `*.md` files plus a `MEMORY.md` index that wiki-links the rest.
 - Basic-Memory: own store (markdown files) backed by a SQLite index;
   reach it via its MCP tools, not by path.
@@ -238,7 +238,7 @@ list_memories()
 
 <required>
 
-**Serena persists Ralph state**: `ralph_[task]_state` with iteration, hypotheses, test_results, next_action.
+**Serena persists Ralph state**: `ralph_«task»_state` with iteration, hypotheses, test_results, next_action.
 
 **Sync**: After each iteration; before/after context reset. See `@smith-ralph/SKILL.md`.
 

@@ -96,7 +96,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - **Humble**: If uncertain, say so; don't over-explain or
   defend — ask for guidance instead
 - **Gentle**: When disagreeing, present evidence respectfully
-  (e.g., "I kept X because [reason] — happy to change if
+  (e.g., "I kept X because «reason» — happy to change if
   you see it differently")
 
 </required>
@@ -142,7 +142,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - Draft content inline in conversation first
-- State intent: "posting to [medium]" — user can interrupt
+- State intent: "posting to «medium»" — user can interrupt
 - Post unless user objects within that turn
 - Always include attribution line per medium convention
 
@@ -226,8 +226,8 @@ git push origin --delete feat/parent_branch
 **Invocation:**
 
 - `/ultrareview` — review diff between current branch and default branch (includes uncommitted/staged)
-- `/ultrareview [PR]` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
-- `claude ultrareview [PR]` (or `[base]`) — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout [minutes]`
+- `/ultrareview «PR»` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
+- `claude ultrareview «PR»` (or `«base»`) — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout «minutes»`
 
 **Requires:** authenticated with claude.ai (run `/login`), not available on Bedrock/Vertex/Foundry or for Zero Data Retention organizations.
 

@@ -2,7 +2,7 @@
 #
 # on-session-clear.sh - SessionStart:clear hook for plan injection
 #
-# Fires after manual /clear. Reads plan from .plan-state-[session-hash]
+# Fires after manual /clear. Reads plan from .plan-state-«session-hash»
 # and injects plan content with skill/todo instructions.
 #
 # This is the reliable injection point for post-/clear plan restoration.

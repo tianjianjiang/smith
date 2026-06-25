@@ -30,8 +30,8 @@ description: Claude Code scheduling — /loop (interval, dynamic, bare), CronCre
 Match the primitive to the signal type:
 
 - **One-off reminder, in session** — natural language to Claude ("remind me at 3pm to push"). Claude uses `CronCreate` single-fire mode.
-- **Recurring within session, fixed cadence** — `/loop [interval] [prompt]` (e.g. `/loop 5m /check-pr`). Backed by `CronCreate`.
-- **Recurring within session, dynamic cadence** — `/loop [prompt]` (no interval). Claude calls `ScheduleWakeup` at the end of each iteration to pick the next delay (1 min – 1 hr). It may also reach for `Monitor` to skip polling entirely.
+- **Recurring within session, fixed cadence** — `/loop «interval» «prompt»` (e.g. `/loop 5m /check-pr`). Backed by `CronCreate`.
+- **Recurring within session, dynamic cadence** — `/loop «prompt»` (no interval). Claude calls `ScheduleWakeup` at the end of each iteration to pick the next delay (1 min – 1 hr). It may also reach for `Monitor` to skip polling entirely.
 - **Default-maintenance loop** — bare `/loop`. Runs the built-in maintenance prompt (continue unfinished work, tend the branch's PR, run cleanup passes) or a custom `loop.md` if present.
 - **Live event stream** (log line, file change, status URL) — ask Claude to use the `Monitor` tool.
 - **Cross-session, durable, scheduled cron** — `/schedule` (Routines on claude.ai). Use this for daily reports, "run once at 3pm tomorrow", anything that must survive a closed terminal.
@@ -44,8 +44,8 @@ Match the primitive to the signal type:
 
 Per https://code.claude.com/docs/en/scheduled-tasks:
 
-- **`/loop [interval] [prompt]`** — fixed cadence. Examples: `/loop 5m check the deploy`, `/loop 20m /review-pr 1234`. Units: `s` `m` `h` `d`. Non-cron-aligned intervals (e.g. `7m`, `90m`) get rounded to the nearest cron step and Claude reports the actual cadence.
-- **`/loop [prompt]`** (no interval) — dynamic. Claude picks the delay each iteration (1 min – 1 hr) and prints the chosen delay + reason at the end of each pass. May use `Monitor` instead of polling.
+- **`/loop «interval» «prompt»`** — fixed cadence. Examples: `/loop 5m check the deploy`, `/loop 20m /review-pr 1234`. Units: `s` `m` `h` `d`. Non-cron-aligned intervals (e.g. `7m`, `90m`) get rounded to the nearest cron step and Claude reports the actual cadence.
+- **`/loop «prompt»`** (no interval) — dynamic. Claude picks the delay each iteration (1 min – 1 hr) and prints the chosen delay + reason at the end of each pass. May use `Monitor` instead of polling.
 - **bare `/loop`** — built-in maintenance prompt at a dynamically chosen interval. Replace with a project-level `.claude/loop.md` or user-level `~/.claude/loop.md`. Edits to `loop.md` take effect on the next iteration. Not available on Bedrock/Vertex/Foundry.
 
 **Stopping a loop:** press `Esc` while it's waiting for the next iteration. (`Esc` does not affect tasks Claude created directly via `CronCreate` — delete those by ID.)
@@ -137,8 +137,8 @@ For local-machine durable scheduling without a cloud account, use Desktop schedu
 1. Live event signal? → `Monitor`
 2. Harness-tracked background work? → just wait
 3. One-off natural-language reminder? → ask Claude ("remind me at 3pm…") → `CronCreate` single-fire
-4. Recurring fixed cadence? → `/loop [interval] [prompt]`
-5. Recurring adaptive cadence? → `/loop [prompt]` (dynamic, Claude self-paces)
+4. Recurring fixed cadence? → `/loop «interval» «prompt»`
+5. Recurring adaptive cadence? → `/loop «prompt»` (dynamic, Claude self-paces)
 6. Cross-session durable / runs while terminal closed? → `/schedule` (cloud Routines)
 
 **Provider guards (Bedrock/Vertex/Foundry):**
