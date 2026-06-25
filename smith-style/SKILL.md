@@ -94,15 +94,15 @@ docs: update deployment guide
 
 **Patterns** (in order of frequency in this repo):
 
-1. **Compound** (most common): `type/<hierarchical-scope>_<single-concept-description>`
+1. **Compound** (most common): `type/[hierarchical-scope]_[single-concept-description]`
    - Hyphens preserve the hierarchical scope (matches the commit scope).
    - A single `_` separates scope from description.
    - Underscores inside the description treat the whole phrase as one concept.
 
-2. **Description-only**: `type/<single-concept-description>` — when there's no
+2. **Description-only**: `type/[single-concept-description]` — when there's no
    meaningful hierarchical scope, just underscored words.
 
-3. **Scope-only-hierarchy**: `type/<hierarchical-scope>-<sub-hierarchy>` — when
+3. **Scope-only-hierarchy**: `type/[hierarchical-scope]-[sub-hierarchy]` — when
    the whole name is hierarchy (e.g. `smith-tools-ext`).
 
 **Real examples from merged PRs:**

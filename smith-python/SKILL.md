@@ -34,7 +34,7 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 
 - ALWAYS use absolute imports (`from package.module import`)
 - ALWAYS use type hints for all function signatures
-- ALWAYS use function-based tests: `def test_should_<action>_when_<condition>():`
+- ALWAYS use function-based tests: `def test_should_[action]_when_[condition]():`
 - ALWAYS use virtual env runner: `poetry run` or `uv run`
 - ALWAYS use structured logging with `extra=` parameter for all log data
 - ALWAYS prefer moderate defaults for enum parameters
@@ -143,5 +143,5 @@ uv run pytest
 ```
 
 **Package management:**
-- Poetry: `poetry install`, `poetry add <pkg>`, `poetry remove <pkg>`
-- uv: `uv sync`, `uv add <pkg>`, `uv remove <pkg>`
+- Poetry: `poetry install`, `poetry add [pkg]`, `poetry remove [pkg]`
+- uv: `uv sync`, `uv add [pkg]`, `uv remove [pkg]`
