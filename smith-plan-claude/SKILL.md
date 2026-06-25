@@ -40,6 +40,15 @@ The SessionStart:clear hook outputs **state metadata** (flag type, plan metadata
 
 **When hook signal = `resume` with flag type `plan-pending`:**
 (Flag file exists = explicit reload intent from enforce-clear or on-plan-exit)
+0. **Verify the plan is not already done before resuming — do NOT trust the
+   flag type alone.** A stale flag from a prior session points at a completed
+   plan; auto-resuming it is a repeat-corrected footgun. The plan is STALE if
+   EITHER holds: all task checkboxes are `- [x]`; or recent `git log` / a
+   session memory shows the work already merged. If stale → skip steps 1-4,
+   report it as a completed/stale plan, and ask what to work on. Only continue
+   when genuinely-pending `- [ ]` tasks remain and no completion evidence
+   contradicts them. (An explicit user message to ignore the plan is handled by
+   the user-request override below.)
 1. Reconstruct todos from plan checkboxes: for each `- [ ]` task, TaskCreate(subject=task_text, description="From plan")
 2. Set first pending task: TaskUpdate(taskId, status="in_progress")
 3. If Serena MCP available: read_memory() for session state (context restoration)

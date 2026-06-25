@@ -128,6 +128,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - DECIDE: convention already answers (commit format, branch naming, review response)
 - DECIDE: next step follows logically from the previous (review → fix → push → re-review)
 - DECIDE: user answered the same question in the last ~5 turns
+- DECIDE + DO: after any PR merge, ff-only pull the repo's **default** branch in the primary checkout to keep local current — never skip it (mechanics in `@smith-gh-pr`, `@smith-worktree`)
 
 **Capability ceiling rule:**
 - If a tool or approach fails, try ONE alternative workaround

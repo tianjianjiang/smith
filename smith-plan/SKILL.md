@@ -92,6 +92,13 @@ When updating the plan, use this pattern:
 # 4. Save to the same file path
 ```
 
+## Completion-Aware Reload
+
+An auto-loaded or auto-listed plan is **stale, not live**, when its checkboxes
+are all `- [x]` (or `git log` / a session memory shows the work merged).
+Disregard a stale plan — report it and ask — rather than resuming it. Verify
+checkbox state before treating any reloaded plan as work to continue.
+
 ## Completion Signal
 
 When all tasks are done, output this exact phrase:
