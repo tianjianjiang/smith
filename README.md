@@ -51,7 +51,7 @@ smith/
 └── ...
 ```
 
-### Skills (36 total)
+### Skills (37 total)
 
 | Category | Skills |
 |----------|--------|
@@ -62,6 +62,7 @@ smith/
 | **Testing** | `smith-tests`, `smith-playwright` |
 | **Workflow** | `smith-ralph`, `smith-plan`, `smith-plan-claude`, `smith-subagents` |
 | **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
+| **Communication** | `smith-slack` |
 | **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills`, `smith-settings` |
 
 ### SKILL.md Format
