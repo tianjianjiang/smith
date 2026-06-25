@@ -90,6 +90,18 @@ applied — see anthropics/claude-code [#15897](https://github.com/anthropics/cl
 tool's input; consolidate the logic into a single hook when the decision must
 stick.
 
+**Matching MCP tools:** MCP server tools appear as regular tools in the tool
+events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`,
+`PermissionDenied`), named `mcp__«server»__«tool»`. Match them by name like any
+tool; append `.*` to the server prefix (`mcp__«server»__.*`) to match every tool
+from one server.
+
+**Narrower than `matcher` — the `if` field:** set `if` on an individual hook
+handler to filter on tool name AND arguments together using
+[permission-rule syntax](https://code.claude.com/docs/en/permissions) — e.g.
+`"Bash(git *)"` fires only for `git` subcommands, `"Edit(*.ts)"` only for
+TypeScript edits.
+
 Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 
 ## Permission Modes

@@ -76,7 +76,7 @@ Decision order — first match wins:
 
 **Default-allowed** (for awareness): read-only ops, working-dir edits, lock-file installs, read-only HTTP, push to session-created branches.
 
-Run `claude auto-mode defaults` for the live rule lists. Trusted infrastructure is configured via `autoMode.environment` — see https://code.claude.com/docs/en/auto-mode-config.
+Run `claude auto-mode defaults` for the live rule lists. Trusted infrastructure is configured via `autoMode.environment` (prose entries naming trusted repos/buckets/domains; the default trusts the working repo + its remotes). To extend the built-in list instead of replacing it, include the literal string `"$defaults"` in the array — the defaults splice in at that position. See https://code.claude.com/docs/en/auto-mode-config.
 
 </context>
 
@@ -162,6 +162,30 @@ operations on shared state (main, production, IAM).
 classifier does not recognize it as a persistent permission grant.
 For repeat ops, the fix is `permissions.allow` in settings, not
 asking again each time.
+
+</context>
+
+## Classifier Rule Lists (`autoMode.*`)
+
+<context>
+
+The classifier is a **second gate** that runs after the permissions system.
+`permissions.deny` (tool-pattern blocks) fires *before* the classifier and
+cannot be overridden — use it for absolutes. The classifier's own rule lists
+live in `~/.claude/settings.json`, each an array of **prose** descriptions (not
+regex/tool patterns):
+
+- `autoMode.hard_deny` — unconditional security boundaries (see [Hard Deny Rules](#hard-deny-rules)).
+- `autoMode.soft_deny` — destructive actions that specific user intent can clear.
+- `autoMode.allow` — exceptions that override matching `soft_deny`.
+- `autoMode.environment` — trusted infra (covered above).
+
+**Four-tier precedence:** `hard_deny` (unconditional) > `soft_deny` > `allow`
+(overrides matching `soft_deny`) > explicit specific user intent (clears
+remaining soft blocks; a general request like "clean up the repo" does **not**
+count — the message must describe the exact action). As with `environment`,
+include the literal `"$defaults"` in any of these arrays to keep the built-in
+rules while adding your own.
 
 </context>
 
