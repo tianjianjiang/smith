@@ -330,14 +330,17 @@ gh pr merge {PR} --squash
 
 Options: `--squash`, `--merge`, or `--rebase`
 
-**Post-merge cleanup:**
+**Post-merge cleanup** (use the repo's DEFAULT branch — `main`, `develop`, etc., never assume `main`):
 ```shell
-git checkout main && git fetch --prune origin && git pull
+DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
+git checkout "$DEFAULT_BRANCH" && git fetch --prune origin && git pull --ff-only
 git branch -d feat/my_feature
 ```
+`--ff-only` is mandatory: it refuses to create a stray merge commit if local has
+diverged (e.g. after a squash-merge), surfacing the problem instead of hiding it.
 
-**Check freshness:**
+**Check freshness** (`@{u}` = current branch's upstream, branch-name-agnostic):
 ```shell
-git fetch origin
-BEHIND=$(git rev-list HEAD..origin/main --count)
+git fetch  # fetches the current branch's configured remote, matching @{u}
+BEHIND=$(git rev-list HEAD..@{u} --count)
 ```

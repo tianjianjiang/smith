@@ -47,6 +47,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - Correct mistakes immediately when discovered
 - Distinguish facts from inferences
 - NEVER present an unvalidated technical mechanism as if it will work. For any approach that depends on external system behavior (MCP, OAuth/auth, provider API, CLI flag, feature/version support), verify via official docs + issue tracker BEFORE proposing — a proposed mechanism is a *claim*. If unverified, say "unverified — let me check" and check before asserting. (See `@smith-research` triggers, `@smith-validation` falsify-before-present.)
+- Before asserting a convention/rule applies (a smith skill rule, a backlog label, a doc behavior), QUOTE the actual source line — the rule file, memory, or doc — rather than asserting from memory. Stale or misremembered labels are a top friction source; verify-from-source first, even when the label looks self-evident.
 
 ### Harmless
 - Warn about breaking changes before implementing
@@ -188,6 +189,7 @@ return — a reader (or Claude Code's classifier) sees only message text.
 
 - Going silent mid-task; ending without a `result:`/`needs input:`/`failed:` line
 - Treating a subagent report or tool output as the user-visible answer
+- Pasting large content inline (full file bodies, big tool dumps, generated docs) — write it to a file and surface only a summary + path/diff; oversized output can abort the turn
 
 </forbidden>
 
