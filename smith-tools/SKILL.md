@@ -81,6 +81,11 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 - Use for: User-provided URLs, web documentation explicitly requested
 - Configuration: Use WebFetch tool if available
 - Avoid: Content available locally, speculative browsing
+- Guardrails (WebFetch behavior):
+  - Cross-host redirects are **not** auto-followed — WebFetch returns the redirect URL; re-call with it if the new host is trusted
+  - Results are cached ~15 min per URL — a stale page can be returned within that window; expect it when re-fetching after a change
+  - A server-side domain blocklist + (for the API tool) `allowed_domains`/`blocked_domains` can return nothing for blocked hosts
+  - JS-heavy / SPA pages can return empty or partial content (plain HTTP fetch, no headless browser) — fall back to a browser MCP (`@smith-browser_mcp/SKILL.md`) for those
 
 **Browser MCP plugins (chrome-devtools-mcp, @playwright/mcp)**:
 - Purpose: Drive a real browser via Chrome DevTools Protocol
@@ -137,6 +142,12 @@ In-session: `/mcp` shows tool count per server, flags servers advertising the to
 - Restart: remove + re-add the server, or restart the Claude Code session
 - Config reload: restart session after edits to `.mcp.json` or settings (MCP server list isn't hot-reloaded)
 
+**`-32000` from an MCP server:** JSON-RPC reserves `-32000` to `-32099` for implementation-defined "Server error" (JSON-RPC 2.0 spec §5.1). It is **generic** — not a Claude-Code-specific code — so the number alone says only "the server raised an error," not what failed. Recover by:
+1. `/mcp` — inspect connection state; re-authenticate if a remote OAuth server shows disconnected
+2. Read the server's own message/`data` field and `~/.claude/logs/mcp-*.log` for the real cause
+3. Restart the server: remove + re-add, or restart the session (config isn't hot-reloaded)
+4. If it recurs, the fault is server-side (its auth, config, data, or deployment — or an implementation bug), not Claude Code — work the server's logs/owner first, then its issue tracker if a defect is still likely
+
 **Common issues:**
 - Server not found → verify command path is absolute
 - Permission denied → check executable permissions
@@ -187,6 +198,19 @@ A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plug
 - **Plugin dependencies** (v2.1.143+): `claude plugin disable` refuses if another enabled plugin depends on the target.
 
 **Plugin-provided MCP servers**: declared in `.mcp.json` at plugin root OR inline in `plugin.json` under `mcpServers`. Start automatically when the plugin is enabled. Use `${CLAUDE_PLUGIN_ROOT}` to reference plugin assets. Plugin MCP servers appear in `/mcp` alongside user-configured ones.
+
+**Supply-chain trust (a plugin runs code on your machine):**
+
+<required>
+
+Installing/enabling a plugin is a trust decision equal to running its install script — it can ship hooks (shell commands), MCP/LSP servers, and `bin/` executables that run locally with your privileges, and an **update can change that code**. Trust by tier, highest first:
+1. `anthropics/*` official marketplace — canonical
+2. Known org / vendor you already depend on
+3. Unknown third-party — review before enabling
+
+Before enabling anything you did not author, read the plugin's `hooks/`, `commands/`, `bin/` executables, and `.mcp.json` / `plugin.json` `mcpServers` — hooks and MCP servers execute on enable, not on first use. Tier 1 is Anthropic-curated so the full read is lower-stakes, but it is not a free pass: still skim the manifest and pin to an explicit `version` (or commit) so an update cannot silently re-grant trust. Tiers 2-3: always do the full review.
+
+</required>
 
 **enabledPlugins** in `~/.claude/settings.json` controls per-user enable state:
 

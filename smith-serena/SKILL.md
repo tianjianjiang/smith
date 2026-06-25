@@ -55,6 +55,31 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 
 </context>
 
+## Native Write vs Symlinked Paths
+
+<context>
+
+Native `Edit`/`Write` do NOT refuse symlinked targets — they write via
+an atomic temp-file + rename. Through a **directory** symlink (e.g.
+`~/.claude/skills` → the smith repo) the rename lands in the resolved
+dir, so the link and the real file are fine. But a **file-level**
+symlink is silently **replaced by a regular file** — the link breaks and
+the original diverges (Claude Code issue #40857, confirmed). smith
+`SKILL.md` files are plain files, so editing them via either path is
+safe; the hazard is any path that is itself a file symlink.
+
+</context>
+
+<required>
+
+- Before a native write, if the target file may be a symlink, resolve it
+  (`readlink -f` / write the real path) — do not write the link path.
+- Distinct from the worktree MCP write blind spot in
+  `@smith-worktree/SKILL.md`; that is about Serena writes hitting the
+  main checkout, not symlink replacement.
+
+</required>
+
 ## Serena Activation Workflow
 
 <required>
@@ -124,6 +149,24 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 Auto memory handles long-term project knowledge (patterns,
 conventions). Serena memory handles session state and cross-context
 continuity. See `@smith-ctx-claude/SKILL.md` for delineation.
+
+**Stores are not a uniform layout — do not assume one path scheme:**
+
+- Serena: `.serena/memories/*.md` (flat dir; naming = memory key).
+- Claude Code auto memory: `~/.claude/projects/[project-slug]/memory/` — flat
+  `*.md` files plus a `MEMORY.md` index that wiki-links the rest.
+- Basic-Memory: own store (markdown files) backed by a SQLite index;
+  reach it via its MCP tools, not by path.
+
+Read each store through its own tool; a path that works for one will not
+resolve the others.
+
+**Conflicting memories → reconcile against source, not against each
+other.** When stores (or an older vs. newer memory) disagree, treat the
+current code/config/docs as the source of truth and the memory as a
+possibly-stale pointer; verify before acting, and update or supersede
+the stale entry. File-backed entries that drift from their source are
+already staleness-flagged — honor the flag.
 
 </required>
 
