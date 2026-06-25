@@ -126,8 +126,8 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
 **Recommendation format:**
 ```text
-Context at [X]%. Recommend context reset (see platform skill for command).
-Keep: [task], [files], [decisions], [todos]
+Context at «X»%. Recommend context reset (see platform skill for command).
+Keep: «task», «files», «decisions», «todos»
 ```
 
 </required>

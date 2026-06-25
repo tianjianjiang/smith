@@ -120,8 +120,8 @@ claude mcp add --transport stdio --scope user server-name -- command args
 
 ```shell
 claude mcp list
-claude mcp get [name]
-claude mcp remove [name]
+claude mcp get «name»
+claude mcp remove «name»
 ```
 
 In-session: `/mcp` shows tool count per server, flags servers advertising the tools capability but exposing none, and authenticates remote OAuth 2.0 servers.
@@ -165,8 +165,8 @@ A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plug
 **Install a marketplace + plugin:**
 
 ```shell
-/plugin marketplace add [git-url-or-path]
-/plugin install [plugin-name]@[marketplace-name]
+/plugin marketplace add «git-url-or-path»
+/plugin install «plugin-name»@«marketplace-name»
 /plugin marketplace update
 /plugin list
 ```
@@ -185,7 +185,7 @@ A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plug
 }
 ```
 
-**plugin.json** (per-plugin, at `[plugin]/.claude-plugin/plugin.json`):
+**plugin.json** (per-plugin, at `«plugin»/.claude-plugin/plugin.json`):
 
 ```json
 { "name": "quality-review-plugin",
@@ -216,7 +216,7 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
 
 ```json
 { "enabledPlugins": {
-    "[plugin]@[marketplace]": true,
+    "«plugin»@«marketplace»": true,
     ...
   } }
 ```

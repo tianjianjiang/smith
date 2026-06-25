@@ -239,7 +239,7 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
 
             CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
             CONTEXT_MSG+=$(printf '\nRalph loop active (iteration %s). Will auto-exit at critical threshold (%d%%).' "${RALPH_ITERATION:-?}" "$CRITICAL_PCT")
-            CONTEXT_MSG+="\nSave iteration state to Serena NOW: write_memory() with ralph_[task]_state."
+            CONTEXT_MSG+="\nSave iteration state to Serena NOW: write_memory() with ralph_«task»_state."
             if [[ -n "$ACTIVE_PLAN" ]]; then
                 CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
             fi
@@ -272,9 +272,9 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             fi
             CONTEXT_MSG+=$(printf '\n\n**Recommended:**\n1. Update plan file with current progress (mark completed as [x])\n2. Commit uncommitted work\n3. If Serena MCP available: write_memory() with descriptive name (task, decisions, file:line refs)\n4. AFTER all tool calls complete, output this block:')
             if [[ -n "$ACTIVE_PLAN" ]]; then
-                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Plan: `%s`\n- Memory: \`[name from step 3]\` (read via read_memory() after /clear)\n- Resume: [describe current task]' "$ACTIVE_PLAN")
+                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Plan: `%s`\n- Memory: \`«name from step 3»\` (read via read_memory() after /clear)\n- Resume: «describe current task»' "$ACTIVE_PLAN")
             else
-                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Memory: \`[name from step 3]\` (read via read_memory() after /clear)\n- Resume: [describe current task]')
+                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Memory: \`«name from step 3»\` (read via read_memory() after /clear)\n- Resume: «describe current task»')
             fi
             CONTEXT_MSG+=$(printf '\n\n5. Tell user to run /clear\n\nPlan auto-reloads after /clear.')
         fi

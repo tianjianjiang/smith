@@ -49,7 +49,7 @@ description: SOLID principles and architecture design patterns. Use when startin
   - Invariant expression
   - Usefulness
   - Enforcement
-- Trigger: "Review the [TypeName] type design" or use Task tool
+- Trigger: "Review the «TypeName» type design" or use Task tool
 
 </context>
 
