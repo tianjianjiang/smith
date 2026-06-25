@@ -133,8 +133,8 @@ if [[ "$FLAG_TYPE" == "plan-pending" ]]; then
 
 **Reload with:**
 - Plan: \`${ACTIVE_PLAN}\`
-- Memory: \`<name from step 3>\` (read via read_memory() after /clear)
-- Resume: <describe current task>"
+- Memory: \`[name from step 3]\` (read via read_memory() after /clear)
+- Resume: [describe current task]"
 elif [[ "$FLAG_TYPE" == "plan-completed" ]]; then
     # Plan exists but no pending tasks
     json_stop_block "Context at ${CONTEXT_PCT}%. Plan completed.
@@ -146,8 +146,8 @@ elif [[ "$FLAG_TYPE" == "plan-completed" ]]; then
 
 **Reload with:**
 - Plan: \`${COMPLETED_PLAN}\` (completed)
-- Memory: \`<name from step 3>\` (read via read_memory() after /clear)
-- Resume: <describe completed work>"
+- Memory: \`[name from step 3]\` (read via read_memory() after /clear)
+- Resume: [describe completed work]"
 else
     # No plan context
     json_stop_block "Context at ${CONTEXT_PCT}%.
@@ -158,6 +158,6 @@ else
 3. AFTER all tool calls complete, output this block:
 
 **Reload with:**
-- Memory: \`<name from step 3>\` (read via read_memory() after /clear)
-- Resume: <describe current task>"
+- Memory: \`[name from step 3]\` (read via read_memory() after /clear)
+- Resume: [describe current task]"
 fi
