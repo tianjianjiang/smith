@@ -93,17 +93,17 @@ If `worktree.baseRef` is set in a repo's `.claude/settings.json`, that repo wins
 
 <context>
 
-When a PR from a worktree branch is squash-merged to main, the local artifacts are inconsistent:
+When a PR from a worktree branch is squash-merged to the default branch (`main`, `develop`, etc. — never assume `main`), the local artifacts are inconsistent:
 
-- `origin/main` has a new commit with the squashed content.
+- `origin/<default-branch>` has a new commit with the squashed content.
 - The local `feat/«name»` branch still points at the original (un-squashed) commit; it shows `[origin/feat/«name»: gone]` after `git fetch --prune`.
 - `git branch -d feat/«name»` will refuse: *"the branch is not fully merged"*. This is a squash-merge orphan; the content **is** in main, just under a different SHA.
 
 Protocol:
 
-1. `ExitWorktree({action: "remove", discard_changes: true})` — the worktree's branch is now redundant since its content is on origin/main.
-2. From the main working copy: `git fetch --prune origin && git pull --ff-only`. This catches origin's new commit and removes the stale remote-tracking ref.
-3. `git branch -D feat/«name»` to remove the orphan local branch.
+1. `ExitWorktree({action: "remove", discard_changes: true})` — removes the worktree AND its branch (the content is now on the default branch).
+2. From the primary working copy: `git fetch --prune origin && git pull --ff-only`. This catches the new commit and removes the stale remote-tracking ref.
+3. Only if a branch survived step 1 (you exited with `keep`, renamed it, or created it outside the tool): `git branch -D «branch»` to clear the squash-merge orphan (`git branch -d` refuses it as "not fully merged").
 
 If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the merge commit). Clean up:
 
@@ -144,6 +144,6 @@ git pull --ff-only
    only when the user has asked for "evaluate-in-place"
 
 **After squash-merge:**
-- `ExitWorktree` (remove + discard) → `git pull --ff-only` on main → `git branch -D feat/«name»` to clear the orphan
+- `ExitWorktree` (remove + discard — deletes the branch too) → `git pull --ff-only` on the default branch. Only if a branch survived (`keep`/renamed/manual): `git branch -D «branch»` to clear the squash-merge orphan.
 
 </required>

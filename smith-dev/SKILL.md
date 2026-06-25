@@ -130,6 +130,17 @@ Before creating a pull request:
 **Directory**: `debug_scripts/outputs/` (add to `.gitignore`)
 **Naming**: `«purpose»_«id»_«timestamp».json`
 
+## Mechanical Sweeps & Text Transforms
+
+<required>
+
+When changing a token across many files, build an EXACT-token allowlist of the
+strings to change and edit only those. Never run a blind `sed`/global
+find-replace that can hit unintended matches (substrings, comments, unrelated
+identifiers). Preview with `grep -n` first, then transform only the vetted set.
+
+</required>
+
 ## Local Command Footguns (macOS)
 
 <context>
@@ -144,6 +155,10 @@ Before handing the user a manual/test command, account for these traps:
 - A background (non-TTY) Claude Code session's Bash cannot run `sudo` (no
   prompt; iTerm2 won't pop a dialog). Route via a GUI askpass (`SUDO_ASKPASS`
   + `osascript`), or hand the command to the user's terminal with a `!` prefix.
+- The user's shell is zsh: unlike bash, zsh does NOT word-split an unquoted
+  `$VAR` in `for x in $list` — it iterates ONCE over the whole string. Split
+  explicitly with an array (`for x in ${(s: :)list}`) or quote on purpose. Keep
+  non-trivial `case`/loop logic in a script file, not a fragile inline one-liner.
 
 </context>
 
