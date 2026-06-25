@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **35 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
+Smith is a collection of **36 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -51,7 +51,7 @@ smith/
 └── ...
 ```
 
-### Skills (35 total)
+### Skills (36 total)
 
 | Category | Skills |
 |----------|--------|
@@ -62,7 +62,7 @@ smith/
 | **Testing** | `smith-tests`, `smith-playwright` |
 | **Workflow** | `smith-ralph`, `smith-plan`, `smith-plan-claude`, `smith-subagents` |
 | **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
-| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills` |
+| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills`, `smith-settings` |
 
 ### SKILL.md Format
 
