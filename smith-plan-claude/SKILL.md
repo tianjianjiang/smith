@@ -149,7 +149,7 @@ Stop hook (enforce-clear.sh) blocks at 60% (critical threshold).
 
 ### Flag File Format
 
-`~/.claude/plans/.pending-reload-[session-hash]`:
+`~/.claude/plans/.pending-reload-«session-hash»`:
 ```
 /absolute/path/to/plan.md       <- line 1: plan path (empty if no plan)
 session_abc123                   <- line 2: session ID
@@ -206,7 +206,7 @@ When Ralph is active and context gets high, three hooks coordinate to prevent de
 
 ### Resume File Format
 
-`~/.claude/plans/.ralph-resume-[session-hash]`:
+`~/.claude/plans/.ralph-resume-«session-hash»`:
 ```text
 20                                  <- line 1: max_iterations
 5                                   <- line 2: current iteration
@@ -215,7 +215,7 @@ TASK COMPLETE                       <- line 3: completion promise
 2026-02-10T14:30:45+0800            <- line 5: timestamp
 ```
 
-`~/.claude/plans/.ralph-resume-[session-hash].prompt`:
+`~/.claude/plans/.ralph-resume-«session-hash».prompt`:
 ```text
 Raw prompt text (may contain newlines)
 ```
@@ -228,7 +228,7 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 
 - `execute plan` — Load most recent plan
 - `!load-plan` — Load most recent plan
-- `!load-plan [name]` — Load specific plan
+- `!load-plan «name»` — Load specific plan
 - `reload` — Load plan from state file (post-/clear shortcut)
 - `reload plan` / `reload the plan` — Load plan from state file
 - `!plan-status` — Show current progress
@@ -246,14 +246,14 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 ## File Locations
 
 - Plans directory — `~/.claude/plans/`
-- Active plan — Tracked in `.plan-state-[session-hash]` state file
-- Reload flag — `~/.claude/plans/.pending-reload-[session-hash]`
-- State file — `~/.claude/plans/.plan-state-[session-hash]`
+- Active plan — Tracked in `.plan-state-«session-hash»` state file
+- Reload flag — `~/.claude/plans/.pending-reload-«session-hash»`
+- State file — `~/.claude/plans/.plan-state-«session-hash»`
 - This skill — `~/.smith/smith-plan-claude/`
 
 ## State File Format
 
-`~/.claude/plans/.plan-state-[session-hash]`:
+`~/.claude/plans/.plan-state-«session-hash»`:
 ```
 sess_abc123                   <- line 1: session ID
 /path/to/transcript.jsonl     <- line 2: transcript path

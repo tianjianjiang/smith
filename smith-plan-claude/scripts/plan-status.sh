@@ -2,7 +2,7 @@
 #
 # plan-status.sh - Show detailed progress of a plan
 #
-# Usage: ./plan-status.sh [plan-name]
+# Usage: ./plan-status.sh «plan-name»
 #        If no name given, shows most recent plan
 #
 

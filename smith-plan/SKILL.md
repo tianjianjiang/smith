@@ -51,11 +51,11 @@ Use this format in plan files for trackable progress:
 
 ## Progress Log
 
-### Iteration 1 ([TIMESTAMP])
+### Iteration 1 («TIMESTAMP»)
 - Completed: Task 1, Task 2
 - Notes: Used PostgreSQL instead of MySQL per user preference
 
-### Iteration 2 ([TIMESTAMP])
+### Iteration 2 («TIMESTAMP»)
 - Working on: Task 3
 - Blockers: None
 ```
@@ -105,7 +105,7 @@ PLAN COMPLETE: All tasks finished successfully.
 If you hit a blocker requiring human input:
 
 ```
-BLOCKER: [description of issue requiring human decision]
+BLOCKER: «description of issue requiring human decision»
 ```
 
 ## Important Rules

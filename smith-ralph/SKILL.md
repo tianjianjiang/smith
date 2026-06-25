@@ -47,8 +47,8 @@ Each test file = iteration boundary. Commit after green.
 **Pattern**: Phase milestones = iteration boundaries. Quality gates between.
 
 ```text
-Phase 1: [milestone] + tests
-Phase 2: [milestone] + tests
+Phase 1: «milestone» + tests
+Phase 2: «milestone» + tests
 Output <promise>COMPLETE</promise> after all phases.
 ```
 
@@ -71,7 +71,7 @@ Output <promise>COMPLETE</promise> after all phases.
 **Proactive: Phase boundaries (ALWAYS clear, even at low context):**
 - After completing each phase's tasks (all [x] for current phase):
   1. Output promise to exit Ralph
-  2. Save state: write_memory("ralph_[task]_phase_N")
+  2. Save state: write_memory("ralph_«task»_phase_N")
   3. Tell user: "Phase N complete. Run /clear for Phase N+1."
   4. After /clear: loop auto-restarts for next phase
 - Rationale: Fresh context per phase prevents degradation even before threshold.
@@ -95,15 +95,15 @@ Output <promise>COMPLETE</promise> after all phases.
 **At EVERY phase boundary (regardless of context level):**
 1. Mark completed tasks [x] in plan file
 2. Commit current work
-3. Save phase state: `write_memory("ralph_[task]_phase_N")`
+3. Save phase state: `write_memory("ralph_«task»_phase_N")`
 4. Output the configured completion promise (default: `<promise>PHASE_COMPLETE</promise>`). Ensure this matches the Ralph loop's `--completion-promise` value.
 5. AFTER all tool calls, output:
 
 **Reload with:**
-- Plan: `[plan_path]`
-- Memory: `ralph_[task]_phase_N` (read via read_memory() after /clear)
+- Plan: `«plan_path»`
+- Memory: `ralph_«task»_phase_N` (read via read_memory() after /clear)
 - Ralph: auto-restarts for next phase
-- Resume: Phase N+1 - [next phase description]
+- Resume: Phase N+1 - «next phase description»
 
 6. Tell user to run /clear
 
@@ -130,7 +130,7 @@ If plan has no ## headings, each `- [ ]` task = one phase.
 
 **Serena memories persist Ralph state across context resets.**
 
-**Memory fields**: `ralph_[task]_state`
+**Memory fields**: `ralph_«task»_state`
 - iteration, hypotheses (tested/remaining), test_results, next_action
 
 **Sync timing:**
@@ -163,7 +163,7 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 3. Build worker context (plan path, iteration number, task text, memory keys)
 4. Spawn worker:
    ```
-   Task(subagent_type="general-purpose", prompt=[worker_prompt])
+   Task(subagent_type="general-purpose", prompt=«worker_prompt»)
    ```
    Worker prompt includes: plan path, task text, iteration N, memory keys for prior iterations, completion promise. See `agents/ralph-worker.md` for worker behavior.
 5. Read worker result + verify plan file updated (`[x]`)
@@ -209,7 +209,7 @@ See `@smith-ctx-claude/SKILL.md` for model routing guidance (added in PR #60).
 
 ### Orchestrator State File
 
-Persists at `~/.claude/plans/.ralph-orchestrator-[CWD_KEY]` (16-char hash of `PPID:CWD` via `session_key()` in `lib-common.sh`):
+Persists at `~/.claude/plans/.ralph-orchestrator-«CWD_KEY»` (16-char hash of `PPID:CWD` via `session_key()` in `lib-common.sh`):
 
 ```yaml
 ---
@@ -403,7 +403,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 
 **Starting Ralph:**
 ```shell
-/ralph-loop "[task]" --completion-promise "[DONE]" --max-iterations 20
+/ralph-loop "«task»" --completion-promise "«DONE»" --max-iterations 20
 ```
 
 **Starting Orchestration (Pattern B):**

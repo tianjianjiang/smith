@@ -68,7 +68,7 @@ any operator's session — never depend on the author's machine:
 
 - No references to local Serena/auto-memory slugs (e.g. `read_memory(...)`)
   or dangling memory refs from a committed SKILL.md or `.claude/agents/*.md`
-- No hardcoded home paths (e.g. `/Users/[name]/...`) - inline the rule instead
+- No hardcoded home paths (e.g. `/Users/«name»/...`) - inline the rule instead
 - No hooks reading `$CLAUDE_TOOL_INPUT` / `$CLAUDE_TOOL_INPUT_FILE_PATH`
   (these never existed; input is JSON on stdin, `$CLAUDE_PROJECT_DIR` is the
   only path var) - such hooks exit 0 and silently do nothing

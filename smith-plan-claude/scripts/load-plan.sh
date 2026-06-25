@@ -2,7 +2,7 @@
 #
 # load-plan.sh - Load and output a plan file
 #
-# Usage: ./load-plan.sh [plan-name]
+# Usage: ./load-plan.sh «plan-name»
 #        If no name given, loads most recent plan
 #
 

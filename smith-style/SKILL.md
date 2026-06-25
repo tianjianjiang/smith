@@ -30,9 +30,9 @@ description: File naming, path standards, and conventional commits. Use when nam
 
 ## File Patterns
 
-**Test files**: `test_[module]_[function]_[type].py`
-**JSON test data**: `[module]_[function]_cases.json`
-**Documentation**: `[topic].md` (hyphen for hierarchy, underscore for phrases)
+**Test files**: `test_«module»_«function»_«type».py`
+**JSON test data**: `«module»_«function»_cases.json`
+**Documentation**: `«topic».md` (hyphen for hierarchy, underscore for phrases)
 **Config**: `.env`, `pyproject.toml`, `AGENTS.md`
 
 ## Path References
@@ -94,15 +94,15 @@ docs: update deployment guide
 
 **Patterns** (in order of frequency in this repo):
 
-1. **Compound** (most common): `type/[hierarchical-scope]_[single-concept-description]`
+1. **Compound** (most common): `type/«hierarchical-scope»_«single-concept-description»`
    - Hyphens preserve the hierarchical scope (matches the commit scope).
    - A single `_` separates scope from description.
    - Underscores inside the description treat the whole phrase as one concept.
 
-2. **Description-only**: `type/[single-concept-description]` — when there's no
+2. **Description-only**: `type/«single-concept-description»` — when there's no
    meaningful hierarchical scope, just underscored words.
 
-3. **Scope-only-hierarchy**: `type/[hierarchical-scope]-[sub-hierarchy]` — when
+3. **Scope-only-hierarchy**: `type/«hierarchical-scope»-«sub-hierarchy»` — when
    the whole name is hierarchy (e.g. `smith-tools-ext`).
 
 **Real examples from merged PRs:**
@@ -170,7 +170,7 @@ mode was not pausing to apply it before pushing.
 - When copying to Slack/GitHub/Jira: convert to plain name or full URL
 
 **Issue format (Job Story):**
-- "When [situation], I want to [motivation], so I can [expected outcome]"
+- "When «situation», I want to «motivation», so I can «expected outcome»"
 - Describe the problem and outcome, not the implementation approach
 
 </required>

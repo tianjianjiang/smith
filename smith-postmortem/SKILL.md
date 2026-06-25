@@ -57,10 +57,10 @@ Include: customer impact (users, regions, services), business impact (revenue, S
 Include: discovery time/method, key events chronologically (local timezone, ISO 8601), response actions, resolution time, post-resolution verification
 
 ```text
-YYYY-MM-DDTHH:MM:SS±HH:MM - Alert triggered: [Alert description]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Alert triggered: «Alert description»
 YYYY-MM-DDTHH:MM:SS±HH:MM - On-call engineer paged, investigation started
-YYYY-MM-DDTHH:MM:SS±HH:MM - Root cause identified: [Root cause description]
-YYYY-MM-DDTHH:MM:SS±HH:MM - Mitigation applied: [Mitigation action]
+YYYY-MM-DDTHH:MM:SS±HH:MM - Root cause identified: «Root cause description»
+YYYY-MM-DDTHH:MM:SS±HH:MM - Mitigation applied: «Mitigation action»
 YYYY-MM-DDTHH:MM:SS±HH:MM - Service restored, monitoring confirmed normal operation
 ```
 
@@ -92,11 +92,11 @@ Include: internal notifications, customer communications (if applicable), status
 
 Ask "why" five times to drill down to root cause:
 
-1. Why did the service fail? → [Immediate cause]
-2. Why [immediate cause]? → [Underlying cause]
-3. Why [underlying cause]? → [Deeper cause]
-4. Why wasn't this caught? → [Detection gap]
-5. Why [detection gap]? → [Root cause]
+1. Why did the service fail? → «Immediate cause»
+2. Why «immediate cause»? → «Underlying cause»
+3. Why «underlying cause»? → «Deeper cause»
+4. Why wasn't this caught? → «Detection gap»
+5. Why «detection gap»? → «Root cause»
 
 ### Fishbone Diagram (Ishikawa)
 
@@ -156,7 +156,7 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 <forbidden>
 
-"[Person] deployed broken code" - assigns blame
+"«Person» deployed broken code" - assigns blame
 
 </forbidden>
 
