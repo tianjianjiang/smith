@@ -148,7 +148,7 @@ Editing `~/.claude/settings.json` from inside a project session almost always tr
 **Reducing classifier friction for known-safe operations**
 via `~/.claude/settings.json`:
 
-`permissions.allow` accepts `{ "tool": "Bash", "command": "[glob]" }`.
+`permissions.allow` accepts `{ "tool": "Bash", "command": "«glob»" }`.
 Common patterns that reduce denial loops without compromising safety:
 - `git push --force-with-lease origin feat/*` — session branches
 - `gh pr merge --squash *` — gh handles its own confirmations

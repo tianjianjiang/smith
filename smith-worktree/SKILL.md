@@ -31,8 +31,8 @@ description: Claude Code worktree tooling — EnterWorktree/ExitWorktree, the bg
 - For multi-file edits in a background session, the bg-isolation guard will refuse the first `Edit` and tell the agent to `EnterWorktree`. Comply on the first refusal — do not try alternative edit paths.
 - After a squash-merge of a worktree branch, the local copy of that feature branch is an **orphan** (its commit is not in main's history under the same SHA). `git branch -d` will refuse it with "not fully merged"; use `git branch -D` (force) once the squash commit is confirmed on main.
 - **Branch naming:** `EnterWorktree` auto-names the branch
-  `worktree-[name]` which violates `@smith-style/SKILL.md`. MUST
-  rename before pushing: `git branch -m [type]/[scope]_[description]`
+  `worktree-«name»` which violates `@smith-style/SKILL.md`. MUST
+  rename before pushing: `git branch -m «type»/«scope»_«description»`
   Alternative: create branch first, then `EnterWorktree({path: ...})`
 
 </required>
@@ -41,11 +41,11 @@ description: Claude Code worktree tooling — EnterWorktree/ExitWorktree, the bg
 
 <context>
 
-`EnterWorktree({name: "[n]"})` creates `.claude/worktrees/[n]/` on local branch `worktree-[n]`, branched from the ref specified by `worktree.baseRef`. The session's CWD switches into the worktree.
+`EnterWorktree({name: "«n»"})` creates `.claude/worktrees/«n»/` on local branch `worktree-«n»`, branched from the ref specified by `worktree.baseRef`. The session's CWD switches into the worktree.
 
-- Naming: the `name` param accepts `/`-separated segments; each segment may contain letters, digits, dots, underscores, dashes only. The branch name is always `worktree-[name]` regardless.
+- Naming: the `name` param accepts `/`-separated segments; each segment may contain letters, digits, dots, underscores, dashes only. The branch name is always `worktree-«name»` regardless.
 - Base ref (`worktree.baseRef` setting in `~/.claude/settings.json` or repo `.claude/settings.json`):
-  - `fresh` (default since v2.1.133) — branches from `origin/[default-branch]`. Ignores local unpushed commits on main.
+  - `fresh` (default since v2.1.133) — branches from `origin/«default-branch»`. Ignores local unpushed commits on main.
   - `head` — branches from local `HEAD`. Use when iterating on top of work that isn't on origin yet.
 `ExitWorktree({action: "keep"|"remove", discard_changes: bool})`:
 
@@ -82,7 +82,7 @@ The bg-isolation guard catches only built-in `Edit`/`Write` — NOT MCP file ope
 
 <context>
 
-- `fresh` (default) — start from `origin/[default-branch]`. Safe when iterating against an up-to-date main. **Loses** local-only commits that haven't been pushed to origin.
+- `fresh` (default) — start from `origin/«default-branch»`. Safe when iterating against an up-to-date main. **Loses** local-only commits that haven't been pushed to origin.
 - `head` — start from local `HEAD`. **Keeps** unpushed commits. Use when the user has staged or committed work locally on main that should carry forward into the worktree.
 
 If `worktree.baseRef` is set in a repo's `.claude/settings.json`, that repo wins over the user-level setting.
@@ -96,20 +96,20 @@ If `worktree.baseRef` is set in a repo's `.claude/settings.json`, that repo wins
 When a PR from a worktree branch is squash-merged to main, the local artifacts are inconsistent:
 
 - `origin/main` has a new commit with the squashed content.
-- The local `feat/[name]` branch still points at the original (un-squashed) commit; it shows `[origin/feat/[name]: gone]` after `git fetch --prune`.
-- `git branch -d feat/[name]` will refuse: *"the branch is not fully merged"*. This is a squash-merge orphan; the content **is** in main, just under a different SHA.
+- The local `feat/«name»` branch still points at the original (un-squashed) commit; it shows `[origin/feat/«name»: gone]` after `git fetch --prune`.
+- `git branch -d feat/«name»` will refuse: *"the branch is not fully merged"*. This is a squash-merge orphan; the content **is** in main, just under a different SHA.
 
 Protocol:
 
 1. `ExitWorktree({action: "remove", discard_changes: true})` — the worktree's branch is now redundant since its content is on origin/main.
 2. From the main working copy: `git fetch --prune origin && git pull --ff-only`. This catches origin's new commit and removes the stale remote-tracking ref.
-3. `git branch -D feat/[name]` to remove the orphan local branch.
+3. `git branch -D feat/«name»` to remove the orphan local branch.
 
 If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the merge commit). Clean up:
 
 ```shell
-git checkout -- [tracked-files-from-the-PR]
-rm -rf [new-untracked-dirs-from-the-PR]
+git checkout -- «tracked-files-from-the-PR»
+rm -rf «new-untracked-dirs-from-the-PR»
 git pull --ff-only
 ```
 
@@ -120,7 +120,7 @@ git pull --ff-only
 <context>
 
 - Worktree `.env` and `node_modules` are often SYMLINKS to the main repo. A blanket `git add -A` / `git add .` then stages the symlink itself. Stage explicit paths only; never blanket-add inside a worktree.
-- `gh pr create` run from a non-primary worktree resets the shell CWD back to the first worktree after it returns. Use `git -C [worktree]` for follow-on git ops rather than trusting CWD persistence.
+- `gh pr create` run from a non-primary worktree resets the shell CWD back to the first worktree after it returns. Use `git -C «worktree»` for follow-on git ops rather than trusting CWD persistence.
 
 </context>
 
@@ -137,13 +137,13 @@ git pull --ff-only
 <required>
 
 **On bg-isolation guard refusal:**
-1. `EnterWorktree({name: "[short-slug]"})` — any short name works
+1. `EnterWorktree({name: "«short-slug»"})` — any short name works
 2. Rename branch per primacy-zone rule above:
-   `git branch -m [type]/[scope]_[description]`
+   `git branch -m «type»/«scope»_«description»`
 3. Mirror prior uncommitted changes from the main copy via `cp`
    only when the user has asked for "evaluate-in-place"
 
 **After squash-merge:**
-- `ExitWorktree` (remove + discard) → `git pull --ff-only` on main → `git branch -D feat/[name]` to clear the orphan
+- `ExitWorktree` (remove + discard) → `git pull --ff-only` on main → `git branch -D feat/«name»` to clear the orphan
 
 </required>

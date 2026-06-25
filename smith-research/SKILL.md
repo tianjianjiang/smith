@@ -21,7 +21,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
 **MUST research when:**
 - Version/release queries ("latest version of X")
 - API/documentation queries ("how to use X API")
-- Best practices queries ("recommended way in [current year]")
+- Best practices queries ("recommended way in «current year»")
 - Technology assessment ("should I use X or Y")
 - Unfamiliar technology (not in training data)
 - **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way I think" — that reframe is the trigger.
@@ -36,12 +36,12 @@ description: Proactive research protocol for version queries, APIs, and best pra
    - `fetch https://docs.python.org/3/library/asyncio.html`
 
 2. **Package registry** - Version info
-   - npm: `https://registry.npmjs.org/[package]/latest`
-   - PyPI: `https://pypi.org/pypi/[package]/json`
-   - GitHub: `https://api.github.com/repos/[owner]/[repo]/releases/latest`
+   - npm: `https://registry.npmjs.org/«package»/latest`
+   - PyPI: `https://pypi.org/pypi/«package»/json`
+   - GitHub: `https://api.github.com/repos/«owner»/«repo»/releases/latest`
 
 3. **Web search** - Broad queries
-   - Include current year: "Next.js 15 best practices [current year]"
+   - Include current year: "Next.js 15 best practices «current year»"
 
 4. **GitHub repo** - Source of truth
    - README, CHANGELOG, release notes

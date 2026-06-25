@@ -7,7 +7,7 @@ if ((BASH_VERSINFO[0] < 4)); then
 fi
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: verify-stack-scope.sh [branch-pattern]"
+    echo "Usage: verify-stack-scope.sh «branch-pattern»"
     echo "Example: verify-stack-scope.sh 'feat/PROJ-1234-*'"
     exit 1
 fi

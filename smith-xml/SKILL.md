@@ -162,8 +162,8 @@ Without blank lines, markdown renders as literal text.
 
 <required>
 
-**Use**: Backticks `` `placeholder` `` or brackets `[placeholder]`
-**Avoid**: `<placeholder>`, `{{placeholder}}`
+**Use**: Guillemets `«placeholder»` (see `@smith-placeholder/SKILL.md`)
+**Avoid**: `<placeholder>` (XML), `[placeholder]` (CLI-optional / links), `{{placeholder}}` (templating)
 
 </required>
 
