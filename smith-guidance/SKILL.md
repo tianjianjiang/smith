@@ -170,6 +170,27 @@ and `smith-stacks/scripts/verify-stack-scope.sh`.
 
 </forbidden>
 
+## In-Band Progress (Async / Background Work)
+
+<required>
+
+In async/background/agent runs, progress and results MUST be stated in-band
+(your own message text), never left implicit in tool output or a subagent's
+return — a reader (or Claude Code's classifier) sees only message text.
+
+1. Narrate the approach before acting
+2. Restate key findings/results in your message — do not point at tool output
+3. Emit an explicit terminal signal on its own line: `result:` / `needs input:` / `failed:`
+
+</required>
+
+<forbidden>
+
+- Going silent mid-task; ending without a `result:`/`needs input:`/`failed:` line
+- Treating a subagent report or tool output as the user-visible answer
+
+</forbidden>
+
 ## Ralph Loop as Exploration Workflow
 
 <context>
@@ -177,6 +198,10 @@ and `smith-stacks/scripts/verify-stack-scope.sh`.
 **Ralph = structured exploration**: Read → Hypothesize → Test → Execute → Loop.
 
 See `@smith-ralph/SKILL.md` for full patterns.
+
+**Investigation discipline**: delegate noisy investigation (broad grep
+sweeps, log trawls, multi-file exploration) to a subagent and keep only the
+findings in the main thread. Prefer targeted reads over whole-file/whole-dir.
 
 </context>
 
