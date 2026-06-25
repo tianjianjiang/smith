@@ -106,7 +106,7 @@ cost.
 3. Re-read relevant files as needed
 
 **JSONL state recall (recovery when no memory was saved):** the transcript is
-preserved at `~/.claude/projects/<project-slug>/*.jsonl` and survives /clear
+preserved at `~/.claude/projects/[project-slug]/*.jsonl` and survives /clear
 and compaction. Prior user prompts, decisions, and errors are recoverable from
 it — `ctx_search(sort: "timeline")` indexes it, or grep the JSONL directly.
 Use this to reconstruct intent before asking the user to repeat themselves.
@@ -142,7 +142,7 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 <context>
 
 **Claude Code auto memory** stores agent-generated notes at:
-`~/.claude/projects/<project-slug>/memory/`
+`~/.claude/projects/[project-slug]/memory/`
 
 - `MEMORY.md` - First 200 lines auto-loaded every session
 - Topic files (e.g. `debugging.md`) - Read on demand
@@ -213,7 +213,7 @@ When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invok
 
 - Searching `~/.claude/plugins/`, marketplace catalogs, or plugin cache to "prove" a slash command exists before invoking it
 - Grepping transcript JSONL files for prior invocations as existence proof
-- Concluding a slash command "doesn't exist on this system" without trying `Skill(skill="<name>")` first
+- Concluding a slash command "doesn't exist on this system" without trying `Skill(skill="[name]")` first
 
 </forbidden>
 
