@@ -137,8 +137,8 @@ Before creating a pull request:
 Before handing the user a manual/test command, account for these traps:
 
 - GNU make 3.81 (macOS system `make`) silently builds a junk executable via
-  the built-in implicit rule `%: %.sh` when `make <target>` has no such target.
-  Confirm the target exists (`grep -n '^<target>:' Makefile`) or run the `.sh`.
+  the built-in implicit rule `%: %.sh` when `make [target]` has no such target.
+  Confirm the target exists (`grep -n '^[target]:' Makefile`) or run the `.sh`.
 - The user's macOS package manager is MacPorts, NOT Homebrew. Use `port`,
   never `brew`, in suggested commands.
 - A background (non-TTY) Claude Code session's Bash cannot run `sudo` (no
