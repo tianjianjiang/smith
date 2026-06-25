@@ -146,6 +146,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
 
+<!-- Communication -->
+<skill name="smith-slack" description="Slack drafting discipline: pre-send gate (draft-not-send, attribution footnote, evidence URLs, no formatting, confirm-before-send)">`@smith-slack/SKILL.md`</skill>
+
 <!-- Other -->
 <skill name="smith-prompts" description="Prompt engineering">`@smith-prompts/SKILL.md`</skill>
 <skill name="smith-xml" description="XML tag patterns for AI">`@smith-xml/SKILL.md`</skill>
@@ -186,6 +189,7 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md`
+**Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
 **Hiring**: Resume/CV screening, candidate grading, hands-on/IC vs PM/lead judgment, scout/ATS batch review → `@smith-hiring/SKILL.md`
 
