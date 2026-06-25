@@ -247,6 +247,7 @@ platform-specific patterns.
 - `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
 - `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard
 - `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule
+- `@smith-settings/SKILL.md` - settings.json scope + convention-validator hook recipe
 
 </related>
 
