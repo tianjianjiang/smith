@@ -31,6 +31,8 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - NEVER use `pytest -m "not integration"` if folder structure is mirrored (import conflicts)
 - NEVER write implementation before tests
 - NEVER skip running tests after changes
+- NEVER mock the branch/unit under test — mock only true external boundaries (LLM, network, DB, clock). A test that mocks the code path it claims to cover is a false green (the test-masking trap, the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
+- NEVER write the test to fit the fix. For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing
 
 </forbidden>
 
@@ -38,7 +40,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 **Unit**:
 - Location: `tests/unit/`
-- Characteristics: Mock dependencies, fast
+- Characteristics: Mock dependencies (external boundaries only — never the unit under test; see Forbidden), fast
 
 **Integration**:
 - Location: `tests/integration/`
@@ -46,6 +48,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 ## TDD Workflow
 
+0. **Bugfix only**: reproduce the real failure as a failing regression test first (drive the real code path; mock only true externals) — see `@smith-validation/SKILL.md` Bugfix Discipline
 1. **Understand**: Read existing test patterns
 2. **Design**: Write failing tests defining expected behavior
 3. **Implement**: Write minimal code to pass tests
@@ -85,6 +88,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 - `@smith-python/SKILL.md` - Python testing patterns (pytest functions)
 - `@smith-playwright/SKILL.md` - Playwright failure monitoring
 - `@smith-dev/SKILL.md` - Development workflow (quality gates)
+- `@smith-validation/SKILL.md` - Bugfix Discipline: trace the real path, reproduce first
 - @smith-principles/SKILL.md - Core principles
 
 </related>
