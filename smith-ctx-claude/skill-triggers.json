@@ -24,6 +24,12 @@
     { "pattern": "\\b(grill|stress[ -]?test|challenge this|socratic|devil'?s advocate)\\b", "skills": ["smith-dialectic"], "why": "dialectic / stress-test" },
     { "pattern": "\\b(resume|\\bCV\\b|candidate|screening|hiring|job applicant)\\b", "skills": ["smith-hiring"], "why": "hiring / resume screening" },
     { "pattern": "\\b(SKILL\\.md|AGENTS\\.md|progressive disclosure|skill authoring|write a skill)\\b", "skills": ["smith-skills"], "why": "skill authoring" },
-    { "pattern": "\\b(latest version|best practice|which library|up to date)\\b", "skills": ["smith-research", "smith-validation"], "why": "research before recommending" }
+    { "pattern": "\\b(latest version|best practice|which library|up to date)\\b", "skills": ["smith-research", "smith-validation"], "why": "research before recommending" },
+    { "pattern": "\\b(multi-?round review|review .{0,20}converg|until convergence)\\b", "skills": ["smith-review", "smith-ship"], "why": "review to convergence" },
+    { "pattern": "\\bship (it|this|the change|end-to-end)\\b", "skills": ["smith-ship"], "why": "ship pipeline" },
+    { "pattern": "\\bstacked branches\\b|\\bstack of branches\\b|/smith-stack\\b", "skills": ["smith-stack"], "why": "stacked-PR pipeline command" },
+    { "pattern": "\\b(session checkpoint|checkpoint the session|save .{0,15}memor|all 3 memories)\\b", "skills": ["smith-checkpoint"], "why": "memory checkpoint" },
+    { "pattern": "\\b(multi-?source investigation|recon (?:the )?(?:topic|sources)|investigate across (?:notion|slack|jira|sources)|sweep (?:the )?sources)\\b", "skills": ["smith-recon"], "why": "guided multi-source investigation" },
+    { "pattern": "\\b(create .{0,12}(?:ticket|sub-?task)|jira (?:ticket|issue))\\b", "skills": ["smith-tickets"], "why": "Jira ticket creation" }
   ]
 }

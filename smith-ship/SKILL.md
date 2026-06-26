@@ -1,7 +1,6 @@
 ---
 name: smith-ship
-description: User-invoked ship pipeline — review a worktree change to convergence, then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup. Invoke with /smith-ship when you want to ship the current change end-to-end.
-disable-model-invocation: true
+description: Ship pipeline — review a worktree change to convergence, then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup. Invoke with /smith-ship when you want to ship the current change end-to-end.
 argument-hint: [scope or PR title]
 allowed-tools: Bash(git *), Bash(gh *)
 ---
@@ -28,10 +27,11 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 1. **Isolate** — if not already in a worktree and this is a background session,
    `EnterWorktree` first (see `@smith-worktree`); rename the branch to the
    `@smith-style` convention before any push.
-2. **Review to convergence** — run the `/smith-review` loop (smith review
-   skills + `/code-review` + CodeRabbit). Iterate until a clean round (0
-   actionable); treat each return as a claim and verify against the diff. Cost
-   guard: bounded reviewers, no blind subagent fan-out.
+2. **Review to convergence** — run the `/smith-review` loop, which marshals ALL
+   relevant smith review skills AND Claude Code review plugins/skills (not just
+   one tool). Multi-round until a clean round (0 actionable); treat each return
+   as a claim and verify against the diff. Cost guard: bounded PER ROUND and
+   verify findings — never "use fewer tools".
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
    body ≤72/line, `Co-Authored-By` trailer. One concern per commit.
 4. **Push & PR** — push the renamed branch; `gh pr create --base <default>
