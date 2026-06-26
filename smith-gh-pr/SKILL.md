@@ -148,6 +148,21 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 </required>
 
+## Approving a PR by command
+
+<required>
+
+- `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
+  write under the user's account: authorization-gate first (state intent; user
+  can interrupt), attribute "on behalf of @user" in the body.
+- It **returns silently on success** (no output is normal, not a failure).
+  ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
+  and confirm the user shows `APPROVED` in `reviews`.
+- `reviewDecision` is **empty when the repo has no required-review branch
+  protection** computing a gate — that is expected, not a missing approval.
+
+</required>
+
 ## Fetching Review Comments
 
 <required>
