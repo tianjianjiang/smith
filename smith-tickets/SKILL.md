@@ -1,7 +1,6 @@
 ---
 name: smith-tickets
-description: User-invoked ticket creation by convention — create Jira issues/sub-tasks in Job Story form, Japanese description, under the correct parent Epic, after reading the relevant context. Invoke with /smith-tickets.
-disable-model-invocation: true
+description: Ticket creation by convention — create Jira issues/sub-tasks in Job Story form, Japanese description, under the correct parent Epic, after reading the relevant context. Invoke with /smith-tickets.
 argument-hint: [work to ticket]
 ---
 
