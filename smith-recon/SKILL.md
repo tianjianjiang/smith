@@ -11,6 +11,11 @@ evidence-linked brief. Designed to be GUIDED and CHEAP — it asks scope before
 sweeping, rather than blindly firing a large subagent fleet (costly and
 low-quality). Argument = the topic/question.
 
+A common case is resuming a work thread: `/smith-recon "resume my work thread on
+«topic/ticket»: pull the tracker issue, any open stacked PRs, related docs, and
+chat references, then brief where I left off"`. The sources below already cover
+this — no separate "resume" command is needed.
+
 ## Procedure
 
 1. **Scope first (ask)** — use AskUserQuestion to confirm: (a) which sources to
