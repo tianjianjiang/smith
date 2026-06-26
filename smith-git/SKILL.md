@@ -1,6 +1,6 @@
 ---
 name: smith-git
-description: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, rebasing, or worktree operations. Covers GPG signing, atomic commits, worktree patterns, and safety flags.
+description: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, rebasing, or raw `git worktree` commands. Covers GPG signing, atomic commits, raw worktree patterns, and safety flags. For the Claude Code worktree tools (EnterWorktree/ExitWorktree) see smith-worktree.
 ---
 
 # Git Workflow Gotchas
