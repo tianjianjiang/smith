@@ -1,6 +1,6 @@
 ---
 name: smith-worktree
-description: Claude Code worktree tooling — EnterWorktree/ExitWorktree, the bgIsolation guard, worktree.baseRef, branch-naming gotcha, and the squash-merge sync protocol.
+description: Claude Code worktree TOOLS — EnterWorktree/ExitWorktree, the bgIsolation guard, worktree.baseRef, the branch-naming gotcha, and the squash-merge sync protocol. Use when invoking EnterWorktree/ExitWorktree, hitting the bgIsolation guard, or cleaning up after a worktree-based PR merge. For raw `git worktree` commands see smith-git.
 ---
 
 # Claude Code Worktree Tooling
