@@ -1,6 +1,6 @@
 ---
 name: smith-ctx
-description: Universal context management with proactive recommendations. Agent checks context levels and recommends context resets to users. Always active as foundation for context optimization.
+description: Universal context-management foundation — proactive context-level checks and reset recommendations. Use when context usage grows high, when deciding whether to /clear or /compact, or when choosing what to retain across a context reset.
 ---
 
 # Context Management
