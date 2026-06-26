@@ -168,6 +168,14 @@ tool already records invocation.
 
 <!-- Hiring -->
 <skill name="smith-hiring" description="Hands-on IC engineer resume/CV screening: 4-gate rubric, evidence-quoting procedure, submission safety">`@smith-hiring/SKILL.md`</skill>
+
+<!-- Commands (user-invoked /name; disable-model-invocation, never auto-loaded) -->
+<skill name="smith-ship" description="/smith-ship — review-to-convergence then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup">`@smith-ship/SKILL.md`</skill>
+<skill name="smith-review" description="/smith-review — multi-round local worktree review until convergence (no shipping)">`@smith-review/SKILL.md`</skill>
+<skill name="smith-stack" description="/smith-stack — atomic stacked branches in separate worktrees → review each → stacked PRs">`@smith-stack/SKILL.md`</skill>
+<skill name="smith-checkpoint" description="/smith-checkpoint — save session state to all 3 memory systems in their formats">`@smith-checkpoint/SKILL.md`</skill>
+<skill name="smith-recon" description="/smith-recon — guided, bounded multi-source investigation; asks sources, cross-verifies, evidence-linked brief">`@smith-recon/SKILL.md`</skill>
+<skill name="smith-tickets" description="/smith-tickets — create Jira tickets by convention (Job Story, Japanese desc, correct parent Epic)">`@smith-tickets/SKILL.md`</skill>
 </available_skills>
 
 ## Semantic Activation
