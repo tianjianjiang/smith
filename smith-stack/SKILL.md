@@ -1,7 +1,6 @@
 ---
 name: smith-stack
-description: User-invoked stacked-PR pipeline — split work into logically/semantically atomic stacked branches in separate worktrees, review each to convergence, then push and open stacked PRs. Invoke with /smith-stack.
-disable-model-invocation: true
+description: Stacked-PR pipeline — split work into logically/semantically atomic stacked branches in separate worktrees, review each to convergence, then push and open stacked PRs. Invoke with /smith-stack.
 argument-hint: [feature or scope]
 allowed-tools: Bash(git *), Bash(gh *)
 ---

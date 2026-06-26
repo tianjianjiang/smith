@@ -1,7 +1,6 @@
 ---
 name: smith-checkpoint
-description: User-invoked memory checkpoint — save the current session's durable state into all three memory systems (Serena memory, Basic-Memory note, auto-memory) in their required formats. Invoke with /smith-checkpoint.
-disable-model-invocation: true
+description: Memory checkpoint — save the current session's durable state into all three memory systems (Serena memory, Basic-Memory note, auto-memory) in their required formats. Invoke with /smith-checkpoint.
 argument-hint: [short label]
 ---
 
