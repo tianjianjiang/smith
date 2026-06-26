@@ -59,6 +59,46 @@ A theory is scientific only if it can be proven false:
 
 </context>
 
+## Bugfix Discipline: Trace the Real Path, Reproduce First
+
+<required>
+
+**Before writing ANY bugfix:**
+1. **Trace the real execution path** — from the failing input, follow the
+   source to the EXACT branch that input actually takes. Read the code;
+   follow the return/artifact types. A symptom (error string, stack frame)
+   names a place, not the branch.
+2. **Reproduce with the real input** — run the actual failing case and observe
+   the failure before touching code. Static reading is a hypothesis, not a
+   diagnosis.
+3. **Put the fix on the branch the real input hits** — confirm by re-running
+   the repro that it now passes.
+
+</required>
+
+<forbidden>
+
+- Symptom→fix pattern-match: jumping to a fix (often "reuse this existing
+  helper") from the symptom alone, without tracing the entry point to the real
+  branch.
+- Assuming the error path. The failing input may take a *success* branch (e.g. a
+  function returns an empty *success* artifact, not an error) — verify which
+  branch, never assume.
+- Diagnosis by static reading only: shipping a fix you never reproduced.
+
+</forbidden>
+
+<context>
+
+**The test-masking trap** (SAT-4946, 2026-06): a fix placed in a branch the real
+input never enters, paired with a unit test that *mocks an input* to force that
+branch → green test, live bug. The test fit the fix instead of reproducing the
+bug. Guard both ends: `@smith-tests/SKILL.md` (never mock the branch/unit under
+test; reproduce the bug as a failing test first) and `@smith-subagents/SKILL.md`
+(audit the execution path of a delegated diff, not just its style).
+
+</context>
+
 ## Anti-Workaround Policy
 
 <forbidden>
@@ -229,6 +269,7 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 2. Apply 5 Whys to find root cause, not symptoms
 3. Use Git Bisect for regressions (binary search ~7 commits for 100-commit range)
 4. Run tests with coverage; inspect code paths common to failures
+5. Bugfix? Trace to the real branch and reproduce real input BEFORE fixing
 
 </required>
 
@@ -259,5 +300,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-analysis/SKILL.md` - Reasoning patterns, problem decomposition
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
+- `@smith-tests/SKILL.md` - Reproduce-first; never mock the branch under test
+- `@smith-subagents/SKILL.md` - Audit a delegated diff's execution path
 
 </related>
