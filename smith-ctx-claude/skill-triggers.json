@@ -1,0 +1,29 @@
+{
+  "_comment": "Single source of truth for the skill-router UserPromptSubmit hook. Each rule: pattern (JS regex, matched case-insensitively against the user prompt), skills (smith skill names to surface), why (short label). Mirror of the Semantic Activation map in CLAUDE.md — keep the two in sync (DRY). The hook is ADVISORY: it surfaces candidates; the model still decides and invokes via the Skill tool.",
+  "rules": [
+    { "pattern": "\\b(pull request|PRs?|code ?review|reviewing|gh pr|merge|squash)\\b", "skills": ["smith-gh-pr", "smith-gh-cli", "smith-style"], "why": "PR / review / merge" },
+    { "pattern": "\\b(commit|rebase|cherry-?pick|stash|branch name|branch naming)\\b", "skills": ["smith-git", "smith-style"], "why": "git commit / branch" },
+    { "pattern": "\\b(worktree|EnterWorktree|ExitWorktree|bgIsolation|baseRef)\\b", "skills": ["smith-worktree"], "why": "Claude Code worktree tools" },
+    { "pattern": "\\bstack(?:ed)? PRs?\\b|\\bstack of PRs?\\b", "skills": ["smith-stacks"], "why": "stacked PRs" },
+    { "pattern": "\\b(unit test|integration test|TDD|pytest|test suite|write tests?|failing test|test coverage)\\b", "skills": ["smith-tests"], "why": "testing / TDD" },
+    { "pattern": "\\b(debug|root cause|reproduce|repro\\b|why .{0,20}fail|bug ?fix|fix the bug|stack ?trace|hypothesis|trace the .{0,12}path)\\b", "skills": ["smith-validation"], "why": "debug / bugfix / RCA" },
+    { "pattern": "\\b(?:python|ruff|poetry|uv|type hints?)\\b|\\.py\\b", "skills": ["smith-python"], "why": "Python" },
+    { "pattern": "\\b(?:typescript|vitest|jest|tsconfig|path alias)\\b|\\.tsx?\\b", "skills": ["smith-typescript"], "why": "TypeScript" },
+    { "pattern": "\\bnuxt\\b", "skills": ["smith-nuxt"], "why": "Nuxt" },
+    { "pattern": "\\bplaywright\\b", "skills": ["smith-playwright", "smith-browser_mcp"], "why": "Playwright" },
+    { "pattern": "\\b(chrome-devtools|chrome for testing|browser mcp)\\b", "skills": ["smith-browser_mcp"], "why": "browser MCP" },
+    { "pattern": "\\bslack\\b", "skills": ["smith-slack"], "why": "Slack" },
+    { "pattern": "\\b(execute the plan|load the plan|run the plan|implement the plan|plan mode)\\b", "skills": ["smith-plan", "smith-plan-claude"], "why": "plan execution" },
+    { "pattern": "/loop\\b|/schedule\\b|\\b(?:ScheduleWakeup|cron|recurring|polling|poll for|every \\d+ ?(?:m|min|mins|minutes|h|hr|hours))\\b", "skills": ["smith-automation"], "why": "automation / scheduling" },
+    { "pattern": "\\b(subagent|sub-agent|spawn|delegate|parallel agents|fan ?out|orchestrat)\\b", "skills": ["smith-subagents"], "why": "subagents / delegation" },
+    { "pattern": "\\b(?:settings\\.json|defaultMode|permission|allowlist)\\b|\\.claude/settings", "skills": ["smith-settings", "smith-ctx-claude"], "why": "settings / config" },
+    { "pattern": "\\b(?:claude[- ]?code hooks?|hook (?:event|matcher|script)|(?:pre|post)tooluse|sessionstart|userpromptsubmit|sessionend|stop hook)\\b", "skills": ["smith-ctx-claude", "smith-settings"], "why": "Claude Code hooks" },
+    { "pattern": "\\b(?:mcp server|mcp setup|install .{0,8}mcp)\\b|\\.mcp\\.json", "skills": ["smith-tools", "smith-research", "smith-validation"], "why": "MCP setup" },
+    { "pattern": "\\b(auto-?mode|classifier|hard_deny|force ?push)\\b", "skills": ["smith-auto_mode"], "why": "auto-mode classifier" },
+    { "pattern": "\\b(architecture|design pattern|SOLID|refactor)\\b", "skills": ["smith-design"], "why": "design / architecture" },
+    { "pattern": "\\b(grill|stress[ -]?test|challenge this|socratic|devil'?s advocate)\\b", "skills": ["smith-dialectic"], "why": "dialectic / stress-test" },
+    { "pattern": "\\b(resume|\\bCV\\b|candidate|screening|hiring|job applicant)\\b", "skills": ["smith-hiring"], "why": "hiring / resume screening" },
+    { "pattern": "\\b(SKILL\\.md|AGENTS\\.md|progressive disclosure|skill authoring|write a skill)\\b", "skills": ["smith-skills"], "why": "skill authoring" },
+    { "pattern": "\\b(latest version|best practice|which library|up to date)\\b", "skills": ["smith-research", "smith-validation"], "why": "research before recommending" }
+  ]
+}
