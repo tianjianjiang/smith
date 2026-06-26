@@ -158,6 +158,17 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - Report what was not verified
 - Distinguish confirmed results from assumptions
 
+**Close gaps — don't just disclose them:**
+- A discovered gap (sampled subset, unscanned source, unverified claim) MUST be
+  closed with full coverage before you conclude. Disclosing "I only checked X"
+  is NOT completion — it is a TODO, not a result.
+- If full coverage is genuinely cost-prohibitive, quantify the uncovered
+  remainder and get user agreement on the reduced scope BEFORE concluding.
+- For corpus / log / history analysis, prefer a deterministic full scan (script
+  the census; report the total denominator + exact counts) over sampling. See
+  `@smith-analysis/SKILL.md` (MECE: collectively exhaustive) and
+  `@smith-research`/`@smith-validation` (verify and exhaust before asserting).
+
 For stack operations, see `@smith-stacks/SKILL.md` Stack Scope Verification
 and `smith-stacks/scripts/verify-stack-scope.sh`.
 
@@ -166,7 +177,8 @@ and `smith-stacks/scripts/verify-stack-scope.sh`.
 <forbidden>
 
 - NEVER report work as "done" without verification
-- NEVER process a subset without noting omissions
+- NEVER treat disclosing a subset as a substitute for closing the gap
+- NEVER conclude on sampled data when a full scan is feasible
 - NEVER assume partial completion equals full completion
 - NEVER silently skip items with empty or unexpected results
 
