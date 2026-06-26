@@ -69,25 +69,32 @@ avoid duplicating the force-loaded source.
 
 <required>
 
-**Before each task**:
-1. Identify which skills apply
-2. Read the skill files using tools
-3. Report using notification format below
-4. Unload after 5 turns unused
+**Skills auto-trigger by their frontmatter `description`** — the native Claude
+Code mechanism. The `skill-router` UserPromptSubmit hook
+(`@smith-ctx-claude/scripts/skill-router.mjs`, table `skill-triggers.json`)
+deterministically surfaces candidate skills from your input every prompt as a
+safety net.
+
+**When a trigger fires, invoke the skill via the Skill tool** — that loads its
+SKILL.md for you. Read a SKILL.md by hand only to quote or edit it, never as a
+substitute for invoking.
+
+No "identify → Read → unload" bookkeeping: it depended on model discipline and
+was ~0% executed in practice (smith-* skills almost never loaded; the router
+hook replaces it). See `@smith-ctx-claude/SKILL.md`.
 
 </required>
 
-## Skill Notification Format
+## Skill Notification (optional)
 
-<required>
+<context>
 
-ALWAYS notify on skill state changes using format: `{Action}: @{skill-name} ({reason})`
+When a skill materially shapes your approach, one short line suffices:
+`using @skill-name (reason)`. The former "ALWAYS notify on every state change"
+ceremony is dropped — it was unenforceable (~8% real compliance) and the Skill
+tool already records invocation.
 
-Actions: `Skills loaded`, `Activated`, `Loaded`, `Unloaded`
-
-Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on one line.
-
-</required>
+</context>
 
 ## Proactive Context Management
 
@@ -167,7 +174,9 @@ Format: short names (omit `/SKILL.md`), reason in parentheses, group multiple on
 
 <required>
 
-**Load on task match, unload after 5 turns unused**:
+**Human-readable mirror of `@smith-ctx-claude/skill-triggers.json` (the
+skill-router hook's table — keep the two in sync). On a task match, invoke the
+skill via the Skill tool:**
 
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
