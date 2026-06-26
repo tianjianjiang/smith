@@ -42,6 +42,11 @@ description: Subagent spawning and return discipline — read-only by default, r
 - Acting on a subagent's summary without re-reading the current state of what
   it described.
 - Assuming a subagent saw your conventions because you follow them.
+- Rubber-stamping a delegated diff on style/quality alone. "Implementation
+  is high quality" is NOT verification — audit the EXECUTION PATH: does the
+  fix run on the real failing input? (SAT-4946: a delegated workflow's
+  clean-looking diff fixed a dead branch. See `@smith-validation/SKILL.md`
+  Bugfix Discipline.)
 
 </forbidden>
 
@@ -72,6 +77,8 @@ description: Subagent spawning and return discipline — read-only by default, r
 - Verify-from-source applies to returns too: if a subagent asserts a label or
   mechanism, confirm against the actual file/doc before you rely on it (see
   @smith-guidance/SKILL.md Honest).
+- For a delegated fix/diff, audit the execution path — trace that the change
+  runs on the real failing input — not just its style or quality.
 
 </context>
 
@@ -95,6 +102,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - `@smith-ralph/SKILL.md` - Iterative orchestration patterns
 - `@smith-skills/SKILL.md` - Subagents don't auto-load skills; pass rules inline
 - `@smith-worktree/SKILL.md` - Isolate parallel file-mutating subagents
+- `@smith-validation/SKILL.md` - Audit a delegated diff's execution path
 
 </related>
 
@@ -111,5 +119,6 @@ description: Subagent spawning and return discipline — read-only by default, r
 1. Treat it as a claim — re-read live state for anything it will mutate
 2. Restate the key findings in your own message
 3. Decide and act from the main thread; don't rubber-stamp the summary
+4. Delegated fix? Audit the execution path (real input?), not just style
 
 </required>
