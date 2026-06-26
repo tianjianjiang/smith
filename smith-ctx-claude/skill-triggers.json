@@ -1,5 +1,5 @@
 {
-  "_comment": "Single source of truth for the skill-router UserPromptSubmit hook. Each rule: pattern (JS regex, matched case-insensitively against the user prompt), skills (smith skill names to surface), why (short label). Mirror of the Semantic Activation map in CLAUDE.md — keep the two in sync (DRY). The hook is ADVISORY: it surfaces candidates; the model still decides and invokes via the Skill tool.",
+  "_comment": "Single source of truth for the skill-router UserPromptSubmit hook. Each rule: pattern (JS regex, matched case-insensitively against the user prompt), skills (smith skill names to surface), why (short label). Mirror of the Semantic Activation map in CLAUDE.md — keep the two in sync (DRY). The hook is ADVISORY: it surfaces candidates; the model still decides and invokes via the Skill tool. It sees ONLY the UserPromptSubmit prompt text — never AskUserQuestion answers or tool results; when an instruction arrives via an answer, self-activate the named skills. Patterns are what the USER types (intent), never a skill's own behavior description.",
   "rules": [
     { "pattern": "\\b(pull request|PRs?|code ?review|reviewing|gh pr|merge|squash)\\b", "skills": ["smith-gh-pr", "smith-gh-cli", "smith-style"], "why": "PR / review / merge" },
     { "pattern": "\\b(commit|rebase|cherry-?pick|stash|branch name|branch naming)\\b", "skills": ["smith-git", "smith-style"], "why": "git commit / branch" },
@@ -25,7 +25,7 @@
     { "pattern": "\\b(resume|\\bCV\\b|candidate|screening|hiring|job applicant)\\b", "skills": ["smith-hiring"], "why": "hiring / resume screening" },
     { "pattern": "\\b(SKILL\\.md|AGENTS\\.md|progressive disclosure|skill authoring|write a skill)\\b", "skills": ["smith-skills"], "why": "skill authoring" },
     { "pattern": "\\b(latest version|best practice|which library|up to date)\\b", "skills": ["smith-research", "smith-validation"], "why": "research before recommending" },
-    { "pattern": "\\b(multi-?round review|review .{0,20}converg|until convergence)\\b", "skills": ["smith-review", "smith-ship"], "why": "review to convergence" },
+    { "pattern": "(?:\\b(?:review (?:this |the |my |your )?(?:pr|pull request|diff|change|code)|approve (?:this |the |my )?(?:pr|pull request)|pr review)\\b|/smith-review|/review-pr)", "skills": ["smith-review", "smith-gh-pr"], "why": "review / approve a PR" },
     { "pattern": "\\bship (it|this|the change|end-to-end)\\b", "skills": ["smith-ship"], "why": "ship pipeline" },
     { "pattern": "\\bstacked branches\\b|\\bstack of branches\\b|/smith-stack\\b", "skills": ["smith-stack"], "why": "stacked-PR pipeline command" },
     { "pattern": "\\b(session checkpoint|checkpoint the session|save .{0,15}memor|all 3 memories)\\b", "skills": ["smith-checkpoint"], "why": "memory checkpoint" },

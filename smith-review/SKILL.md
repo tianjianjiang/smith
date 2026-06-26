@@ -16,6 +16,19 @@ Review-only (no commit/push/merge). For the full pipeline use `/smith-ship`.
 
 ## Procedure
 
+<required>
+
+**Plugin-pass receipt (every round).** A round MUST end with a one-line receipt
+naming each Claude Code review tool and whether it ran:
+`coderabbit [ran/NA] · /code-review [ran/NA] · pr-review-toolkit:review-pr
+[ran/NA] · security-review [ran/NA] · code-simplifier [ran/NA]`. `NA` needs a
+one-word reason (e.g. `NA:docs`). The change is NOT converged until the receipt
+shows every applicable tool ran. Disclosing a skipped tool is not a substitute
+for running it (`@smith-guidance` close-gaps). Resist the bias to "use fewer
+tools".
+
+</required>
+
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
 - smith: `@smith-gh-pr` (Code Review Cycle + Convergence), `@smith-validation`,
@@ -40,6 +53,7 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    iteration as a `/loop`/ralph loop that re-shares the relevant skills + diff
    each round (`@smith-ralph`, `@smith-automation`).
 5. **Converge** — stop on a clean round (0 actionable) or 2 consecutive
-   Info-only rounds. Report findings + verdict in-band.
+   Info-only rounds, AND only once the latest round's plugin-pass receipt shows
+   no applicable tool skipped. Report findings + verdict + the receipt in-band.
 
 Restate the outcome in your own message; do not point at tool output.
