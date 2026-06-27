@@ -104,6 +104,15 @@ Simulates Claude Code's "clear context and auto-accept edits" behavior for plan 
 - Plan mode "clear context" may not fire SessionStart:clear ([#20900](https://github.com/anthropics/claude-code/issues/20900)) -- docs now list `clear` as valid matcher; may be fixed. Preemptive flag ensures auto-resume regardless via inject-plan.sh fallback
 - Tasks are orphaned across session boundaries ([#20797](https://github.com/anthropics/claude-code/issues/20797)) -- todo reconstruction from plan checkboxes is the workaround
 
+### Explain Before ExitPlanMode
+
+The approval modal shows the plan FILE and draws the user's eye away from your
+chat message -- in-message prose is easily missed. So when the plan is
+non-obvious or you want the user to read reasoning first, put the explanation
+(plain text; zh-Hant per user preference) in its OWN turn FIRST, then call
+ExitPlanMode in a LATER turn. Do not bury a substantial explanation in the same
+turn as the ExitPlanMode call.
+
 ### ExitPlanMode Rejection Handling
 
 ExitPlanMode rejection has three scenarios -- handle each differently:

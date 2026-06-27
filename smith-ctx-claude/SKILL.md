@@ -221,7 +221,13 @@ the dialog and can't be relied on to reach the user. Put every
 decision-critical fact (trade-offs,
 recommendation, what each choice commits to) INSIDE the question and option
 fields, never only in the message body. Recommendation goes as the first
-option labelled "… (Recommended)". (Pairs with one-scope-decision-per-turn.)
+option labelled "… (Recommended)".
+
+**One scope decision per turn.** Ask ONE scope/approach decision at a time; do
+not bundle several unrelated decisions into one AskUserQuestion call. A single
+multiSelect for ONE coherent choice (e.g. which sources to sweep) is fine;
+batching distinct decisions is not. (Implementation-phase confirmations that
+follow logically from an approved plan need no re-ask.)
 
 </required>
 
