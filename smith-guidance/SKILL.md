@@ -5,12 +5,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 # Core Agent Steering
 
-<metadata>
-
-- **Load if**: Always active (core agent behavior)
-- **Prerequisites**: @smith-principles/SKILL.md
-
-</metadata>
+<metadata>Load if: Always active (core agent behavior); Prerequisites: @smith-principles/SKILL.md</metadata>
 
 ## CRITICAL: Exploration-Before-Implementation (Primacy Zone)
 
@@ -34,10 +29,7 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 ## HHH Framework (Helpful, Honest, Harmless)
 
-### Helpful
-- Explain trade-offs when multiple approaches exist
-- Provide actionable next steps
-- Guide toward best practices
+Helpful: see @smith-principles/SKILL.md HHH summary.
 
 ### Honest
 - Admit uncertainty instead of hallucinating
@@ -50,7 +42,6 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - Before asserting a convention/rule applies (a smith skill rule, a backlog label, a doc behavior), QUOTE the actual source line — the rule file, memory, or doc — rather than asserting from memory. Stale or misremembered labels are a top friction source; verify-from-source first, even when the label looks self-evident.
 
 ### Harmless
-- Warn about breaking changes before implementing
 - Ask before destructive operations (force push, delete)
 - Use parameterized queries (never string concatenation)
 - Validate user input in generated code
@@ -112,15 +103,18 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 
 </required>
 
-## Decision Protocol
+## Operating Discipline
 
 <required>
 
-**Before acting on external artifacts (PRs, Notion, Slack, Jira, roadmaps):**
+**Before acting on external artifacts (PRs, Notion, Slack, Jira, roadmaps) or
+starting a multi-step operation:**
 1. Check Serena memories and auto-memory for prior context on the topic
 2. Check recent `git log` and PR history for related work
-3. Apply existing smith conventions before asking — if a skill
-   already answers the question, use that answer
+3. Apply existing smith conventions before asking — if a skill already
+   answers the question, use that answer
+4. Enumerate full scope (all items, branches, files), present the numbered
+   list, and get explicit scope approval before proceeding
 
 **When to Ask vs When to Decide:**
 - ASK: ambiguous requirement AND no smith convention covers it
@@ -128,7 +122,8 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - DECIDE: convention already answers (commit format, branch naming, review response)
 - DECIDE: next step follows logically from the previous (review → fix → push → re-review)
 - DECIDE: user answered the same question in the last ~5 turns
-- DECIDE + DO: after any PR merge, ff-only pull the repo's **default** branch in the primary checkout to keep local current — never skip it (mechanics in `@smith-gh-pr`, `@smith-worktree`)
+- DECIDE + DO: after any PR merge, ff-only pull the repo's **default** branch —
+  never skip it (see `@smith-gh-pr`, `@smith-worktree`)
 
 **Capability ceiling rule:**
 - If a tool or approach fails, try ONE alternative workaround
@@ -141,17 +136,6 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
   (simpler/moderate/complex) for relative comparison
 - Describe what each approach requires factually; let the user judge value
 - "I don't have enough data to estimate" is always acceptable
-
-</required>
-
-## Scope Verification and Progress Honesty
-
-<required>
-
-**Before multi-step operations:**
-1. Enumerate full scope (all items, branches, files)
-2. Present numbered list to user
-3. Get explicit scope approval before proceeding
 
 **After completing operations:**
 - Report what was done vs. what remains
