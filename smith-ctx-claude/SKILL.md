@@ -5,17 +5,7 @@ description: Claude Code context management with /clear, /compact mechanics, sto
 
 # Claude Code Context Management
 
-<metadata>
-
-- **Load if**: Using Claude Code, context >50%
-- **Prerequisites**: @smith-ctx/SKILL.md
-- **Companion (Layer 3, read on demand)**: `smith-ctx-claude/REFERENCE.md` —
-  hooks reference, recommended linting hooks, permission modes, agent
-  features + dispatch, /goal, model routing, tool search, plugin discovery,
-  session analytics. Read it only when configuring those surfaces; it is not
-  needed for routine context management.
-
-</metadata>
+<metadata>Load if: Using Claude Code, context >50%; Prerequisites: @smith-ctx/SKILL.md; Companion (Layer 3, read on demand): `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.</metadata>
 
 ## CRITICAL: Context Commands (Primacy Zone)
 
@@ -28,16 +18,12 @@ description: Claude Code context management with /clear, /compact mechanics, sto
 - 50%: Warning - recommend action (summarize or /clear)
 - 60%: Critical - /clear mandatory (stop hook enforced)
 
-**"Summarize from here"** (preserves early context):
-- Access: Esc+Esc (or /rewind) -> select checkpoint -> Summarize
-- Keeps conversation before checkpoint intact
-- Compresses everything after checkpoint into summary
-- Optional: provide focus instructions for the summary
-- Best when early decisions matter but later exploration is verbose
+**"Summarize from here"** preserves context before a checkpoint and compresses
+everything after into a summary; pass focus instructions to steer it (access
+via `/rewind`; full path in ACTION below).
 
-**"/clear"** (full reset, save state first):
-- Stop hook enforced at 60% via `smith-plan-claude`
-- Uses `stop_hook_active` (official best practice)
+**"/clear"** (full reset, save state first): stop hook enforced at 60% via
+`smith-plan-claude` using `stop_hook_active` (official best practice).
 
 </required>
 
@@ -47,24 +33,16 @@ description: Claude Code context management with /clear, /compact mechanics, sto
 
 </forbidden>
 
-## /compact — Mechanics and When to Avoid
+## /compact — When to Avoid
 
 <context>
 
-`/compact` summarizes the **entire** conversation into a model-written
-summary and continues in the **same** session (contrast `/clear`, which wipes
-history). Auto-compact also fires automatically near the context limit unless
-disabled. The `PreCompact` hook fires first (use it to persist state).
-
-**Prefer "Summarize from here" or /clear** because /compact is lossy and
-non-deterministic about what it keeps — you cannot pick the checkpoint, and
-file:line refs / decisions can silently drop. "Summarize from here" lets you
-choose the boundary and give focus instructions; /clear gives a known-clean
-reset after an explicit **Reload with:** block.
-
-If /compact does run (manual or auto): pass focus instructions where the UI
-allows, and treat the result as lossy — re-verify file:line refs and open
-decisions against the repo afterward.
+`/compact` summarizes the **entire** conversation in-place; auto-compact fires
+near the limit unless disabled (`PreCompact` hook runs first — persist state).
+Prefer "Summarize from here" or /clear: /compact is lossy and non-deterministic
+(you cannot pick the checkpoint; file:line refs / decisions can silently drop).
+If it does run, pass focus instructions where allowed and re-verify file:line
+refs + open decisions against the repo afterward.
 
 </context>
 
@@ -95,21 +73,15 @@ cost.
 1. Update plan file with current progress (if active)
 2. Commit current work with detailed message
 3. Save state to Serena memory with `write_memory()`
-4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path if applicable, memory name, resume command)
+4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command)
 
-**Preserved**: Project files, CLAUDE.md, plan files
-**Lost**: All conversation history
+**Preserved**: Project files, CLAUDE.md, plan files. **Lost**: conversation history.
 
 **After `/clear`:**
-1. Plan auto-reloads with todo reconstruction ONLY if a flag file exists (explicit reload intent from enforce-clear or on-plan-exit). State file alone = informational, not auto-resume.
-2. If Serena MCP available: call list_memories(), read relevant memories for session state
+1. Plan auto-reloads with todo reconstruction ONLY if a flag file exists (from enforce-clear or on-plan-exit); state file alone = informational, not auto-resume
+2. If Serena MCP available: list_memories(), read relevant memories
 3. Re-read relevant files as needed
-
-**JSONL state recall (recovery when no memory was saved):** the transcript is
-preserved at `~/.claude/projects/«project-slug»/*.jsonl` and survives /clear
-and compaction. Prior user prompts, decisions, and errors are recoverable from
-it — `ctx_search(sort: "timeline")` indexes it, or grep the JSONL directly.
-Use this to reconstruct intent before asking the user to repeat themselves.
+4. No memory saved? Recover intent from the JSONL transcript — see `smith-ctx-claude/REFERENCE.md` "JSONL State Recall"
 
 </required>
 
@@ -171,19 +143,16 @@ Serena handles continuity.
 
 <context>
 
-Claude Code auto-injects system-reminder blocks in response to events. They look like user messages but are NOT user input — don't treat them as acknowledgements or replies. Common triggers:
+Claude Code auto-injects system-reminder blocks in response to events. They
+look like user messages but are NOT user input — don't treat them as
+acknowledgements or replies. Respond to the underlying event only when action
+is required.
 
-- **Task tools idle nudge** — `TaskCreate`/`TaskUpdate` present but unused
-- **File modification notice** — a touched file changed outside the agent's tool calls
-- **Skills available list** — periodic re-enumeration of Skill entries (informational)
-- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
-- **Auto-memory staleness** — reading a memory flagged old (verify against current code before asserting)
-- **Background task completion** — a `Bash(run_in_background)` task ended
-- **Date change** — local date rolled over
-- **Auto mode active** — session is in auto mode (see `@smith-auto_mode/SKILL.md`)
-- **bg-isolation guard refusal** — first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
-
-Respond to the underlying event only when action is required.
+Events: task-tools idle nudge, file-modification notice, skills-available list,
+plan-mode transitions, auto-memory staleness, background-task completion, date
+change, auto-mode active, bg-isolation guard refusal. Full descriptions (with
+the relevant skill cross-refs) in `smith-ctx-claude/REFERENCE.md`
+"System-Reminder Event Taxonomy".
 
 </context>
 
@@ -195,13 +164,8 @@ Some plugins inject SessionStart hooks that alter behavior for the whole
 session. Account for them; do not mistake their output for a user instruction
 or an error.
 
-- **caveman** — terse output mode (drops articles/filler). Governs PROSE only:
-  commits, PR/issue bodies, code, and Slack drafts stay normal full prose
-  (`@smith-slack`). Auto-clarity already exempts security warnings and
-  multi-step/irreversible sequences — write those in full.
-- **ponytail** — biases to the laziest working solution (stdlib/native first,
-  shortest diff). When the user explicitly asks for the full build, build it —
-  do not re-argue scope. Deliberate simplifications carry a `ponytail:` marker.
+- **caveman** — terse PROSE only; commits, PR/issue bodies, code, Slack drafts stay full prose (`@smith-slack`); its SessionStart hook restates the detail.
+- **ponytail** — biases to the laziest working solution; build the full version when the user asks; its SessionStart hook restates the detail.
 - **context-mode** — sandboxed analysis tools (`ctx_*`). Subprocess/`ctx_execute`
   writes do NOT persist to the host FS — use Write/Edit for real file changes.
   The recurring "vX outdated → /ctx-upgrade" banner is noise, not a failure.
@@ -215,13 +179,11 @@ says "stop caveman" / "stop ponytail" / "normal mode".
 
 <required>
 
-The AskUserQuestion UI surfaces the question text plus each option's label and
-description; surrounding prose in your message may be clipped or hidden beside
-the dialog and can't be relied on to reach the user. Put every
-decision-critical fact (trade-offs,
-recommendation, what each choice commits to) INSIDE the question and option
-fields, never only in the message body. Recommendation goes as the first
-option labelled "… (Recommended)".
+The AskUserQuestion UI surfaces only the question text and each option's label
+and description; surrounding message prose may be hidden. Put every
+decision-critical fact (trade-offs, recommendation, what each choice commits to)
+INSIDE the question and option fields, never only in the body. Recommendation
+goes as the first option labelled "… (Recommended)".
 
 **One scope decision per turn.** Ask ONE scope/approach decision at a time; do
 not bundle several unrelated decisions into one AskUserQuestion call. A single
@@ -265,19 +227,10 @@ platform-specific patterns.
 
 <related>
 
+- `smith-ctx-claude/REFERENCE.md` - Hooks, permission modes, agent features, model routing, moved trigger table + skill catalog (Layer-3 dumps)
 - @smith-ctx/SKILL.md - Universal context strategies
-- `smith-ctx-claude/REFERENCE.md` - Hooks, permission modes, agent features, model routing (Layer-3 dumps)
-- `@smith-ctx-cursor/SKILL.md` - Cursor IDE context
-- `@smith-ctx-kiro/SKILL.md` - Kiro platform context
-- `@smith-plan-claude/SKILL.md` - Plan-specific hooks
-- `@smith-ralph/SKILL.md` - Orchestration patterns (B/C)
-- `@smith-git/SKILL.md` - Git commits, worktrees
-- `@smith-prompts/SKILL.md` - Prompt caching optimization
-- `@smith-style/SKILL.md` - Commit conventions, `#WIP` prefix
 - `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
 - `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard
-- `@smith-automation/SKILL.md` - /loop, ScheduleWakeup, Monitor, /schedule
-- `@smith-settings/SKILL.md` - settings.json scope + convention-validator hook recipe
 
 </related>
 

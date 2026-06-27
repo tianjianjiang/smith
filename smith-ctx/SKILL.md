@@ -5,12 +5,7 @@ description: Universal context-management foundation — proactive context-level
 
 # Context Management
 
-<metadata>
-
-- **Load if**: Always active (context management foundation)
-- **Prerequisites**: @smith-guidance/SKILL.md
-
-</metadata>
+<metadata>Load if: Always active (context management foundation); Prerequisites: @smith-guidance/SKILL.md</metadata>
 
 ## CRITICAL: Proactive Context Management (Primacy Zone)
 

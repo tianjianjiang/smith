@@ -5,12 +5,7 @@ description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID, HHH). Use w
 
 # Fundamental Coding Principles
 
-<metadata>
-
-- **Load if**: Always active (foundation for all development)
-- **Prerequisites**: None
-
-</metadata>
+<metadata>Load if: Always active (foundation for all development); Prerequisites: None</metadata>
 
 ## CRITICAL (Primacy Zone)
 

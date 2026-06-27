@@ -5,27 +5,15 @@ description: Universal coding standards for emoji usage, comments, datetime form
 
 # Universal Coding Standards
 
-<metadata>
-
-- **Scope**: Universal coding standards (emoji, comments, datetime)
-- **Load if**: Always active (universal rules for all development)
-- **Prerequisites**: @smith-principles/SKILL.md
-
-</metadata>
+<metadata>Scope: Universal coding standards (emoji, comments, datetime); Load if: Always active (universal rules for all development); Prerequisites: @smith-principles/SKILL.md</metadata>
 
 ## CRITICAL: Universal Rules (Primacy Zone)
 
-<forbidden>
-
-- Decorative emoji in code, logs, or documentation
-- Files without exactly one trailing newline
-
-</forbidden>
-
 <required>
 
-- Self-documenting code over inline comments
-- ISO 8601 timestamps with timezone
+No decorative emoji; exactly one trailing newline; self-documenting code over
+comments; ISO 8601 timestamps with timezone. Full rules below in "Universal
+Code Standards" and "DateTime Standards".
 
 </required>
 
