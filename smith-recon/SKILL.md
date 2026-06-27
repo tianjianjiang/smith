@@ -18,11 +18,13 @@ this — no separate "resume" command is needed.
 
 ## Procedure
 
-1. **Scope first (ask)** — use AskUserQuestion to confirm: (a) which sources to
-   read — jsonl convo history, Serena + Basic-Memory, Notion, Slack, Jira,
-   Google Drive, GitHub; (b) the precise question; (c) depth/breadth and output
-   language (zh-Hant by default per user preference). Do NOT presume the source
-   set.
+1. **Scope first (ask ONE thing)** — the argument is the precise question;
+   output language defaults to zh-Hant (user preference). The single scope
+   decision to ask is **which sources to sweep** — a multiSelect over jsonl
+   convo history, Serena + Basic-Memory, Notion, Slack, Jira, Google Drive,
+   GitHub (one coherent choice, not bundled with other decisions — see
+   `@smith-ctx-claude` one-scope-decision-per-turn). Do NOT presume the source
+   set. Confirm depth/breadth only if the chosen sources leave it ambiguous.
 2. **Plan the sweep** — list the concrete reads per chosen source. Cap fan-out:
    prefer a few targeted reads (and, when iterating, a `/loop`/ralph loop that
    re-shares the relevant smith skills + topic + accumulated context —
