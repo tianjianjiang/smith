@@ -127,6 +127,7 @@ them out.
 - `feat/user-authentication` — multi-word single concept; should be `feat/user_authentication`
 - `feat/auth_login` — hierarchy (login is part of auth); should be `feat/auth-login`
 - `feat/ctx-claude-slash-cmd-rule` — three errors in one: (a) `slash-cmd` should be `slash_command` (multi-word single concept); (b) `cmd` is an unnecessary abbreviation; (c) the separator between scope `ctx-claude` and description should be `_`, not `-`. Correct: `feat/ctx-claude_slash_command_rule`.
+- `fix/auth_post_review` / `fix/auth_after_review` — names the change's ORIGIN (a review round), not the change. Name what it does: `fix/auth_token_expiry`. Never put `post_review`/`post-review`/`after_review` in a branch or commit.
 
 </forbidden>
 

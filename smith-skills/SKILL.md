@@ -86,7 +86,10 @@ any operator's session — never depend on the author's machine:
 
 **SKILL.md** (Agent Skills format):
 - YAML frontmatter (required fields):
-  - `name`: kebab-case, max 64 chars, must match directory name (e.g., `smith-guidance`)
+  - `name`: kebab-case, max 64 chars, must match directory name (e.g.,
+    `smith-guidance`). Use a PRECISE technical term, not a casual one
+    (`smith-dialectic`, not `smith-grill`); match the terse body of
+    existing names (`ctx`, `git`, `plan`, `validation`).
   - `description`: max 1024 chars, starts with noun phrase,
     ends with trigger conditions ("Use when...")
 - YAML frontmatter (optional fields — include only when publishing externally):
