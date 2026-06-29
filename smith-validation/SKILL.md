@@ -90,7 +90,7 @@ A theory is scientific only if it can be proven false:
 
 <context>
 
-**The test-masking trap** (the test-masking trap, 2026-06): a fix placed in a branch the real
+**The test-masking trap** (2026-06): a fix placed in a branch the real
 input never enters, paired with a unit test that *mocks an input* to force that
 branch → green test, live bug. The test fit the fix instead of reproducing the
 bug. Guard both ends: `@smith-tests/SKILL.md` (never mock the branch/unit under
