@@ -31,7 +31,7 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - NEVER use `pytest -m "not integration"` if folder structure is mirrored (import conflicts)
 - NEVER write implementation before tests
 - NEVER skip running tests after changes
-- NEVER mock the branch/unit under test — mock only true external boundaries (LLM, network, DB, clock). A test that mocks the code path it claims to cover is a false green (the test-masking trap, SAT-4946; see `@smith-validation/SKILL.md` Bugfix Discipline)
+- NEVER mock the branch/unit under test — mock only true external boundaries (LLM, network, DB, clock). A test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
 - NEVER write the test to fit the fix. For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing
 
 </forbidden>

@@ -44,7 +44,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - Assuming a subagent saw your conventions because you follow them.
 - Rubber-stamping a delegated diff on style/quality alone. "Implementation
   is high quality" is NOT verification — audit the EXECUTION PATH: does the
-  fix run on the real failing input? (SAT-4946: a delegated workflow's
+  fix run on the real failing input? (the test-masking trap: a delegated workflow's
   clean-looking diff fixed a dead branch. See `@smith-validation/SKILL.md`
   Bugfix Discipline.)
 
