@@ -141,8 +141,11 @@ them out.
    - `_` ← "this is a multi-word single concept" OR "this separates the scope from the description"
 3. If any separator can't be justified — the name is wrong; rename before push.
 4. If the branch name contains an abbreviation, ask: "is the full word ≤15 chars AND not a domain-standard term (`gh`, `pr`, `ci`, `mcp`)? If yes, use the full word."
+5. If the name was not explicitly given by the user, confirm it with them before
+   the first push — don't ship a name you invented without a chance to correct it.
 
-This checklist exists because the same underscore-vs-hyphen mistake has recurred
+This checklist is a blocking gate, not advisory — run it before every first push
+(referenced from `@smith-gh-pr` Pre-PR checklist). It exists because the same underscore-vs-hyphen mistake has recurred
 across multiple PRs (#71/#72 skill names, #80 branch name) — both rounds
 required follow-up fixes. The rule itself was always documented; the failure
 mode was not pausing to apply it before pushing.

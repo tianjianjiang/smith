@@ -44,10 +44,16 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 <required>
 
 **Pre-PR checklist:**
+0. **Review to convergence FIRST** — run `/smith-review` (ALL applicable tools,
+   per-round receipt, clean final round) BEFORE the first push. Do NOT push a
+   code change and then react to one bot afterward — that inverts review-then-push
+   and a single-tool pass (one reviewer alone) is NOT convergence.
 1. Run linter and formatter
 2. Run tests
 3. Rebase onto parent branch (not always main - check stacked PRs)
-4. Push to remote
+4. Run the `@smith-style` pre-push branch-name checklist; if the branch name was
+   not user-specified, confirm it with the user before pushing
+5. Push to remote
 
 </required>
 

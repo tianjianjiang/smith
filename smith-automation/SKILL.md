@@ -148,4 +148,12 @@ For local-machine durable scheduling without a cloud account, use Desktop schedu
 **`ScheduleWakeup` delay:**
 - Active polling 60–270s, idle 1200–1800s, **never 300s**
 
+**Loop / autonomous push discipline:**
+- In a loop or autonomous tick, "ready to merge / PR ready" means review-converged
+  via `/smith-review` (all applicable tools, clean final round) — NOT merely
+  CI-green.
+- Never push the first version of a change from a loop tick without that review
+  pass. A loop must not optimize for green CI by inverting review-then-push into
+  push-then-react-to-one-bot.
+
 </required>
