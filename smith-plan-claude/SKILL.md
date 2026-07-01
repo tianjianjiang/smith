@@ -188,7 +188,7 @@ plan-pending                     <- line 5: type (plan-pending|plan-completed|no
 
 - `PLAN_CONTEXT_WARNING_PCT` (default: `50`) — Advisory warning threshold (% of context window)
 - `PLAN_CONTEXT_CRITICAL_PCT` (default: `60`) — Stop hook blocking threshold (% of context window)
-- `CONTEXT_WINDOW_TOKENS` (default: `200000`) — Fallback context window size; auto-detected from model when possible (Haiku/Sonnet=200K, models with [1m] suffix=1M, others=`$CONTEXT_WINDOW_TOKENS` fallback, default 200K)
+- `CONTEXT_WINDOW_TOKENS` (default: `200000`) — Fallback context window size; auto-detected from model when possible (Haiku and legacy Sonnet ≤4.5=200K, current-gen Sonnet 4.6+/Opus/Fable/Mythos and models with [1m] suffix=1M, others=`$CONTEXT_WINDOW_TOKENS` fallback, default 200K)
 
 ## Serena Memory Convention
 

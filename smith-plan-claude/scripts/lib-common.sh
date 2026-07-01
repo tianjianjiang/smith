@@ -14,16 +14,27 @@ RALPH_STATE_FILENAME="ralph-loop.local.md"
 
 # Map model ID to context window size in tokens.
 # Handles both SessionStart format (with [1m] suffix) and transcript format (without).
-# Flagships (Opus/Fable) default to 1M and the [1m] suffix is authoritative;
-# Haiku/Sonnet have no automatic 1M; unknown IDs fall back to CONTEXT_WINDOW_TOKENS.
-# Ordering matters: the [1m] branch precedes *sonnet* so sonnet[1m] resolves to 1M.
+# Flagships (Opus/Fable/Mythos) are 1M and the [1m] suffix is authoritative;
+# current-gen Sonnet (4.6-4.9, incl. Sonnet 5+) is 1M standard as of the
+# Claude 5 model family (no opt-in needed); Haiku and legacy Sonnet (4.5 and
+# older, incl. undated-minor-version IDs like "claude-sonnet-4-20250514")
+# remain 200K; unknown IDs fall back to CONTEXT_WINDOW_TOKENS.
+# Ordering matters: the [1m] branch precedes the sonnet branches, and the
+# current-gen sonnet branch precedes the generic haiku/sonnet catch-all so
+# e.g. "claude-sonnet-4-6" and "claude-sonnet-5" resolve to 1M while
+# "claude-sonnet-4-5" and "claude-sonnet-4-20250514" still resolve to 200K.
+# The minor-version match is deliberately single-digit ([6-9], not a wider
+# digit range): a wider range would also match the leading digits of a dated
+# base-Sonnet-4 ID's date suffix (e.g. "sonnet-4-20250514" starts with "20"),
+# incorrectly promoting a legacy 200K model to 1M.
 model_to_context_window() {
     local model="${1:-}"
     case "$model" in
-        *\[1[mM]\])         echo 1000000 ;;  # explicit terminal suffix
-        *haiku*|*sonnet*)   echo 200000  ;;  # no automatic 1M
-        *claude-opus-*|*claude-fable-*) echo 1000000 ;;  # flagships -> 1M
-        *)                  echo "${CONTEXT_WINDOW_TOKENS}" ;;  # safe fallback
+        *\[1[mM]\])                    echo 1000000 ;;  # explicit terminal suffix
+        *sonnet-5*|*sonnet-4-[6-9]*)   echo 1000000 ;;  # current-gen Sonnet (4.6-4.9, 5+): 1M standard
+        *haiku*|*sonnet*)              echo 200000  ;;  # Haiku, legacy Sonnet (<=4.5): no automatic 1M
+        *claude-opus-*|*claude-fable-*|*claude-mythos-*) echo 1000000 ;;  # flagships -> 1M
+        *)                             echo "${CONTEXT_WINDOW_TOKENS}" ;;  # safe fallback
     esac
 }
 
