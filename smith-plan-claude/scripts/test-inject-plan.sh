@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 54 scenarios covering:
+# Runs 56 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -63,7 +63,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=54
+TOTAL=56
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -1655,16 +1655,16 @@ else
 fi
 
 # ============================================================================
-# MODEL AUTO-DETECTION TESTS (41-47)
+# MODEL AUTO-DETECTION TESTS (41-48b)
 # ============================================================================
 
 echo ""
 echo "--- Model Auto-Detection Tests ---"
 echo ""
 
-# --- Test 41: Sonnet transcript at 55% -> 200K auto-detected -> returns ~55 ---
-echo "Test 41: Sonnet transcript at 55% -> 200K auto-detected -> returns ~55"
-TRANSCRIPT_41=$(create_transcript_pct 55 "t41" "claude-sonnet-4-6")
+# --- Test 41: Legacy Sonnet transcript at 55% -> 200K auto-detected -> returns ~55 ---
+echo "Test 41: Legacy Sonnet (4.5) transcript at 55% -> 200K auto-detected -> returns ~55"
+TRANSCRIPT_41=$(create_transcript_pct 55 "t41" "claude-sonnet-4-5")
 # Source patched lib-common.sh to call get_context_percentage directly
 PCT_41=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_41")
 if [[ $PCT_41 -ge 54 ]] && [[ $PCT_41 -le 56 ]]; then
@@ -1672,6 +1672,18 @@ if [[ $PCT_41 -ge 54 ]] && [[ $PCT_41 -le 56 ]]; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL (expected ~55%, got ${PCT_41}%)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 41b: Current-gen Sonnet (4.6) transcript at 55% -> 1M auto-detected -> returns ~55 ---
+echo "Test 41b: Current-gen Sonnet (4.6) transcript at 55% -> 1M auto-detected -> returns ~55"
+TRANSCRIPT_41B=$(create_transcript_pct 55 "t41b" "claude-sonnet-4-6")
+PCT_41B=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_41B")
+if [[ $PCT_41B -ge 54 ]] && [[ $PCT_41B -le 56 ]]; then
+    echo "  PASS (got ${PCT_41B}%)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected ~55%, got ${PCT_41B}%)"
     FAIL=$((FAIL + 1))
 fi
 
@@ -1701,8 +1713,8 @@ fi
 
 # --- Test 44: Explicit $2 override bypasses auto-detection ---
 echo "Test 44: Explicit context_window arg bypasses model auto-detection"
-# Create a Sonnet transcript (200K window) but pass 1M explicitly -> should return ~11%
-TRANSCRIPT_44=$(create_transcript_pct 55 "t44" "claude-sonnet-4-6")
+# Create a legacy Sonnet (4.5, 200K window) transcript but pass 1M explicitly -> should return ~11%
+TRANSCRIPT_44=$(create_transcript_pct 55 "t44" "claude-sonnet-4-5")
 PCT_44=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_44" "1000000")
 # 55% of 200K = 110K tokens. 110K / 1M = 11%
 if [[ $PCT_44 -ge 10 ]] && [[ $PCT_44 -le 12 ]]; then
@@ -1740,9 +1752,9 @@ CWD_46_KEY=$(compute_session_key "$CWD_46")
 # Create session model file (as on-session-clear.sh would)
 printf 'claude-opus-4-6[1m]\n' > "$PLANS_DIR/.model-${CWD_46_KEY}"
 
-# Create transcript with Sonnet model at 55% of 200K = 110K tokens
+# Create transcript with legacy Sonnet (4.5) model at 55% of 200K = 110K tokens
 # But since session model has [1m], it should use 1M -> 110K/1M = 11% (below 50% warning)
-TRANSCRIPT_46=$(create_transcript_pct 55 "t46" "claude-sonnet-4-6")
+TRANSCRIPT_46=$(create_transcript_pct 55 "t46" "claude-sonnet-4-5")
 
 # Set up state file
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_46" "$TRANSCRIPT_46" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_46_KEY}"
@@ -1758,14 +1770,19 @@ else
 fi
 rm -f "$PLANS_DIR/.model-${CWD_46_KEY}"
 
-# --- Test 47: model_to_context_window maps [1m] suffix correctly ---
-echo "Test 47: model_to_context_window maps [1m] suffix -> 1M"
+# --- Test 47: model_to_context_window maps [1m] suffix and current-gen Sonnet correctly ---
+echo "Test 47: model_to_context_window maps [1m] suffix, current-gen Sonnet, and legacy models correctly"
 T47_PASS=true
 CTX_1M=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1m]")
 CTX_1M_UPPER=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1M]")
-CTX_SONNET=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-6")
+CTX_SONNET_LEGACY=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-5")
+CTX_SONNET_4_6=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-6")
+CTX_SONNET_4_7=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-7")
+CTX_SONNET_4_DATED=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-20250514")
+CTX_SONNET_5=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-5")
 CTX_HAIKU=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-haiku-4-5-20251001")
 CTX_OPUS=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6")
+CTX_MYTHOS=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-mythos-1")
 if [[ "$CTX_1M" != "1000000" ]]; then
     echo "  [1m] -> expected 1000000, got $CTX_1M"
     T47_PASS=false
@@ -1774,8 +1791,24 @@ if [[ "$CTX_1M_UPPER" != "1000000" ]]; then
     echo "  [1M] -> expected 1000000, got $CTX_1M_UPPER"
     T47_PASS=false
 fi
-if [[ "$CTX_SONNET" != "200000" ]]; then
-    echo "  sonnet -> expected 200000, got $CTX_SONNET"
+if [[ "$CTX_SONNET_LEGACY" != "200000" ]]; then
+    echo "  sonnet-4-5 (legacy) -> expected 200000, got $CTX_SONNET_LEGACY"
+    T47_PASS=false
+fi
+if [[ "$CTX_SONNET_4_6" != "1000000" ]]; then
+    echo "  sonnet-4-6 (current-gen) -> expected 1000000, got $CTX_SONNET_4_6"
+    T47_PASS=false
+fi
+if [[ "$CTX_SONNET_4_7" != "1000000" ]]; then
+    echo "  sonnet-4-7 (current-gen, single-digit range) -> expected 1000000, got $CTX_SONNET_4_7"
+    T47_PASS=false
+fi
+if [[ "$CTX_SONNET_4_DATED" != "200000" ]]; then
+    echo "  sonnet-4-20250514 (dated base Sonnet 4, no minor version -- legacy) -> expected 200000, got $CTX_SONNET_4_DATED"
+    T47_PASS=false
+fi
+if [[ "$CTX_SONNET_5" != "1000000" ]]; then
+    echo "  sonnet-5 (current-gen) -> expected 1000000, got $CTX_SONNET_5"
     T47_PASS=false
 fi
 if [[ "$CTX_HAIKU" != "200000" ]]; then
@@ -1786,6 +1819,10 @@ if [[ "$CTX_OPUS" != "1000000" ]]; then
     echo "  opus (no suffix) -> expected 1000000, got $CTX_OPUS"
     T47_PASS=false
 fi
+if [[ "$CTX_MYTHOS" != "1000000" ]]; then
+    echo "  mythos (flagship) -> expected 1000000, got $CTX_MYTHOS"
+    T47_PASS=false
+fi
 if [[ "$T47_PASS" == "true" ]]; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -1794,8 +1831,8 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# --- Test 48: Plain Sonnet session model -> 200K window -> warning at 55% ---
-echo "Test 48: Plain Sonnet session model -> 200K window triggers warning at 55%"
+# --- Test 48: Plain legacy Sonnet session model -> 200K window -> warning at 55% ---
+echo "Test 48: Plain legacy Sonnet (4.5) session model -> 200K window triggers warning at 55%"
 create_test_plan
 rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
 
@@ -1803,16 +1840,16 @@ CWD_48="$TEST_DIR/worktree-48"
 mkdir -p "$CWD_48"
 CWD_48_KEY=$(compute_session_key "$CWD_48")
 
-# Create session model file with plain Sonnet (no [1m] suffix)
-printf 'claude-sonnet-4-6\n' > "$PLANS_DIR/.model-${CWD_48_KEY}"
+# Create session model file with plain legacy Sonnet (no [1m] suffix, pre-4.6)
+printf 'claude-sonnet-4-5\n' > "$PLANS_DIR/.model-${CWD_48_KEY}"
 
-# Create transcript with Sonnet model at 55% of 200K = 110K tokens
-TRANSCRIPT_48=$(create_transcript_pct 55 "t48" "claude-sonnet-4-6")
+# Create transcript with legacy Sonnet model at 55% of 200K = 110K tokens
+TRANSCRIPT_48=$(create_transcript_pct 55 "t48" "claude-sonnet-4-5")
 
 # Set up state file with plan
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_48" "$TRANSCRIPT_48" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48_KEY}"
 
-# Should trigger context warning (55% >= 50%) because plain Sonnet uses 200K window
+# Should trigger context warning (55% >= 50%) because legacy Sonnet uses 200K window
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48","transcript_path":"'"$TRANSCRIPT_48"'","cwd":"'"$CWD_48"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
     echo "  PASS (warning triggered at 55% of 200K)"
@@ -1822,6 +1859,38 @@ else
     FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"
+
+# --- Test 48b: Plain current-gen Sonnet (4.6) session model -> 1M window -> no false warning ---
+echo "Test 48b: Plain current-gen Sonnet (4.6) session model -> 1M window -> no warning at what used to be 55% of 200K"
+create_test_plan
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+
+CWD_48B="$TEST_DIR/worktree-48b"
+mkdir -p "$CWD_48B"
+CWD_48B_KEY=$(compute_session_key "$CWD_48B")
+
+# Create session model file with plain current-gen Sonnet (no [1m] suffix -- 1M is now standard)
+printf 'claude-sonnet-4-6\n' > "$PLANS_DIR/.model-${CWD_48B_KEY}"
+
+# 11% of the real 1M window = 110K -- the SAME absolute token count as Test 48's
+# 55% of the old, incorrect 200K assumption. Against the correct 1M window this is
+# below the warning threshold.
+TRANSCRIPT_48B=$(create_transcript_pct 11 "t48b" "claude-sonnet-4-6")
+
+# Set up state file with plan
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_48b" "$TRANSCRIPT_48B" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48B_KEY}"
+
+# Should NOT trigger context warning (110K / 1M = 11%, below 50%) now that current-gen
+# Sonnet correctly resolves to its real 1M window instead of the legacy 200K assumption.
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48b","transcript_path":"'"$TRANSCRIPT_48B"'","cwd":"'"$CWD_48B"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if [[ -z "$OUTPUT" ]] || ! echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
+    echo "  PASS (no false warning at 11% of the real 1M window)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (expected no CONTEXT WARNING, got: $(echo "$OUTPUT" | head -3))"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR/.model-${CWD_48B_KEY}"
 
 # --- Test 49: enforce-clear with completed plan writes empty plan path in flag and state ---
 echo "Test 49: enforce-clear + completed plan -> empty plan path in flag and state"
