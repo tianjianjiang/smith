@@ -22,7 +22,6 @@
     { "pattern": "\\b(auto-?mode|classifier|hard_deny|force ?push)\\b", "skills": ["smith-auto_mode"], "why": "auto-mode classifier" },
     { "pattern": "\\b(architecture|design pattern|SOLID|refactor)\\b", "skills": ["smith-design"], "why": "design / architecture" },
     { "pattern": "\\b(grill|stress[ -]?test|challenge this|socratic|devil'?s advocate)\\b", "skills": ["smith-dialectic"], "why": "dialectic / stress-test" },
-    { "pattern": "\\b(resume|\\bCV\\b|candidate|screening|hiring|job applicant)\\b", "skills": ["smith-hiring"], "why": "hiring / resume screening" },
     { "pattern": "\\b(SKILL\\.md|AGENTS\\.md|progressive disclosure|skill authoring|write a skill)\\b", "skills": ["smith-skills"], "why": "skill authoring" },
     { "pattern": "\\b(latest version|best practice|which library|up to date)\\b", "skills": ["smith-research", "smith-validation"], "why": "research before recommending" },
     { "pattern": "(?:\\b(?:review (?:this |the |my |your )?(?:pr|pull request|diff|change|code)|approve (?:this |the |my )?(?:pr|pull request)|pr review)\\b|/smith-review|/review-pr)", "skills": ["smith-review", "smith-gh-pr"], "why": "review / approve a PR" },

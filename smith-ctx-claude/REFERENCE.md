@@ -332,9 +332,6 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-research" description="Research methodology">`@smith-research/SKILL.md`</skill>
 <skill name="smith-skills" description="Skill authoring">`@smith-skills/SKILL.md`</skill>
 
-<!-- Hiring -->
-<skill name="smith-hiring" description="Hands-on IC engineer resume/CV screening: 4-gate rubric, evidence-quoting procedure, submission safety">`@smith-hiring/SKILL.md`</skill>
-
 <!-- Commands (invoke with /name; also auto-trigger on task match) -->
 <skill name="smith-ship" description="/smith-ship — review-to-convergence then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup">`@smith-ship/SKILL.md`</skill>
 <skill name="smith-review" description="/smith-review — multi-round local worktree review until convergence (no shipping)">`@smith-review/SKILL.md`</skill>
@@ -374,7 +371,6 @@ skill via the Skill tool:
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md`
 **Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
-**Hiring**: Resume/CV screening, candidate grading, hands-on/IC vs PM/lead judgment, scout/ATS batch review → `@smith-hiring/SKILL.md`
 **Commands** (user types `/smith-X`, or auto-trigger on task match): ship a change end-to-end → `@smith-ship/SKILL.md`; review-to-convergence only → `@smith-review/SKILL.md`; stacked branches → `@smith-stack/SKILL.md`; save all 3 memories → `@smith-checkpoint/SKILL.md`; guided multi-source investigation → `@smith-recon/SKILL.md`; Jira tickets by convention → `@smith-tickets/SKILL.md`
 
 ## JSONL State Recall (moved from SKILL.md `/clear` section)
