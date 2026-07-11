@@ -39,8 +39,10 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 5. **Address review** — fetch and reply to comments via the `gh pr-review`
    extension (see `@smith-gh-pr`); fix high-confidence findings with **fix +
    amend** (not new commits), reply with SHA + attribution ("on behalf of
-   @<user>"), resolve threads. Re-review after each push. Confirm CodeRabbit
-   actually ran (it fails open) before trusting 0.
+   @<user>"), resolve threads. When a reply proposes a specific code change
+   instead of auto-applying it, embed a committable `suggestion` block (see
+   `@smith-gh-pr` "Posting Review Findings"). Re-review after each push. Confirm
+   CodeRabbit actually ran (it fails open) before trusting 0.
 6. **Merge** — on convergence, `gh pr merge --squash --delete-branch` (targets
    the current branch's PR).
 7. **Sync & clean up** — `ExitWorktree` (remove), then ff-only pull the repo's

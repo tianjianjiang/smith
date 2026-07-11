@@ -86,6 +86,9 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 **Code review response rules:**
 - **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
+- **Propose edits as committable suggestions**: when a reply proposes a specific
+  code change, embed a committable ` ```suggestion ` block (see "Posting Review
+  Findings" below) so the author commits it in one click instead of re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
@@ -111,6 +114,63 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 - NEVER reply to file-inline comments with `gh pr comment` (loses thread context)
 - NEVER mention `@copilot` in replies (triggers unwanted sub-PRs)
+
+</forbidden>
+
+## Posting Review Findings
+
+When Claude Code is the reviewer and an open PR exists (including self-review
+before human review), deliver findings as **inline comments anchored to the
+line(s)**, carrying a **committable `suggestion` block** whenever the fix is
+concrete — not as one PR-level summary comment. With no open PR, report in-band
+(see `@smith-review`).
+
+<required>
+
+- **Anchor to the line(s).** A finding that maps to specific line(s) MUST be an
+  inline review comment on those lines. Reserve PR-level/summary comments for
+  cross-cutting findings with no single anchor (architecture, a missing test
+  file, a cross-module concern).
+- **Carry a committable suggestion when the fix is concrete.** GitHub renders a
+  "Commit suggestion" button from a fenced block tagged `suggestion`; the author
+  applies it in one click. Include one whenever the fix is a mechanical code
+  change. Omit it only when the fix needs design discussion or can't be
+  expressed as a line-range replacement — and say why in the comment.
+- **Replace the whole commented range.** GitHub replaces the commented line(s)
+  with the block's contents verbatim — the block may hold more or fewer lines
+  than the range (a suggestion can add or drop lines). Comment on the full range
+  you intend to replace and put the complete replacement in one block.
+
+**Mechanism (prefer the built-in):**
+
+- `/code-review --comment` — runs the review and posts findings as inline PR
+  comments automatically. Primary path.
+- Manual single inline comment via REST (when hand-authoring one finding):
+
+````shell
+gh api repos/{owner}/{repo}/pulls/{pr}/comments \
+  -f commit_id={headSHA} -f path={file} -F line={n} -f side=RIGHT \
+  -f body=$'Explain the issue briefly.\n\n```suggestion\nfixed line(s) here\n```'
+# Multi-line range: add -F start_line={firstLine} -f start_side=RIGHT
+````
+
+A committable suggestion is just a fenced block inside the comment body:
+
+````text
+```suggestion
+const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
+```
+````
+
+</required>
+
+<forbidden>
+
+- NEVER collapse line-anchorable findings into one PR-level summary comment
+  (loses the anchor and the commit button).
+- NEVER anchor the comment on the wrong range — GitHub replaces exactly the
+  commented line(s) with the block verbatim, so a mis-anchored range edits the
+  wrong lines and corrupts the file.
 
 </forbidden>
 
