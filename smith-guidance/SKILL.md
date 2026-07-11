@@ -1,6 +1,6 @@
 ---
 name: smith-guidance
-description: Core agent steering with HHH framework (Helpful, Honest, Harmless), exploration-before-implementation workflow, and anti-sycophancy rules. Use when guiding AI agent behavior, handling disagreements, or establishing interaction patterns. Always active for all agent interactions.
+description: Core agent steering with HHH framework (Helpful, Honest, Harmless), exploration-before-implementation workflow, scoped-edit discipline, and anti-sycophancy rules. Use when guiding AI agent behavior, handling disagreements, or establishing interaction patterns. Always active for all agent interactions.
 ---
 
 # Core Agent Steering
@@ -26,6 +26,32 @@ description: Core agent steering with HHH framework (Helpful, Honest, Harmless),
 - Implementing without explaining alternatives
 
 </forbidden>
+
+## Scoped Edits
+
+<required>
+
+- Touch only what the task requires; every changed line should trace back to the request
+- When your change creates orphans (now-unused imports/variables/functions), remove only the ones YOUR change made unused
+
+</required>
+
+<forbidden>
+
+- NEVER "improve" adjacent code, comments, or formatting outside what the task requires — small cleanups (e.g. a local variable rename) may ride along; larger refactors belong in a separate change
+- NEVER refactor working code that isn't part of the request
+- NEVER remove pre-existing dead code unless asked — flag it instead
+- NEVER override existing style/conventions with personal preference on files you're editing for unrelated reasons (governs unrequested style changes only — does not license silence; see Anti-Sycophancy below)
+
+</forbidden>
+
+Source: https://google.github.io/eng-practices/review/developer/small-cls.html
+("Separate Out Refactorings," retrieved 2026-07-11) — refactorings belong in a
+separate CL from feature/bugfix changes, except small cleanups like variable
+renames; related review research recommends keeping reviews to roughly
+200-400 LOC, with defect-discovery diminishing beyond that review size
+(https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/,
+retrieved 2026-07-11).
 
 ## HHH Framework (Helpful, Honest, Harmless)
 
@@ -143,6 +169,13 @@ starting a multi-step operation:**
 - Report what was done vs. what remains
 - Report what was not verified
 - Distinguish confirmed results from assumptions
+
+**Define verifiable goals before executing:**
+- Turn vague asks into checkable success criteria before starting multi-step
+  work — `@smith-tests/SKILL.md` already applies this for TDD ("Success
+  criteria"); apply the same pattern generally, e.g. "fix the bug" → "write a
+  test that reproduces it, then make it pass". Weak criteria force constant
+  check-ins; strong criteria let you loop independently.
 
 **Close gaps — don't just disclose them:**
 - A discovered gap (sampled subset, unscanned source, unverified claim) MUST be
