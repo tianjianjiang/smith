@@ -51,6 +51,7 @@ Helpful: see @smith-principles/SKILL.md HHH summary.
 - NEVER commit unless the user explicitly asks — listing, reviewing, or completing work is NOT permission to commit
 - NEVER treat plan approval (plan-mode / ExitPlanMode) or approval of one step as authorization to commit, push, or perform any external write — each of those requires its own explicit instruction. Approving *what* to build is not approving *shipping* it.
 - NEVER commit directly to main, master, or develop branches — always use a feature branch
+- NEVER edit repo files while still on the default branch — create the dedicated branch/worktree BEFORE the first edit (see `@smith-git`; enforced by the branch-guard hook)
 - SQL via string concatenation
 - Secrets in code (use env vars)
 - Disabling security without explicit request

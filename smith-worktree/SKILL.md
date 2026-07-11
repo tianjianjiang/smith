@@ -43,6 +43,14 @@ description: Claude Code worktree TOOLS — EnterWorktree/ExitWorktree, the bgIs
 
 `EnterWorktree({name: "«n»"})` creates `.claude/worktrees/«n»/` on local branch `worktree-«n»`, branched from the ref specified by `worktree.baseRef`. The session's CWD switches into the worktree.
 
+A new worktree starts with a CLEAN tree: uncommitted changes in the current
+checkout never carry over — they stay behind, stranded from the task. The
+`worktree-dirty-guard` PreToolUse hook
+(`smith-ctx-claude/scripts/worktree-dirty-guard.mjs`, registered
+user-globally) blocks `EnterWorktree` while `git status --porcelain` is
+non-empty; resolve deliberately (commit, stash-and-apply inside the worktree,
+or branch in place) before retrying.
+
 - Naming: the `name` param accepts `/`-separated segments; each segment may contain letters, digits, dots, underscores, dashes only. The branch name is always `worktree-«name»` regardless.
 - Base ref (`worktree.baseRef` setting in `~/.claude/settings.json` or repo `.claude/settings.json`):
   - `fresh` (default since v2.1.133) — branches from `origin/«default-branch»`. Ignores local unpushed commits on main.
@@ -82,7 +90,7 @@ The bg-isolation guard catches only built-in `Edit`/`Write` — NOT MCP file ope
 
 <context>
 
-- `fresh` (default) — start from `origin/«default-branch»`. Safe when iterating against an up-to-date main. **Loses** local-only commits that haven't been pushed to origin.
+- `fresh` (default) — start from `origin/«default-branch»`. Safe when iterating against an up-to-date main. **Loses** local-only commits that haven't been pushed to origin — and uncommitted changes are stranded either way (see EnterWorktree Semantics; the dirty-guard hook catches this).
 - `head` — start from local `HEAD`. **Keeps** unpushed commits. Use when the user has staged or committed work locally on main that should carry forward into the worktree.
 
 If `worktree.baseRef` is set in a repo's `.claude/settings.json`, that repo wins over the user-level setting.
@@ -135,6 +143,11 @@ git pull --ff-only
 ## ACTION (Recency Zone)
 
 <required>
+
+**Before any EnterWorktree:**
+- `git status --porcelain` — if non-empty, STOP: commit, stash-and-apply
+  inside the worktree, or branch in place instead. Uncommitted changes never
+  carry into a new worktree (the `worktree-dirty-guard` hook blocks this).
 
 **On bg-isolation guard refusal:**
 1. `EnterWorktree({name: "«short-slug»"})` — any short name works

@@ -20,6 +20,15 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 - MUST GPG sign all commits: `git commit -S -m "..."`
 - MUST keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-stacks/SKILL.md`
 - MUST verify current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase` — confirm it matches the branch you intend to modify
+- MUST create a dedicated branch (+worktree in background sessions, see
+  `@smith-worktree/SKILL.md`) BEFORE the first edit of any repo-file-modifying
+  task — even when no commit is requested. Never start edits on the default
+  branch or on an unrelated dirty branch. Mechanical backstop: the
+  `branch-guard` PreToolUse hook (`smith-ctx-claude/scripts/branch-guard.mjs`,
+  registered user-globally) blocks Edit/Write/NotebookEdit and Serena write
+  tools on non-gitignored files while the repo is on `main`/`master`/`develop`
+  (or its `origin/HEAD` default); per-repo opt-out is
+  `.claude/branch-guard.disabled`.
 
 </required>
 

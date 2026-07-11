@@ -75,6 +75,21 @@ hook replaces it). See `@smith-ctx-claude/SKILL.md`.
 
 </required>
 
+## Guard Hooks
+
+<context>
+
+Two PreToolUse guards ship alongside the router (registered user-globally in
+`~/.claude/settings.json`; registration snippets in README.md "Hooks"):
+`branch-guard` blocks file edits while a repo is on its default branch —
+create the dedicated branch/worktree BEFORE the first edit (rule in
+`@smith-git/SKILL.md`; per-repo opt-out `.claude/branch-guard.disabled`);
+`worktree-dirty-guard` blocks `EnterWorktree` on a dirty checkout because
+uncommitted changes never carry into a new worktree (details in
+`@smith-worktree/SKILL.md`).
+
+</context>
+
 ## Skill Notification
 
 <required>
