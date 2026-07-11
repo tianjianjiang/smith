@@ -41,6 +41,52 @@ ln -sf $HOME/.smith $HOME/.claude/skills
 
 Claude Code discovers skills and offers them based on task context. All skills use "smith-" prefix to avoid conflicts with built-in commands (`/context`, `/ide`, `/skills`, etc.).
 
+### Hooks (manual registration)
+
+Some scripts in this repo are hooks, NOT self-activating skills — they only
+take effect once registered in `$HOME/.claude/settings.json` (see
+`@smith-settings/SKILL.md`). With the skills symlink above in place, add the
+entries below (merge into any existing `hooks` object):
+
+- **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
+  UserPromptSubmit router that surfaces candidate smith skills per prompt from
+  `skill-triggers.json`.
+- **branch-guard** (`smith-ctx-claude/scripts/branch-guard.mjs`) — PreToolUse
+  guard that blocks file edits while a repo is on its default branch
+  (`main`/`master`/`develop`): branch/worktree first. Per-repo opt-out: create
+  `.claude/branch-guard.disabled` in that repo.
+- **worktree-dirty-guard** (`smith-ctx-claude/scripts/worktree-dirty-guard.mjs`)
+  — PreToolUse guard that blocks `EnterWorktree` while the checkout has
+  uncommitted changes (they would not carry into the new worktree).
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-router.mjs\"" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit|mcp__(plugin_serena_)?serena__(replace_content|replace_symbol_body|replace_in_files|insert_after_symbol|insert_before_symbol|safe_delete_symbol|rename_symbol|create_text_file)",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-guard.mjs\"" }
+        ]
+      },
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/worktree-dirty-guard.mjs\"" }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ## Structure
 
 ```text

@@ -24,8 +24,15 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 `@smith-style/SKILL.md`, `@smith-worktree/SKILL.md`, and
 `@smith-subagents/SKILL.md`.
 
-1. **Isolate** — if not already in a worktree and this is a background session,
-   `EnterWorktree` first (see `@smith-worktree`); rename the branch to the
+1. **Isolate** — check `git status --porcelain` FIRST: if the checkout is
+   dirty, STOP and pick ONE path: (a) commit or stash the changes, then
+   `EnterWorktree`; or (b) branch in place (`git switch -c …`) and continue in
+   the current checkout — no `EnterWorktree` at all (the tree is still dirty
+   and the `worktree-dirty-guard` hook would block it; a new worktree starts
+   clean, stranding uncommitted changes). `worktree.baseRef: head` only
+   preserves already-committed unpushed work, never uncommitted changes.
+   Then, if on the EnterWorktree path in a background session, enter the
+   worktree (see `@smith-worktree`) and rename the branch to the
    `@smith-style` convention before any push.
 2. **Review to convergence** — run the `/smith-review` loop, which marshals ALL
    relevant smith review skills AND Claude Code review plugins/skills (not just
