@@ -1,3 +1,0 @@
-# Local-only secret leak guard (skill + hooks + denylist). Never published:
-# the denylist names internal tokens that must not reach this public repo.
-smith-secret-guard/
