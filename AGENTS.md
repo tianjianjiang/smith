@@ -75,16 +75,16 @@ hook replaces it). See `@smith-ctx-claude/SKILL.md`.
 
 </required>
 
-## Skill Notification (optional)
+## Skill Notification
 
-<context>
+<required>
 
-When a skill materially shapes your approach, one short line suffices:
-`using @skill-name (reason)`. The former "ALWAYS notify on every state change"
-ceremony is dropped — it was unenforceable (~8% real compliance) and the Skill
-tool already records invocation.
+ALWAYS emit one line per skill invocation, in the message where it shapes your
+work: `using @skill-name (reason)`. Group multiple skills on one line. This is
+the user's only in-conversation visibility into which skills actually loaded —
+do not skip it because the Skill tool already logs the call.
 
-</context>
+</required>
 
 ## Proactive Context Management
 
