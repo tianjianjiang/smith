@@ -56,4 +56,16 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    Info-only rounds, AND only once the latest round's plugin-pass receipt shows
    no applicable tool skipped. Report findings + verdict + the receipt in-band.
 
+**Delivery when a PR exists.** If the change under review already has an open PR
+and findings are being posted to it:
+- findings that map to specific line(s) are inline comments anchored to those
+  lines — prefer `/code-review --comment` — with a committable `suggestion`
+  block for concrete code changes, per `@smith-gh-pr` "Posting Review Findings";
+- non-code findings that still map to specific lines stay inline without a
+  suggestion block;
+- cross-cutting or otherwise non-representable findings (architecture, a missing
+  test file) use a PR-level comment.
+
+Without an open PR, line-local review-only findings are reported in-band.
+
 Restate the outcome in your own message; do not point at tool output.
