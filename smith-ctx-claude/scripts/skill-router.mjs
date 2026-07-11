@@ -89,7 +89,11 @@ function main() {
     });
     if (fresh.length === 0) continue;
     fresh.forEach((s) => seenSkills.add(s));
-    matched.push({ why: rule.why || "match", skills: fresh });
+    matched.push({
+      why: rule.why || "match",
+      skills: fresh,
+      note: typeof rule.note === "string" ? rule.note.trim() : "",
+    });
     if (matched.length >= MAX_RULES_SHOWN) break;
   }
 
@@ -98,9 +102,13 @@ function main() {
   const lines = matched.map(
     (m) => `- ${m.why} -> ${m.skills.map((s) => "@" + s).join(", ")}`,
   );
+  // A rule may carry a deterministic reminder (its `note`) beyond the skill
+  // list — e.g. dev-initiation prompts get the branch-first rule verbatim.
+  const notes = matched.filter((m) => m.note).map((m) => `- note: ${m.note}`);
   const additionalContext = [
     "Skill router (deterministic hook): your input matches these smith skills —",
     ...lines,
+    ...notes,
     "Invoke the relevant one via the Skill tool (or Read its SKILL.md). Candidates, not commands.",
   ].join("\n");
 

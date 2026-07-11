@@ -352,7 +352,8 @@ skill via the Skill tool:
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
   Playwright → `@smith-playwright/SKILL.md`
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation OR browser MCP launch failure → `@smith-browser_mcp/SKILL.md`
-**Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`
+**Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
+  Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `Monitor`, polling for external state → `@smith-automation/SKILL.md`
@@ -371,7 +372,7 @@ skill via the Skill tool:
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md`
 **Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
-**Commands** (user types `/smith-X`, or auto-trigger on task match): ship a change end-to-end → `@smith-ship/SKILL.md`; review-to-convergence only → `@smith-review/SKILL.md`; stacked branches → `@smith-stack/SKILL.md`; save all 3 memories → `@smith-checkpoint/SKILL.md`; guided multi-source investigation → `@smith-recon/SKILL.md`; Jira tickets by convention → `@smith-tickets/SKILL.md`
+**Commands** (user types `/smith-X`, or auto-trigger on task match): ship a change end-to-end (also "commit and push", "open/create a PR") → `@smith-ship/SKILL.md`; review-to-convergence only → `@smith-review/SKILL.md`; stacked branches → `@smith-stack/SKILL.md`; save all 3 memories → `@smith-checkpoint/SKILL.md`; guided multi-source investigation → `@smith-recon/SKILL.md`; Jira tickets by convention → `@smith-tickets/SKILL.md`
 
 ## JSONL State Recall (moved from SKILL.md `/clear` section)
 
