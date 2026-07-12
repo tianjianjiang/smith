@@ -63,7 +63,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 8. Re-check for new comments after CI passes
 
 **Code review response rules:**
-- **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
+- **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
 - **Propose edits as committable suggestions**: when a reply proposes a specific
   code change, embed a committable ` ```suggestion ` block (see "Posting Review
   Findings" below) so the author commits it in one click instead of re-typing.
