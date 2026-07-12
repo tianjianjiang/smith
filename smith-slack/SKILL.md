@@ -32,7 +32,8 @@ every revision — a single miss is a repeat-correction.**
    hyperlink that exact title.
 4. **No formatting** — plain prose with bare identifiers and paths only; no
    bold, italic, backticks, or code blocks. (Links and mentions below are NOT
-   formatting and ARE required.)
+   formatting and ARE required; the `> ` blockquote used to quote what you're
+   replying to is NOT formatting either and IS required when quoting.)
 5. **Confirm before send** — present the draft and wait for user confirmation.
    Draft means draft: do not consider it sent until the user says so.
 6. **Outbound text stays clean** — keep internal metadata and scratch
