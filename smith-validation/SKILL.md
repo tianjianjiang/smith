@@ -5,25 +5,15 @@ description: Hypothesis testing, root cause analysis, and debugging techniques. 
 
 # Verification Techniques
 
-<metadata>
-
-- **Scope**: Hypothesis testing, root cause analysis, and verification
-- **Load if**: Bug reported, test failure, proving correctness, root cause analysis
-- **Prerequisites**: @smith-guidance/SKILL.md
-
-</metadata>
-
-<context>
+**Scope:** Hypothesis testing, root cause analysis, and verification
+**Load if:** Bug reported, test failure, proving correctness, root cause analysis
+**Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Based on PDSA's Study phase (Deming) and Popper's Falsification - understanding WHY something works or doesn't, not just IF it works.
 
 **When to use**: Debugging, testing hypotheses, validating solutions, proving correctness.
 
-</context>
-
 ## Hypothesis Testing
-
-<context>
 
 ### Strong Inference
 
@@ -57,38 +47,21 @@ A theory is scientific only if it can be proven false:
 
 **Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check. (Triggered 2026-06: proposed two Slack-MCP OAuth setups as if they'd work; both failed; a 30-second search would have found the closed-as-not-planned regression that made the whole route impossible.)
 
-</context>
-
 ## Bugfix Discipline: Trace the Real Path, Reproduce First
-
-<required>
 
 **Before writing ANY bugfix:**
 1. **Trace the real execution path** — from the failing input, follow the
    source to the EXACT branch that input actually takes. Read the code;
    follow the return/artifact types. A symptom (error string, stack frame)
-   names a place, not the branch.
+   names a place, not the branch. Don't pattern-match a fix (often "reuse
+   this existing helper") from the symptom alone. Never assume the error
+   path — the input may take a *success* branch instead (e.g. a function
+   returns an empty *success* artifact, not an error).
 2. **Reproduce with the real input** — run the actual failing case and observe
    the failure before touching code. Static reading is a hypothesis, not a
    diagnosis.
 3. **Put the fix on the branch the real input hits** — confirm by re-running
    the repro that it now passes.
-
-</required>
-
-<forbidden>
-
-- Symptom→fix pattern-match: jumping to a fix (often "reuse this existing
-  helper") from the symptom alone, without tracing the entry point to the real
-  branch.
-- Assuming the error path. The failing input may take a *success* branch (e.g. a
-  function returns an empty *success* artifact, not an error) — verify which
-  branch, never assume.
-- Diagnosis by static reading only: shipping a fix you never reproduced.
-
-</forbidden>
-
-<context>
 
 **The test-masking trap** (2026-06): a fix placed in a branch the real
 input never enters, paired with a unit test that *mocks an input* to force that
@@ -97,22 +70,14 @@ bug. Guard both ends: `@smith-tests/SKILL.md` (never mock the branch/unit under
 test; reproduce the bug as a failing test first) and `@smith-subagents/SKILL.md`
 (audit the execution path of a delegated diff, not just its style).
 
-</context>
-
 ## Anti-Workaround Policy
 
-<forbidden>
-
-- NEVER add `# noqa`, `// NOLINT`, or similar inline
-  suppressions without meeting exception criteria below
-- NEVER increase timeouts without diagnosing root cause
-- NEVER use `_` prefix to suppress unused-variable warnings
-  without removing the actual dead code
-- NEVER disable warnings without documented justification
-
-</forbidden>
-
-<required>
+- Only add `# noqa`, `// NOLINT`, or similar inline suppressions when the
+  exception criteria below are met
+- Only increase timeouts after diagnosing root cause
+- Remove the actual dead code rather than merely using a `_` prefix to
+  suppress unused-variable warnings
+- Only disable warnings with documented justification
 
 **When lint or test failures occur:**
 1. Apply 5 Whys to find root cause first
@@ -131,11 +96,7 @@ test; reproduce the bug as a failing test first) and `@smith-subagents/SKILL.md`
 - Diagnosis of why the operation is slow
 - User approval before increasing
 
-</required>
-
 ## Root Cause Analysis
-
-<context>
 
 ### 5 Whys (Toyota)
 
@@ -157,11 +118,7 @@ Root cause analysis through iterative questioning:
 
 **Caution**: Don't stop at symptoms. "Why?" should reach systemic causes.
 
-</context>
-
 ## Explanation Techniques
-
-<context>
 
 ### Rubber Duck Debugging
 
@@ -175,11 +132,7 @@ Explain simply to reveal gaps: Choose concept → Explain to child → Identify 
 
 If you can't explain it simply, you don't understand it well enough.
 
-</context>
-
 ## Systematic Isolation
-
-<context>
 
 ### Delta Debugging
 
@@ -193,11 +146,7 @@ Minimize failing input: split in half, test each, recurse on failing half until 
 
 Work backward: Failure → Propagation → Infection → Defect.
 
-</context>
-
 ## Version Control Debugging
-
-<context>
 
 ### Git Bisect
 
@@ -231,11 +180,7 @@ Exit codes: 0 = good, 1-127 = bad, 125 = skip
 - Automated test can detect the bug
 - Need to find exact commit that broke something
 
-</context>
-
 ## Coverage-Based Localization
-
-<context>
 
 ### Spectrum-Based Fault Localization (SBFL)
 
@@ -258,11 +203,7 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 
 **For AI agents**: When multiple tests fail, identify code paths common to failures but not successes.
 
-</context>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When debugging or validating:**
 1. Use Strong Inference: devise multiple hypotheses before testing
@@ -271,11 +212,7 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 4. Run tests with coverage; inspect code paths common to failures
 5. Bugfix? Trace to the real branch and reproduce real input BEFORE fixing
 
-</required>
-
 ## Claude Code Plugin Integration
-
-<context>
 
 **When pr-review-toolkit is available:**
 
@@ -283,24 +220,16 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 - Analyzes catch blocks, fallback behavior, missing logging
 - Trigger: "Check for silent failures" or use Task tool
 
-</context>
-
 ## Ralph Loop Integration
-
-<context>
 
 **Debugging = Ralph iteration**: hypothesis → test → eliminate → iterate until `<promise>ROOT CAUSE FOUND</promise>`.
 
 See `@smith-ralph/SKILL.md` for full patterns.
 
-</context>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-analysis/SKILL.md` - Reasoning patterns, problem decomposition
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
 - `@smith-tests/SKILL.md` - Reproduce-first; never mock the branch under test
 - `@smith-subagents/SKILL.md` - Audit a delegated diff's execution path
-
-</related>

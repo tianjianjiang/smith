@@ -5,15 +5,9 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 
 # Thinking Clarity
 
-<metadata>
-
-- **Scope**: Guarding against cognitive traps and logical fallacies in decision-making
-- **Load if**: Making decisions, evaluating approaches, risk assessment, detecting faulty reasoning
-- **Prerequisites**: @smith-guidance/SKILL.md
-
-</metadata>
-
-<context>
+**Scope:** Guarding against cognitive traps and logical fallacies in decision-making
+**Load if:** Making decisions, evaluating approaches, risk assessment, detecting faulty reasoning
+**Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Defensive thinking techniques - avoiding errors rather than constructing solutions.
 
@@ -22,11 +16,7 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 - **smith-clarity** (this file) - Defensive thinking (what to avoid)
 - `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
 
-</context>
-
 ## Logic Fallacies
-
-<context>
 
 ### Formal Fallacies (structural)
 
@@ -50,11 +40,7 @@ description: Cognitive trap detection and logic fallacy identification. Use when
 3. Provide evidence-based counter-reasoning
 4. Respect user while correcting logic
 
-</context>
-
 ## Cognitive Traps
-
-<forbidden>
 
 ### Einstellung Effect
 
@@ -104,11 +90,7 @@ Work expands to fill the time available for completion.
 
 **Mitigation**: Set aggressive (50% probability) estimates; aggregate buffers at project level
 
-</forbidden>
-
 ## Cognitive Forcing Strategies
-
-<context>
 
 1. **Cognitive timeout**: Pause before finalizing any solution
 2. **Metacognition**: "What am I assuming? What could I be missing?"
@@ -121,11 +103,7 @@ Work expands to fill the time available for completion.
 3. After fixing bug: Verify fix addresses root cause, not symptom
 4. When user agrees: Ask "Are there downsides we haven't considered?"
 
-</context>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When making decisions or evaluating reasoning:**
 1. Pause before finalizing (Cognitive timeout)
@@ -133,12 +111,8 @@ Work expands to fill the time available for completion.
 3. Generate 2-3 alternatives before committing
 4. Seek disconfirming evidence, not confirming evidence
 
-</required>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-analysis/SKILL.md` - Pre-mortem analysis, constraint thinking
 - `@smith-validation/SKILL.md` - Hypothesis testing, debugging
-
-</related>

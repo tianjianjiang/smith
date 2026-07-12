@@ -5,16 +5,10 @@ description: Prompt engineering standards for AI interactions with cache optimiz
 
 # Prompt Engineering Standards
 
-<metadata>
+**Load if:** Writing AI prompts, optimizing context usage
+**Prerequisites:** @smith-principles/SKILL.md
 
-- **Load if**: Writing AI prompts, optimizing context usage
-- **Prerequisites**: @smith-principles/SKILL.md
-
-</metadata>
-
-## CRITICAL: Prompt Caching (Primacy Zone)
-
-<required>
+## Prompt Caching
 
 Cache reduces costs 90%, latency 85%
 
@@ -26,47 +20,33 @@ Cache reduces costs 90%, latency 85%
 
 **Cache breakpoints**: Every ~1024 tokens. Prefix must be identical for cache hit.
 
-</required>
-
-<forbidden>
-
-- Reordering tools between calls
-- Injecting dynamic content into static sections
-- Modifying cached prefix unnecessarily
-- Using Markdown tables (see `@smith-skills/SKILL.md` - use bullet lists instead)
-
-</forbidden>
+**Rules:**
+- Keep tool definitions in a consistent order between calls
+- Keep dynamic content out of static sections
+- Keep the cached prefix stable — only change it when the static content
+  itself changes
+- Use bullet lists instead of Markdown tables (see `@smith-skills/SKILL.md`)
 
 ## AGENTS.md Cache-Friendly Structure
 
 ```markdown
 <!-- STATIC - cached -->
-<metadata>
+**Metadata**: Scope, Load if, Prerequisites
 
-Scope, Load if, Prerequisites
+## Critical Rules
 
-</metadata>
+Critical ALWAYS rules, written as affirmative statements
 
-<required>
+## Hard Limits
 
-Critical NEVER/ALWAYS rules
-
-</required>
-
-<forbidden>
-
-Anti-patterns
-
-</forbidden>
+Anti-patterns with no natural positive phrasing
 
 <!-- CACHE BREAKPOINT (~1024 tokens) -->
 
 <!-- DYNAMIC - not cached -->
-<examples>
+## Examples
 
 Code examples that evolve
-
-</examples>
 ```
 
 ## Token Efficiency
@@ -80,22 +60,15 @@ Code examples that evolve
 
 ### Sparse Attention
 
-<required>
-
 **Efficient file reading:**
 1. Grep to find location
 2. Read with offset/limit for large files
 3. Read only necessary context (±20 lines)
 
-</required>
-
-<forbidden>
-
-- Loading full files when targeted reads suffice
-- Reading documentation when metadata answers the question
-- Repeating user's question in responses
-
-</forbidden>
+**Rules:**
+- Prefer targeted reads over loading full files
+- Check metadata before reading full documentation
+- Answer directly instead of restating the user's question
 
 ## Structured Output
 
@@ -104,26 +77,18 @@ Code examples that evolve
 - **Anthropic**: Tool use with flexible schemas
 - **Gemini**: responseSchema with retry
 
-<required>
-
 **Schema design:**
 - Match existing project patterns
 - Include descriptions for complex fields
 - Define required vs optional fields
 - Keep nesting ≤3 levels
 
-</required>
-
-<related>
+## Related
 
 - @smith-ctx/SKILL.md - Progressive disclosure, reference-based communication
-- `@smith-xml/SKILL.md` - Approved XML tags
+- `@smith-xml/SKILL.md` - XML tags for runtime prompts (not SKILL.md bodies)
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **For caching:**
 - Place static content before dynamic
@@ -134,5 +99,3 @@ Code examples that evolve
 - Use Grep before Read
 - Read incrementally (narrow → expand)
 - Use file:line references
-
-</required>

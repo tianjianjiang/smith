@@ -5,16 +5,10 @@ description: Proactive research protocol for version queries, APIs, and best pra
 
 # Proactive Research Protocol
 
-<metadata>
+**Load if:** Queries about versions, APIs, libraries, best practices
+**Prerequisites:** @smith-guidance/SKILL.md
 
-- **Load if**: Queries about versions, APIs, libraries, best practices
-- **Prerequisites**: @smith-guidance/SKILL.md
-
-</metadata>
-
-## CRITICAL: Mandatory Research Triggers (Primacy Zone)
-
-<required>
+## CRITICAL: Mandatory Research Triggers
 
 **Temporal constraint**: ALWAYS get today's real date first as critical context for research queries.
 
@@ -26,11 +20,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
 - Unfamiliar technology (not in training data)
 - **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — MUST load this skill + `@smith-validation/SKILL.md` (falsify-before-present) and verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; claims need evidence — do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way I think" — that reframe is the trigger.
 
-</required>
-
 ## Research Methods (Priority Order)
-
-<required>
 
 1. **Official docs** - Most authoritative
    - `fetch https://docs.python.org/3/library/asyncio.html`
@@ -46,11 +36,7 @@ description: Proactive research protocol for version queries, APIs, and best pra
 4. **GitHub repo** - Source of truth
    - README, CHANGELOG, release notes
 
-</required>
-
 ## Source Citation
-
-<required>
 
 **Always include:**
 - Source URL
@@ -69,17 +55,11 @@ description: Proactive research protocol for version queries, APIs, and best pra
 - Medium: "Based on recent community discussion..."
 - Low: "My training data suggests X, but couldn't verify..."
 
-</required>
-
 ## Paywall Workarounds
-
-<context>
 
 **Medium.com**: Replace domain with `freedium-mirror.cfd`
 - Pattern: `https://freedium-mirror.cfd/https://medium.com/@author/article`
 - Use when WebFetch returns paywall/403 errors
-
-</context>
 
 ## When NOT to Research
 
@@ -89,43 +69,28 @@ description: Proactive research protocol for version queries, APIs, and best pra
 
 ## Proactive Behavior
 
-<required>
-
 **Research when:**
 - Answering would require guessing
 - User's code references unfamiliar library
 - Error suggests version incompatibility
 - User mentions "latest", "current", "2024", "2025"
+- Accuracy matters (research rather than skip)
+- Docs are accessible (provide current API examples, not outdated ones)
+- About to claim certainty about a version (verify first)
 
 **Inform user:**
 - "I checked the current documentation..."
 - "I couldn't fetch latest info, but based on training..."
 
-</required>
-
-<forbidden>
-
-- Claiming certainty about versions without verification
-- Providing outdated API examples when docs accessible
-- Skipping research when accuracy matters
-
-</forbidden>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Honest principle
 - `@smith-tools/SKILL.md` - MCP fetch configuration
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before answering version/API questions:**
 1. Check if research trigger applies
 2. Fetch official docs or registry
 3. Cite source with URL and date
 4. Flag if info conflicts with training data
-
-</required>

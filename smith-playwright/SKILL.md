@@ -5,16 +5,10 @@ description: Playwright testing patterns including proactive failure monitoring,
 
 # Playwright Testing Standards
 
-<metadata>
+**Load if:** Running Playwright tests, analyzing test results
+**Prerequisites:** `@smith-tests/SKILL.md`
 
-- **Load if**: Running Playwright tests, analyzing test results
-- **Prerequisites**: `@smith-tests/SKILL.md`
-
-</metadata>
-
-## CRITICAL: Proactive Failure Monitoring (Primacy Zone)
-
-<required>
+## CRITICAL: Proactive Failure Monitoring
 
 - MUST check test runner exit code after every run
 - MUST inspect failure artifacts before reporting
@@ -22,19 +16,7 @@ description: Playwright testing patterns including proactive failure monitoring,
 - MUST classify root cause before reporting to user
 - MUST proactively detect and report -- do NOT wait for user
 
-</required>
-
-<forbidden>
-
-- NEVER report "tests failed" without reading error messages
-- NEVER assume tests passed without verifying exit code
-- NEVER skip failure artifact inspection after a run
-
-</forbidden>
-
 ## Failure Analysis Protocol
-
-<required>
 
 **After every Playwright test run:**
 
@@ -47,11 +29,7 @@ description: Playwright testing patterns including proactive failure monitoring,
 6. **Classify root cause** (see categories below)
 7. **Report** with: failed tests, classification, evidence
 
-</required>
-
 ## Root Cause Categories
-
-<context>
 
 - **Selector mismatch**: test expects elements or classes
   not present in current component implementation
@@ -67,11 +45,7 @@ description: Playwright testing patterns including proactive failure monitoring,
 - **Test data/state**: database not seeded, stale
   fixtures, previous test side effects
 
-</context>
-
 ## Playwright MCP Tools
-
-<context>
 
 When Playwright MCP plugin (`mcp__plugin_playwright_playwright`)
 is available, use it to inspect HTML reports programmatically:
@@ -94,25 +68,17 @@ tools before first use.
 4. `browser_click` on failed tests to expand error details
 5. `browser_snapshot` again to read assertion messages
 
-</context>
-
-<related>
+## Related
 
 - `@smith-tests/SKILL.md` - Testing standards, TDD workflow
 - `@smith-validation/SKILL.md` - Root cause analysis
 - `@smith-nuxt/SKILL.md` - Nuxt testing patterns
 - `@smith-browser_mcp/SKILL.md` - Browser MCP plugin reliability (chrome-devtools-mcp, Playwright MCP)
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Post-test checklist:**
 1. Exit code non-zero? Read failure artifacts
 2. Read page snapshots + screenshots
 3. Classify root cause
 4. Report proactively with evidence
-
-</required>

@@ -5,38 +5,20 @@ description: Nuxt 3 development patterns including auto-import stubbing for test
 
 # Nuxt Development Standards
 
-<metadata>
+**Scope:** Nuxt 3 specific patterns
+**Load if:** Working with Nuxt projects
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-typescript/SKILL.md`
 
-- **Scope**: Nuxt 3 specific patterns
-- **Load if**: Working with Nuxt projects
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-typescript/SKILL.md`
-
-</metadata>
-
-## CRITICAL: Auto-Import Stubbing (Primacy Zone)
-
-<required>
+## CRITICAL: Auto-Import Stubbing
 
 **Stub Nuxt auto-imports BEFORE importing modules that use them** - module code executes at import time.
 
-</required>
-
-<forbidden>
-
-- Mocking `h3` module expecting auto-imports (they're globals)
-- Importing middleware before stubbing globals
-
-</forbidden>
+- Treat the `h3` module's auto-imports as globals — stub them directly rather than mocking `h3`
+- Stub globals before importing middleware, since the module executes at import time
 
 ## Auto-Import Stubbing in Tests
 
-<context>
-
 Nuxt auto-imports utilities like `defineEventHandler`, `createError`, `useState`. These are globally available in Nuxt runtime but NOT in test environments.
-
-</context>
-
-<required>
 
 Stub auto-imports globally BEFORE importing the module under test:
 
@@ -55,27 +37,17 @@ import type { H3Event } from 'h3';
 import middleware from '../myMiddleware';
 ```
 
-</required>
-
-<forbidden>
-
-- NEVER mock `h3` module expecting auto-imports to work (they're globals, not module exports)
-- NEVER import middleware before stubbing globals (module executes at import time)
-
-</forbidden>
+- Treat the `h3` module's auto-imports as globals, not module exports — stub the globals rather than mocking `h3`
+- Stub globals before importing middleware, since the module executes at import time
 
 ## Environment Variables
-
-<context>
 
 Nuxt uses `NUXT_` prefix for runtime config environment variables.
 
 - `NUXT_PUBLIC_*` - Exposed to client
 - `NUXT_*` - Server-only
 
-</context>
-
-<examples>
+### Examples
 
 Server-only:
 ```shell
@@ -88,22 +60,14 @@ Public (exposed to browser):
 NUXT_PUBLIC_API_BASE=https://api.example.com
 ```
 
-</examples>
-
-<related>
+## Related
 
 - `@smith-typescript/SKILL.md` - General TypeScript patterns
 - `@smith-tests/SKILL.md` - Testing standards
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before testing Nuxt code:**
 1. Stub auto-imports BEFORE any imports
 2. Use `NUXT_PUBLIC_*` for client-exposed env vars
 3. Use `NUXT_*` for server-only env vars
-
-</required>

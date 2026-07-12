@@ -5,16 +5,10 @@ description: Ralph Loop integration patterns for iterative AI development. Use w
 
 # Ralph Loop Integration
 
-<metadata>
+**Load if:** Starting `/ralph-loop`, managing iterations, recovering from context reset
+**Prerequisites:** @smith-ctx/SKILL.md, `@smith-git/SKILL.md`, `@smith-serena/SKILL.md`
 
-- **Load if**: Starting `/ralph-loop`, managing iterations, recovering from context reset
-- **Prerequisites**: @smith-ctx/SKILL.md, `@smith-git/SKILL.md`, `@smith-serena/SKILL.md`
-
-</metadata>
-
-## CRITICAL: Ralph Fundamentals (Primacy Zone)
-
-<required>
+## CRITICAL: Ralph Fundamentals
 
 **Ralph = iterative prompt loop**: Same prompt fed repeatedly, Claude sees previous work in files.
 
@@ -23,8 +17,6 @@ description: Ralph Loop integration patterns for iterative AI development. Use w
 2. `--max-iterations` as safety limit (always set)
 3. Atomic commits mark iteration boundaries
 4. Serena memory persists state across context resets
-
-</required>
 
 ## Skills Integration
 
@@ -58,8 +50,6 @@ Output <promise>COMPLETE</promise> after all phases.
 
 ## Context Management
 
-<required>
-
 **Ralph burns context rapidly.** ~1-3.5k tokens per iteration.
 
 **Reactive: Auto-exit at critical context (hook-managed):**
@@ -86,11 +76,7 @@ Output <promise>COMPLETE</promise> after all phases.
 - Test results summary
 - File:line references
 
-</required>
-
 ## Phase Boundary Protocol
-
-<required>
 
 **At EVERY phase boundary (regardless of context level):**
 1. Mark completed tasks [x] in plan file
@@ -110,11 +96,7 @@ Output <promise>COMPLETE</promise> after all phases.
 **Phase = group of tasks under the same ## heading in the plan.**
 If plan has no ## headings, each `- [ ]` task = one phase.
 
-</required>
-
 ## Commit Strategy
-
-<required>
 
 **Atomic commits mark iteration boundaries.**
 
@@ -122,11 +104,7 @@ If plan has no ## headings, each `- [ ]` task = one phase.
 2. Commit with iteration number: `fix(feature): iteration 3 - resolved null check`
 3. If regression, use `git bisect` to find breaking iteration
 
-</required>
-
 ## Memory Persistence
-
-<required>
 
 **Serena memories persist Ralph state across context resets.**
 
@@ -137,21 +115,13 @@ If plan has no ## headings, each `- [ ]` task = one phase.
 - After each iteration: `write_memory()`
 - Before/after context reset: `write_memory()` / `read_memory()`
 
-</required>
-
 ## Orchestration Mode (Pattern B)
-
-<context>
 
 **Pattern B = subagent orchestration**: Parent stays light, workers get fresh 200k context each.
 
 ```text
 User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 ```
-
-</context>
-
-<required>
 
 **Trigger**: "ralph orchestrate", "ralph orch", or "use orchestration mode"
 
@@ -173,18 +143,14 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 9. On all tasks complete: clean up state, output summary
 
 **Parent stays light by**:
-- NOT reading full source files (only plan diffs, memory keys)
-- NOT accumulating worker output (read summary, discard details)
+- Reading only plan diffs and memory keys, not full source files
+- Reading worker summaries and discarding details, not accumulating worker output
 - Using Serena memory keys as references (read only when needed)
 - Periodically checking context %
 
 **Prompt-based fallback**: If `agents/ralph-worker.md` is not found, parent builds equivalent prompt inline for `Task(subagent_type="general-purpose", prompt=...)`.
 
-</required>
-
 ### Delegation Best Practices
-
-<required>
 
 **Well-scoped worker prompts MUST include:**
 - Specific task description (what, not how)
@@ -204,8 +170,6 @@ User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
 
 **Model routing for workers:**
 See `@smith-ctx-claude/SKILL.md` for model routing guidance (added in PR #60).
-
-</required>
 
 ### Orchestrator State File
 
@@ -228,8 +192,6 @@ Hook scripts detect this file to manage context cycling (save state before `/cle
 
 ## Agent Teams Mode (Pattern C)
 
-<context>
-
 **Pattern C = agent teams**: Team lead coordinates, teammates get independent context.
 
 ```text
@@ -238,10 +200,6 @@ User -> "ralph team" -> Team Lead -> Teammates (own context, shared tasks)
 
 **Setup**: Set `"env": {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}`
 in `~/.claude/settings.json` (or export before starting Claude Code).
-
-</context>
-
-<required>
 
 **Trigger**: "ralph team" or "use team mode"
 
@@ -266,11 +224,7 @@ in `~/.claude/settings.json` (or export before starting Claude Code).
 - Sequential tasks (same files): use dependency tracking to serialize
 - Lead assigns file ownership to avoid conflicts
 
-</required>
-
 ### Display Modes
-
-<context>
 
 **In-process** (default, any terminal):
 - Shift+Up/Down: Cycle between teammates
@@ -288,11 +242,7 @@ in `~/.claude/settings.json` (or export before starting Claude Code).
 **Default** (`"auto"`): Uses split panes if already in tmux,
 otherwise in-process.
 
-</context>
-
 ### Known Issues
-
-<required>
 
 **Delegate mode permission bug** (Issue #25037):
 Teammates spawned after enabling delegate mode (Shift+Tab)
@@ -300,7 +250,7 @@ inherit the lead's restricted permissions. Teammates lose
 file tools (Read, Write, Edit, Bash, Glob, Grep) and cannot
 write code.
 
-**Workaround**: Do NOT use delegate mode for code-writing teams.
+**Workaround**: Do not use delegate mode for code-writing teams.
 - Tell lead: "Wait for teammates to complete before proceeding"
 - Use **plan approval mode** instead for coordination control
   (require teammates to plan before implementing)
@@ -313,11 +263,7 @@ write code.
 - Token-intensive (each teammate = separate Claude instance)
 - Experimental - API may change
 
-</required>
-
 ### Quality Gate Hooks
-
-<context>
 
 Hook matchers below are part of the experimental agent teams API
 and may change. Verify against current Claude Code docs if issues arise.
@@ -352,15 +298,9 @@ Exit code 2 prevents completion and sends feedback.
 }
 ```
 
-</context>
-
 ## Tasks Integration
 
-<context>
-
 Claude Code Tasks provide visual progress tracking. Used as optional UI layer for both patterns.
-
-</context>
 
 **Pattern B**:
 - Parent creates `TaskCreate` for each plan `- [ ]` item at orchestration start
@@ -385,7 +325,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 2. Multi-step plan, sequential tasks -> Pattern B ("ralph orchestrate")
 3. Parallel-safe tasks, research/review -> Pattern C ("ralph team")
 
-<related>
+## Related
 
 - `@smith-tests/SKILL.md` - TDD workflow
 - `@smith-validation/SKILL.md` - Debugging techniques
@@ -395,11 +335,7 @@ Claude Code Tasks provide visual progress tracking. Used as optional UI layer fo
 - `@smith-git/SKILL.md` - Commit patterns
 - `@smith-serena/SKILL.md` - Memory persistence
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Starting Ralph:**
 ```shell
@@ -422,5 +358,3 @@ Say "ralph team" with a plan file. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAM
 **On context reset:**
 1. `write_memory()` with full state
 2. After context reset: `read_memory()` to resume
-
-</required>

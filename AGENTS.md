@@ -2,17 +2,11 @@
 
 AI agent skills for development with progressive disclosure.
 
-<metadata>
-
-- **Always loaded**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
-- **Load condition**: Session start (all platforms)
-- **Token budget**: per-skill <2000 tokens; keep this always-loaded index minimal
-
-</metadata>
+**Always loaded:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
+**Load condition:** Session start (all platforms)
+**Token budget:** per-skill <2000 tokens; keep this always-loaded index minimal
 
 ## Platform Context (Load First)
-
-<required>
 
 **Auto-detect platform in order:**
 1. **MCP servers**: Check for `cursor-ide-browser` or `cursor-browser-extension` → **Cursor** → Load `@smith-ctx-cursor/SKILL.md`
@@ -20,11 +14,7 @@ AI agent skills for development with progressive disclosure.
 3. **System prompt**: If mentions "Claude Code" → **Claude Code** → Load `@smith-ctx-claude/SKILL.md`
 4. **Default**: Ask user or use Cursor (most common)
 
-</required>
-
 ## Claude Code Skills Integration
-
-<context>
 
 **Symlink for skill discovery:**
 ```shell
@@ -33,11 +23,7 @@ ln -sf $HOME/.smith $HOME/.claude/skills
 
 All skills use "smith-" prefix to avoid conflicts with Claude Code built-in commands (`/context`, `/ide`, `/skills`, etc.).
 
-</context>
-
 ## Serena MCP Integration (If Available)
-
-<context>
 
 When Serena MCP is available, prefer Serena tools for file I/O and semantic
 edits, and use Serena project memories for durable cross-session context.
@@ -48,16 +34,12 @@ See `@smith-serena/SKILL.md` for tool-preference and memory-sync rules.
   auto-loads `CLAUDE.md` (not a bare `AGENTS.md`) — see `@smith-skills/SKILL.md`.
 - Load applicable smith skills via the Semantic Activation triggers below.
 
-</context>
-
 ## Core Principles
 
 DRY, KISS, YAGNI, SOLID, HHH — defined in @smith-principles/SKILL.md
 (force-loaded), HHH in @smith-guidance/SKILL.md. Not restated here.
 
 ## Skill Loading
-
-<required>
 
 **Skills auto-trigger by their frontmatter `description`** — the native Claude
 Code mechanism. The `skill-router` UserPromptSubmit hook
@@ -73,11 +55,7 @@ No "identify → Read → unload" bookkeeping: it depended on model discipline a
 was ~0% executed in practice (smith-* skills almost never loaded; the router
 hook replaces it). See `@smith-ctx-claude/SKILL.md`.
 
-</required>
-
 ## Guard Hooks
-
-<context>
 
 Two PreToolUse guards ship alongside the router (registered user-globally in
 `~/.claude/settings.json`; registration snippets in README.md "Hooks"):
@@ -88,27 +66,17 @@ create the dedicated branch/worktree BEFORE the first edit (rule in
 uncommitted changes never carry into a new worktree (details in
 `@smith-worktree/SKILL.md`).
 
-</context>
-
 ## Skill Notification
-
-<required>
 
 ALWAYS emit one line per skill invocation, in the message where it shapes your
 work: `using @skill-name (reason)`. Group multiple skills on one line. This is
 the user's only in-conversation visibility into which skills actually loaded —
 do not skip it because the Skill tool already logs the call.
 
-</required>
-
 ## Proactive Context Management
-
-<required>
 
 - **At warning threshold**: Warn, prepare retention criteria, unload unused skills
 - **At critical threshold**: CRITICAL - context reset required (see platform skill for thresholds and command)
-
-</required>
 
 ## Available Skills
 
@@ -118,16 +86,12 @@ catalog (categorized, with descriptions) lives in
 
 ## Semantic Activation
 
-<required>
-
 Skills auto-trigger by frontmatter `description`; the skill-router
 UserPromptSubmit hook (`@smith-ctx-claude/scripts/skill-router.mjs`, table
 `skill-triggers.json`) is the deterministic safety net. The full human-readable
 trigger table lives in `smith-ctx-claude/REFERENCE.md` (keep it in sync with
 `skill-triggers.json`). The verify-before-proposing rule for
 external-dependency recommendations lives in `@smith-research/SKILL.md`.
-
-</required>
 
 ## Platform Compatibility
 
@@ -137,27 +101,16 @@ external-dependency recommendations lives in `@smith-research/SKILL.md`.
 
 ## Kiro Terminal (CRITICAL)
 
-<forbidden>
-
-- echo with double quotes (hangs)
-- heredoc syntax (fails)
-- Complex zsh themes (hangs)
-
-</forbidden>
-
-<required>
-
 - Use Python scripts for file generation
 - Prefer Serena MCP tools over Kiro native file operations
-- Use single quotes or write to file instead of echo
+- Use single quotes, or write to a file, instead of echo with double quotes
+  — double-quoted echo hangs in Kiro's terminal
+- Heredoc syntax fails in Kiro's terminal — write to a file instead
+- Complex zsh themes hang in Kiro's terminal — keep the shell theme simple
 
-</required>
-
-<related>
+## Related
 
 - @smith-principles/SKILL.md - Core principles (DRY, KISS, YAGNI, SOLID)
 - @smith-standards/SKILL.md - Universal coding standards
 - @smith-guidance/SKILL.md - AI agent behavior patterns
 - @smith-ctx/SKILL.md - Context management, proactive recommendations
-
-</related>

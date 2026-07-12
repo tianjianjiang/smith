@@ -5,37 +5,19 @@ description: Tool configurations for IDEs, MCP integrations, and development too
 
 # Tool Configurations
 
-<metadata>
+**Scope:** Configuration standards for development tools, IDEs, and MCP integrations
+**Load if:** Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR configuring MCP tools
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
-- **Scope**: Configuration standards for development tools, IDEs, and MCP integrations
-- **Load if**: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR configuring MCP tools
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md
-
-</metadata>
-
-## CRITICAL: Tool Configuration (Primacy Zone)
-
-<required>
+## CRITICAL: Tool Configuration
 
 - Check codebase and local docs BEFORE using MCP tools
 - Use MCP tools only when task specifically requires them
 - Activate tools conditionally, not by default
-
-</required>
-
-<forbidden>
-
-- Mandating Serena MCP for all plans (only multi-session)
-- Requiring Context7 for all libraries (only unfamiliar external)
-- Loading MCP tools unconditionally
-
-</forbidden>
-
-<context>
+- Mandate Serena MCP only for multi-session plans, not all plans
+- Require Context7 only for unfamiliar external libraries, not all libraries
 
 This document defines configuration standards for development tools, IDEs, and external integrations.
-
-</context>
 
 ## IDE & Extension Settings
 
@@ -50,17 +32,13 @@ This document defines configuration standards for development tools, IDEs, and e
 - **Purpose**: Suppress INFO/DEBUG logs from external libraries during test execution
 - **Exception**: Use DEBUG level only when actively debugging specific issues
 
-**For detailed pytest execution patterns**: See `@smith-python/SKILL.md#action-recency-zone`
+**For detailed pytest execution patterns**: See `@smith-python/SKILL.md#before-you-finish`
 
 ## MCP Tool Integration (Optional)
-
-<context>
 
 MCP (Model Context Protocol) tools provide enhanced capabilities for specific scenarios. Use them conditionally when their specific functionality is needed.
 
 **These tools are NOT required** for standard development work.
-
-</context>
 
 ### Available MCP Tools
 
@@ -95,8 +73,6 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
 ## MCP Server Lifecycle
-
-<context>
 
 **Installation:**
 
@@ -154,11 +130,7 @@ In-session: `/mcp` shows tool count per server, flags servers advertising the to
 - Startup timeout → increase `MCP_TIMEOUT`
 - Option ordering → flags before server name, `--` before server command
 
-</context>
-
 ## Plugin Marketplaces
-
-<context>
 
 A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plugins. Anyone can host one (git repo, local path, URL); the smith-* ecosystem treats `anthropics/claude-plugins-official` as the canonical official marketplace.
 
@@ -201,16 +173,12 @@ A **marketplace** is a catalog at `.claude-plugin/marketplace.json` listing plug
 
 **Supply-chain trust (a plugin runs code on your machine):**
 
-<required>
-
 Installing/enabling a plugin is a trust decision equal to running its install script — it can ship hooks (shell commands), MCP/LSP servers, and `bin/` executables that run locally with your privileges, and an **update can change that code**. Trust by tier, highest first:
 1. `anthropics/*` official marketplace — canonical
 2. Known org / vendor you already depend on
 3. Unknown third-party — review before enabling
 
 Before enabling anything you did not author, read the plugin's `hooks/`, `commands/`, `bin/` executables, and `.mcp.json` / `plugin.json` `mcpServers` — hooks and MCP servers execute on enable, not on first use. Tier 1 is Anthropic-curated so the full read is lower-stakes, but it is not a free pass: still skim the manifest and pin to an explicit `version` (or commit) so an update cannot silently re-grant trust. Tiers 2-3: always do the full review.
-
-</required>
 
 **enabledPlugins** in `~/.claude/settings.json` controls per-user enable state:
 
@@ -220,8 +188,6 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
     ...
   } }
 ```
-
-</context>
 
 ## Configuration Hierarchy
 
@@ -244,7 +210,7 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
 3. **Validation**: Verify consistency across all tools and configurations
 4. **Documentation**: Update project-specific documentation with references
 
-<related>
+## Related
 
 - `@smith-ctx-claude/SKILL.md` - Claude Code patterns
 - `@smith-prompts/SKILL.md` - Structured output patterns
@@ -252,15 +218,9 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
 - `@smith-ide/SKILL.md` - IDE-specific path syntax
 - `@smith-browser_mcp/SKILL.md` - Browser MCP plugin reliability
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before using MCP tools:**
 1. Check codebase and local docs first
 2. Use MCP only when local info insufficient
 3. Configure tools conditionally per task
-
-</required>

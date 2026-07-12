@@ -5,16 +5,10 @@ description: File naming, path standards, and conventional commits. Use when nam
 
 # File Naming & Path Standards
 
-<metadata>
+**Load if:** Git operations, PR workflows, new project setup
+**Prerequisites:** @smith-principles/SKILL.md
 
-- **Load if**: Git operations, PR workflows, new project setup
-- **Prerequisites**: @smith-principles/SKILL.md
-
-</metadata>
-
-## CRITICAL: Naming Separators (Primacy Zone)
-
-<required>
+## CRITICAL: Naming Separators
 
 **Underscore (_)**: Multi-word phrases as single concept
 - `user_authentication`, `query_processor`, `semantic_search`
@@ -26,8 +20,6 @@ description: File naming, path standards, and conventional commits. Use when nam
 - Dates: `2025-01-15`
 - Tickets: `JIRA-1234`
 
-</required>
-
 ## File Patterns
 
 **Test files**: `test_«module»_«function»_«type».py`
@@ -37,8 +29,6 @@ description: File naming, path standards, and conventional commits. Use when nam
 
 ## Path References
 
-<required>
-
 **Use code blocks, not Markdown links:**
 ```markdown
 **Core Principles**: @smith-principles/SKILL.md - Description
@@ -47,11 +37,7 @@ description: File naming, path standards, and conventional commits. Use when nam
 
 **Variables**: `$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`
 
-</required>
-
 ## Conventional Commits
-
-<required>
 
 **Format**: `type: description` or `type(scope): description`
 
@@ -61,9 +47,7 @@ description: File naming, path standards, and conventional commits. Use when nam
 - Subject: 50 chars target, 72 max
 - Body: 72 chars per line
 
-</required>
-
-<examples>
+### Examples
 
 ```text
 feat(auth): add token refresh
@@ -71,26 +55,15 @@ fix: resolve CORS issues
 docs: update deployment guide
 ```
 
-</examples>
-
-<forbidden>
-
-- Subject over 72 characters
-- Multiple unrelated changes ("add X and fix Y")
-- Using `docs` when also changing code
-
-</forbidden>
-
-<context>
+**Also keep in mind:**
+- Scope each commit to a single logical change — avoid mixing unrelated
+  changes ("add X and fix Y")
+- Use `docs` only when the commit doesn't also change code
 
 **Special prefixes** (outside conventional commits):
 - `#WIP` — Work-in-progress checkpoint, not a conventional commit (used by auto-commit rules)
 
-</context>
-
 ## Branch Names
-
-<required>
 
 **Patterns** (in order of frequency in this repo):
 
@@ -120,18 +93,12 @@ abbreviation is a domain-standard term in this repo (`gh` = GitHub,
 Protocol). `command`, `configuration`, `authentication` all fit — spell
 them out.
 
-</required>
-
-<forbidden>
+### Avoid
 
 - `feat/user-authentication` — multi-word single concept; should be `feat/user_authentication`
 - `feat/auth_login` — hierarchy (login is part of auth); should be `feat/auth-login`
 - `feat/ctx-claude-slash-cmd-rule` — three errors in one: (a) `slash-cmd` should be `slash_command` (multi-word single concept); (b) `cmd` is an unnecessary abbreviation; (c) the separator between scope `ctx-claude` and description should be `_`, not `-`. Correct: `feat/ctx-claude_slash_command_rule`.
 - `fix/auth_post_review` / `fix/auth_after_review` — names the change's ORIGIN (a review round), not the change. Name what it does: `fix/auth_token_expiry`. Never put `post_review`/`post-review`/`after_review` in a branch or commit.
-
-</forbidden>
-
-<context>
 
 **Pre-push checklist (use this before every `git push`):**
 
@@ -150,11 +117,7 @@ across multiple PRs (#71/#72 skill names, #80 branch name) — both rounds
 required follow-up fixes. The rule itself was always documented; the failure
 mode was not pausing to apply it before pushing.
 
-</context>
-
 ## External Communication Standards
-
-<required>
 
 **Language matching:**
 - Match the language of the source context
@@ -177,18 +140,12 @@ mode was not pausing to apply it before pushing.
 - "When «situation», I want to «motivation», so I can «expected outcome»"
 - Describe the problem and outcome, not the implementation approach
 
-</required>
-
-<related>
+## Related
 
 - `@smith-git/SKILL.md` - Branch and commit workflows
 - @smith-principles/SKILL.md - Core principles (DRY, KISS, YAGNI)
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before naming:**
 1. Is it a single concept? → underscore
@@ -199,5 +156,3 @@ mode was not pausing to apply it before pushing.
 1. Subject ≤72 chars?
 2. Single atomic change?
 3. Type matches branch?
-
-</required>

@@ -5,16 +5,10 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 # Git Workflow Gotchas
 
-<metadata>
+**Load if:** Git commits, merges, branch management
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
-- **Load if**: Git commits, merges, branch management
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md
-
-</metadata>
-
-## CRITICAL (Primacy Zone)
-
-<required>
+## CRITICAL
 
 - MUST use `git mv` for renames (preserves history)
 - MUST GPG sign all commits: `git commit -S -m "..."`
@@ -29,51 +23,28 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
   tools on non-gitignored files while the repo is on `main`/`master`/`develop`
   (or its `origin/HEAD` default); per-repo opt-out is
   `.claude/branch-guard.disabled`.
-
-</required>
-
-<forbidden>
-
-- NEVER force push to main or shared branches
-- NEVER commit directly to main branch
-- NEVER rebase shared branches (only personal feature branches)
-- NEVER use `--no-verify` to bypass git hooks
-- NEVER use `--no-gpg-sign` to skip commit signing
-
-</forbidden>
+- Reserve force-push for personal branches only — never main or shared branches.
+- Commit only to feature branches, never directly to main.
+- Rebase only personal feature branches, never shared branches.
+- Let git hooks run — skip `--no-verify`.
+- Keep GPG signing enabled — skip `--no-gpg-sign`.
 
 ## Operation Boundaries
 
-<forbidden>
-
-- NEVER interpret "list", "check", or "show" as
-  permission to create or modify
-- NEVER create branches or tags beyond what was requested
-
-</forbidden>
-
-<required>
-
-- Match action to request: list=list, create=create
+- Match action to request: list=list, create=create — treating "list",
+  "check", or "show" as permission to create or modify is out of scope
+- Create only the branches/tags that were actually requested, nothing beyond it
 - State planned operations before multi-step workflows
 - For scope/approval rules, see @smith-guidance/SKILL.md
 - For PR creation rules, see `@smith-gh-pr/SKILL.md`
 
-</required>
-
 ## Worktree Safety
-
-<required>
 
 - Before write operations (commits, pushes, dev servers, tests): verify `git rev-parse --show-toplevel` matches your intended working directory
 - If multiple worktrees exist, use `git worktree list` to identify the correct one
 - If in wrong worktree: stop, `cd` to the correct one before proceeding
 
-</required>
-
 ## Worktree Patterns
-
-<context>
 
 **Git worktree basics:**
 
@@ -105,10 +76,6 @@ git worktree remove ../feature-branch
 - Agent worktrees auto-cleanup; persistent ones need
   manual `git worktree remove`
 
-</context>
-
-<required>
-
 - ALWAYS verify worktree path before write operations
 - NEVER leave orphaned worktrees (check `git worktree list`)
 - Clean up persistent worktrees after branch is merged
@@ -116,8 +83,6 @@ git worktree remove ../feature-branch
   test another branch — it tramples IDE/dev-server/test state in place. Use a
   worktree (`git worktree add` / `EnterWorktree`), which fails loudly if the
   branch is already checked out elsewhere.
-
-</required>
 
 ## Branch Naming
 
@@ -142,8 +107,6 @@ git worktree remove ../feature-branch
 
 ## Claude Code Plugin Integration
 
-<context>
-
 **When commit-commands plugin is available:**
 
 - **`/commit`**: Auto-generates commit message, stages files, creates commit
@@ -154,19 +117,13 @@ git worktree remove ../feature-branch
 - Interactive rebase
 - Force push with lease
 
-</context>
-
 ## Ralph Loop Commit Strategy
-
-<required>
 
 **Atomic commits mark iteration boundaries.** Include iteration number; enables `git bisect` for regressions.
 
 See `@smith-ralph/SKILL.md` for full commit patterns.
 
-</required>
-
-<related>
+## Related
 
 - `@smith-stacks/SKILL.md` - Stacked PR workflows (uses linear history, force-with-lease)
 - `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies
@@ -175,11 +132,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 - `@smith-ctx-claude/SKILL.md` - Claude Code agent features and context management
 - `@smith-worktree/SKILL.md` - Claude Code worktree tools, bgIsolation, squash-merge sync
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **First push to new branch:**
 ```shell
@@ -200,5 +153,3 @@ git merge --no-ff feat/my_feature
 ```shell
 git rebase -i HEAD~3
 ```
-
-</required>

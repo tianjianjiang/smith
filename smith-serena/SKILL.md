@@ -5,16 +5,10 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 
 # Serena MCP Integration
 
-<metadata>
+**Load if:** Serena MCP available, file operations needed, symbol-level editing
+**Prerequisites:** None (standalone reference)
 
-- **Load if**: Serena MCP available, file operations needed, symbol-level editing
-- **Prerequisites**: None (standalone reference)
-
-</metadata>
-
-## CRITICAL: Serena-First Principle (Primacy Zone)
-
-<required>
+## CRITICAL: Serena-First Principle
 
 **When Serena MCP is available, ALWAYS use Serena for:**
 
@@ -31,20 +25,12 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 6. `write_memory`, `read_memory` - Persistent context
 7. Platform native tools - **Fallback ONLY when Serena unavailable**
 
-</required>
-
-<forbidden>
-
-**DO NOT use platform native tools when Serena is available:**
+**Prefer Serena over platform native tools when available:**
 - Native file read tools may truncate large files silently
 - String-based replace tools fail on duplicate content
 - Text-based search is less efficient than semantic search
 
-</forbidden>
-
 ## Why Serena Over Native Tools
-
-<context>
 
 **Serena advantages:**
 - Semantic symbol operations reduce context usage by 99%+
@@ -53,11 +39,7 @@ description: Serena MCP integration for file I/O, semantic code editing, and per
 - Language server integration provides accurate navigation
 - No silent truncation or string-matching failures
 
-</context>
-
 ## Native Write vs Symlinked Paths
-
-<context>
 
 Native `Edit`/`Write` do NOT refuse symlinked targets — they write via
 an atomic temp-file + rename. Through a **directory** symlink (e.g.
@@ -68,21 +50,13 @@ the original diverges (Claude Code issue #40857, confirmed). smith
 `SKILL.md` files are plain files, so editing them via either path is
 safe; the hazard is any path that is itself a file symlink.
 
-</context>
-
-<required>
-
 - Before a native write, if the target file may be a symlink, resolve it
   (`readlink -f` / write the real path) — do not write the link path.
 - Distinct from the worktree MCP write blind spot in
   `@smith-worktree/SKILL.md`; that is about Serena writes hitting the
   main checkout, not symlink replacement.
 
-</required>
-
 ## Serena Activation Workflow
-
-<required>
 
 **At session start, MUST activate Serena:**
 
@@ -94,8 +68,6 @@ safe; the hazard is any path that is itself a file symlink.
 **If onboarding not performed:**
 - Call `onboarding()` to get instructions
 - Follow onboarding steps before proceeding
-
-</required>
 
 ## Core Serena Tools
 
@@ -116,8 +88,6 @@ safe; the hazard is any path that is itself a file symlink.
 - `find_referencing_symbols(name, path)` - All references to symbol
 
 ## Proactive Memory Workflow
-
-<required>
 
 **Memory files persist across sessions and context resets. Sync proactively at boundaries.**
 
@@ -168,8 +138,6 @@ possibly-stale pointer; verify before acting, and update or supersede
 the stale entry. File-backed entries that drift from their source are
 already staleness-flagged — honor the flag.
 
-</required>
-
 ## Project Configuration
 
 **Location**: `.serena/project.yml`
@@ -188,15 +156,9 @@ project_name: my_docs
 language: markdown
 ```
 
-<required>
-
 **For projects with no code files**, specify `language: markdown` explicitly to avoid onboarding errors.
 
-</required>
-
 ## Testing Serena Availability
-
-<required>
 
 **To verify Serena MCP is available:**
 
@@ -207,11 +169,7 @@ list_memories()
 - If successful: Serena is available, use Serena tools exclusively
 - If fails: Fall back to platform native tools with caution
 
-</required>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Serena-first for all file operations:**
 
@@ -232,22 +190,14 @@ list_memories()
 - Todo start → `read_memory()` if context needed
 - Todo complete → `write_memory()` with findings
 
-</required>
-
 ## Ralph Loop Memory Integration
-
-<required>
 
 **Serena persists Ralph state**: `ralph_«task»_state` with iteration, hypotheses, test_results, next_action.
 
 **Sync**: After each iteration; before/after context reset. See `@smith-ralph/SKILL.md`.
 
-</required>
-
-<related>
+## Related
 
 - @smith-ctx/SKILL.md - Context management thresholds
 - @smith-guidance/SKILL.md - AI agent behavior patterns
 - `@smith-ctx-kiro/SKILL.md` - Kiro-specific: Serena is MANDATORY over native tools
-
-</related>

@@ -5,17 +5,11 @@ description: SOLID principles and architecture design patterns. Use when startin
 
 # Design Principles
 
-<metadata>
-
-- **Scope**: SOLID principles for OOP/architecture design
-- **Load if**: Starting new feature, refactoring, architecture review
-- **Prerequisites**: @smith-principles/SKILL.md (fundamental principles: DRY, KISS, YAGNI, MECE)
-
-</metadata>
+**Scope:** SOLID principles for OOP/architecture design
+**Load if:** Starting new feature, refactoring, architecture review
+**Prerequisites:** @smith-principles/SKILL.md (fundamental principles: DRY, KISS, YAGNI, MECE)
 
 ## SOLID Principles
-
-<required>
 
 - **S**ingle Responsibility: One reason to change per class/module
 - **O**pen/Closed: Open for extension, closed for modification
@@ -23,11 +17,7 @@ description: SOLID principles and architecture design patterns. Use when startin
 - **I**nterface Segregation: Many specific interfaces over one general
 - **D**ependency Inversion: Depend on abstractions, not concretions
 
-</required>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When designing or reviewing architecture:**
 1. Apply Single Responsibility - each module has one reason to change
@@ -36,11 +26,7 @@ description: SOLID principles and architecture design patterns. Use when startin
 4. Prefer small, focused interfaces (Interface Segregation)
 5. Depend on abstractions, not implementations (Dependency Inversion)
 
-</required>
-
 ## Claude Code Plugin Integration
-
-<context>
 
 **When pr-review-toolkit is available:**
 
@@ -51,13 +37,9 @@ description: SOLID principles and architecture design patterns. Use when startin
   - Enforcement
 - Trigger: "Review the «TypeName» type design" or use Task tool
 
-</context>
-
-<related>
+## Related
 
 - @smith-principles/SKILL.md - Fundamental principles (DRY, KISS, YAGNI)
 - @smith-standards/SKILL.md - Universal code standards
 - `@smith-dev/SKILL.md` - Development workflow
 - `@smith-analysis/SKILL.md` - Problem decomposition before design
-
-</related>

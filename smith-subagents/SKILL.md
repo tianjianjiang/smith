@@ -5,21 +5,15 @@ description: Subagent spawning and return discipline — read-only by default, r
 
 # Subagent Discipline
 
-<metadata>
+**Scope:** Spawning, scoping, and consuming Task/Agent subagents and
+workflow orchestration; what tools to grant and how to trust returns
+**Load if:** About to spawn a subagent, delegate investigation, orchestrate
+parallel agents, OR a subagent will read/modify shared state (PR, issue,
+file, remote)
+**Prerequisites:** @smith-guidance/SKILL.md (delegation + in-band progress),
+@smith-ctx/SKILL.md (context isolation)
 
-- **Scope**: Spawning, scoping, and consuming Task/Agent subagents and
-  workflow orchestration; what tools to grant and how to trust returns
-- **Load if**: About to spawn a subagent, delegate investigation, orchestrate
-  parallel agents, OR a subagent will read/modify shared state (PR, issue,
-  file, remote)
-- **Prerequisites**: @smith-guidance/SKILL.md (delegation + in-band progress),
-  @smith-ctx/SKILL.md (context isolation)
-
-</metadata>
-
-## CRITICAL: Spawn Narrow, Trust Nothing (Primacy Zone)
-
-<required>
+## CRITICAL: Spawn Narrow, Trust Nothing
 
 - Spawn READ-ONLY by default. Grant write/side-effecting tools only for a
   bounded edit you have explicitly described in the prompt.
@@ -31,28 +25,21 @@ description: Subagent spawning and return discipline — read-only by default, r
   task needs INLINE in the prompt.
 - Restate a subagent's key findings in your own message — a reader (and the
   classifier) sees only your text, never the subagent's return.
-
-</required>
-
-<forbidden>
-
-- Granting an investigator/locator write, commit, push, or external-API tools.
-- Letting a subagent mutate a shared artifact (PR title/body, issue, remote
-  branch, tracked file) on its own — that is the main thread's call.
-- Acting on a subagent's summary without re-reading the current state of what
-  it described.
-- Assuming a subagent saw your conventions because you follow them.
-- Rubber-stamping a delegated diff on style/quality alone. "Implementation
-  is high quality" is NOT verification — audit the EXECUTION PATH: does the
-  fix run on the real failing input? (the test-masking trap: a delegated workflow's
-  clean-looking diff fixed a dead branch. See `@smith-validation/SKILL.md`
-  Bugfix Discipline.)
-
-</forbidden>
+- Grant investigator/locator roles read-only tools; reserve write, commit,
+  push, or external-API tools for a named editor role.
+- Keep mutation of shared artifacts (PR title/body, issue, remote branch,
+  tracked file) as the main thread's call — a subagent may report on them but
+  not apply the change itself.
+- Re-read the current state of anything a subagent described before acting on
+  its summary.
+- Assume a subagent has NOT seen your conventions unless you passed them
+  inline — don't assume it follows them because you do.
+- For a delegated diff, audit the EXECUTION PATH rather than approving on
+  style/quality alone: does the fix run on the real failing input? (the
+  test-masking trap: a delegated workflow's clean-looking diff fixed a dead
+  branch. See `@smith-validation/SKILL.md` Bugfix Discipline.)
 
 ## Spawning: scope and tools
-
-<context>
 
 - One concern per subagent. A locator finds; an editor changes one bounded
   thing; a reviewer critiques. Don't fuse roles.
@@ -63,11 +50,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - Parallel file-mutating subagents need isolation — see
   `@smith-worktree/SKILL.md`. Read-only fan-out does not.
 
-</context>
-
 ## Returns: findings, not actions
-
-<context>
 
 - The deliverable is DATA the main thread can act on: paths, line numbers,
   quoted evidence, a verdict. Not a side effect already taken.
@@ -80,11 +63,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - For a delegated fix/diff, audit the execution path — trace that the change
   runs on the real failing input — not just its style or quality.
 
-</context>
-
 ## Reconcile vs live state
-
-<context>
 
 - Between spawn and return, the world can change: a PR gets retitled, a file
   gets edited, a branch moves. The subagent's snapshot is already stale.
@@ -93,9 +72,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - Incident this guards against: a subagent overwrote a PR title from a stale
   read, discarding an intervening change. Reconcile first, then write.
 
-</context>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Delegation, in-band progress, verify-from-source
 - @smith-ctx/SKILL.md - Context isolation: keep findings, discard the noise
@@ -104,11 +81,7 @@ description: Subagent spawning and return discipline — read-only by default, r
 - `@smith-worktree/SKILL.md` - Isolate parallel file-mutating subagents
 - `@smith-validation/SKILL.md` - Audit a delegated diff's execution path
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before spawning:**
 1. Pick ONE concern; grant read-only tools unless it is a named bounded edit
@@ -120,5 +93,3 @@ description: Subagent spawning and return discipline — read-only by default, r
 2. Restate the key findings in your own message
 3. Decide and act from the main thread; don't rubber-stamp the summary
 4. Delegated fix? Audit the execution path (real input?), not just style
-
-</required>
