@@ -11,7 +11,13 @@ description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwri
 
 ## CRITICAL: Browser Selection
 
-- **chrome-devtools-mcp**: omit `--executablePath`; let the package resolve **Chrome for Testing** automatically, rather than pointing it at `/Applications/Vivaldi.app/...` or any Brave / Arc / Opera / Edge / consumer-Chrome binary. CfT is Google's automation-only build, distinct from consumer Chrome — typically not flagged by corporate Jamf rules that block consumer Chrome / Edge.
+- **chrome-devtools-mcp**: omit `--executablePath` (and `--channel`, which
+  defaults to `stable`), rather than pointing it at
+  `/Applications/Vivaldi.app/...` or any Brave / Arc / Opera / Edge /
+  consumer-Chrome binary. Upstream states it "officially supports Google
+  Chrome and Chrome for Testing only" — Chrome for Testing is Google's
+  automation-only build, distinct from consumer Chrome — typically not
+  flagged by corporate Jamf rules that block consumer Chrome / Edge.
 - **chrome-devtools-mcp**: pass `--isolated` so every run gets a fresh, MCP-owned user-data-dir, rather than reusing a Vivaldi user-data-dir (the one with `VivaldiDirectMatchIcons/`, Vivaldi extension `mpognobbkildjkofajifpdfhcoklimli`). Avoids cross-run profile collisions.
 - **Playwright MCP**: rely on Playwright's bundled Chromium (no `--browser` / `--executable-path` override), or attach to a user-launched instance via `--browserUrl` — not at other non-bundled browsers.
 - **Pre-flight** at session start (not just before the first MCP call): inspect all four MCP configuration locations (see "MCP Configuration Locations" below) and confirm no Vivaldi/Edge/consumer-Chrome `--executablePath` / `--executable-path` is set on `chrome-devtools-mcp` or `@playwright/mcp`. Run `claude mcp list` first as the authoritative live view; then locate the offending entry by file via the table when a violation is found.
@@ -72,9 +78,13 @@ In `~/.claude/settings.json` or a project `.mcp.json`, the chrome-devtools-mcp s
 }
 ```
 
-No `--executablePath`, no `--channel`. The package resolves Chrome for Testing on first use; subsequent runs reuse the cached binary.
+No `--executablePath`, no `--channel` — this defaults to the stable
+channel, one of the two browsers upstream officially supports (Google
+Chrome or Chrome for Testing).
 
-Source: https://github.com/ChromeDevTools/chrome-devtools-mcp (README `--executablePath`, `--isolated`, `--channel` options).
+Source: https://github.com/ChromeDevTools/chrome-devtools-mcp (README:
+"officially supports Google Chrome and Chrome for Testing only"; `--channel`
+"default is the stable channel version"; retrieved 2026-07-12).
 
 ## Recipe: Playwright MCP (default)
 
