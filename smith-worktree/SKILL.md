@@ -115,4 +115,5 @@ git pull --ff-only
    only when the user has asked for "evaluate-in-place"
 
 **After squash-merge:**
-- `ExitWorktree` (remove + discard — deletes the branch too) → `git pull --ff-only` on the default branch. Only if a branch survived (`keep`/renamed/manual): `git branch -D «branch»` to clear the squash-merge orphan.
+- Confirm the squash commit actually landed first (e.g. `gh pr view «n» --json state,mergedAt` shows `MERGED`) — don't discard on the assumption a merge command "probably worked."
+- Then `ExitWorktree` (remove + discard — deletes the branch too) → `git fetch --prune origin && git pull --ff-only` on the repo's actual default branch (resolve it, don't assume `main` — see Sync-After-Squash-Merge Protocol above). Only if a branch survived (`keep`/renamed/manual): `git branch -D «branch»` to clear the squash-merge orphan.
