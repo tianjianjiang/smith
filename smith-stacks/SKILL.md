@@ -11,7 +11,9 @@ description: Stacked pull request workflows for large features. Use when creatin
 
 ## CRITICAL
 
-- Merge the parent PR before its child PR.
+- Merge stacked PRs bottom-up: retarget each child's base onto its
+  grandparent (or `main`) BEFORE merging or deleting the parent PR — never
+  after.
 - Update child branches by merging their immediate parent (not `main`
   directly) — cascade through each level of the stack in order.
 - Keep stacks to 3-4 levels deep.
@@ -19,9 +21,10 @@ description: Stacked pull request workflows for large features. Use when creatin
   `gh pr merge --delete-branch` on a parent/middle PR while a child PR still
   targets its branch: via the gh CLI this CLOSES the child instead of
   retargeting it (cli/cli#1168, still open; the web-UI delete auto-retargets).
-- Squash-merging a non-final stacked PR is fine as long as it's followed by
-  the cascade-sync (rebase child `--onto`, retarget, then delete the parent
-  branch) — squash itself is allowed; see Squash Merge with Stacked PRs.
+- Squash-merging a non-final stacked PR is fine as long as the child is
+  retargeted BEFORE the parent merges, followed by the cascade-sync (merge
+  parent, delete its branch, then rebase child `--onto`) — squash itself is
+  allowed; see Squash Merge with Stacked PRs.
 
 ## Stack Scope Verification
 
@@ -77,20 +80,25 @@ main
 
 **Sequential merge order** (bottom-up):
 1. Wait for parent PR approval
-2. Merge parent PR into `main`
-3. Rebase child PR onto updated `main`
-4. Get child PR approved
-5. Repeat for each level in stack
+2. Retarget child PR's base onto the parent's base (its grandparent, or
+   `main` if the parent is the stack's base) — BEFORE merging the parent,
+   to avoid GitHub auto-closing the child (cli/cli#1168)
+3. Merge parent PR into `main`
+4. Rebase child PR onto updated `main`
+5. Get child PR approved
+6. Repeat for each level in stack
 
 ### Examples
 
 **Correct merge sequence**:
 ```text
-1. Merge PR #1 (feat/auth-base) → main
-2. Rebase PR #2 (feat/auth-login) onto main
-3. Merge PR #2 → main
-4. Rebase PR #3 (feat/auth-oauth) onto main
-5. Merge PR #3 → main (can squash this one)
+1. Retarget PR #2 (feat/auth-login) onto main (before merging PR #1)
+2. Merge PR #1 (feat/auth-base) → main
+3. Rebase PR #2 onto main
+4. Retarget PR #3 (feat/auth-oauth) onto main (before merging PR #2)
+5. Merge PR #2 → main
+6. Rebase PR #3 onto main
+7. Merge PR #3 → main (can squash this one)
 ```
 
 ## Rebasing After Parent Merges
@@ -232,9 +240,10 @@ git merge main
 ## Before You Finish
 
 **Merge stacked PRs bottom-up:**
-1. Merge parent PR first, WITHOUT `--delete-branch` (the gh CLI would close
-   the child instead of retargeting it — cli/cli#1168)
-2. Retarget child base: `gh pr edit {child} --base main`
+1. Retarget child base BEFORE merging the parent: `gh pr edit {child}
+   --base main`
+2. Merge parent PR, WITHOUT `--delete-branch` (the gh CLI would close a
+   still-pointing child instead of retargeting it — cli/cli#1168)
 3. Rebase child: `git rebase --onto origin/main feat/parent`
 4. Force push child: `git push --force-with-lease`
 5. Delete the parent branch only now: `git push origin --delete feat/parent`
