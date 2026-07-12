@@ -6,7 +6,8 @@ description: Development workflow standards and code quality requirements. Use w
 # Development Workflow Standards
 
 **Scope:** Development workflow standards and code quality requirements
-**Load if:** Initializing a new project
+**Load if:** Starting any task that modifies repo files (implement, fix, add,
+refactor, harden) or initializing a new project
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 This document defines development workflow standards and code quality requirements.
