@@ -5,18 +5,12 @@ description: Socratic interview that stress-tests a plan against project docs an
 
 # Socratic Plan Interview
 
-<metadata>
+**Scope:** Relentless Socratic questioning of user's plan against project docs and code
+**Load if:** User requests plan challenge, stress-test, dialectic, or "grill"
+**Prerequisites:** @smith-guidance/SKILL.md (Questioning Techniques, Anti-Sycophancy)
+**Based on:** [mattpocock/skills grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md)
 
-- **Scope**: Relentless Socratic questioning of user's plan against project docs and code
-- **Load if**: User requests plan challenge, stress-test, dialectic, or "grill"
-- **Prerequisites**: @smith-guidance/SKILL.md (Questioning Techniques, Anti-Sycophancy)
-- **Based on**: [mattpocock/skills grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md)
-
-</metadata>
-
-## CRITICAL: Interview Protocol (Primacy Zone)
-
-<required>
+## CRITICAL: Interview Protocol
 
 **The interview targets the USER's plan, never a third party's work.**
 
@@ -32,21 +26,14 @@ Interview the user relentlessly about every aspect of their plan until reaching 
 - What plan/design is being stress-tested?
 - Which project docs to use as evidence? (default: CLAUDE.md + README)
 
-</required>
-
-<forbidden>
-
-- Evaluating or scoring a third party's work
-- Checklist-audit format (pass/fail grading, scoring rubrics)
-- Expanding scope without confirming the user's objective first
-- Rubber-stamping ("looks good" without substantive challenge)
-- Batching multiple questions in a single response
-
-</forbidden>
+**Keep the interview scoped and adversarially honest:**
+- Evaluate only the user's own plan, never a third party's work
+- Ask open-ended Socratic questions rather than using checklist-audit pass/fail grading or scoring rubrics
+- Confirm the user's objective before expanding scope
+- Challenge substantively rather than rubber-stamping ("looks good")
+- Ask one question per response, not a batch
 
 ## During the Interview
-
-<required>
 
 **Challenge against project docs:**
 When the user's plan conflicts with CLAUDE.md, README, or project conventions, surface it immediately. "CLAUDE.md says X, but your plan assumes Y — which is right?"
@@ -60,11 +47,7 @@ When relationships or dependencies are discussed, stress-test with specific scen
 **Cross-reference with code:**
 When the user states how something works, check whether the code agrees. Surface contradictions: "Your code does A, but you just said B — which is current?"
 
-</required>
-
 ## Questioning Style
-
-<context>
 
 Builds on @smith-guidance/SKILL.md Socratic Method:
 
@@ -75,20 +58,14 @@ Builds on @smith-guidance/SKILL.md Socratic Method:
 
 Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules throughout.
 
-</context>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Socratic Method, Anti-Sycophancy (foundation)
 - `@smith-analysis/SKILL.md` - Constructive reasoning (complement)
 - `@smith-clarity/SKILL.md` - Cognitive traps (defensive complement)
 - `@smith-validation/SKILL.md` - Hypothesis testing (code-level complement)
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When conducting a dialectic session:**
 1. Confirm user's plan and doc scope before starting
@@ -97,5 +74,3 @@ Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules through
 4. One question at a time, with your recommended answer
 5. Challenge language, assumptions, and claims against evidence
 6. Continue until shared understanding is reached
-
-</required>

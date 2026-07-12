@@ -113,7 +113,11 @@ smith/
 
 ### SKILL.md Format
 
-Each skill follows [agentskills.io specification](https://agentskills.io/specification)[[29]](#ref-29):
+Each skill follows [agentskills.io specification](https://agentskills.io/specification)[[29]](#ref-29).
+Bodies use plain Markdown (headers, bold labels, bullet lists) — not an XML
+tag skeleton — matching Anthropic's own SKILL.md-authoring examples and
+OpenAI's current model guidance; see `smith-xml/SKILL.md` for the narrower
+case where XML tags still apply (runtime prompts, not SKILL.md bodies):
 
 ```yaml
 ---
@@ -123,18 +127,16 @@ description: ...        # When to use this skill
 
 # Skill Title
 
-<metadata>
-- **Load if**: Conditions for activation
-- **Prerequisites**: Dependencies
-</metadata>
+**Load if:** Conditions for activation
+**Prerequisites:** Dependencies
 
-<required>
+## Section Title
+
 Instructions...
-</required>
 
-<related>
+## Related
+
 - `@other/SKILL.md` - Description
-</related>
 ```
 
 ### Reference Convention

@@ -5,11 +5,10 @@ description: Universal context-management foundation — proactive context-level
 
 # Context Management
 
-<metadata>Load if: Always active (context management foundation); Prerequisites: @smith-guidance/SKILL.md</metadata>
+**Load if:** Always active (context management foundation)
+**Prerequisites:** @smith-guidance/SKILL.md
 
-## CRITICAL: Proactive Context Management (Primacy Zone)
-
-<required>
+## Proactive Context Management
 
 **Agent role**: Check context levels proactively, RECOMMEND actions to user.
 
@@ -18,8 +17,6 @@ description: Universal context-management foundation — proactive context-level
 **To check context**: Prompt "What is the current context usage?" to get percentage.
 
 **Agent RECOMMENDS - user executes** the platform's context reset command.
-
-</required>
 
 ## Platform Reference
 
@@ -31,27 +28,18 @@ description: Universal context-management foundation — proactive context-level
 
 ## Progressive Disclosure
 
-<required>
-
 **Loading order (cheapest first):**
 1. **Metadata scan**: Glob/Grep for file locations
 2. **Targeted read**: Specific file sections only
 3. **Full file**: Only when actively modifying
 4. **Broad explore**: Delegate to subagent (isolated context)
 
-</required>
-
-<forbidden>
-
-- NEVER read entire directories without Grep filtering
-- NEVER load full files when targeted sections suffice
-- NEVER repeat file reads without using context
-
-</forbidden>
+**Rules:**
+- Filter with Grep before reading entire directories
+- Load targeted sections instead of full files when they suffice
+- Reuse context from files already read instead of re-reading them
 
 ## Serena MCP Preference
-
-<required>
 
 **When Serena MCP is available, prefer Serena tools over native tools:**
 
@@ -62,11 +50,7 @@ description: Universal context-management foundation — proactive context-level
 - **Writing**: `replace_content` (regex) > `replace_symbol_body` > native `strReplace`
 - **Context savings**: 99%+ reduction with symbol-level operations
 
-</required>
-
 ## Information Retention
-
-<required>
 
 **Always preserve:**
 - Task goals
@@ -81,19 +65,13 @@ description: Universal context-management foundation — proactive context-level
 
 **Reference format**: Use `file:line` (e.g., `auth.ts:234`) instead of embedding content
 
-</required>
-
 ## Ralph Loop Context Management
-
-<required>
 
 **Ralph burns ~1-3.5k tokens/iteration.** At critical threshold, persist state to Serena memory before context reset.
 
 See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
-</required>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Core agent behavior
 - `@smith-ctx-claude/SKILL.md` - Claude Code: `/clear` (stop hook enforced)
@@ -101,11 +79,7 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 - `@smith-ctx-kiro/SKILL.md` - Kiro: 80% auto-summarize, Serena memory
 - `@smith-serena/SKILL.md` - Serena MCP for persistent memory
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Proactive context checks:**
 1. Periodically check context (platform-specific method)
@@ -124,5 +98,3 @@ See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 Context at «X»%. Recommend context reset (see platform skill for command).
 Keep: «task», «files», «decisions», «todos»
 ```
-
-</required>

@@ -5,11 +5,11 @@ description: Claude Code context management with /clear, /compact mechanics, sto
 
 # Claude Code Context Management
 
-<metadata>Load if: Using Claude Code, context >50%; Prerequisites: @smith-ctx/SKILL.md; Companion (Layer 3, read on demand): `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.</metadata>
+**Load if:** Using Claude Code, context >50%
+**Prerequisites:** @smith-ctx/SKILL.md
+**Companion (Layer 3, read on demand):** `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.
 
-## CRITICAL: Context Commands (Primacy Zone)
-
-<required>
+## CRITICAL: Context Commands
 
 **Agent prompts for context status**, then recommends action.
 
@@ -25,17 +25,9 @@ via `/rewind`; full path in ACTION below).
 **"/clear"** (full reset, save state first): stop hook enforced at 60% via
 `smith-plan-claude` using `stop_hook_active` (official best practice).
 
-</required>
-
-<forbidden>
-
-- `/clear` without checking uncommitted work
-
-</forbidden>
+Check for uncommitted work before running `/clear`.
 
 ## /compact — When to Avoid
-
-<context>
 
 `/compact` summarizes the **entire** conversation in-place; auto-compact fires
 near the limit unless disabled (`PreCompact` hook runs first — persist state).
@@ -44,11 +36,7 @@ Prefer "Summarize from here" or /clear: /compact is lossy and non-deterministic
 If it does run, pass focus instructions where allowed and re-verify file:line
 refs + open decisions against the repo afterward.
 
-</context>
-
 ## Tool-Output Hygiene
-
-<required>
 
 Every byte a tool returns persists in context for the rest of the session and
 is itself re-summarized on compaction. Large spills (full file reads,
@@ -63,11 +51,7 @@ cost.
 - Reference artifacts by `file:line` / path, not pasted content.
 - Read targeted ranges, not whole files, when a section suffices.
 
-</required>
-
 ## /clear - Full Context Reset
-
-<required>
 
 **Before `/clear`:**
 1. Update plan file with current progress (if active)
@@ -83,21 +67,13 @@ cost.
 3. Re-read relevant files as needed
 4. No memory saved? Recover intent from the JSONL transcript — see `smith-ctx-claude/REFERENCE.md` "JSONL State Recall"
 
-</required>
-
 ## Commit-Early Pattern
-
-<required>
 
 - Do not batch commits to end of session — context resets lose uncommitted work
 - If 15+ tool calls pass without a commit and there are uncommitted changes, commit with `#WIP` prefix to preserve progress
 - Before destructive operations (rebase, `/clear`), commit or stash current work
 
-</required>
-
 ## Stop Hook (Unified)
-
-<context>
 
 Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`. Uses real token counts from transcript JSONL (same data as Claude Code statusline) to calculate context percentage. A single unified hook covers both plan-active and non-plan contexts:
 
@@ -107,11 +83,7 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 
 **Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
 
-</context>
-
 ## Auto Memory (Claude Code Native)
-
-<context>
 
 **Claude Code auto memory** stores agent-generated notes at:
 `~/.claude/projects/«project-slug»/memory/`
@@ -120,10 +92,6 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 - Topic files (e.g. `debugging.md`) - Read on demand
 - Browse: `/memory` command
 - Disable: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
-
-</context>
-
-<required>
 
 **Auto memory vs Serena memory - complementary, not competing:**
 
@@ -137,11 +105,7 @@ continuity.
 **No sync needed** - different lifecycles. Auto memory accumulates knowledge;
 Serena handles continuity.
 
-</required>
-
 ## System Reminders (Auto-Injected Context)
-
-<context>
 
 Claude Code auto-injects system-reminder blocks in response to events. They
 look like user messages but are NOT user input — don't treat them as
@@ -154,11 +118,7 @@ change, auto-mode active, bg-isolation guard refusal. Full descriptions (with
 the relevant skill cross-refs) in `smith-ctx-claude/REFERENCE.md`
 "System-Reminder Event Taxonomy".
 
-</context>
-
 ## Active Plugin Side-Effects
-
-<context>
 
 Some plugins inject SessionStart hooks that alter behavior for the whole
 session. Account for them; do not mistake their output for a user instruction
@@ -173,11 +133,7 @@ or an error.
 These are output/behavioral contracts, not memory; they persist until the user
 says "stop caveman" / "stop ponytail" / "normal mode".
 
-</context>
-
 ## AskUserQuestion — Body Prose Is Hidden
-
-<required>
 
 The AskUserQuestion UI surfaces only the question text and each option's label
 and description; surrounding message prose may be hidden. Put every
@@ -191,23 +147,14 @@ multiSelect for ONE coherent choice (e.g. which sources to sweep) is fine;
 batching distinct decisions is not. (Implementation-phase confirmations that
 follow logically from an approved plan need no re-ask.)
 
-</required>
-
 ## Slash Command Invocation
-
-<required>
 
 When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invoke it directly via the `Skill` tool. The user naming the command IS the confirmation it exists. A failed `Skill` call costs one round-trip; an exhaustive existence audit costs dozens of tool calls plus a confidently wrong conclusion.
 
-</required>
-
-<forbidden>
-
-- Searching `~/.claude/plugins/`, marketplace catalogs, or plugin cache to "prove" a slash command exists before invoking it
+Treat the user naming a slash command as sufficient grounds to try it — invoke `Skill(skill="«name»")` first rather than:
+- Searching `~/.claude/plugins/`, marketplace catalogs, or plugin cache to "prove" the command exists before invoking it
 - Grepping transcript JSONL files for prior invocations as existence proof
 - Concluding a slash command "doesn't exist on this system" without trying `Skill(skill="«name»")` first
-
-</forbidden>
 
 **If the `Skill` call fails** with "skill not found": surface the error, ask the user to confirm the name or install the plugin. Do not escalate to filesystem search.
 
@@ -215,28 +162,20 @@ When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invok
 
 **Location**: `$WORKSPACE_ROOT/.claude/CLAUDE.md` or `$HOME/.claude/CLAUDE.md`
 
-<required>
-
 **Put in CLAUDE.md** (always active): critical guardrails (NEVER/ALWAYS),
 reference to @AGENTS.md, project-specific preferences.
 
 **Put in skill files** (context-triggered): detailed technical guidelines,
 platform-specific patterns.
 
-</required>
-
-<related>
+## Related
 
 - `smith-ctx-claude/REFERENCE.md` - Hooks, permission modes, agent features, model routing, moved trigger table + skill catalog (Layer-3 dumps)
 - @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
 - `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Proactive context management:**
 1. At 40-50%: Try "Summarize from here" first
@@ -249,5 +188,3 @@ platform-specific patterns.
 **Throughout:** keep tool-output spill out of context (sandbox-process, delegate, reference by path).
 
 **Agent RECOMMENDS - user executes the command.**
-
-</required>

@@ -16,8 +16,6 @@ Review-only (no commit/push/merge). For the full pipeline use `/smith-ship`.
 
 ## Procedure
 
-<required>
-
 **Plugin-pass receipt (every round).** A round MUST end with a one-line receipt
 naming each Claude Code review tool and whether it ran:
 `coderabbit [ran/NA] · /code-review [ran/NA] · pr-review-toolkit:review-pr
@@ -26,8 +24,6 @@ one-word reason (e.g. `NA:docs`). The change is NOT converged until the receipt
 shows every applicable tool ran. Disclosing a skipped tool is not a substitute
 for running it (`@smith-guidance` close-gaps). Resist the bias to "use fewer
 tools".
-
-</required>
 
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:

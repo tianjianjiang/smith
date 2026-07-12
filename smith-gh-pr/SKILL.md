@@ -5,16 +5,10 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 
 # GitHub PR Workflows
 
-<metadata>
+**Load if:** Creating PRs, reviewing code, merging, stacked PRs
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-git/SKILL.md`
 
-- **Load if**: Creating PRs, reviewing code, merging, stacked PRs
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-git/SKILL.md`
-
-</metadata>
-
-## CRITICAL (Primacy Zone)
-
-<required>
+## CRITICAL
 
 - MUST run quality checks before creating PR
 - MUST ensure branch is up-to-date before requesting review or merging
@@ -23,25 +17,17 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 - MUST have explicit user request before creating PRs
   -- listing is NOT consent to create
 
-</required>
-
 ## Avoid GitHub MCP
 
-<forbidden>
-
-- GitHub MCP tools (`mcp__github__*`) - hard to control pagination (token waste), less complete than CLI, requires personal token
-
-</forbidden>
-
-**Use instead**: `gh pr-review` extension, `gh api`, or GraphQL queries
+Prefer the `gh pr-review` extension, `gh api`, or GraphQL queries over GitHub
+MCP tools (`mcp__github__*`) — they are hard to control pagination on (token
+waste), less complete than the CLI, and require a personal token.
 
 ## PR Title Format
 
 Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 ## PR Creation Workflow
-
-<required>
 
 **Pre-PR checklist:**
 0. **Review to convergence FIRST** — run `/smith-review` (ALL applicable tools,
@@ -55,19 +41,13 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    not user-specified, confirm it with the user before pushing
 5. Push to remote
 
-</required>
-
 **AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies).
 
 ## Working on Existing PRs
 
-<required>
-
 - ALWAYS get actual branch name: `gh pr view {PR} --json headRefName`
 - ALWAYS check for review comments before making changes
 - ALWAYS update PR title/body after pushing changes
-
-</required>
 
 ## Code Review Cycle
 
@@ -82,8 +62,6 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 7. **Resolve threads after addressing** - don't leave resolved issues open
 8. Re-check for new comments after CI passes
 
-<required>
-
 **Code review response rules:**
 - **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
 - **Propose edits as committable suggestions**: when a reply proposes a specific
@@ -95,6 +73,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
 - **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"). Omit when the user manually authors the comment.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
+- Keep `@copilot` out of replies — mentioning it triggers unwanted sub-PRs
 
 **Review reply tone and style:**
 - **Concise**: Lead with the action taken or answer; no filler
@@ -108,15 +87,6 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
   (e.g., "I kept X because «reason» — happy to change if
   you see it differently")
 
-</required>
-
-<forbidden>
-
-- NEVER reply to file-inline comments with `gh pr comment` (loses thread context)
-- NEVER mention `@copilot` in replies (triggers unwanted sub-PRs)
-
-</forbidden>
-
 ## Posting Review Findings
 
 When Claude Code is the reviewer and an open PR exists (including self-review
@@ -124,8 +94,6 @@ before human review), deliver findings as **inline comments anchored to the
 line(s)**, carrying a **committable `suggestion` block** whenever the fix is
 concrete — not as one PR-level summary comment. With no open PR, report in-band
 (see `@smith-review`).
-
-<required>
 
 - **Anchor to the line(s).** A finding that maps to specific line(s) MUST be an
   inline review comment on those lines. Reserve PR-level/summary comments for
@@ -162,21 +130,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 ```
 ````
 
-</required>
-
-<forbidden>
-
-- NEVER collapse line-anchorable findings into one PR-level summary comment
-  (loses the anchor and the commit button).
-- NEVER anchor the comment on the wrong range — GitHub replaces exactly the
-  commented line(s) with the block verbatim, so a mis-anchored range edits the
-  wrong lines and corrupts the file.
-
-</forbidden>
-
 ## Review Convergence Protocol
-
-<required>
 
 **Decide-and-proceed defaults (do NOT ask between obvious steps):**
 - CR finding is Critical/Warning + high-confidence: fix, commit, push silently
@@ -212,11 +166,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Post unless user objects within that turn
 - Always include attribution line per medium convention
 
-</required>
-
 ## Approving a PR by command
-
-<required>
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
   write under the user's account: authorization-gate first (state intent; user
@@ -227,17 +177,11 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - `reviewDecision` is **empty when the repo has no required-review branch
   protection** computing a gate — that is expected, not a missing approval.
 
-</required>
-
 ## Fetching Review Comments
-
-<required>
 
 **Use `gh pr-review`** over `gh api` - structured output with thread IDs.
 
 All commands require `--pr {number} -R {owner}/{repo}` for numeric PR selectors.
-
-</required>
 
 **Install**: `gh extension install agynio/gh-pr-review` (consider pinning to vetted SHA)
 
@@ -300,8 +244,6 @@ git push origin --delete feat/parent_branch
 
 ## /ultrareview — Cloud Deep-Review
 
-<context>
-
 `/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than the built-in single-pass `/review` slash command: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
 
 **Invocation:**
@@ -318,11 +260,7 @@ git push origin --delete feat/parent_branch
 
 **When to recommend over the built-in `/review`:** before merging a substantial change where pre-merge confidence matters; not for quick iterative feedback. Source: https://code.claude.com/docs/en/ultrareview
 
-</context>
-
 ## Automated PR Review Monitoring
-
-<context>
 
 **`/loop` for review cycles** — periodically poll for
 new review comments and auto-address them:
@@ -364,11 +302,7 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 - Loop pattern: terminal stays attached; agent under the user's direct supervision; user controls each push
 - `/autofix-pr`: terminal can close; runs autonomously in cloud; for PRs where you're confident in unattended fixing
 
-</context>
-
 ## Claude Code Plugin Integration
-
-<context>
 
 **When plugins are available, prefer plugin commands:**
 
@@ -383,9 +317,7 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 
 **Plugin commands complement** (not replace) manual `gh` workflows.
 
-</context>
-
-<related>
+## Related
 
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands, pagination limits
 - `@smith-stacks/SKILL.md` - Stacked PR workflows
@@ -395,9 +327,7 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 - `@smith-research/SKILL.md` - Research best practices before implementing review feedback
 - `@smith-validation/SKILL.md` - Debugging, root cause analysis for review issues
 
-</related>
-
-## ACTION (Recency Zone)
+## Before You Finish
 
 **Create PR:**
 ```shell

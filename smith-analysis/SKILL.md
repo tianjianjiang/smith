@@ -5,15 +5,9 @@ description: Reasoning frameworks and problem decomposition techniques. Use when
 
 # Reasoning Frameworks
 
-<metadata>
-
-- **Scope**: Reasoning, problem decomposition, and analysis techniques
-- **Load if**: Planning implementation, evaluating arguments, estimating scope, decomposing tasks
-- **Prerequisites**: @smith-guidance/SKILL.md
-
-</metadata>
-
-<context>
+**Scope:** Reasoning, problem decomposition, and analysis techniques
+**Load if:** Planning implementation, evaluating arguments, estimating scope, decomposing tasks
+**Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Based on OODA Loop's Orient phase (Boyd) - the "cognitive engine" that drives decision-making through mental models, prior experience, and analysis/synthesis.
 
@@ -24,11 +18,7 @@ description: Reasoning frameworks and problem decomposition techniques. Use when
 - `@smith-clarity/SKILL.md` - Defensive thinking (what to avoid)
 - `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
 
-</context>
-
 ## Reasoning Patterns
-
-<context>
 
 ### Deductive Reasoning
 
@@ -63,26 +53,18 @@ Best explanation from incomplete observations (inference to best explanation):
 3. Select most plausible explanation
 4. Test to confirm or falsify
 
-</context>
-
 ## Extended Thinking Guidance
 
 Modern LLMs have built-in extended thinking for complex problem-solving.
 
 **When to use**: Complex architectural decisions, multi-step refactoring, security analysis, performance optimization.
 
-<forbidden>
-
-- NEVER use "think step-by-step" prompts (counterproductive for models with built-in reasoning)
-- NEVER ask for visible reasoning steps (defeats efficiency purpose)
-- NEVER use for simple, straightforward tasks
-- NEVER provide explicit reasoning instructions (focus on outcome specification, not process)
-
-</forbidden>
+- Rely on the model's built-in reasoning instead of "think step-by-step" prompts (counterproductive for models with built-in reasoning)
+- Keep reasoning steps internal — asking for visible reasoning steps defeats the efficiency purpose
+- Reserve extended thinking for complex problems; skip it for simple, straightforward tasks
+- Specify the desired outcome rather than giving explicit reasoning/process instructions
 
 ## Problem Decomposition
-
-<context>
 
 ### First Principles Thinking
 
@@ -112,11 +94,7 @@ Universally applicable problem-solving:
    - Can you check the result differently?
    - Can you use this for other problems?
 
-</context>
-
 ## Estimation
-
-<context>
 
 ### Fermi Estimation
 
@@ -127,11 +105,7 @@ Order-of-magnitude approximation with limited data:
 3. Combine estimates (multiply/add as appropriate)
 4. Sanity check: Is result reasonable?
 
-</context>
-
 ## Constraint Thinking
-
-<context>
 
 ### TOC Five Focusing Steps
 
@@ -161,11 +135,7 @@ Trace symptoms to root cause:
 3. Trace backward to find common root cause
 4. Validate: Does root cause explain ALL symptoms?
 
-</context>
-
 ## Risk Assessment
-
-<context>
 
 ### Pre-Mortem Analysis
 
@@ -186,11 +156,7 @@ Think backward to avoid failure:
 - Instead of "How to make this fast?" ask "What would make this slow?"
 - Avoid stupidity rather than seeking brilliance
 
-</context>
-
 ## Comprehensive Review
-
-<context>
 
 ### Six Thinking Hats
 
@@ -203,11 +169,7 @@ Ensure coverage by examining from 6 perspectives:
 - **Green** (Creativity): What alternatives exist? New approaches?
 - **Blue** (Process): Are we on track? What's the next step?
 
-</context>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When reasoning or planning:**
 1. Use First Principles to break down complex problems
@@ -215,12 +177,8 @@ Ensure coverage by examining from 6 perspectives:
 3. Use Pre-Mortem Analysis before implementation
 4. Apply Six Thinking Hats for comprehensive review
 
-</required>
-
-<related>
+## Related
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
 - `@smith-validation/SKILL.md` - Hypothesis testing, debugging
-
-</related>

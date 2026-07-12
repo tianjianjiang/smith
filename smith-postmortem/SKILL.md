@@ -5,40 +5,23 @@ description: Incident postmortem methodology and templates. Use when conducting 
 
 # Postmortem Standards
 
-<metadata>
-
-- **Scope**: Technical/engineering incident postmortem templates, methodologies, and best practices
-- **Load if**: Conducting incident postmortems, writing postmortem reports, establishing postmortem processes, incident response workflows, post-incident analysis
-- **Prerequisites**: None (standalone guideline)
-
-</metadata>
-
-<context>
+**Scope:** Technical/engineering incident postmortem templates, methodologies, and best practices
+**Load if:** Conducting incident postmortems, writing postmortem reports, establishing postmortem processes, incident response workflows, post-incident analysis
+**Prerequisites:** None (standalone guideline)
 
 Postmortems are structured reviews after incidents to understand what happened, why it happened, and how to prevent recurrence. Principles: blameless culture (systems, not people), learning focus, timely execution (48-72 hours), actionable outcomes (action items with timelines).
 
-</context>
-
 ## Core Principles
-
-<required>
 
 - MUST maintain blameless culture - focus on systems, processes, and contributing factors, not individual fault
 - MUST be conducted within 48-72 hours of incident resolution
 - MUST include all key participants (incident commander, responders, affected teams)
 - MUST result in specific, assigned action items with timelines
 - MUST be shared widely within the organization for learning
-
-</required>
-
-<forbidden>
-
-- NEVER assign blame to individuals or teams
-- NEVER skip postmortems for "minor" incidents - all incidents provide learning opportunities
-- NEVER create action items without owners and timelines
-- NEVER conduct postmortems without key participants present
-
-</forbidden>
+- Attribute failures to systems and processes, not individuals or teams
+- Conduct postmortems for all incidents, including "minor" ones - they all provide learning opportunities
+- Give every action item an owner and a timeline
+- Conduct postmortems only with key participants present
 
 ## Report Structure
 
@@ -115,14 +98,10 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 ### When to Conduct
 
-<required>
-
 - MUST conduct for all P0/P1 incidents (critical/high severity)
 - SHOULD conduct for P2 incidents (medium severity) if they reveal systemic issues
 - SHOULD conduct for recurring incidents even if individually low severity
 - SHOULD conduct for incidents with customer impact
-
-</required>
 
 ### Participants
 
@@ -138,15 +117,11 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 ### Sharing and Documentation
 
-<required>
-
 - MUST publish postmortem in accessible location (wiki, documentation system)
 - MUST share with all engineering teams
 - MUST include in team retrospectives and learning sessions
 - MUST update runbooks and documentation based on learnings
 - MUST track action items to completion
-
-</required>
 
 ### Blameless Language
 
@@ -154,21 +129,15 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 **Guidelines**: Use "we" not "they". Focus on "what" and "why" not "who".
 
-<forbidden>
+### Avoid
 
-"«Person» deployed broken code" - assigns blame
+- "«Person» deployed broken code" - assigns blame
 
-</forbidden>
+### Good
 
-<examples>
+- "The deployment process allowed code with a connection leak to reach production" - describes system gap
 
-"The deployment process allowed code with a connection leak to reach production" - describes system gap
-
-</examples>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When conducting postmortems:**
 1. Schedule within 48-72 hours of incident resolution
@@ -178,11 +147,7 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 5. Assign owners and timelines to all action items
 6. Share widely for organizational learning
 
-</required>
-
-<related>
+## Related
 
 - `@smith-clarity/SKILL.md` - Root cause analysis techniques (Five Whys, fishbone)
 - `@smith-validation/SKILL.md` - Hypothesis testing
-
-</related>

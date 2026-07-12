@@ -5,44 +5,26 @@ description: Python development with uv, pytest, ruff, and type hints. Use when 
 
 # Python Development Standards
 
-<metadata>
+**Load if:** Python code, pytest, virtual env
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
-- **Load if**: Python code, pytest, virtual env
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md
+## CRITICAL
 
-</metadata>
-
-## CRITICAL (Primacy Zone)
-
-<forbidden>
-
-- NEVER use relative imports (`from .module import`)
-- NEVER use inline imports within functions
-- NEVER use unittest-style TestCase classes
-- NEVER use pytest class-based tests (`class TestFoo:`)
-- NEVER execute pytest without virtual env runner (missing .env vars)
-- NEVER execute directly: `.venv/bin/python -m pytest`
-- NEVER mix package managers in same project
-- NEVER use %-style formatting in log messages (use `extra=` parameter for structured logging)
-- NEVER add `# noqa` to silence ruff/flake8 without meeting
-  exception criteria in `@smith-validation/SKILL.md`
-- NEVER rename to `_` prefix to suppress F841 unused-variable
-
-</forbidden>
-
-<required>
-
-- ALWAYS use absolute imports (`from package.module import`)
+- ALWAYS use absolute imports (`from package.module import`) instead of relative imports (`from .module import`)
 - ALWAYS use type hints for all function signatures
-- ALWAYS use function-based tests: `def test_should_«action»_when_«condition»():`
-- ALWAYS use virtual env runner: `poetry run` or `uv run`
-- ALWAYS use structured logging with `extra=` parameter for all log data
+- ALWAYS use function-based tests: `def test_should_«action»_when_«condition»():` — instead of unittest-style TestCase classes or pytest class-based tests (`class TestFoo:`)
+- ALWAYS use virtual env runner: `poetry run` or `uv run` — running `.venv/bin/python -m pytest` directly skips required .env vars
+- ALWAYS use structured logging with `extra=` parameter for all log data, instead of %-style formatting in log messages
 - ALWAYS prefer moderate defaults for enum parameters
   (e.g., "medium" not "low"/"high" unless spec requires)
 - When refactoring, preserve existing parameter values
   and model references unless change is requested
-
-</required>
+- Keep imports at module level, not inline within functions
+- Use a single package manager consistently within a project
+- Add `# noqa` to silence ruff/flake8 only when it meets the
+  exception criteria in `@smith-validation/SKILL.md`
+- Address F841 unused-variable warnings directly, rather than
+  renaming to a `_` prefix to suppress them
 
 ## Import Organization
 
@@ -105,8 +87,6 @@ import library  # Now sees config
 
 ## Claude Code LSP (Experimental)
 
-<context>
-
 **LSP plugins exist but are currently broken** (race condition in initialization):
 - `pyright-lsp@claude-plugins-official`
 
@@ -114,9 +94,7 @@ import library  # Now sees config
 
 **Workaround**: Use Serena MCP for language server features (`find_symbol`, `find_referencing_symbols`)
 
-</context>
-
-<related>
+## Related
 
 - @smith-principles/SKILL.md - Core principles
 - @smith-standards/SKILL.md - Universal coding standards
@@ -124,9 +102,7 @@ import library  # Now sees config
 - `@smith-dev/SKILL.md` - Development workflow
 - `@smith-serena/SKILL.md` - Serena MCP for language server features
 
-</related>
-
-## ACTION (Recency Zone)
+## Before You Finish
 
 **Before commit (Poetry):**
 ```shell

@@ -5,27 +5,17 @@ description: Claude Code auto mode classifier — what gets blocked, how to reco
 
 # Auto Mode Classifier — Denial Recovery
 
-<metadata>
+**Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
+**Load if:** An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`
+**Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
+**Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode (verified 2026-05-21)
 
-- **Scope**: Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
-- **Load if**: An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`
-- **Prerequisites**: `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
-- **Authoritative source**: https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode (verified 2026-05-21)
+## CRITICAL: Denial Handling
 
-</metadata>
-
-## CRITICAL: Denial Handling (Primacy Zone)
-
-<forbidden>
-
-- NEVER silently retry the same action after a classifier denial. The classifier rejected for a reason; retrying without changing context just exhausts the fallback budget (3 consecutive blocks → auto mode pauses; 20 total → auto mode pauses for the session).
-- NEVER substitute a more destructive equivalent (e.g. `git push --force` after a regular `git push` was denied, or `rm -rf` after a `git restore` was denied). The classifier flags broader categories than the literal command.
-- NEVER assume a user-stated boundary ("don't push", "wait until I review") will persist past a `/clear` or summarization. Boundaries are re-read from the transcript on each check; context compaction can drop them. For a hard guarantee, the user needs a deny rule, not a chat boundary.
-- NEVER skip the classifier by switching to `bypassPermissions` mid-task to "get past" a denial. That bypasses every safety check, not just the one in question.
-
-</forbidden>
-
-<required>
+- After a classifier denial, change something material before retrying — the classifier rejected the action for a reason, and a silent identical retry just exhausts the fallback budget (3 consecutive blocks → auto mode pauses; 20 total → auto mode pauses for the session)
+- Stay within the same risk category after a denial — e.g. a denied `git push` should not be escalated to `git push --force`, nor a denied `git restore` to `rm -rf`; the classifier flags broader categories than the literal command
+- Treat a user-stated boundary ("don't push", "wait until I review") as re-read from the transcript on each check, not as a persisted rule — context compaction (`/clear`, summarization) can drop it, so for a hard guarantee recommend the user add a `permissions.deny` rule instead of relying on the chat boundary
+- Keep the classifier engaged through to task completion — switching to `bypassPermissions` mid-task to get past a denial bypasses every safety check, not just the one in question
 
 After a classifier denial the agent MUST:
 
@@ -36,11 +26,7 @@ After a classifier denial the agent MUST:
 
 On the **second** denial of the same logical action (even if the literal command differs), use `AskUserQuestion` rather than free-form prose — the user needs to pick a path explicitly.
 
-</required>
-
 ## What Auto Mode Is
-
-<context>
 
 Auto mode lets Claude execute without per-action permission prompts. A separate classifier model evaluates each pending action and blocks anything that escalates beyond the user's request, targets unrecognized infrastructure, or appears driven by content Claude read from a tool result.
 
@@ -50,11 +36,7 @@ Auto mode lets Claude execute without per-action permission prompts. A separate 
 
 **Requirements**: Max/Team/Enterprise/API plan; Sonnet 4.6, Opus 4.6, or Opus 4.7; Anthropic API provider. See the cited URL for the full matrix.
 
-</context>
-
 ## What the Classifier Decides
-
-<context>
 
 Decision order — first match wins:
 
@@ -78,11 +60,7 @@ Decision order — first match wins:
 
 Run `claude auto-mode defaults` for the live rule lists. Trusted infrastructure is configured via `autoMode.environment` (prose entries naming trusted repos/buckets/domains; the default trusts the working repo + its remotes). To extend the built-in list instead of replacing it, include the literal string `"$defaults"` in the array — the defaults splice in at that position. See https://code.claude.com/docs/en/auto-mode-config.
 
-</context>
-
 ## Decision Matrix on Denial
-
-<required>
 
 Four outcomes after a classifier block — pick exactly one, surface it to the user:
 
@@ -91,11 +69,7 @@ Four outcomes after a classifier block — pick exactly one, surface it to the u
 - **(c) Ambiguous intent** — `AskUserQuestion` to clarify what they really want. Often the right answer is a less risky path the agent didn't see.
 - **(d) Defer or abandon** — Tell the user the action is blocked and the task can't proceed without their decision. Park the work, document state, and stop.
 
-</required>
-
 ## User-Stated Boundaries
-
-<context>
 
 Phrases like "don't push", "wait until I review", or "we don't deploy on Fridays" are treated as **block signals** by the classifier — even when the default rules would allow the action. Important properties:
 
@@ -103,47 +77,27 @@ Phrases like "don't push", "wait until I review", or "we don't deploy on Fridays
 - Boundaries can be **lost on context compaction** (`/clear`, "Summarize from here", or summary rollover). For a guarantee that survives compaction, recommend the user add a `permissions.deny` rule in `~/.claude/settings.json`.
 - Claude's own judgment that a boundary's condition was met does **not** lift it. Only an explicit user message lifts a boundary.
 
-</context>
-
 ## Hard Deny Rules
-
-<context>
 
 `hard_deny` blocks an action unconditionally; no `allow` rule overrides it. The user owns the configuration; the agent's job is to recognize the outcome and route to **(d) abandon** — never propose workarounds.
 
-</context>
-
 ## Fallback Thresholds
-
-<context>
 
 - **3 consecutive blocks** → auto mode pauses; CLI resumes prompting. Any allowed action resets the consecutive counter.
 - **20 total blocks** in a session → auto mode pauses for the rest of the session.
 - Non-interactive `-p` mode → repeated blocks **abort** the session (no user to prompt).
 
-</context>
-
 ## Subagent Behavior
-
-<context>
 
 Subagents inherit the parent's classifier (checked at spawn, per-action, and on return). A subagent's `permissionMode` frontmatter is **ignored** in auto mode.
 
-</context>
-
 ## Protected Paths
-
-<context>
 
 Writes to repo/Claude config dots (`.git`, `.claude/*` except commands/agents/skills/worktrees, shell rc files, `.mcp.json`, `.claude.json`, etc.) route to the classifier and usually block. See https://code.claude.com/docs/en/permission-modes#protected-paths for the full enumeration.
 
 Editing `~/.claude/settings.json` from inside a project session almost always trips the classifier. Recommend the user edit it themselves, or invoke the Claude Code `update-config` plugin command.
 
-</context>
-
 ## Pre-approved Operation Patterns
-
-<context>
 
 **Reducing classifier friction for known-safe operations**
 via `~/.claude/settings.json`:
@@ -155,19 +109,15 @@ Common patterns that reduce denial loops without compromising safety:
 - `rm -rf .claude/worktrees/*` — session artifact cleanup
 
 **Principle:** Pre-approve only operations bounded by session-local
-state (branches you created, worktrees you own). Never pre-approve
-operations on shared state (main, production, IAM).
+state (branches you created, worktrees you own). Reserve operations on
+shared state (main, production, IAM) for explicit per-instance approval.
 
 **Note:** `AskUserQuestion` authorization is conversational — the
 classifier does not recognize it as a persistent permission grant.
 For repeat ops, the fix is `permissions.allow` in settings, not
 asking again each time.
 
-</context>
-
 ## Classifier Rule Lists (`autoMode.*`)
-
-<context>
 
 The classifier is a **second gate** that runs after the permissions system.
 `permissions.deny` (tool-pattern blocks) fires *before* the classifier and
@@ -187,9 +137,7 @@ count — the message must describe the exact action). As with `environment`,
 include the literal `"$defaults"` in any of these arrays to keep the built-in
 rules while adding your own.
 
-</context>
-
-<related>
+## Related
 
 - `@smith-ctx-claude/SKILL.md` - Permission modes overview (this skill is the deep-dive for the `auto` mode)
 - `@smith-git/SKILL.md` - Force-push and push-to-main behavior (common classifier triggers)
@@ -197,11 +145,7 @@ rules while adding your own.
 - `@smith-guidance/SKILL.md` - Ask-before-assuming, anti-sycophancy (the denial-recovery protocol is an application of these)
 - `@smith-settings/SKILL.md` - Where permission keys live; convention-validator hook recipe
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **On every classifier denial:**
 1. Pause — no follow-up tool call this turn
@@ -216,5 +160,3 @@ rules while adding your own.
 
 **Before invoking known classifier-sensitive actions:**
 - Force push, push to `main`, production deploys, IAM grants, cloud-storage mass deletes → confirm with the user first, even before the first classifier check
-
-</required>

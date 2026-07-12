@@ -5,15 +5,9 @@ description: Placeholder syntax standard — guillemets «token» in every conte
 
 # Placeholder Syntax Standards
 
-<metadata>
-
-- **Scope**: Placeholder syntax for documentation, prompts, and usage strings
-- **Load if**: Writing prompts, documentation, or pattern descriptions
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md
-
-</metadata>
-
-<context>
+**Scope:** Placeholder syntax for documentation, prompts, and usage strings
+**Load if:** Writing prompts, documentation, or pattern descriptions
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 A placeholder marks where a reader substitutes a value. The delimiter must not
 collide with the grammar of any context it appears in. No ASCII bracket pair is
@@ -21,11 +15,7 @@ collision-free: `<x>`=XML/HTML tag, `[x]`=CLI-optional + glob/regex + markdown
 link, `{x}`/`{{x}}`=f-string/jinja templating. Guillemets `«»` carry no meaning
 in any of those grammars, so smith uses them everywhere — one rule, zero clash.
 
-</context>
-
-## CRITICAL: Standard Form (Primacy Zone)
-
-<required>
+## CRITICAL: Standard Form
 
 **Placeholder = `«token»`** (U+00AB `«` / U+00BB `»`) in EVERY context — prose,
 inline-backtick paths, command examples, CLI usage synopses, code identifiers,
@@ -44,19 +34,14 @@ Keep the token name descriptive (`«project-slug»`, not `«x»`).
 command itself — NEVER by delimiter shape. `«token»` always means "substitute a
 value", never "optional".
 
-</required>
+These delimiters are already reserved for other grammars, so keep placeholders
+in guillemets instead:
 
-<forbidden>
-
-Never use as a placeholder:
-
-- `<token>` — parses as an XML/HTML tag
-- `[token]` — collides with CLI-optional grammar, shell globs, and markdown
+- `<token>` — reserved for an XML/HTML tag
+- `[token]` — reserved for CLI-optional grammar, shell globs, and markdown
   links; `[]` stays reserved for its native uses (links `[text](url)`, task
   checkboxes `- [ ]` / `- [x]`)
-- `{token}` / `{{token}}` — f-string / jinja / handlebars templating
-
-</forbidden>
+- `{token}` / `{{token}}` — reserved for f-string / jinja / handlebars templating
 
 ## Typing «»
 
@@ -77,9 +62,7 @@ export API_KEY="YOUR_API_KEY"
 git checkout -b "feat/«scope»_«description»"
 ```
 
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When writing placeholders:**
 1. Use `«token»` in all contexts (prose, inline backticks, code, usage strings)
@@ -87,12 +70,8 @@ git checkout -b "feat/«scope»_«description»"
 3. Never use `<>` (XML), `[]` (CLI-optional / links), or `{}`/`{{}}` (templating)
 4. Show required/optional in words, not delimiter shape
 
-</required>
-
-<related>
+## Related
 
 - `@smith-xml/SKILL.md` - XML tag standards
 - `@smith-style/SKILL.md` - File/branch naming patterns
 - @smith-standards/SKILL.md - Functional Unicode is allowed; decorative emoji is not
-
-</related>

@@ -5,34 +5,25 @@ description: Stacked pull request workflows for large features. Use when creatin
 
 # Stacked Pull Requests
 
-<metadata>
+**Scope:** Advanced stacked PR workflows and patterns for large features
+**Load if:** Creating stacked PRs, working on PR stacks, managing dependent PRs
+**Prerequisites:** `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`, `@smith-gh-cli/SKILL.md`
 
-- **Scope**: Advanced stacked PR workflows and patterns for large features
-- **Load if**: Creating stacked PRs, working on PR stacks, managing dependent PRs
-- **Prerequisites**: `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`, `@smith-gh-cli/SKILL.md`
+## CRITICAL
 
-</metadata>
-
-## CRITICAL (Primacy Zone)
-
-<forbidden>
-
-- NEVER merge child PR before parent
-- NEVER merge main directly into child branch
-- NEVER create stacks deeper than 3-4 levels
-- NEVER `gh pr merge --delete-branch` a parent/middle PR while a child PR
-  still targets its branch — via the gh CLI this CLOSES the child instead of
+- Merge the parent PR before its child PR.
+- Update child branches by merging their immediate parent (not `main`
+  directly) — cascade through each level of the stack in order.
+- Keep stacks to 3-4 levels deep.
+- Retarget the child first, then delete the parent branch after — avoid
+  `gh pr merge --delete-branch` on a parent/middle PR while a child PR still
+  targets its branch: via the gh CLI this CLOSES the child instead of
   retargeting it (cli/cli#1168, still open; the web-UI delete auto-retargets).
-  Retarget the child first, delete the parent branch after.
-- NEVER squash-merge a non-final stacked PR without the cascade-sync below
-  (rebase child `--onto`, retarget, then delete the parent branch) — squash
-  itself is allowed; see Squash Merge with Stacked PRs.
-
-</forbidden>
+- Squash-merging a non-final stacked PR is fine as long as it's followed by
+  the cascade-sync (rebase child `--onto`, retarget, then delete the parent
+  branch) — squash itself is allowed; see Squash Merge with Stacked PRs.
 
 ## Stack Scope Verification
-
-<required>
 
 **Before stack-wide operations (rebase cascade, PR creation):**
 1. Load stack metadata from Serena memory (if available)
@@ -46,10 +37,6 @@ description: Stacked pull request workflows for large features. Use when creatin
 - Investigate why (already up-to-date? wrong base?)
 - Report the anomaly to user before continuing
 
-</required>
-
-<context>
-
 For large features, use stacked PRs to maintain atomic, reviewable changes.
 
 **When to stack**:
@@ -57,11 +44,7 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 - Multiple logical components that can be reviewed independently
 - Need to unblock dependent work before full feature is ready
 
-</context>
-
 ## Creating Stacked PRs
-
-<required>
 
 **How to stack**:
 1. Create base PR with foundation (e.g., `feat/auth-base`)
@@ -69,9 +52,7 @@ For large features, use stacked PRs to maintain atomic, reviewable changes.
 3. Each PR should be independently reviewable and mergeable
 4. Merge bottom-up: base first, then children
 
-</required>
-
-<examples>
+### Examples
 
 **Stack structure**:
 ```text
@@ -92,11 +73,7 @@ main
 - `Depends on`: PRs that must merge before this one (upstream dependencies)
 - `Blocks`: PRs waiting for this one to merge (downstream dependents)
 
-</examples>
-
 ## Stacked PR Merge Workflow
-
-<required>
 
 **Sequential merge order** (bottom-up):
 1. Wait for parent PR approval
@@ -105,9 +82,7 @@ main
 4. Get child PR approved
 5. Repeat for each level in stack
 
-</required>
-
-<examples>
+### Examples
 
 **Correct merge sequence**:
 ```text
@@ -118,11 +93,7 @@ main
 5. Merge PR #3 → main (can squash this one)
 ```
 
-</examples>
-
 ## Rebasing After Parent Merges
-
-<required>
 
 When a parent PR merges, child PRs must be rebased:
 
@@ -140,9 +111,7 @@ git push --force-with-lease
 
 **Why `--onto`**: Only transplants commits unique to child branch (commits between parent and child), avoiding duplicate commits.
 
-</required>
-
-<examples>
+### Examples
 
 **Before rebase** (after parent merged):
 ```text
@@ -158,11 +127,7 @@ main ──●──●──●──M
                   └──A'──B'──C' (feat/auth-login rebased)
 ```
 
-</examples>
-
 ## Squash Merge with Stacked PRs
-
-<required>
 
 **Squash merge IS allowed** if you follow the branch deletion process for stacked PRs.
 
@@ -182,10 +147,6 @@ reopen/recreate. Pre-retargeting avoids the race.
 - **Middle**: Squash OK with process, delete after child base updated
 - **Final (leaf)**: Squash OK, immediate deletion OK
 
-</required>
-
-<context>
-
 **Why squash merge requires extra steps**:
 
 Squash merge creates a single commit, destroying commit ancestry. Child branches still contain parent's original commits, causing:
@@ -193,9 +154,7 @@ Squash merge creates a single commit, destroying commit ancestry. Child branches
 - Merge conflicts when rebasing
 - Git unable to recognize commits already in main
 
-</context>
-
-<examples>
+### Examples
 
 **Fixing child PR after parent was squash merged**:
 
@@ -215,11 +174,7 @@ git rebase -i main
 ```
 In the interactive editor, mark all commits from the parent branch as `drop`.
 
-</examples>
-
 ## Keeping Stack Updated
-
-<required>
 
 When pulling changes from main into a stack, cascade updates through the stack sequentially:
 
@@ -235,9 +190,7 @@ git push
 
 - After each cascade step, run `git log --oneline -3` and confirm the tip commit is the merge/rebase you just performed before proceeding downstream
 
-</required>
-
-<forbidden>
+### Avoid
 
 Merging main directly into a child branch corrupts history:
 
@@ -246,11 +199,9 @@ git checkout feat/auth-login
 git merge main
 ```
 
-</forbidden>
-
 ## Best Practices
 
-<examples>
+### Good
 
 **Good stack structure**:
 - Each PR is independently reviewable (clear purpose, focused changes)
@@ -264,9 +215,7 @@ git merge main
 - Notify reviewers when dependencies merge
 - Explain the overall feature in parent PR
 
-</examples>
-
-<forbidden>
+### Avoid
 
 **Bad practices**:
 - Creating stacks deeper than 3-4 levels (too complex to manage)
@@ -274,19 +223,13 @@ git merge main
 - Forgetting to update child PRs after parent merge (causes conflicts)
 - Using stacked PRs for unrelated changes (defeats purpose of atomicity)
 
-</forbidden>
-
-<related>
+## Related
 
 - `@smith-gh-pr/SKILL.md` - Complete GitHub PR lifecycle
 - `@smith-git/SKILL.md` - Commits, branches, rebase
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Merge stacked PRs bottom-up:**
 1. Merge parent PR first, WITHOUT `--delete-branch` (the gh CLI would close
@@ -300,5 +243,3 @@ git merge main
 ```shell
 ./smith-stacks/scripts/verify-stack-scope.sh 'feat/PROJ-*'
 ```
-
-</required>

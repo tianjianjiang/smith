@@ -1,38 +1,31 @@
 ---
 name: smith-skills
-description: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use when creating or editing agent instructions, rules, or documentation. Covers progressive disclosure, rule loading, XML tag usage, and token budget guidelines.
+description: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use when creating or editing agent instructions, rules, or documentation. Covers progressive disclosure, rule loading, Markdown structure, and token budget guidelines.
 ---
 
 # Agent Skills Authoring Guide
 
-<metadata>
-
-- **Scope**: Writing AGENTS.md, SKILL.md, and steering files
-- **Load if**: Creating or editing agent instructions, rules, or documentation
-- **Prerequisites**: `@smith-xml/SKILL.md` for approved XML tags
-- **Based on**: [agentskills.io](https://agentskills.io) standards
-
-</metadata>
+**Scope:** Writing AGENTS.md, SKILL.md, and steering files
+**Load if:** Creating or editing agent instructions, rules, or documentation
+**Based on:** [agentskills.io](https://agentskills.io) standards
 
 ## Progressive Disclosure Philosophy
-
-<context>
 
 Skills and rules follow 3-tier loading to minimize token usage:
 - **Layer 1**: AGENTS.md entry point (~500 tokens, always loaded)
 - **Layer 2**: Individual standards (<2000 tokens, on-demand by task)
 - **Layer 3**: Detailed resources (loaded when explicitly needed)
 
-**Lost-in-the-Middle research**: LLMs have U-shaped attention
-- First 20% (primacy zone): CRITICAL rules, `<required>`/`<forbidden>` tags
-- Middle 60%: Details, examples (weakest attention)
-- Last 10% (recency zone): ACTION items, checklists, `<related>` refs
-
-</context>
+**Section ordering**: put the rules an agent must never miss near the top of
+the file, and checklists/action items near the bottom. Treat this as
+practical placement hygiene, not a claim about a specific attention
+mechanism — a prior version of this file labeled sections "(Primacy Zone)"
+and "(Recency Zone)" as if that maps to a documented Anthropic effect.
+Verified 2026-07-11: it doesn't. Anthropic's context-engineering and
+prompt-engineering docs never mention primacy/recency, and state that
+"exact formatting matters less as models get more capable."
 
 ## Rule Loading Notification
-
-<required>
 
 **Every AGENTS.md MUST define:**
 - Which files are always-active vs on-demand
@@ -42,39 +35,30 @@ Skills and rules follow 3-tier loading to minimize token usage:
 
 **Enforcement**: Reporting proves actual loading, not fake compliance
 
-</required>
+## Critical Rules
 
-## Critical Rules (Primacy Zone)
+- Use bullet lists over tables for ALL content (instructions AND reference
+  data) — LLMs parse bullet lists more reliably than tables
+- Put a metadata line (Scope/Load if/Prerequisites) at the file start for
+  early loading
+- Keep lines under 80 characters for better parsing
+- Keep nested lists to 2 levels or fewer
+- Use code blocks with language hints for all code examples
+- Shell code blocks must be copy-paste ready — no inline comments; move
+  descriptions outside as text or subsection titles
 
-<required>
-
-- **Bullet lists over tables for ALL content** (instructions AND reference data)
-- LLMs parse bullet lists more reliably than tables
-- XML tags for semantic boundaries: `<required>`, `<forbidden>`, `<context>`, `<examples>`
-- Metadata blocks at file start for early loading
-- Lines under 80 characters for better parsing
-- No nested lists deeper than 2 levels
-- Code blocks with language hints for all code examples
-- **Shell code blocks must be copy-paste ready** - no inline comments, move descriptions outside as text or subsection titles
-
-</required>
-
-## Self-Contained Committed Config (Primacy Zone)
-
-<required>
+## Self-Contained Committed Config
 
 Skills, subagents, and hooks committed into a repo's `.claude/` MUST work in
 any operator's session — never depend on the author's machine:
 
 - No references to local Serena/auto-memory slugs (e.g. `read_memory(...)`)
   or dangling memory refs from a committed SKILL.md or `.claude/agents/*.md`
-- No hardcoded home paths (e.g. `/Users/«name»/...`) - inline the rule instead
+- No hardcoded home paths (e.g. `/Users/«name»/...`) — inline the rule instead
 - No hooks reading `$CLAUDE_TOOL_INPUT` / `$CLAUDE_TOOL_INPUT_FILE_PATH`
   (these never existed; input is JSON on stdin, `$CLAUDE_PROJECT_DIR` is the
-  only path var) - such hooks exit 0 and silently do nothing
+  only path var) — such hooks exit 0 and silently do nothing
 - Verify a committed hook actually fires; a silent exit-0 looks like "passed"
-
-</required>
 
 ## File Structure
 
@@ -96,28 +80,26 @@ any operator's session — never depend on the author's machine:
   - `version`: semver (for published/shared skills)
   - `license`: SPDX identifier
   - `compatibility`: minimum tool version
-- Body structure:
-  - `<metadata>` block: Scope, Load if, Prerequisites
-  - Primacy zone (first 20%): `<required>`, `<forbidden>` rules
-  - Middle: `<context>`, examples, reference details
-  - Recency zone (last 10%): `<related>` links, then ACTION section
+- Body structure (plain Markdown — see Markdown Structure below):
+  - Metadata line: Scope, Load if, Prerequisites
+  - Critical rules near the top
+  - Middle: context, examples, reference details
+  - Related links, then a final checklist near the bottom
 - Size: <500 lines recommended (~5000 tokens max)
 - Internal smith skills: omit `version`, `license`, `compatibility`
   (noise without value for project-scoped skills)
 
 **SKILL.md frontmatter dual-spec**: a SKILL.md legitimately carries BOTH the
 agentskills.io YAML frontmatter (`name`/`description`, for discovery/registry)
-AND the smith XML `<metadata>` block (Scope/Load if/Prerequisites). They are
-complementary - never strip one in favor of the other.
+AND a smith metadata line (Scope/Load if/Prerequisites) in the body. They are
+complementary — never strip one in favor of the other.
 
 **Steering files** (.md):
-- Metadata block at start
-- Critical rules in first 20% (primacy zone)
-- Action items in last 10% (recency zone)
+- Metadata line at start
+- Critical rules near the top
+- Action items near the bottom
 
 ## Skill Reference Convention
-
-<required>
 
 **Backtick usage for skill references:**
 - **Always-load skills** (core): No backticks - @smith-principles/SKILL.md
@@ -126,26 +108,20 @@ complementary - never strip one in favor of the other.
 
 This distinguishes core skills (always in context) from contextual skills (loaded on demand).
 
-</required>
-
 ## Skill Loading Mechanics
-
-<context>
 
 How Claude Code actually loads skills (non-obvious; governs why smith works):
 
 - Claude Code does NOT auto-execute skill-loading instructions written in
-  CLAUDE.md / AGENTS.md - the agent must proactively Read the skill files.
+  CLAUDE.md / AGENTS.md — the agent must proactively Read the skill files.
   Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
 - Auto-triggering is description/shape-match in the MAIN thread only.
-  Task/Workflow subagents do NOT auto-load skills or AGENTS.md - pass the
+  Task/Workflow subagents do NOT auto-load skills or AGENTS.md — pass the
   needed rules inline in the subagent prompt.
 - Claude Code auto-loads `CLAUDE.md` (including nested CLAUDE.md) but NOT a
   bare `AGENTS.md`. A repo whose root ships only AGENTS.md silently fails to
-  load its catalog in CC - keep a root `CLAUDE.md` -> `AGENTS.md` symlink
+  load its catalog in CC — keep a root `CLAUDE.md` -> `AGENTS.md` symlink
   (AGENTS.md-native tools load AGENTS.md directly and are unaffected).
-
-</context>
 
 ## Heading Hierarchy
 
@@ -155,30 +131,40 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
 - H3: Subsections
 - Avoid H4+ (indicates over-nesting)
 
-## XML Tag Usage
+## Markdown Structure
 
-**Universal tags** (cross-platform):
-- `<instructions>` - Step-by-step guidance
-- `<context>` - Background information
-- `<examples>` - Correct patterns only
-- `<constraints>` - Behavioral limitations
+SKILL.md bodies use plain Markdown — headers, bold labels, and bullet
+lists — not an XML tag skeleton (no `<required>`/`<forbidden>`/`<context>`/
+`<metadata>`/`<related>`). This matches Anthropic's own SKILL.md-authoring
+examples and OpenAI's current (GPT-5.5/5.6) model-guidance format; only
+Gemini's docs treat XML and Markdown as equally valid, so Markdown is the
+safer cross-platform default. (Verified 2026-07-11 against
+platform.claude.com's Skill authoring best-practices page and OpenAI's
+GPT-5.5 model guidance — see `@smith-xml/SKILL.md` for the narrower case
+where XML content-tags are still the right tool: runtime prompts that mix
+instructions with embedded data, e.g. subagent prompts.)
 
-**Claude-specific**:
-- `<required>` - Mandatory rules
-- `<forbidden>` - Anti-patterns only
-- `<metadata>` - File metadata
-- `<related>` - Cross-references
-
-<forbidden>
-
-- Mixing good/bad examples in same XML tag
-- Inventing placeholder-style tags (`<type>`, `<scope>`)
-- **Markdown tables** (use bullet lists for ALL content, even reference data)
-- Nested lists deeper than 2 levels
-- Skipped heading levels
-- Inline comments inside shell code blocks
-
-</forbidden>
+**Structure:**
+- `##` headers name the topic — a header like "## Branch Naming" already
+  signals scope; strengthen individual bullets with MUST/ALWAYS/NEVER
+  wording instead of relying on a wrapper tag to carry that weight.
+- Prefer telling the agent what to do over what not to do. Rewrite
+  prohibitions as affirmative statements and fold them into the normal
+  bullet list — "Only commit when the user explicitly asks" carries the
+  same rule as "Never commit unless asked" without asking the reader to
+  parse a negation. This is Anthropic's own documented guidance ("tell
+  Claude what to do instead of what not to do"), verified 2026-07-11.
+- Reserve a `## Hard Limits` section for the residual with no natural
+  affirmative phrasing (secrets, force-push, irreversible deletes). Keep
+  it short — if bullets keep accumulating there, some of them probably do
+  have a positive rephrasing that hasn't been found yet.
+- Good/bad example pairs go in separate `### Good` / `### Avoid`
+  subheadings — never mixed in one block.
+- Bullet lists over tables for all content, including reference data.
+- Don't invent placeholder-style tags (`<type>`, `<scope>`) when writing
+  runtime-prompt content per `@smith-xml/SKILL.md` — that guidance is
+  scoped to actual runtime prompts, not SKILL.md bodies, which don't use
+  tags at all.
 
 ## Token Budget Guidelines
 
@@ -187,20 +173,16 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
 - SKILL.md files: <500 lines (~5000 tokens max)
 - Session total: <5000 tokens (index + 1-2 active skills)
 
-<examples>
+### Good: bullet list for rules
 
-**Good**: Bullet list for rules
 ```markdown
-<required>
-
 - Always use `uv` for Python packages
 - Type hints on all public functions
 - Run tests before committing
-
-</required>
 ```
 
-**Good**: Reference data (bullet list preferred over table)
+### Good: reference data (bullet list preferred over table)
+
 ```markdown
 **Context thresholds:**
 - Claude Code: 50% warning, 60% critical
@@ -208,19 +190,13 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
 - Kiro: 70% warning, 80% critical
 ```
 
-</examples>
+## Related
 
-<related>
-
-- `@smith-xml/SKILL.md` - Approved XML tags and usage
+- `@smith-xml/SKILL.md` - XML tags for runtime prompts (not SKILL.md bodies)
 - @smith-ctx/SKILL.md - Context management strategies
 - @smith-principles/SKILL.md - Core coding principles
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When creating AGENTS.md:**
 1. Keep under 500 tokens
@@ -229,17 +205,9 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
 4. Add context thresholds
 
 **When creating skill files:**
-1. Add `<metadata>` with Load if condition
-2. Put CRITICAL rules in first 20%
-3. Put ACTION items in last 10%
-4. Add `<related>` cross-references
-
-</required>
-
-<forbidden>
-
-- Tables for instructions (use bullet lists)
-- Nested lists deeper than 2 levels
-- Custom/invented XML tags
-
-</forbidden>
+1. Add a metadata line with the Load if condition
+2. Put critical rules near the top
+3. Put a checklist/action items near the bottom
+4. Add a Related section with cross-references
+5. Use bullet lists, not tables, for instructions and reference data; keep
+   nested lists to 2 levels or fewer

@@ -5,16 +5,10 @@ description: Cursor context management with /summarize command, @ mentions for f
 
 # Cursor Context Management
 
-<metadata>
+**Load if:** Using Cursor, context >60%
+**Prerequisites:** @smith-ctx/SKILL.md
 
-- **Load if**: Using Cursor, context >60%
-- **Prerequisites**: @smith-ctx/SKILL.md
-
-</metadata>
-
-## CRITICAL: Context Commands (Primacy Zone)
-
-<required>
+## CRITICAL: Context Commands
 
 **Agent prompts for context status**, then recommends `/summarize` at 60-70%.
 
@@ -24,13 +18,9 @@ description: Cursor context management with /summarize command, @ mentions for f
 1. Re-state critical context (task, files, decisions)
 2. Use @ mentions to restore files: `@auth/middleware.ts @auth/tokens.ts`
 
-</required>
-
 ## /summarize - Manual Summarization
 
 **When to use**: Before automatic trigger, between task phases
-
-<required>
 
 **Recommendation format:**
 ```text
@@ -46,21 +36,11 @@ After summarizing, re-add critical files:
 - Design decisions
 - Next steps
 
-</required>
-
-<forbidden>
-
-- Claiming to execute `/summarize` directly
-- Relying solely on automatic summarization
-- Continuing without verifying summary quality
-
-</forbidden>
+Recommend `/summarize` for the user to run rather than claiming to execute it directly. Recommend manual `/summarize` rather than relying solely on automatic summarization. Verify summary quality before continuing.
 
 ## @ Mentions - Force-Include Files
 
 **Syntax**: `@filename` or `@path/to/file.ext`
-
-<required>
 
 **Use @ mentions for:**
 - After summarization (restore critical files)
@@ -73,35 +53,21 @@ After summarizing, re-add critical files:
 @src/auth.ts @tests/auth.test.ts       # File + tests
 ```
 
-</required>
-
-<forbidden>
-
-- @codebase for files >600 lines (only loads first 250)
-- @ mention entire directories
-- @ mention files you won't use
-
-</forbidden>
+Use @ mention (not @codebase) for files >600 lines, since @codebase only loads the first 250. @ mention specific files rather than entire directories, and only @ mention files you'll actually use.
 
 ## @codebase - Discovery Only
 
 **Use for**: Finding files, understanding patterns
 **Limitation**: Returns summaries, not complete code
 
-<required>
-
 **Workflow:**
 1. `@codebase authentication middleware` → Find files
 2. `@auth/middleware.ts` → Load full file
 3. Implement with complete context
 
-</required>
-
 ## .cursorrules - Persistent Instructions
 
 **Location**: `.cursorrules` in project root
-
-<required>
 
 **Put in .cursorrules** (project-specific):
 - Technology stack
@@ -124,17 +90,11 @@ Follow standards from @AGENTS.md
 - Testing: Jest
 ```
 
-</required>
-
-<related>
+## Related
 
 - @smith-ctx/SKILL.md - Universal context strategies
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Proactive context management:**
 1. Prompt for context status
@@ -147,5 +107,3 @@ Follow standards from @AGENTS.md
 - <250 lines: @codebase works
 - 250-600 lines: Use @ mention
 - >600 lines: Always @ mention
-
-</required>

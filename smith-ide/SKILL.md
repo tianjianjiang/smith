@@ -5,25 +5,15 @@ description: IDE path variable mappings for VS Code, Cursor, Kiro, and JetBrains
 
 # IDE Path Variable Mappings
 
-<metadata>
+**Scope:** Maps conceptual path variables to IDE-specific syntax
+**Load if:** Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-style/SKILL.md`
 
-- **Scope**: Maps conceptual path variables to IDE-specific syntax
-- **Load if**: Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-style/SKILL.md`
-
-</metadata>
-
-## CRITICAL: Variable Translation (Primacy Zone)
-
-<required>
+## CRITICAL: Variable Translation
 
 **Always use conceptual variables in documentation**, translate to IDE-specific syntax in configs:
 - `$WORKSPACE_ROOT` → `${workspaceFolder}` (VS Code) or `$PROJECT_DIR$` (JetBrains)
 - `$HOME` → `${userHome}` (VS Code) or `$USER_HOME$` (JetBrains)
-
-</required>
-
-<context>
 
 ## Overview
 
@@ -34,8 +24,6 @@ Maps conceptual path variables to IDE-specific syntax. For variable definitions 
 **Defined in**: `@smith-style/SKILL.md#path-references`
 
 For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usage patterns, see `@smith-style/SKILL.md#path-references`.
-
-</context>
 
 ## IDE Syntax Mappings
 
@@ -77,8 +65,6 @@ For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usa
 
 **Configuration**: File → Settings → Appearance & Behavior → Path Variables
 
-<required>
-
 ## Best Practices
 
 1. **Documentation**: Always use conceptual variables (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`)
@@ -86,25 +72,15 @@ For path variable definitions (`$WORKSPACE_ROOT`, `$REPO_ROOT`, `$HOME`) and usa
 3. **Cross-IDE Compatibility**: Prefer environment variables when possible
 4. **Security**: Use variable references for sensitive values, never hardcode
 
-</required>
-
 ## Reference
-
-<related>
 
 - **VS Code Variables**: [Documentation](https://code.visualstudio.com/docs/editor/variables-reference)
 - **PyCharm Macros**: [Documentation](https://www.jetbrains.com/help/idea/absolute-path-variables.html)
 - **Path Standards**: `@smith-style/SKILL.md#path-references`
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **When writing IDE configs:**
 1. Use conceptual variables in docs (`$WORKSPACE_ROOT`)
 2. Translate to IDE syntax in config files
 3. Prefer environment variables for cross-IDE compatibility
-
-</required>

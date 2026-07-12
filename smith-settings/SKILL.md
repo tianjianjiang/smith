@@ -5,22 +5,15 @@ description: Claude Code settings files — which config lives where (user / pro
 
 # Claude Code Settings
 
-<metadata>
+**Scope:** Settings file layout + scope precedence, and a convention-validator
+hook recipe. NOT a hooks or permissions deep-dive — those live elsewhere.
+**Load if:** Editing `settings.json` / `.claude` config, choosing which scope a
+key belongs in, OR building a hook that enforces a repo convention.
+**Prerequisites:** `@smith-ctx-claude/SKILL.md` (hooks + permission-mode
+deep-dive), `@smith-auto_mode/SKILL.md` (permissions, `$defaults`, classifier)
+**Authoritative source:** [Claude Code settings](https://code.claude.com/docs/en/settings), [hooks](https://code.claude.com/docs/en/hooks) (verified 2026-06-25)
 
-- **Scope**: Settings file layout + scope precedence, and a convention-validator
-  hook recipe. NOT a hooks or permissions deep-dive — those live elsewhere.
-- **Load if**: Editing `settings.json` / `.claude` config, choosing which scope a
-  key belongs in, OR building a hook that enforces a repo convention.
-- **Prerequisites**: `@smith-ctx-claude/SKILL.md` (hooks + permission-mode
-  deep-dive), `@smith-auto_mode/SKILL.md` (permissions, `$defaults`, classifier)
-- **Authoritative source**: https://docs.claude.com/en/docs/claude-code/settings
-  + .../hooks (verified 2026-06-25)
-
-</metadata>
-
-## CRITICAL: One Key, One Scope (Primacy Zone)
-
-<required>
+## CRITICAL: One Key, One Scope
 
 - Put a key in the RIGHT file: shared team config → committed
   `.claude/settings.json`; personal/secret/machine-specific → gitignored
@@ -29,21 +22,13 @@ description: Claude Code settings files — which config lives where (user / pro
   omitting it leaves the lower value in place (keys merge, they don't wipe).
 - `permissions.defaultMode: "auto"` is honored ONLY in `~/.claude/settings.json`
   — it is ignored in project/local settings, so a repo can't grant itself auto.
-
-</required>
-
-<forbidden>
-
-- Re-documenting hook events/handlers or permission rules HERE — cross-ref
-  `@smith-ctx-claude/SKILL.md` and `@smith-auto_mode/SKILL.md` instead (DRY).
-- Committing secrets or a personal `defaultMode` into `.claude/settings.json` —
-  that file ships to every teammate. Personal overrides go in `.local.json`.
-
-</forbidden>
+- Cross-reference `@smith-ctx-claude/SKILL.md` and `@smith-auto_mode/SKILL.md`
+  for hook events/handlers or permission rules instead of re-documenting them
+  here (DRY).
+- Keep secrets and personal `defaultMode` overrides in `.local.json` —
+  `.claude/settings.json` ships to every teammate.
 
 ## Settings files & precedence
-
-<context>
 
 Four scopes, highest precedence first (a managed policy can't be overridden):
 
@@ -57,11 +42,7 @@ The same scope names appear as `ConfigChange` hook matchers (`user_settings`,
 `project_settings`, `local_settings`, `policy_settings`, `skills`) — use that
 event to audit or block settings changes.
 
-</context>
-
 ## Convention-validator hook recipe
-
-<context>
 
 A `PreToolUse` hook can ENFORCE a repo convention by rejecting the offending
 tool call (`exit 2` blocks it and shows stderr to Claude). The `if` field
@@ -116,20 +97,14 @@ format. For richer control than `exit 2`, a PreToolUse hook can return
 `hookSpecificOutput.permissionDecision: "deny"` with a reason — see
 `@smith-ctx-claude/SKILL.md`.
 
-</context>
-
-<related>
+## Related
 
 - `@smith-ctx-claude/SKILL.md` - Hook events/handlers, permission modes (deep-dive)
 - `@smith-auto_mode/SKILL.md` - Permissions rules, `$defaults`, classifier lists
 - `@smith-dev/SKILL.md` - Pre-commit checks this hook can enforce
 - `@smith-git/SKILL.md` - The protected-branch rule the recipe enforces
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Placing a key:**
 1. Shared team behavior → committed `.claude/settings.json`
@@ -140,5 +115,3 @@ format. For richer control than `exit 2`, a PreToolUse hook can return
 1. `PreToolUse` + `matcher: "Bash"` + an `if` permission-rule to scope it
 2. Script exits 2 to block (stderr is shown to Claude); use exec form (`args`)
    when `command` references a `${CLAUDE_PROJECT_DIR}` path placeholder
-
-</required>

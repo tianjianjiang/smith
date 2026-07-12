@@ -5,31 +5,21 @@ description: Kiro-specific context management with terminal limitations, Serena 
 
 # Kiro Context Management
 
-<metadata>
+**Scope:** Kiro-specific context management, terminal limitations, tool preferences
+**Load if:** Using Kiro IDE (ALWAYS load first in Kiro sessions)
+**Prerequisites:** None (this file loads before other rules)
 
-- **Scope**: Kiro-specific context management, terminal limitations, tool preferences
-- **Load if**: Using Kiro IDE (ALWAYS load first in Kiro sessions)
-- **Prerequisites**: None (this file loads before other rules)
+## CRITICAL: Terminal Limitations
 
-</metadata>
+**Terminal commands that cause Kiro to freeze — avoid these:**
 
-## CRITICAL: Terminal Limitations (Primacy Zone)
-
-<forbidden>
-
-**Terminal commands that cause Kiro to freeze:**
-
-- NEVER use `echo` with double quotes (causes hang)
-- NEVER use heredoc syntax (`<<EOF`) (fails in Kiro terminal)
-- NEVER use complex zsh themes (powerlevel10k, oh-my-zsh cause timeouts)
-- NEVER use interactive editors (vim, nano) in automated commands
-- NEVER use pagers (less, more) in automated commands
-- NEVER chain commands with `&&` or `||` in complex scripts
-- NEVER expect second command in same session to return reliably (zsh bug)
-
-</forbidden>
-
-<required>
+- Use single quotes or write to a file instead of `echo` with double quotes (causes hang)
+- Avoid heredoc syntax (`<<EOF`) — it fails in the Kiro terminal
+- Use simple shell configurations — complex zsh themes (powerlevel10k, oh-my-zsh) cause timeouts
+- Use non-interactive commands in automation — avoid interactive editors (vim, nano)
+- Avoid interactive pagers (less, more) in automated commands
+- Keep scripts simple — avoid chaining commands with `&&` or `||` in complex scripts
+- Treat a second command in the same terminal session as unreliable (known zsh bug) — run one command per invocation
 
 **Terminal best practices for Kiro:**
 
@@ -41,11 +31,7 @@ description: Kiro-specific context management with terminal limitations, Serena 
 - Run one command per terminal invocation when possible
 - Add timeouts to long-running commands
 
-</required>
-
 ## CRITICAL: Serena MCP is Mandatory
-
-<required>
 
 **When Serena MCP is available, you MUST use Serena tools for all file operations.**
 
@@ -61,19 +47,9 @@ Kiro native tools have known reliability issues:
 3. **Navigation**: `find_referencing_symbols` > `grepSearch`
 4. **Context**: `write_memory`, `read_memory` for persistent state
 
-</required>
-
-<forbidden>
-
-- Using Kiro `strReplace` when Serena `replace_content` is available
-- Using Kiro `readFile` for large files when Serena tools are available
-- Ignoring Serena MCP availability
-
-</forbidden>
+Use Serena `replace_content` over Kiro `strReplace` when Serena is available. Use Serena tools over Kiro `readFile` for large files when Serena tools are available. Always check for and use Serena MCP availability rather than ignoring it.
 
 ## Serena Activation Workflow
-
-<required>
 
 **At session start:**
 1. Check if Serena MCP is available
@@ -89,8 +65,6 @@ Kiro native tools have known reliability issues:
 **Before compaction (70% context):**
 - Save session state with `write_memory`
 
-</required>
-
 ## AGENTS.md Integration
 
 Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separate `.kiro/steering/` files needed.
@@ -101,16 +75,12 @@ Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separa
 - Include instructions for loading domain-specific files
 - Critical rules (terminal limitations) embedded directly with XML tags
 
-<related>
+## Related
 
 - @smith-ctx/SKILL.md - Universal context strategies
 - `@smith-serena/SKILL.md` - Serena MCP tools (mandatory for Kiro)
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Proactive context management:**
 1. Prompt for context status periodically
@@ -123,5 +93,3 @@ Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separa
 1. Avoid echo with double quotes
 2. Use Python scripts for file generation
 3. Use Serena MCP tools (mandatory, not optional)
-
-</required>

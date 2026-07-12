@@ -5,26 +5,16 @@ description: GitHub CLI gotchas and best practices. Use when executing gh comman
 
 # GitHub CLI Best Practices
 
-<metadata>
+**Load if:** Using GitHub CLI commands
+**Prerequisites:** `@smith-git/SKILL.md`, `@smith-gh-pr/SKILL.md`
 
-- **Load if**: Using GitHub CLI commands
-- **Prerequisites**: `@smith-git/SKILL.md`, `@smith-gh-pr/SKILL.md`
+## CRITICAL: Avoid GitHub MCP
 
-</metadata>
-
-## CRITICAL: Avoid GitHub MCP (Primacy Zone)
-
-<forbidden>
-
-- GitHub MCP tools - hard to control pagination (25k token truncation), less complete than CLI, requires personal token
-
-</forbidden>
-
-**Use instead**: `gh pr-review` extension, `gh api`, or GraphQL queries
+Prefer the `gh pr-review` extension, `gh api`, or GraphQL queries over GitHub
+MCP tools — MCP tools are hard to control pagination on (25k token
+truncation), less complete than the CLI, and require a personal token.
 
 ## Token Efficiency
-
-<required>
 
 **Safe perPage limits:**
 - `list_pull_requests`: perPage 20-30
@@ -32,17 +22,11 @@ description: GitHub CLI gotchas and best practices. Use when executing gh comman
 - `get_files`: perPage 30
 - `search_repositories`: minimal_output: true
 
-</required>
-
 ## Common Pitfalls
-
-<required>
 
 - **ALWAYS assign yourself**: `--assignee @me`
 - **Draft PRs**: Use `--draft` with `#WIP` in title for work-in-progress
 - **Ensure gh installed**: If `gh` not found, prompt user/agent to install
-
-</required>
 
 ## Issue Linking
 
@@ -60,9 +44,7 @@ In PR descriptions:
   owner of that path. Check CODEOWNERS before recommending a reviewer —
   "wrote it" does not imply "can approve it".
 
-<related>
+## Related
 
 - `@smith-gh-pr/SKILL.md` - PR workflows, review comment fetching
 - `@smith-git/SKILL.md` - Git operations
-
-</related>

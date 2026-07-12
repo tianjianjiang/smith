@@ -13,12 +13,8 @@ metadata:
 
 Claude Code-specific automation for plan execution: hooks, auto-reload after `/clear`, context threshold detection, and session-keyed isolation.
 
-<metadata>
-
-- **Load if**: Using Claude Code with plan files, `!load-plan`, `execute plan`
-- **Prerequisites**: `@smith-plan/SKILL.md`, @smith-ctx/SKILL.md
-
-</metadata>
+**Load if:** Using Claude Code with plan files, `!load-plan`, `execute plan`
+**Prerequisites:** `@smith-plan/SKILL.md`, @smith-ctx/SKILL.md
 
 ## Auto-Resume Directive
 
@@ -284,23 +280,17 @@ $(date +%Y-%m-%dT%H:%M:%S%z) <- line 4: ISO timestamp
 - **60-min auto-load window**: State files older than 60 minutes are skipped for auto-load (prevents loading old plan in new session)
 - **24-hour cleanup**: State files older than 24 hours are auto-cleaned on each hook invocation
 
-<related>
+## Related
 
 - `@smith-plan/SKILL.md` - Portable plan tracking protocol
 - @smith-ctx/SKILL.md - Context management
 - `@smith-ctx-claude/SKILL.md` - Claude Code context management
 - `@smith-ralph/SKILL.md` - Ralph Loop iterative development
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Plan execution in Claude Code:**
 1. Hook auto-loads plan into context on each prompt
 2. Follow `@smith-plan/SKILL.md` iteration workflow
 3. At phase boundaries, update plan + commit work, save state to Serena memory, then AFTER all tool calls output self-contained "Reload with:" block (with plan path), recommend `/clear`
 4. Plan auto-reloads in fresh context via pending-reload flag
-
-</required>

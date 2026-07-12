@@ -11,30 +11,18 @@ metadata:
 
 Portable protocol for tracking plan progress across iterations. Platform-agnostic — works with any AI agent that can read/write files.
 
-<metadata>
+**Load if:** Executing plans, tracking multi-step tasks
+**Prerequisites:** @smith-ctx/SKILL.md
 
-- **Load if**: Executing plans, tracking multi-step tasks
-- **Prerequisites**: @smith-ctx/SKILL.md
-
-</metadata>
-
-## CRITICAL: Plan Sync Protocol (Primacy Zone)
-
-<required>
+## CRITICAL: Plan Sync Protocol
 
 **After completing ANY task, you MUST update the plan file.**
 
 This ensures the next iteration sees your progress.
 
-</required>
-
-<forbidden>
-
-- Skipping the sync step after completing work
-- Leaving tasks unmarked after completion
-- Modifying plan format in ways that break checkbox parsing
-
-</forbidden>
+- Sync the plan file right after completing work — do not defer it
+- Mark tasks complete as soon as they are finished
+- Keep plan format changes compatible with checkbox parsing
 
 ## Progress Tracking Format
 
@@ -123,17 +111,13 @@ BLOCKER: «description of issue requiring human decision»
 4. **Add timestamps** to progress log entries
 5. **Note file changes** in progress log for traceability
 
-<related>
+## Related
 
 - @smith-ctx/SKILL.md - Context management
 - `@smith-plan-claude/SKILL.md` - Claude Code automation (hooks, scripts)
 - `@smith-ralph/SKILL.md` - Ralph Loop iterative development
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Per iteration:**
 1. Read plan file
@@ -141,5 +125,3 @@ BLOCKER: «description of issue requiring human decision»
 3. Execute the task
 4. Mark `- [x]`, add progress log entry
 5. Continue or signal completion
-
-</required>

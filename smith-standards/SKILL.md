@@ -5,35 +5,26 @@ description: Universal coding standards for emoji usage, comments, datetime form
 
 # Universal Coding Standards
 
-<metadata>Scope: Universal coding standards (emoji, comments, datetime); Load if: Always active (universal rules for all development); Prerequisites: @smith-principles/SKILL.md</metadata>
+**Scope:** Universal coding standards (emoji, comments, datetime)
+**Load if:** Always active (universal rules for all development)
+**Prerequisites:** @smith-principles/SKILL.md
 
-## CRITICAL: Universal Rules (Primacy Zone)
-
-<required>
+## Universal Rules
 
 No decorative emoji; exactly one trailing newline; self-documenting code over
 comments; ISO 8601 timestamps with timezone. Full rules below in "Universal
 Code Standards" and "DateTime Standards".
 
-</required>
-
-<context>
-
 Universal standards that apply to all code, logs, documentation, and outputs across all languages and contexts.
-
-</context>
 
 ## Universal Code Standards
 
-<forbidden>
-
-- **NEVER use decorative emoji** (for example: x-mark, check mark, warning, memo, celebration, thumbs-up symbols) in code, logs, print statements, error messages, or documentation. Exception: user-facing UI text if explicitly requested. Functional Unicode symbols (→, ±×÷) are allowed. Checkmarks are redundant when followed by descriptive labels.
-- NEVER add excessive blank lines between code blocks
-- NEVER commit files without exactly one trailing newline
-
-</forbidden>
-
-<required>
+- Keep code, logs, print statements, error messages, and documentation free
+  of decorative emoji (x-mark, check mark, warning, memo, celebration,
+  thumbs-up) — except user-facing UI text if explicitly requested.
+  Functional Unicode symbols (→, ±×÷) are fine; checkmarks are redundant
+  next to descriptive labels.
+- Keep blank lines between code blocks minimal
 
 **Inline Comments**:
 - ONLY add inline comments when code intent is not self-evident from naming and structure
@@ -44,8 +35,6 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 - ALWAYS have exactly one newline at the end of every file
 - ALWAYS use language-appropriate formatters before commits
 - ALWAYS use descriptive names following language conventions
-
-</required>
 
 ## DateTime Standards
 
@@ -64,7 +53,7 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 
 **Code Reuse**: ALWAYS check existing scripts before creating new ones; check `debug_scripts/` and language-specific tool directories
 
-<related>
+## Related
 
 - @smith-principles/SKILL.md - Fundamental coding principles
 - `@smith-style/SKILL.md` - Path and naming standards
@@ -75,16 +64,10 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 - `@smith-gh-pr/SKILL.md` - Pull request workflows
 - `@smith-gh-cli/SKILL.md` - GitHub CLI operations
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Before committing:**
 1. No decorative emoji in code/logs
 2. Exactly one trailing newline
 3. Self-documenting names over comments
 4. ISO 8601 timestamps with timezone
-
-</required>

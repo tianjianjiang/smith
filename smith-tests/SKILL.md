@@ -5,16 +5,10 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 # Testing Standards
 
-<metadata>
+**Load if:** Writing tests, running test suites, TDD
+**Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-python/SKILL.md`
 
-- **Load if**: Writing tests, running test suites, TDD
-- **Prerequisites**: @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-python/SKILL.md`
-
-</metadata>
-
-## CRITICAL (Primacy Zone)
-
-<required>
+## CRITICAL
 
 - MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
 - MUST use pytest functions (not classes) - see `@smith-python/SKILL.md`
@@ -23,24 +17,15 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 - MUST write tests BEFORE implementation (TDD)
 - MUST run full test suite proactively after code changes — do not wait for the user to ask
 - MUST run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
-
-</required>
-
-<forbidden>
-
-- NEVER use `pytest -m "not integration"` if folder structure is mirrored (import conflicts)
-- NEVER write implementation before tests
-- NEVER skip running tests after changes
-- NEVER mock the branch/unit under test — mock only true external boundaries (LLM, network, DB, clock). A test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
-- NEVER write the test to fit the fix. For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing
-
-</forbidden>
+- Run explicit test paths instead of `pytest -m "not integration"` when the folder structure is mirrored — that flag causes import conflicts
+- Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
+- For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing — write the test to match the real bug, not to fit the fix
 
 ## Test Organization
 
 **Unit**:
 - Location: `tests/unit/`
-- Characteristics: Mock dependencies (external boundaries only — never the unit under test; see Forbidden), fast
+- Characteristics: Mock dependencies (external boundaries only — never the unit under test; see CRITICAL above), fast
 
 **Integration**:
 - Location: `tests/integration/`
@@ -63,27 +48,19 @@ description: Testing standards and TDD workflow. Use when writing tests, running
 
 ## Claude Code Plugin Integration
 
-<context>
-
 **When pr-review-toolkit is available:**
 
 - **pr-test-analyzer agent**: Analyzes behavioral coverage, identifies critical gaps
 - Rates test gaps 1-10 (10 = critical, must add)
 - Trigger: "Check if the tests are thorough" or use Task tool
 
-</context>
-
 ## Ralph Loop Integration
-
-<context>
 
 **TDD = Ralph iteration**: test → implement → pytest → iterate until `<promise>TESTS PASS</promise>`.
 
 See `@smith-ralph/SKILL.md` for full patterns.
 
-</context>
-
-<related>
+## Related
 
 - `@smith-python/SKILL.md` - Python testing patterns (pytest functions)
 - `@smith-playwright/SKILL.md` - Playwright failure monitoring
@@ -91,11 +68,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 - `@smith-validation/SKILL.md` - Bugfix Discipline: trace the real path, reproduce first
 - @smith-principles/SKILL.md - Core principles
 
-</related>
-
-## ACTION (Recency Zone)
-
-<required>
+## Before You Finish
 
 **Run tests** (use project's virtual env runner):
 ```shell
@@ -110,5 +83,3 @@ VENV_RUNNER pytest tests/integration/ -v
 - Test names follow project conventions
 - Tests are isolated and deterministic
 - No regressions in existing tests
-
-</required>
