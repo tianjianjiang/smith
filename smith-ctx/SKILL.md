@@ -67,7 +67,10 @@ description: Universal context-management foundation — proactive context-level
 
 ## Ralph Loop Context Management
 
-**Ralph burns ~1-3.5k tokens/iteration.** At critical threshold, persist state to Serena memory before context reset.
+**Ralph burns ~1-3.5k tokens/iteration.** At critical threshold, persist
+state before context reset: Serena memory when Serena MCP is available,
+else fall back to the plan file (or a workspace state file) so recovery
+isn't silently broken without Serena.
 
 See `@smith-ralph/SKILL.md` for full context strategy and retention criteria.
 
