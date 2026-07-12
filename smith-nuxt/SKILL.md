@@ -11,10 +11,10 @@ description: Nuxt 3 development patterns including auto-import stubbing for test
 
 ## CRITICAL: Auto-Import Stubbing
 
-**Stub Nuxt auto-imports BEFORE importing modules that use them** - module code executes at import time.
+**Stub Nuxt auto-imports BEFORE importing modules that use them** - module code executes at import time. Static ES `import`s are hoisted and run before any other code in the file regardless of source position, so source-line order alone does NOT guarantee the stub runs first — use a dynamic `await import(...)` after the stubs instead of a static `import`.
 
 - Treat the `h3` module's auto-imports as globals — stub them directly rather than mocking `h3`
-- Stub globals before importing middleware, since the module executes at import time
+- Stub globals, then dynamically `import()` the middleware — a static `import` would be hoisted above the stubs
 
 ## Auto-Import Stubbing in Tests
 
@@ -33,12 +33,15 @@ import type { H3Event } from 'h3';
   (options: { statusCode: number; statusMessage: string }) =>
     Object.assign(new Error(options.statusMessage), { statusCode: options.statusCode });
 
-// Now import the module that uses auto-imports
-import middleware from '../myMiddleware';
+// Dynamic import runs here, AFTER the stubs above. A static `import` for
+// this module would be hoisted and run BEFORE the stubs regardless of
+// source position, defeating the stub-before-import order this example
+// demonstrates.
+const { default: middleware } = await import('../myMiddleware');
 ```
 
 - Treat the `h3` module's auto-imports as globals, not module exports — stub the globals rather than mocking `h3`
-- Stub globals before importing middleware, since the module executes at import time
+- Stub globals, then dynamically `import()` the middleware — a static `import` would be hoisted above the stubs and run first regardless of where it's written in the file
 
 ## Environment Variables
 
