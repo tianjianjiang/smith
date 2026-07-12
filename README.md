@@ -64,7 +64,7 @@ the three hooks below.
 Open (or create) it:
 
 ```shell
-${EDITOR:-nano} "$HOME/.claude/settings.json"
+mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
 ```
 
 - **No `settings.json` yet**: save the block below as-is — it's already a
