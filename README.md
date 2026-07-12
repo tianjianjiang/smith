@@ -45,8 +45,8 @@ Claude Code discovers skills and offers them based on task context. All skills u
 
 Some scripts in this repo are hooks, NOT self-activating skills — they only
 take effect once registered in `$HOME/.claude/settings.json` (see
-`@smith-settings/SKILL.md`). With the skills symlink above in place, add the
-entries below (merge into any existing `hooks` object):
+`@smith-settings/SKILL.md`). With the skills symlink above in place, register
+the three hooks below.
 
 - **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
   UserPromptSubmit router that surfaces candidate smith skills per prompt from
@@ -58,6 +58,21 @@ entries below (merge into any existing `hooks` object):
 - **worktree-dirty-guard** (`smith-ctx-claude/scripts/worktree-dirty-guard.mjs`)
   — PreToolUse guard that blocks `EnterWorktree` while the checkout has
   uncommitted changes (they would not carry into the new worktree).
+
+**Where to save it**: these are user-level hooks, so they belong in
+`$HOME/.claude/settings.json` — not a project's `.claude/settings.json`.
+Open (or create) it:
+
+```shell
+${EDITOR:-nano} "$HOME/.claude/settings.json"
+```
+
+- **No `settings.json` yet**: save the block below as-is — it's already a
+  complete, valid file.
+- **Already have one**: merge the `hooks` key in. If you already have
+  entries under `hooks.UserPromptSubmit` or `hooks.PreToolUse`, append these
+  hook objects to those arrays instead of replacing them — overwriting the
+  array silently drops your existing hooks.
 
 ```json
 {
@@ -86,6 +101,20 @@ entries below (merge into any existing `hooks` object):
   }
 }
 ```
+
+**Verify each hook actually fires** (a silent exit-0 looks like "passed" —
+don't assume registration worked just because the JSON parses). Hook
+definitions load at session start, so start a new `claude` session first,
+then:
+
+1. **skill-router** — send a prompt that matches a known trigger (e.g.
+   mention "git commit"); confirm a skill-router advisory listing candidate
+   skills appears.
+2. **branch-guard** — on a repo's default branch, attempt an `Edit`/`Write`;
+   confirm Claude Code blocks it citing branch-guard. Then create a
+   branch/worktree and confirm the same edit proceeds normally.
+3. **worktree-dirty-guard** — with uncommitted changes present, invoke
+   `EnterWorktree`; confirm it's blocked citing the dirty checkout.
 
 ## Structure
 
