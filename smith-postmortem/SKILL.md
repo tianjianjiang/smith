@@ -15,13 +15,12 @@ Postmortems are structured reviews after incidents to understand what happened, 
 
 - MUST maintain blameless culture - focus on systems, processes, and contributing factors, not individual fault
 - MUST be conducted within 48-72 hours of incident resolution
-- MUST include all key participants (incident commander, responders, affected teams)
+- MUST invite all key participants (incident commander, responders, affected teams) — proceed at the scheduled time with the available core group, and collect input from anyone who couldn't attend asynchronously; don't let one person's unavailability stall the 48-72 hour window
 - MUST result in specific, assigned action items with timelines
 - MUST be shared widely within the organization for learning
 - Attribute failures to systems and processes, not individuals or teams
-- Conduct postmortems for all incidents, including "minor" ones - they all provide learning opportunities
+- Conduct postmortems per the severity/impact criteria in Best Practices > When to Conduct below (not every incident by default) — minor incidents still warrant one when they reveal systemic issues, recur, or affect customers
 - Give every action item an owner and a timeline
-- Conduct postmortems only with key participants present
 
 ## Report Structure
 
