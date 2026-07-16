@@ -63,6 +63,27 @@ docs: update deployment guide
 **Special prefixes** (outside conventional commits):
 - `#WIP` — Work-in-progress checkpoint, not a conventional commit (used by auto-commit rules)
 
+## Assisted-by attribution
+
+Smith policy: every commit, PR body, PR review comment, and Slack message
+produced with AI assistance ends with an `Assisted-by:` trailer naming the agent
+and model. The trailer format follows the Linux kernel coding-assistants policy
+(https://docs.kernel.org/process/coding-assistants.html, retrieved 2026-07-16),
+which mandates it for commits; extending it to PR bodies, review comments, and
+Slack is a Smith convention.
+
+**Format**: `Assisted-by: «AGENT_NAME»:«MODEL_VERSION» [«tool»]…`
+- Smith value: `Assisted-by: Claude:claude-opus-4-8` — `«MODEL_VERSION»` is the
+  actual running session model id, not a frozen string.
+- Optional bracketed `[«tool»]` entries name specialized analysis tools only
+  (e.g. coccinelle, sparse, semgrep); never basic dev tools (git, editors).
+
+**Never add a `Signed-off-by:` trailer yourself** — only a human can certify the
+DCO, so the agent must not add one (a human may still add their own), and
+`Assisted-by:` does not replace human authorship/sign-off. This line is
+orthogonal to the "on behalf of @user" attribution (`@smith-gh-pr`): that names
+the human who directed the work; this names the AI that assisted.
+
 ## Branch Names
 
 **Patterns** (in order of frequency in this repo):
@@ -156,3 +177,4 @@ mode was not pausing to apply it before pushing.
 1. Subject ≤72 chars?
 2. Single atomic change?
 3. Type matches branch?
+4. `Assisted-by:` trailer present, and no AI-added `Signed-off-by:`?

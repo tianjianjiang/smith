@@ -72,6 +72,9 @@ main
 - **Blocks**: #125 (feat/auth-oauth) ← PR #125 depends on this PR
 ```
 
+Every stacked PR body also ends with the `Assisted-by:` line (see
+`@smith-style`).
+
 **Field meanings**:
 - `Depends on`: PRs that must merge before this one (upstream dependencies)
 - `Blocks`: PRs waiting for this one to merge (downstream dependents)
