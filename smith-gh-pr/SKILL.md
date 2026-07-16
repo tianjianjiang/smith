@@ -41,7 +41,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    not user-specified, confirm it with the user before pushing
 5. Push to remote
 
-**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies).
+**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`).
 
 ## Working on Existing PRs
 
@@ -71,7 +71,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
-- **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"). Omit when the user manually authors the comment.
+- **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"), and end the comment with the `Assisted-by:` line (see `@smith-style`). Omit both when the user manually authors the comment.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 - Keep `@copilot` out of replies — mentioning it triggers unwanted sub-PRs
 
@@ -164,13 +164,14 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Draft content inline in conversation first
 - State intent: "posting to «medium»" — user can interrupt
 - Post unless user objects within that turn
-- Always include attribution line per medium convention
+- Always include attribution line per medium convention, plus the `Assisted-by:` line (`@smith-style`)
 
 ## Approving a PR by command
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
   write under the user's account: authorization-gate first (state intent; user
-  can interrupt), attribute "on behalf of @user" in the body.
+  can interrupt), attribute "on behalf of @user" plus the `Assisted-by:` line
+  (`@smith-style`) in the body.
 - It **returns silently on success** (no output is normal, not a failure).
   ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
   and confirm the user shows `APPROVED` in `reviews`.

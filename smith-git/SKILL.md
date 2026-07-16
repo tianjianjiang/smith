@@ -98,6 +98,10 @@ git worktree remove ../feature-branch
 
 **Atomic commits**: One logical change per commit, passes tests, reversible.
 
+**Attribution**: AI-assisted commits carry an `Assisted-by:` trailer; the agent
+never adds `Signed-off-by:` (only humans certify the DCO) — see
+`@smith-style/SKILL.md`.
+
 ## Non-Obvious Flags
 
 - **`-u`**: Use on first push to set upstream tracking

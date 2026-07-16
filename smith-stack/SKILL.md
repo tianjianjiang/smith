@@ -26,7 +26,7 @@ Load `@smith-stacks/SKILL.md`, `@smith-worktree/SKILL.md`,
    independently; fix to a clean round per unit.
 4. **Push & open stacked PRs** — push bottom-up; open each PR with its base set
    to the parent branch (not the default branch). Note the stack order in each
-   body.
+   body, and end each body with the `Assisted-by:` line (`@smith-style`).
 5. **Merge order & sync** — merge parent-first; per
    `@smith-stacks`/`@smith-gh-pr` OMIT `--delete-branch` when an open child
    exists, then retarget the child to the default branch and rebase. After each

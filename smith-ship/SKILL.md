@@ -40,14 +40,17 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    as a claim and verify against the diff. Cost guard: bounded PER ROUND and
    verify findings — never "use fewer tools".
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
-   body ≤72/line, `Co-Authored-By` trailer. One concern per commit.
+   body ≤72/line, `Assisted-by:` trailer (see `@smith-style`). One concern per
+   commit.
 4. **Push & PR** — push the renamed branch; `gh pr create --base <default>
-   --assignee @me` with a What/Why/Testing body. Link issues only if real.
+   --assignee @me` with a What/Why/Testing body ending with the `Assisted-by:`
+   line (`@smith-style`). Link issues only if real.
 5. **Address review** — fetch and reply to comments via the `gh pr-review`
    extension (see `@smith-gh-pr`); fix high-confidence findings with **fix +
    amend** (not new commits), reply with SHA + attribution ("on behalf of
-   @<user>"), resolve threads. When a reply proposes a specific code change
-   instead of auto-applying it, embed a committable `suggestion` block (see
+   @<user>", plus the `Assisted-by:` line — `@smith-style`), resolve threads.
+   When a reply proposes a specific code change instead of auto-applying it,
+   embed a committable `suggestion` block (see
    `@smith-gh-pr` "Posting Review Findings"). Re-review after each push. Confirm
    CodeRabbit actually ran (it fails open) before trusting 0.
 6. **Merge** — on convergence, `gh pr merge --squash --delete-branch` (targets

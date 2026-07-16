@@ -25,7 +25,9 @@ every revision — a single miss is a repeat-correction.**
    `slack_send_message`. Route all communication through channels; drafting or
    sending a DM is off-limits (company policy).
 2. **Attribution footnote is the LAST line** — every message body ends with the
-   attribution footnote. This is the single most repeat-corrected gate.
+   attribution footnote, which includes the `Assisted-by:` line (format in
+   `@smith-style`; team-specific footnote parts stay in project memory). This is
+   the single most repeat-corrected gate.
 3. **Evidence URLs for every reference** — every PR / issue / ticket / Notion
    page / Opik trace is a clickable link, never a bare number (`#3453` alone is
    wrong). Pull a PR's exact title from `gh pr view «n» --json title` and
@@ -72,7 +74,7 @@ Have the full picture first — drafts without evidence get rejected:
 
 **Before calling `slack_send_message_draft`, run the gate:**
 1. draft tool (not send, not DM)
-2. last line = attribution footnote
+2. last line = attribution footnote (includes `Assisted-by:` line)
 3. every reference = hyperlinked exact title / URL
 4. zero bold/italic/backticks; links `<url|text>`, mentions `<@USERID>`
 5. concise, fluent, quoted reply, no recap
