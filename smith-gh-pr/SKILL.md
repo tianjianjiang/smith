@@ -132,12 +132,25 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 
 ## Review Convergence Protocol
 
+**PR ownership gate (whose PRs may we merge?):**
+- Merge or `--force-with-lease` push ONLY a PR the user authored (or explicitly
+  says is theirs to merge). When unsure, check
+  `gh pr view {PR} --json author --jq .author.login` against
+  `gh api user --jq .login`; if that lookup errors, returns an empty login, or
+  is not an exact match, **fail closed** — treat the PR as not yours and stop.
+- A PR authored by someone else is NOT ours to merge: report its status and stop
+  — do not merge it, and do not ask whether to merge it, unless the user
+  explicitly directs it. This gate scopes every merge default below.
+- Approving another author's PR is different — that IS legitimate; see
+  "Approving a PR by command".
+
 **Decide-and-proceed defaults (do NOT ask between obvious steps):**
 - CR finding is Critical/Warning + high-confidence: fix, commit, push silently
 - CR finding is Info/Nitpick: reply-and-resolve or skip with one-line reason
 - After pushing a fix: re-run review immediately
-- 0 actionable findings: merge (`gh pr merge --squash --delete-branch`);
-  for a stacked PR with an open child, OMIT `--delete-branch` (see Stacked PRs)
+- 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
+  --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
+  (see Stacked PRs)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
