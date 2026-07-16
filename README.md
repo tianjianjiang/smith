@@ -119,14 +119,17 @@ then:
 ### Checkpoint & reload prerequisites
 
 `/smith-checkpoint` (capture) and its post-`/clear` auto-reload have runtime
-dependencies. If they are missing, capture still runs but reload degrades:
+dependencies. If they are missing, capture may still be attempted but the
+checkpoint is **incomplete** — it is not successful until all three backend
+writes succeed (the skill reports which failed rather than claiming success),
+and reload degrades:
 
 - **MCP servers** — the lifecycle writes and reads through them: **Serena**
   (`write_memory`/`read_memory`), **Basic-Memory** (`write_note` / note search).
   Both are **local-only** in a default setup (Serena memories live under
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled). auto-memory lives under
-  `~/.claude/projects/<project>/memory/` (Claude Code, local).
+  `~/.claude/projects/«project»/memory/` (Claude Code, local).
 - **Auto-reload hook** — the memory-restore directive is injected on the next
   `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. That hook set (SessionStart / Stop /

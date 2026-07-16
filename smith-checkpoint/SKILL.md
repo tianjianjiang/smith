@@ -39,14 +39,28 @@ records.
    sync (no silent partial checkpoint).
 5. On full success, report in-band what was saved and where
    (paths/permalinks/slugs).
-6. **Emit the Reload block** (below) so the next session can read the state back —
-   a checkpoint that no one can reload is only half done.
+6. **Arm auto-reload (Claude Code only), then emit the Reload block.** On Claude Code,
+   run the bridge and check its exit status BEFORE emitting the block, so the block only
+   claims auto-reload when the flag was actually written:
+
+   ```
+   ~/.claude/skills/smith-plan-claude/scripts/write-reload-flag.sh "«label»"
+   ```
+
+   The script exits non-zero (without printing "Wrote reload flag") if the flag could not be
+   written. If it fails — or on any non-Claude-Code platform where you don't run it — emit the
+   block with the `Auto-reload` line dropped and rely on the manual `/smith-recon` line. It drops
+   a `.pending-memory-restore-<key>` flag that `on-session-clear.sh` reads to auto-inject the
+   memory-restore directive on the next `/clear` — see `@smith-plan-claude/SKILL.md`. Needs the
+   smith-plan-claude SessionStart hook registered and the Serena / Basic-Memory MCP servers
+   available (see README "Hooks").
 
 ## Reload after /clear
 
 End every checkpoint with this block — the canonical reload recipe. Fill real
 values; annotate each anchor with where it is reachable from, in plain language
-(no shorthand codes):
+(no shorthand codes). Include the `Auto-reload` line only if the bridge (step 6)
+reported success:
 
 ```
 ## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
@@ -60,10 +74,5 @@ Where this checkpoint's state lives (reachable from):
 A cloud/fresh-clone run (/schedule, /code-review ultra, web) sees only committed git/PR state — none of the above unless noted portable.
 ```
 
-This skill is platform-neutral: any agent can write the backends and emit the block.
-**Claude Code auto-reload (platform bridge):** after the writes succeed, run
-`~/.claude/skills/smith-plan-claude/scripts/write-reload-flag.sh "«label»"`. It drops the
-`.pending-reload` flag so `on-session-clear.sh` auto-injects the memory-restore directive on
-the next `/clear` — see `@smith-plan-claude/SKILL.md`. Needs the smith-plan-claude SessionStart
-hook registered and the Serena / Basic-Memory MCP servers available (see README "Hooks"). On
-other platforms, just emit the block above.
+This skill is platform-neutral: any agent can write the backends and emit the block; the
+step-6 bridge is the Claude Code layer.

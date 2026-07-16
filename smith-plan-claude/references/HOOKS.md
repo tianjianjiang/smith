@@ -120,21 +120,17 @@ Fires after ExitPlanMode tool is used. Locates the active plan by first checking
 `~/.claude/plans/.pending-reload-<CWD_KEY>` (`CWD_KEY` = first 16 chars of `md5(PPID:CWD)`, computed by `session_key()` in `lib-common.sh`; PPID is Claude Code's PID, stable across `/clear`):
 
 ```
-/Users/user/.claude/plans/my-plan.md    <- line 1: absolute plan path (empty for memory-restore)
+/Users/user/.claude/plans/my-plan.md    <- line 1: absolute plan path
 sess_abc123def                           <- line 2: session ID
 $(date +%Y-%m-%dT%H:%M:%S%z)            <- line 3: ISO 8601 timestamp
 /path/to/working/directory              <- line 4: CWD (for debugging)
 plan-pending                             <- line 5: FLAG_TYPE (see below)
-my-checkpoint-label                      <- line 6: optional label (memory-restore only)
 ```
 
 **FLAG_TYPE (line 5)** — old flags without line 5 default to `plan-pending`:
 - `plan-pending` — active plan with pending `- [ ]` tasks → on-session-clear.sh reloads the plan.
 - `plan-completed` — plan exists, no pending tasks → not reloaded (defense-in-depth).
 - `no-plan` — no active plan → soft state signal only.
-- `memory-restore` — written by `/smith-checkpoint` via `write-reload-flag.sh` (no plan). Routes to
-  the no-plan path, where on-session-clear.sh emits a hard `list_memories()`/`read_memory()` +
-  auto-memory restore directive. Optional line 6 names the checkpoint in that directive.
 
 **Properties:**
 - **CWD-keyed**: Each parallel session (worktree) gets its own flag file
@@ -142,6 +138,26 @@ my-checkpoint-label                      <- line 6: optional label (memory-resto
 - One-shot: deleted after plan is loaded
 - Expired flags (>1 hour old) are auto-cleaned on each hook invocation
 - Legacy single `.pending-reload` file auto-cleaned (backward compatibility)
+
+### Checkpoint memory-restore flag (separate file)
+
+`~/.claude/plans/.pending-memory-restore-<CWD_KEY>` — written by `/smith-checkpoint` via
+`write-reload-flag.sh`, read by `on-session-clear.sh`. **Deliberately separate** from
+`.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
+`inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
+would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
+
+```
+sess_abc123def                    <- line 1: session ID (informational)
+2026-01-01T00:00:00+0900          <- line 2: ISO 8601 timestamp
+/path/to/working/directory        <- line 3: CWD
+my-checkpoint-label               <- line 4: optional label (names the checkpoint in the directive)
+```
+
+`on-session-clear.sh` consumes it one-shot (removed whether fresh or stale), applies a 24h
+freshness window, and prepends a hard `list_memories()`/`read_memory()` + auto-memory restore
+directive to its output (regardless of plan state). The write is atomic (temp file + `mv`) and
+`write-reload-flag.sh` exits non-zero without printing success if the directory or write fails.
 
 ## Ralph Loop Integration
 
