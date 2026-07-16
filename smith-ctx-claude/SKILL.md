@@ -57,7 +57,7 @@ cost.
 1. Update plan file with current progress (if active)
 2. Commit current work with detailed message
 3. Save state to Serena memory with `write_memory()`
-4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command)
+4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command) — canonical format + reachability annotation in `@smith-checkpoint/SKILL.md` "Reload after /clear"
 
 **Preserved**: Project files, CLAUDE.md, plan files. **Lost**: conversation history.
 

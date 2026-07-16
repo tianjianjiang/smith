@@ -61,6 +61,33 @@ if [[ -f "$FLAG_FILE" ]]; then
     FLAG_TYPE=${FLAG_TYPE:-plan-pending}
 fi
 
+# Independent checkpoint memory-restore flag — a SEPARATE file from the plan flag
+# above (written by write-reload-flag.sh). The plan hooks never touch it, so it
+# survives the enforce-clear/inject-plan writes that own `.pending-reload`. Read and
+# consume it here regardless of plan state; build a hard restore directive to prepend
+# to whichever output path runs below. 24h freshness mirrors the state-file window;
+# one-shot consumption prevents firing on an unrelated later /clear.
+MR_FLAG="${PLANS_DIR}/.pending-memory-restore-${CWD_KEY}"
+MR_DIRECTIVE=""
+if [[ -f "$MR_FLAG" ]]; then
+    if [[ -n "$(find "$MR_FLAG" -mmin -1440 2>/dev/null)" ]]; then
+        MR_LABEL=$(sed -n '4p' "$MR_FLAG" 2>/dev/null)
+        MR_DIRECTIVE="**ACTION REQUIRED - MEMORY RESTORE"
+        [[ -n "$MR_LABEL" ]] && MR_DIRECTIVE+=" (checkpoint: ${MR_LABEL})"
+        MR_DIRECTIVE+=":**"
+        MR_DIRECTIVE+="\n\nA /smith-checkpoint saved durable session state before this /clear. Restore it before responding:"
+        MR_DIRECTIVE+="\n1. If Serena MCP available: list_memories() then read_memory() for the checkpoint"
+        [[ -n "$MR_LABEL" ]] && MR_DIRECTIVE+=" (\`${MR_LABEL}\`)"
+        MR_DIRECTIVE+=" or the most recent session memory"
+        MR_DIRECTIVE+="\n2. Read the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, then the referenced checkpoint file"
+        MR_DIRECTIVE+="\n3. If Basic-Memory MCP available: search recent notes for the checkpoint"
+        MR_DIRECTIVE+="\n4. Report the restored context and continue the work thread"
+        MR_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
+        MR_DIRECTIVE+="\nIf the user's message contains a different request, address it first but still restore context."
+    fi
+    rm -f "$MR_FLAG" 2>/dev/null   # one-shot: consume whether fresh or stale
+fi
+
 # Only auto-load plan if a flag file exists (explicit reload intent from
 # enforce-clear or on-plan-exit). The state file alone is informational —
 # it records which plan was active but does NOT mean the user wants to resume.
@@ -179,7 +206,7 @@ if [[ -z "$PLAN_FILE" ]]; then
     fi
 
     # Determine signal: flag or Ralph/orchestrator resume means reload intent
-    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$RALPH_RESUME_DIRECTIVE" ]] || [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
+    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$RALPH_RESUME_DIRECTIVE" ]] || [[ -n "$ORCH_RESUME_DIRECTIVE" ]] || [[ -n "$MR_DIRECTIVE" ]]; then
         SIGNAL="resume"
     else
         SIGNAL="fresh-start"
@@ -200,6 +227,10 @@ if [[ -z "$PLAN_FILE" ]]; then
     if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
         STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
     fi
+
+    # Prepend the checkpoint memory-restore directive (if its flag was consumed above)
+    # so the action leads.
+    [[ -n "$MR_DIRECTIVE" ]] && STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
 
     rm -f "$FLAG_FILE" 2>/dev/null
     json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
@@ -222,6 +253,7 @@ if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
     if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
         STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
     fi
+    [[ -n "$MR_DIRECTIVE" ]] && STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
     rm -f "$FLAG_FILE" 2>/dev/null
     json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
     exit 0
@@ -280,6 +312,10 @@ fi
 if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
     FULL_CONTENT+=$(printf '%b' "$ORCH_RESUME_DIRECTIVE")
 fi
+
+# Prepend the checkpoint memory-restore directive (if its flag was consumed above) so
+# it leads even when a plan also reloaded.
+[[ -n "$MR_DIRECTIVE" ]] && FULL_CONTENT=$(printf '%b\n\n%s' "$MR_DIRECTIVE" "$FULL_CONTENT")
 
 # Clean up the pending-reload flag if it exists (SessionStart:clear handles it now)
 rm -f "$FLAG_FILE" 2>/dev/null

@@ -34,6 +34,20 @@ See `@smith-serena/SKILL.md` for tool-preference and memory-sync rules.
   auto-loads `CLAUDE.md` (not a bare `AGENTS.md`) — see `@smith-skills/SKILL.md`.
 - Load applicable smith skills via the Semantic Activation triggers below.
 
+## Checkpoint & Reload Prerequisites
+
+`/smith-checkpoint` (`@smith-checkpoint/SKILL.md`) captures durable state to three
+backends and ends with a Reload block. Its dependencies:
+- **MCP servers**: Serena (`write_memory`/`read_memory`) and Basic-Memory
+  (`write_note`) — all **local-only** by default (Serena memories gitignored;
+  Basic-Memory local SQLite unless cloud enabled; auto-memory under `~/.claude`).
+- **Auto-reload**: the memory-restore directive fires on the next `/clear` only if
+  the `smith-plan-claude` SessionStart:clear hook is registered (see README.md
+  "Hooks" / `smith-plan-claude/references/HOOKS.md`). Otherwise resume manually via
+  the Reload block's `/smith-recon "resume …"` line.
+- **Cloud/fresh-clone runs** (`/schedule`, `/code-review ultra`, web) see none of the
+  local backends — only committed git/PR state.
+
 ## Core Principles
 
 DRY, KISS, YAGNI, SOLID, HHH — defined in @smith-principles/SKILL.md

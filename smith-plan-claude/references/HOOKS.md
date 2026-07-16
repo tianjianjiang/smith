@@ -117,14 +117,20 @@ Fires after ExitPlanMode tool is used. Locates the active plan by first checking
 
 ## Flag File Format
 
-`~/.claude/plans/.pending-reload-<CWD_KEY>` (8-char md5 hash of CWD):
+`~/.claude/plans/.pending-reload-<CWD_KEY>` (`CWD_KEY` = first 16 chars of `md5(PPID:CWD)`, computed by `session_key()` in `lib-common.sh`; PPID is Claude Code's PID, stable across `/clear`):
 
 ```
 /Users/user/.claude/plans/my-plan.md    <- line 1: absolute plan path
 sess_abc123def                           <- line 2: session ID
 $(date +%Y-%m-%dT%H:%M:%S%z)            <- line 3: ISO 8601 timestamp
 /path/to/working/directory              <- line 4: CWD (for debugging)
+plan-pending                             <- line 5: FLAG_TYPE (see below)
 ```
+
+**FLAG_TYPE (line 5)** — old flags without line 5 default to `plan-pending`:
+- `plan-pending` — active plan with pending `- [ ]` tasks → on-session-clear.sh reloads the plan.
+- `plan-completed` — plan exists, no pending tasks → not reloaded (defense-in-depth).
+- `no-plan` — no active plan → soft state signal only.
 
 **Properties:**
 - **CWD-keyed**: Each parallel session (worktree) gets its own flag file
@@ -132,6 +138,26 @@ $(date +%Y-%m-%dT%H:%M:%S%z)            <- line 3: ISO 8601 timestamp
 - One-shot: deleted after plan is loaded
 - Expired flags (>1 hour old) are auto-cleaned on each hook invocation
 - Legacy single `.pending-reload` file auto-cleaned (backward compatibility)
+
+### Checkpoint memory-restore flag (separate file)
+
+`~/.claude/plans/.pending-memory-restore-<CWD_KEY>` — written by `/smith-checkpoint` via
+`write-reload-flag.sh`, read by `on-session-clear.sh`. **Deliberately separate** from
+`.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
+`inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
+would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
+
+```
+sess_abc123def                    <- line 1: session ID (informational)
+2026-01-01T00:00:00+0900          <- line 2: ISO 8601 timestamp
+/path/to/working/directory        <- line 3: CWD
+my-checkpoint-label               <- line 4: optional label (names the checkpoint in the directive)
+```
+
+`on-session-clear.sh` consumes it one-shot (removed whether fresh or stale), applies a 24h
+freshness window, and prepends a hard `list_memories()`/`read_memory()` + auto-memory restore
+directive to its output (regardless of plan state). The write is atomic (temp file + `mv`) and
+`write-reload-flag.sh` exits non-zero without printing success if the directory or write fails.
 
 ## Ralph Loop Integration
 
@@ -229,9 +255,8 @@ Build a REST API for user management
 ### Test flag consumption (auto-reload)
 
 ```bash
-# CWD_KEY is the first 8 chars of md5(CWD)
-CWD_KEY=$(printf '%s' "$PWD" | md5 -q 2>/dev/null || printf '%s' "$PWD" | md5sum | cut -d' ' -f1)
-CWD_KEY=${CWD_KEY:0:8}
+source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 
 echo '{"prompt":"go","session_id":"test1","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/inject-plan.sh
@@ -249,8 +274,8 @@ echo '{"prompt":"hello","session_id":"test2","transcript_path":"/tmp/test-transc
 ### Test Stop hook blocking
 
 ```bash
-CWD_KEY=$(printf '%s' "$PWD" | md5 -q 2>/dev/null || printf '%s' "$PWD" | md5sum | cut -d' ' -f1)
-CWD_KEY=${CWD_KEY:0:8}
+source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 rm -f ~/.claude/plans/.pending-reload-${CWD_KEY}
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
@@ -259,8 +284,8 @@ echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
 ### Test Stop hook allow (flag exists)
 
 ```bash
-CWD_KEY=$(printf '%s' "$PWD" | md5 -q 2>/dev/null || printf '%s' "$PWD" | md5sum | cut -d' ' -f1)
-CWD_KEY=${CWD_KEY:0:8}
+source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 printf '/tmp/plan.md\ntest\n'"$(date +%Y-%m-%d)"'\n/tmp\n' > ~/.claude/plans/.pending-reload-${CWD_KEY}
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
@@ -269,8 +294,8 @@ echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
 ### Test stale flag cleanup
 
 ```bash
-CWD_KEY=$(printf '%s' "$PWD" | md5 -q 2>/dev/null || printf '%s' "$PWD" | md5sum | cut -d' ' -f1)
-CWD_KEY=${CWD_KEY:0:8}
+source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 printf '/path/plan.md\nold_session\n'"$(date +%Y-%m-%dT%H:%M:%S%z)"'\n/old/path\n' > ~/.claude/plans/.pending-reload-${CWD_KEY}
 # Set file mtime to 2 hours ago to trigger cleanup
 touch -t $(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M) ~/.claude/plans/.pending-reload-${CWD_KEY}
