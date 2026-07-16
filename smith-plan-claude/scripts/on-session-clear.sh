@@ -56,9 +56,15 @@ fi
 # Read flag type (line 5) if flag exists. Old flags without line 5 default to
 # "plan-pending" for backward compatibility.
 FLAG_TYPE=""
+FLAG_LABEL=""
 if [[ -f "$FLAG_FILE" ]]; then
     FLAG_TYPE=$(sed -n '5p' "$FLAG_FILE" 2>/dev/null)
     FLAG_TYPE=${FLAG_TYPE:-plan-pending}
+    # memory-restore flags (from /smith-checkpoint via write-reload-flag.sh) carry
+    # an optional label on line 6 naming the checkpoint.
+    if [[ "$FLAG_TYPE" == "memory-restore" ]]; then
+        FLAG_LABEL=$(sed -n '6p' "$FLAG_FILE" 2>/dev/null)
+    fi
 fi
 
 # Only auto-load plan if a flag file exists (explicit reload intent from
@@ -199,6 +205,25 @@ if [[ -z "$PLAN_FILE" ]]; then
     fi
     if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
         STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
+    fi
+
+    # memory-restore: a /smith-checkpoint saved durable state before /clear (no plan).
+    # Emit a hard restore directive (mirrors inject-plan.sh serena_only), prepended
+    # so the action leads. Backends are local-only; a cloud/fresh-clone run can't see them.
+    if [[ "$FLAG_TYPE" == "memory-restore" ]]; then
+        MR_DIRECTIVE="**ACTION REQUIRED - MEMORY RESTORE"
+        [[ -n "$FLAG_LABEL" ]] && MR_DIRECTIVE+=" (checkpoint: ${FLAG_LABEL})"
+        MR_DIRECTIVE+=":**"
+        MR_DIRECTIVE+="\n\nA /smith-checkpoint saved durable session state before this /clear. Restore it before responding:"
+        MR_DIRECTIVE+="\n1. If Serena MCP available: list_memories() then read_memory() for the checkpoint"
+        [[ -n "$FLAG_LABEL" ]] && MR_DIRECTIVE+=" (\`${FLAG_LABEL}\`)"
+        MR_DIRECTIVE+=" or the most recent session memory"
+        MR_DIRECTIVE+="\n2. Read the auto-memory index at \`~/.claude/projects/<project>/memory/MEMORY.md\`, then the referenced checkpoint file"
+        MR_DIRECTIVE+="\n3. If Basic-Memory MCP available: search recent notes for the checkpoint"
+        MR_DIRECTIVE+="\n4. Report the restored context and continue the work thread"
+        MR_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
+        MR_DIRECTIVE+="\nIf the user's message contains a different request, address it first but still restore context."
+        STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
     fi
 
     rm -f "$FLAG_FILE" 2>/dev/null
