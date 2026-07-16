@@ -50,6 +50,25 @@ file, remote)
 - Parallel file-mutating subagents need isolation — see
   `@smith-worktree/SKILL.md`. Read-only fan-out does not.
 
+## Contract template: paste inline when spawning
+
+The rules above are principles; a subagent sees none of them unless you paste
+them. Drop this canonical block into an investigative prompt instead of
+re-deriving the contract each spawn (re-deriving it is a top cause of subagents
+that mutate shared state or return plans instead of findings):
+
+> READ-ONLY investigation. Return FINDINGS ONLY — do NOT edit, write, commit,
+> push, or call any mutating / external-write tool. Report `file:line` facts and
+> quoted evidence, not fixes or actions taken. If a step seems to need a
+> mutation, describe it for the main thread instead of doing it. Restate the
+> exact values you observed; do not summarize them away.
+> «Inline the specific conventions this task needs — subagents inherit no
+> skills, AGENTS.md, or memory»
+
+For a bounded EDITOR role the contract inverts: name the ONE artifact it may
+change and the single tool granted, and state that everything else stays
+read-only.
+
 ## Returns: findings, not actions
 
 - The deliverable is DATA the main thread can act on: paths, line numbers,
