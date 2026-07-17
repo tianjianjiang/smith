@@ -46,7 +46,8 @@ Decision order — first match wins:
 
 **Default-blocked categories** (observed and documented):
 
-- Force push, or pushing directly to `main`
+- Bare `--force` push, or pushing directly to a shared or default branch
+  (`--force-with-lease` is the non-blocked variant — see the escape patterns below)
 - `curl | bash` style download-and-execute patterns
 - Sending sensitive data to external endpoints
 - Production deploys and migrations
@@ -167,4 +168,4 @@ rules while adding your own.
 - Never propose a workaround — outcome (d) abandon
 
 **Before invoking known classifier-sensitive actions:**
-- Force push, push to `main`, production deploys, IAM grants, cloud-storage mass deletes → confirm with the user first, even before the first classifier check
+- Bare `--force` push, push to a shared or default branch (`main`, `develop`, etc. — never assume `main`), production deploys, IAM grants, cloud-storage mass deletes → confirm with the user first, even before the first classifier check. `--force-with-lease` on a branch you own is NOT in this set — it is mechanics (`@smith-guidance` Harmless, external writes); the lease is the safety check, and it is the recommended form above. "Own" means a personal or PR branch, never a shared or default one (`@smith-git`); where a PR exists, its ownership gate (`@smith-gh-pr`) is the test — before one exists, the branch being yours is.
