@@ -44,11 +44,16 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    commit.
 4. **Push & PR** — push the renamed branch; `gh pr create --base <default>
    --assignee @me` with a What/Why/Testing body ending with the `Assisted-by:`
-   line (`@smith-style`). Link issues only if real.
+   line (`@smith-style`). Link issues only if real. The body and title are
+   content: show them and create on an explicit yes (`@smith-guidance`
+   Harmless).
 5. **Address review** — fetch and reply to comments via the `gh pr-review`
    extension (see `@smith-gh-pr`); fix high-confidence findings with **fix +
    amend** (not new commits), reply with SHA + attribution ("on behalf of
    @<user>", plus the `Assisted-by:` line — `@smith-style`), resolve threads.
+   Replies to an automated reviewer's own thread that no human has joined are
+   mechanics; a comment addressed to a human needs an explicit yes first, one
+   per turn (`@smith-guidance` Harmless).
    When a reply proposes a specific code change instead of auto-applying it,
    embed a committable `suggestion` block (see
    `@smith-gh-pr` "Posting Review Findings"). Re-review after each push. Confirm

@@ -41,7 +41,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    not user-specified, confirm it with the user before pushing
 5. Push to remote
 
-**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`).
+**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a description is content addressed to a human — show it and open on an explicit yes (`@smith-guidance` Harmless).
 
 ## Working on Existing PRs
 
@@ -70,7 +70,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
-- **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable
+- **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is content — show it and post on a yes (`@smith-guidance` Harmless)
 - **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"), and end the comment with the `Assisted-by:` line (see `@smith-style`). Omit both when the user manually authors the comment.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 - Keep `@copilot` out of replies — mentioning it triggers unwanted sub-PRs
@@ -112,7 +112,11 @@ concrete — not as one PR-level summary comment. With no open PR, report in-ban
 **Mechanism (prefer the built-in):**
 
 - `/code-review --comment` — runs the review and posts findings as inline PR
-  comments automatically. Primary path.
+  comments automatically — every finding at once, ungated, each one content
+  addressed to a human. Review comments are a conversation, not a list, so they
+  stay **one per turn** (`@smith-guidance` Harmless) and `--comment`'s auto-post
+  is therefore NOT the default path: post them one at a time. Asking for a
+  review is not a yes for words that did not exist when it was asked.
 - Manual single inline comment via REST (when hand-authoring one finding):
 
 ````shell
@@ -155,6 +159,10 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
 **Must-ask criteria (only interruption triggers):**
+- About to post content addressed to a human — a review finding, PR
+  description, or approval body (`@smith-guidance` Harmless). Replies to an
+  automated reviewer's own thread that no human has joined are mechanics and do
+  not trigger this.
 - Finding requires scope change beyond the PR's stated goal
 - Finding contradicts an existing smith-skill rule (meta-question)
 - Auto-mode classifier denial without a documented escape pattern
@@ -174,17 +182,23 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Confirm a CR review actually ran before treating "0 findings" as clean.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
-- Draft content inline in conversation first
-- State intent: "posting to «medium»" — user can interrupt
-- Post unless user objects within that turn
+- A comment addressed to a **human** — a review finding, a PR description, an
+  approval body — is content: draft it, show it, wait for an explicit yes, one
+  per turn. A reply to an automated reviewer's own thread is mechanics and needs
+  no yes — unless a human has joined that thread, which makes it theirs.
+  Canonical split: `@smith-guidance` Harmless.
+- Merging, `--force-with-lease`, ff-sync, and resolving threads are mechanics —
+  decide-and-proceed inside an authorized ship (the PR ownership gate above
+  bounds which PRs qualify).
 - Always include attribution line per medium convention, plus the `Assisted-by:` line (`@smith-style`)
 
 ## Approving a PR by command
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
-  write under the user's account: authorization-gate first (state intent; user
-  can interrupt), attribute "on behalf of @user" plus the `Assisted-by:` line
-  (`@smith-style`) in the body.
+  write under the user's account, and an approval body is content: draft it,
+  show it, and submit only on an explicit yes (`@smith-guidance` Harmless).
+  Attribute "on behalf of @user" plus the `Assisted-by:` line (`@smith-style`)
+  in the body.
 - It **returns silently on success** (no output is normal, not a failure).
   ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
   and confirm the user shows `APPROVED` in `reviews`.
@@ -292,7 +306,9 @@ above for decide-vs-ask criteria and convergence rules):
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement, commit, reply with SHA
+3. High-confidence fixes: implement, commit, reply with SHA — a reply to the
+   bot's own thread is mechanics, so it needs no yes (`@smith-guidance`
+   Harmless). A comment addressed to a human reviewer does.
 4. Low-confidence: draft reply, ask user before posting
 5. Re-check after CI passes
 
@@ -306,6 +322,8 @@ above for decide-vs-ask criteria and convergence rules):
 Run `/autofix-pr` while on the PR's branch. Claude Code detects the open PR with `gh`, spawns a Claude Code on the web session, and turns on auto-fix for that PR in one step. The web session subscribes to GitHub events (CI checks, review comments) and pushes fixes for high-confidence cases; ambiguous changes prompt instead of pushing.
 
 **Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
+
+Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Harmless) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: "on behalf of @user" plus the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
 
 **Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
 

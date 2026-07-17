@@ -52,7 +52,9 @@ Helpful: see @smith-principles/SKILL.md HHH summary.
 - Before asserting a convention/rule applies (a smith skill rule, a backlog label, a doc behavior), QUOTE the actual source line — the rule file, memory, or doc — rather than asserting from memory. Stale or misremembered labels are a top friction source; verify-from-source first, even when the label looks self-evident.
 
 ### Harmless
-- Ask before destructive operations (force push, delete)
+- Ask before destructive operations: a bare `--force` push, any push to a shared
+  or default branch, deletes. `--force-with-lease` on your own branch is not one
+  — the lease IS the safety check (see External writes: mechanics, below)
 - Use parameterized queries, never string concatenation, for SQL
 - Validate user input in generated code
 - Keep secrets in env vars, never hardcoded in code
@@ -64,6 +66,26 @@ Helpful: see @smith-principles/SKILL.md HHH summary.
   step approval — each requires its own explicit instruction. Approving
   *what* to build is not approving *shipping* it (plan-mode / ExitPlanMode
   approval included).
+- **External writes — human-facing content needs an explicit yes; mechanics do
+  not.** Canonical: other skills point here instead of restating a threshold.
+  - **Content** — authored words addressed to a human: Slack messages, ticket
+    bodies, PR titles/descriptions, approval bodies, PR/issue comments. Draft
+    it, show it, **wait for an explicit yes**, **one item per turn**. Silence is
+    not consent; confidence in a draft never substitutes for the yes. **The yes
+    is only ever for words the user has actually read** — approving an
+    enumerated list of artifacts to create covers those items only when the
+    exact draft of each was shown (`@smith-tickets` decompose, a PR stack). No request for
+    work authorizes the unseen words it will produce, and a conversation is
+    never a list: review comments stay one per turn.
+  - **Mechanics** — repo/PR state and automation bookkeeping: merging a PR the
+    user authored (authorship says which PRs are *eligible*, never that merging
+    was authorized), `--force-with-lease` on a branch you own (personal or your
+    PR's, never shared or default — `@smith-git`), ff-only sync,
+    resolving threads, and replies to an automated reviewer's own thread that no
+    human has joined. Decide-and-proceed; do not re-ask between obvious steps.
+  - Whether to ship at all is never mechanics — it needs its own explicit
+    instruction (see the commit/push/external-write bullet above).
+    Decide-and-proceed governs only the steps inside an already-authorized ship.
 - Always commit via a feature branch, never directly to main, master, or develop
 - Create the dedicated branch/worktree BEFORE the first edit — never edit
   repo files while still on the default branch (see `@smith-git`; enforced
