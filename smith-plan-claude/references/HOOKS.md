@@ -141,23 +141,40 @@ plan-pending                             <- line 5: FLAG_TYPE (see below)
 
 ### Checkpoint memory-restore flag (separate file)
 
-`~/.claude/plans/.pending-memory-restore-<CWD_KEY>` — written by `/smith-checkpoint` via
+`~/.claude/plans/.pending-memory-restore-<unique id>` — written by `/smith-checkpoint` via
 `write-reload-flag.sh`, read by `on-session-clear.sh`. **Deliberately separate** from
 `.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
 `inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
 would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
 
-```
+**Discovered by content, not by key.** The writer runs under the Bash tool, whose ephemeral
+shell `$PPID` can never reproduce the hook's `session_key` (PPID:CWD) — the old shared-key
+design meant the hook found nothing, ever (verified 2026-07-18: 0 flags consumed across 252
+`SessionStart:clear` firings in local history). The filename key is therefore merely unique
+(timestamp + PID); `on-session-clear.sh` scans all `.pending-memory-restore-*` files and
+matches line 3 (cwd) against its hook-input cwd. One match → hard restore directive; several
+matches (parallel sessions checkpointed in the same cwd) → a directive listing every candidate
+that instructs Claude to ask the user which checkpoint to restore (newest wins headless).
+Foreign-cwd flags are left for their own session's `/clear`, with a >7-day hygiene sweep
+(positive staleness only — a `find` failure keeps the flag; the same sweep covers stranded
+`.mr-claimed.*`/`.mr-tmp.*` files). Caveat: the cwd match is an exact string comparison of
+logical paths — a flag written under a symlinked path (e.g. `/tmp` vs `/private/tmp`) will
+not match a hook cwd spelled differently; both sides normally come from the same session so
+this only bites cross-spelling setups.
+
+```text
 sess_abc123def                    <- line 1: session ID (informational)
 2026-01-01T00:00:00+0900          <- line 2: ISO 8601 timestamp
 /path/to/working/directory        <- line 3: CWD
 my-checkpoint-label               <- line 4: optional label (names the checkpoint in the directive)
 ```
 
-`on-session-clear.sh` consumes it one-shot (removed whether fresh or stale), applies a 24h
-freshness window, and prepends a hard `list_memories()`/`read_memory()` + auto-memory restore
-directive to its output (regardless of plan state). The write is atomic (temp file + `mv`) and
+`on-session-clear.sh` consumes matched-cwd flags one-shot (removed whether fresh or stale),
+applies a 24h freshness window, and prepends the restore directive to its output (regardless
+of plan state). The write is atomic (temp file + `mv`, temp name outside the scan glob) and
 `write-reload-flag.sh` exits non-zero without printing success if the directory or write fails.
+Exit 0 proves only that the flag was written — only a live `/clear` showing the directive
+proves the read side.
 
 ## Ralph Loop Integration
 
