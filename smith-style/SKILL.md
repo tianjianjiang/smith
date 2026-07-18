@@ -147,12 +147,6 @@ mode was not pausing to apply it before pushing.
 - Default for user-facing explanations when context is ambiguous: zh-Hant (user preference)
 - Never switch language unprompted — if unsure, ask once
 
-**Slack formatting (mrkdwn, not Markdown):**
-- Links: `<https://url|display text>` (not `[text](url)`)
-- Emphasis: `*bold*`, `_italic_`, `` `code` ``
-- Mentions: `<@USERID>` format, never display names
-- Thread replies for follow-ups; avoid walls of text in channels
-
 **Wiki-link leakage prevention:**
 - `[[Page Title]]` renders as broken literal text outside Notion
 - When copying to Slack/GitHub/Jira: convert to plain name or full URL
@@ -165,6 +159,7 @@ mode was not pausing to apply it before pushing.
 
 - `@smith-git/SKILL.md` - Branch and commit workflows
 - @smith-principles/SKILL.md - Core principles (DRY, KISS, YAGNI)
+- `@smith-slack/SKILL.md` - Slack message formatting and pre-send gate (owns all Slack rules)
 
 ## Before You Finish
 
