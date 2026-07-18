@@ -118,7 +118,7 @@ then:
 
 ### Checkpoint & reload prerequisites
 
-`/smith-checkpoint` (capture) and its post-`/clear` auto-reload have runtime
+`/smith-checkpoint` (capture) and its post-`/clear` reload flag have runtime
 dependencies. If they are missing, capture may still be attempted but the
 checkpoint is **incomplete** — it is not successful until all three backend
 writes succeed (the skill reports which failed rather than claiming success),
@@ -130,9 +130,11 @@ and reload degrades:
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled). auto-memory lives under
   `~/.claude/projects/«project»/memory/` (Claude Code, local).
-- **Auto-reload hook** — the memory-restore directive is injected on the next
-  `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
-  (`on-session-clear.sh`) is registered. That hook set (SessionStart / Stop /
+- **Reload-flag hook** — the memory-restore directive is injected as context on
+  the next `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
+  (`on-session-clear.sh`) is registered; the restore itself executes at the
+  user's first prompt after `/clear` (any prompt) — hooks cannot start a model
+  turn in an interactive session. That hook set (SessionStart / Stop /
   UserPromptSubmit / PostToolUse) is documented in
   `smith-plan-claude/references/HOOKS.md`; without it, use the manual
   `/smith-recon "resume …"` path printed in the checkpoint's Reload block.
