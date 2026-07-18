@@ -39,9 +39,9 @@ records.
    sync (no silent partial checkpoint).
 5. On full success, report in-band what was saved and where
    (paths/permalinks/slugs).
-6. **Arm auto-reload (Claude Code only), then emit the Reload block.** On Claude Code,
+6. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
    run the bridge and check its exit status BEFORE emitting the block, so the block only
-   claims auto-reload when the flag was actually written:
+   claims a flag when one was actually written:
 
    ```
    ~/.claude/skills/smith-plan-claude/scripts/write-reload-flag.sh "«label»"
@@ -49,11 +49,15 @@ records.
 
    The script exits non-zero (without printing "Wrote reload flag") if the flag could not be
    written. If it fails — or on any non-Claude-Code platform where you don't run it — emit the
-   block with the `Auto-reload` line dropped and rely on the manual `/smith-recon` line. It drops
+   block with the `Reload flag` line dropped and rely on the manual `/smith-recon` line. It drops
    a uniquely-keyed `.pending-memory-restore-*` flag that `on-session-clear.sh` discovers by
-   matching the flag's recorded cwd against the hook's cwd (no shared key), then auto-injects the
-   memory-restore directive on the next `/clear`; if several sessions checkpointed in the same
-   cwd, the directive asks which checkpoint to restore — see
+   matching the flag's recorded cwd against the hook's cwd (no shared key), then injects the
+   memory-restore directive as context on the next `/clear`. The restore itself executes only at
+   the user's FIRST PROMPT after `/clear` (any prompt): SessionStart hook output is context-only,
+   and no hook can start a model turn in an interactive session — a Claude Code limit, not
+   configurable (`initialUserMessage` applies only to `-p` non-interactive runs). Never describe
+   this as restoring "on /clear" or without user input. If several sessions checkpointed in the
+   same cwd, the directive asks which checkpoint to restore — see
    `smith-plan-claude/references/HOOKS.md` ("Checkpoint memory-restore flag"). Needs
    the smith-plan-claude SessionStart hook registered and the Serena / Basic-Memory MCP servers
    available (see README "Hooks"). Exit 0 proves the flag was WRITTEN, not that the hook will
@@ -63,12 +67,12 @@ records.
 
 End every checkpoint with this block — the canonical reload recipe. Fill real
 values; annotate each anchor with where it is reachable from, in plain language
-(no shorthand codes). Include the `Auto-reload` line only if the bridge (step 6)
+(no shorthand codes). Include the `Reload flag` line only if the bridge (step 6)
 reported success:
 
 ```
 ## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
-Auto-reload: flag written for the next /clear on THIS machine (discovered by cwd match; verify by seeing the directive after /clear).
+Reload flag: armed for the next /clear on THIS machine (discovered by cwd match). The restore runs at your FIRST PROMPT after /clear — type anything; nothing visible happens at /clear itself (Claude Code limit: hooks cannot start a turn).
 Manual resume: /smith-recon "resume my work thread on «label»"
 Where this checkpoint's state lives (reachable from):
 - auto-memory:  memory/«file».md          — this machine only (Claude Code home dir)

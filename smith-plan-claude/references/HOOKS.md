@@ -146,6 +146,9 @@ plan-pending                             <- line 5: FLAG_TYPE (see below)
 `.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
 `inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
 would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
+The injected directive is context-only: the restore executes at the user's first prompt after
+`/clear` (any prompt) — no hook event can start a model turn in an interactive session
+(`initialUserMessage` is `-p`-only), so nothing visible happens at `/clear` itself.
 
 **Discovered by content, not by key.** The writer runs under the Bash tool, whose ephemeral
 shell `$PPID` can never reproduce the hook's `session_key` (PPID:CWD) — the old shared-key

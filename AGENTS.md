@@ -41,10 +41,12 @@ backends and ends with a Reload block. Its dependencies:
 - **MCP servers**: Serena (`write_memory`/`read_memory`) and Basic-Memory
   (`write_note`) — all **local-only** by default (Serena memories gitignored;
   Basic-Memory local SQLite unless cloud enabled; auto-memory under `~/.claude`).
-- **Auto-reload**: the memory-restore directive fires on the next `/clear` only if
-  the `smith-plan-claude` SessionStart:clear hook is registered (see README.md
-  "Hooks" / `smith-plan-claude/references/HOOKS.md`). Otherwise resume manually via
-  the Reload block's `/smith-recon "resume …"` line.
+- **Reload flag**: the memory-restore directive is injected as context on the next
+  `/clear` only if the `smith-plan-claude` SessionStart:clear hook is registered
+  (see README.md "Hooks" / `smith-plan-claude/references/HOOKS.md`); the restore
+  itself runs at the user's first prompt after `/clear` — no hook can start a turn
+  in an interactive session. Otherwise resume manually via the Reload block's
+  `/smith-recon "resume …"` line.
 - **Cloud/fresh-clone runs** (`/schedule`, `/code-review ultra`, web) see none of the
   local backends — only committed git/PR state.
 
