@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 56 scenarios covering:
+# Runs 66 scenarios covering:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -42,6 +42,11 @@
 #  37. enforce-clear + exit-marker -> exit 0 (no block)
 #  ... (38-54 cover exit-marker edge cases, model auto-detection,
 #       plan-completed flag consistency, and no-state-file regression)
+#  57. memory-restore: 1 fresh matching flag -> restore directive, flag consumed
+#  58. memory-restore: 2 matching flags -> collision directive lists both + asks, both consumed
+#  59. memory-restore: fresh flag for a different cwd -> untouched, no directive
+#  60. memory-restore: stale (>24h) matching flag -> consumed, no directive
+#  61. memory-restore: end-to-end write-reload-flag.sh -> hook discovers by cwd match
 #
 
 set -e
@@ -63,7 +68,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=56
+TOTAL=66
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -2144,6 +2149,239 @@ if [[ "$T54_PASS" == "true" ]]; then
     PASS=$((PASS + 1))
 else
     echo '  FAIL'
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 57: memory-restore, single fresh matching flag -> directive + consumed ---
+echo "Test 57: memory-restore: 1 fresh matching flag -> MEMORY RESTORE directive, flag consumed"
+CWD_57="$TEST_DIR/worktree-57"
+mkdir -p "$CWD_57"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_57="$PLANS_DIR/.pending-memory-restore-20260718T000000-11111"
+printf '%s\n%s\n%s\n%s\n' "sess_57" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_57" "checkpoint-57" > "$MR_FLAG_57"
+OUTPUT=$(echo '{"cwd":"'"$CWD_57"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "57" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_contains "57" "$OUTPUT" "checkpoint-57" && \
+   assert_not_contains "57" "$OUTPUT" "checkpoints for this directory" && \
+   assert_file_not_exists "57" "$MR_FLAG_57"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 58: memory-restore, two matching flags -> collision question, both consumed ---
+echo "Test 58: memory-restore: 2 matching flags -> collision directive lists both, asks, consumes both"
+CWD_58="$TEST_DIR/worktree-58"
+mkdir -p "$CWD_58"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_58A="$PLANS_DIR/.pending-memory-restore-20260718T000001-22222"
+MR_FLAG_58B="$PLANS_DIR/.pending-memory-restore-20260718T000002-33333"
+printf '%s\n%s\n%s\n%s\n' "sess_58a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_58" "checkpoint-58-older" > "$MR_FLAG_58A"
+printf '%s\n%s\n%s\n%s\n' "sess_58b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_58" "checkpoint-58-newer" > "$MR_FLAG_58B"
+OUTPUT=$(echo '{"cwd":"'"$CWD_58"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+T58_CLAIMED=$(find "$PLANS_DIR" -name '.mr-claimed.*' | wc -l | tr -d ' ')
+if assert_contains "58" "$OUTPUT" "checkpoints for this directory" && \
+   assert_contains "58" "$OUTPUT" "checkpoint-58-older" && \
+   assert_contains "58" "$OUTPUT" "checkpoint-58-newer" && \
+   assert_contains "58" "$OUTPUT" "AskUserQuestion" && \
+   assert_file_not_exists "58" "$MR_FLAG_58A" && \
+   assert_file_not_exists "58" "$MR_FLAG_58B" && \
+   [[ "$T58_CLAIMED" == "0" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 59: memory-restore, foreign-cwd flag -> untouched, no directive ---
+echo "Test 59: memory-restore: fresh flag for a DIFFERENT cwd -> untouched, no directive"
+CWD_59="$TEST_DIR/worktree-59"
+CWD_59_OTHER="$TEST_DIR/worktree-59-other"
+mkdir -p "$CWD_59" "$CWD_59_OTHER"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_59="$PLANS_DIR/.pending-memory-restore-20260718T000003-44444"
+printf '%s\n%s\n%s\n%s\n' "sess_59" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_59_OTHER" "checkpoint-59" > "$MR_FLAG_59"
+OUTPUT=$(echo '{"cwd":"'"$CWD_59"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "59" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_file_exists "59" "$MR_FLAG_59"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$MR_FLAG_59"
+
+# --- Test 60: memory-restore, stale matching flag -> consumed, no directive ---
+echo "Test 60: memory-restore: stale (>24h) matching flag -> consumed, no directive"
+CWD_60="$TEST_DIR/worktree-60"
+mkdir -p "$CWD_60"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_60="$PLANS_DIR/.pending-memory-restore-20260716T000000-55555"
+printf '%s\n%s\n%s\n%s\n' "sess_60" "2026-07-16T00:00:00+0900" "$CWD_60" "checkpoint-60" > "$MR_FLAG_60"
+touch -t 202607160000 "$MR_FLAG_60"
+OUTPUT=$(echo '{"cwd":"'"$CWD_60"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "60" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_file_not_exists "60" "$MR_FLAG_60"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 61: memory-restore, writer-to-reader end-to-end via write-reload-flag.sh ---
+echo "Test 61: memory-restore: real write-reload-flag.sh output is discovered by the hook"
+CWD_61="$TEST_DIR/worktree-61"
+mkdir -p "$CWD_61"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+sed -e 's|PLANS_DIR="\${HOME}/.claude/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
+    "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
+# Guard against a fail-open substitution: if the PLANS_DIR line format ever
+# changes, the copied writer would silently write into the REAL ~/.claude/plans.
+if grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
+    T61_SUBST_OK=true
+else
+    # Fail-closed: without the substitution the writer would write into the
+    # REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
+    echo "  ASSERT FAILED: PLANS_DIR substitution did not take effect in test lib-common.sh"
+    T61_SUBST_OK=false
+fi
+cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
+chmod +x "$TEST_DIR/write-reload-flag.sh"
+WRITE_OUT=""
+if [[ "$T61_SUBST_OK" == "true" ]]; then
+    WRITE_OUT=$(cd "$CWD_61" && bash "$TEST_DIR/write-reload-flag.sh" "checkpoint-61-e2e")
+fi
+OUTPUT=$(echo '{"cwd":"'"$CWD_61"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+MR_LEFT=$(find "$PLANS_DIR" -name '.pending-memory-restore-*' | wc -l | tr -d ' ')
+if [[ "$T61_SUBST_OK" == "true" ]] && \
+   assert_contains "61" "$WRITE_OUT" "Wrote reload flag" && \
+   assert_contains "61" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_contains "61" "$OUTPUT" "checkpoint-61-e2e" && \
+   [[ "$MR_LEFT" == "0" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    [[ "$MR_LEFT" != "0" ]] && echo "  ASSERT FAILED: expected 0 leftover flags, found $MR_LEFT"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 62: memory-restore, concurrent hooks -> exactly one restore directive ---
+echo "Test 62: memory-restore: two concurrent hooks, one flag -> exactly one directive (atomic claim)"
+CWD_62="$TEST_DIR/worktree-62"
+mkdir -p "$CWD_62"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
+MR_FLAG_62="$PLANS_DIR/.pending-memory-restore-20260718T000004-66666"
+printf '%s\n%s\n%s\n%s\n' "sess_62" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_62" "checkpoint-62" > "$MR_FLAG_62"
+OUT_62A_FILE="$TEST_DIR/t62-a.out"
+OUT_62B_FILE="$TEST_DIR/t62-b.out"
+echo '{"cwd":"'"$CWD_62"'"}' | bash "$TEST_DIR/on-session-clear.sh" > "$OUT_62A_FILE" 2>/dev/null &
+T62_PID_A=$!
+echo '{"cwd":"'"$CWD_62"'"}' | bash "$TEST_DIR/on-session-clear.sh" > "$OUT_62B_FILE" 2>/dev/null &
+T62_PID_B=$!
+wait "$T62_PID_A"; T62_STATUS_A=$?
+wait "$T62_PID_B"; T62_STATUS_B=$?
+T62_DIRECTIVES=$(cat "$OUT_62A_FILE" "$OUT_62B_FILE" | grep -c "MEMORY RESTORE" || true)
+T62_LEFT=$(find "$PLANS_DIR" \( -name '.pending-memory-restore-*' -o -name '.mr-claimed.*' \) | wc -l | tr -d ' ')
+if [[ "$T62_STATUS_A" == "0" ]] && [[ "$T62_STATUS_B" == "0" ]] && \
+   [[ "$T62_DIRECTIVES" == "1" ]] && [[ "$T62_LEFT" == "0" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    echo "  ASSERT FAILED: expected both hooks exit 0 (got $T62_STATUS_A/$T62_STATUS_B), exactly 1 directive (got $T62_DIRECTIVES), 0 leftover files (got $T62_LEFT)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 63: memory-restore, collision ordering -> newest first + headless newest label ---
+echo "Test 63: memory-restore: collision with distinct mtimes -> newest first, headless picks newest"
+CWD_63="$TEST_DIR/worktree-63"
+mkdir -p "$CWD_63"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_63A="$PLANS_DIR/.pending-memory-restore-20260718T000005-77777"
+MR_FLAG_63B="$PLANS_DIR/.pending-memory-restore-20260718T000006-88888"
+printf '%s\n%s\n%s\n%s\n' "sess_63a" "2026-07-18T01:00:00+0900" "$CWD_63" "checkpoint-63-older" > "$MR_FLAG_63A"
+printf '%s\n%s\n%s\n%s\n' "sess_63b" "2026-07-18T02:00:00+0900" "$CWD_63" "checkpoint-63-newer" > "$MR_FLAG_63B"
+touch -t "$(date -v-3H +%Y%m%d%H%M 2>/dev/null || date -d '3 hours ago' +%Y%m%d%H%M)" "$MR_FLAG_63A"
+touch -t "$(date -v-1H +%Y%m%d%H%M 2>/dev/null || date -d '1 hour ago' +%Y%m%d%H%M)" "$MR_FLAG_63B"
+OUTPUT=$(echo '{"cwd":"'"$CWD_63"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+T63_AFTER_NEWER=${OUTPUT#*checkpoint-63-newer}
+if assert_contains "63" "$OUTPUT" 'restore the newest (`checkpoint-63-newer`)' && \
+   assert_contains "63" "$T63_AFTER_NEWER" "checkpoint-63-older"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (newest-first ordering or headless-newest label broken)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 64: memory-restore + plan reload flag coexist -> both directives ---
+echo "Test 64: memory-restore flag + plan reload flag -> output contains BOTH directives"
+create_test_plan
+CWD_64="$TEST_DIR/worktree-64"
+mkdir -p "$CWD_64"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.pending-reload-*
+CWD_64_KEY=$(compute_session_key "$CWD_64")
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_64" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_64_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_64" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_64" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_64_KEY}"
+MR_FLAG_64="$PLANS_DIR/.pending-memory-restore-20260718T000007-99999"
+printf '%s\n%s\n%s\n%s\n' "sess_64" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_64" "checkpoint-64" > "$MR_FLAG_64"
+OUTPUT=$(echo '{"cwd":"'"$CWD_64"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "64" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_contains "64" "$OUTPUT" "POST-CLEAR RESUME" && \
+   assert_file_not_exists "64" "$MR_FLAG_64"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+
+# --- Test 65: memory-restore, >7-day foreign flag -> swept ---
+echo "Test 65: memory-restore: 8-day-old foreign-cwd flag -> deleted by hygiene sweep, no directive"
+CWD_65="$TEST_DIR/worktree-65"
+CWD_65_OTHER="$TEST_DIR/worktree-65-other"
+mkdir -p "$CWD_65" "$CWD_65_OTHER"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_65="$PLANS_DIR/.pending-memory-restore-20260710T000000-10101"
+printf '%s\n%s\n%s\n%s\n' "sess_65" "2026-07-10T00:00:00+0900" "$CWD_65_OTHER" "checkpoint-65" > "$MR_FLAG_65"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_65"
+OUTPUT=$(echo '{"cwd":"'"$CWD_65"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "65" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_file_not_exists "65" "$MR_FLAG_65"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 66: memory-restore, mixed fresh + stale matching flags -> single directive, both consumed ---
+echo "Test 66: memory-restore: fresh + stale matching flags -> single-checkpoint directive (no collision), both consumed"
+CWD_66="$TEST_DIR/worktree-66"
+mkdir -p "$CWD_66"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_66A="$PLANS_DIR/.pending-memory-restore-20260716T000001-20202"
+MR_FLAG_66B="$PLANS_DIR/.pending-memory-restore-20260718T000008-30303"
+printf '%s\n%s\n%s\n%s\n' "sess_66a" "2026-07-16T00:00:01+0900" "$CWD_66" "checkpoint-66-stale" > "$MR_FLAG_66A"
+printf '%s\n%s\n%s\n%s\n' "sess_66b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_66" "checkpoint-66-fresh" > "$MR_FLAG_66B"
+touch -t "$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)" "$MR_FLAG_66A"
+OUTPUT=$(echo '{"cwd":"'"$CWD_66"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "66" "$OUTPUT" "checkpoint: checkpoint-66-fresh" && \
+   assert_not_contains "66" "$OUTPUT" "checkpoints for this directory" && \
+   assert_not_contains "66" "$OUTPUT" "checkpoint-66-stale" && \
+   assert_file_not_exists "66" "$MR_FLAG_66A" && \
+   assert_file_not_exists "66" "$MR_FLAG_66B"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
 

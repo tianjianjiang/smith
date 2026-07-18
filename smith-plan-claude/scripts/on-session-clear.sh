@@ -61,17 +61,78 @@ if [[ -f "$FLAG_FILE" ]]; then
     FLAG_TYPE=${FLAG_TYPE:-plan-pending}
 fi
 
-# Independent checkpoint memory-restore flag — a SEPARATE file from the plan flag
-# above (written by write-reload-flag.sh). The plan hooks never touch it, so it
-# survives the enforce-clear/inject-plan writes that own `.pending-reload`. Read and
-# consume it here regardless of plan state; build a hard restore directive to prepend
-# to whichever output path runs below. 24h freshness mirrors the state-file window;
-# one-shot consumption prevents firing on an unrelated later /clear.
-MR_FLAG="${PLANS_DIR}/.pending-memory-restore-${CWD_KEY}"
+# Independent checkpoint memory-restore flags — SEPARATE files from the plan flag
+# above (written by write-reload-flag.sh). The plan hooks never touch them, so they
+# survive the enforce-clear/inject-plan writes that own `.pending-reload`.
+#
+# Discovery is BY CONTENT, not by key: the writer runs under the Bash tool, whose
+# ephemeral shell $PPID can never reproduce this hook's session_key, so the flag's
+# filename key is merely unique. Scan every `.pending-memory-restore-*` file and
+# match line 3 (cwd, newline-stripped by the writer) against this hook's cwd.
+# 0 fresh matches → nothing; 1 fresh match → hard restore directive; ≥2 fresh
+# (parallel sessions in this cwd checkpointed) → directive listing every candidate
+# and instructing Claude to ASK which one to restore. Matched flags are consumed
+# one-shot whether fresh or stale (24h window, hardcoded); the flag is only a pointer —
+# checkpoint state itself lives in the memory backends. Foreign-cwd flags are left
+# for their own session's /clear, except a >7-day hygiene sweep.
+_mr_cwd="${HOOK_CWD:-${PWD:-}}"
+_mr_cwd=${_mr_cwd//$'\n'/ }
 MR_DIRECTIVE=""
-if [[ -f "$MR_FLAG" ]]; then
-    if [[ -n "$(find "$MR_FLAG" -mmin -1440 2>/dev/null)" ]]; then
-        MR_LABEL=$(sed -n '4p' "$MR_FLAG" 2>/dev/null)
+_mr_rows=""   # sortable rows: "<mtime>\t<label>\t<timestamp>"
+# Guard: with an empty hook cwd ("" == "" would match truncated/corrupt flags),
+# skip the whole scan and leave every flag for a healthy hook run to consume.
+if [[ -n "$_mr_cwd" ]]; then
+for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
+    [[ -f "$_mr_f" ]] || continue
+    _mr_fcwd=$(sed -n '3p' "$_mr_f" 2>/dev/null)
+    if [[ "$_mr_fcwd" != "$_mr_cwd" ]]; then
+        # Another session's flag (or unreadable): not ours to consume. Hygiene:
+        # drop only on POSITIVE staleness (>7 days) — `find -mmin +N` prints
+        # nothing on a transient find/IO failure, so failure means keep, never
+        # delete a flag another session may still need.
+        if [[ -n "$(find "$_mr_f" -mmin +10080 -print 2>/dev/null)" ]]; then
+            rm -f "$_mr_f" 2>/dev/null
+        fi
+        continue
+    fi
+    # Atomically CLAIM the flag before consuming: two simultaneous /clear hooks
+    # in the same cwd could otherwise both read it before either rm's it,
+    # breaking the one-shot contract with duplicate directives. mv on the same
+    # filesystem is atomic — exactly one hook wins; the loser skips. The claim
+    # name must stay outside the .pending-memory-restore-* scan glob.
+    _mr_claim="${PLANS_DIR}/.mr-claimed.$$.${_mr_f##*/.pending-memory-restore-}"
+    if ! mv "$_mr_f" "$_mr_claim" 2>/dev/null; then
+        # Gone = lost the race to a concurrent hook (fine). Still present = a
+        # real filesystem failure (read-only, EACCES, full) — surface it so the
+        # feature can't degrade to silently-off forever.
+        [[ -e "$_mr_f" ]] && echo "Warning: cannot claim memory-restore flag: $_mr_f" >&2
+        continue
+    fi
+    # Freshness: positive staleness detection, same rationale as the sweep —
+    # a find failure must read as fresh (a spurious directive is recoverable;
+    # a silently swallowed fresh checkpoint is the bug this file exists to fix).
+    if [[ -z "$(find "$_mr_claim" -mmin +1440 -print 2>/dev/null)" ]]; then
+        # mtime fallback is "now", never 0: an unstat-able flag must not be
+        # silently demoted to oldest (headless restores "the newest").
+        _mr_mtime=$(stat -f %m "$_mr_claim" 2>/dev/null) || \
+            _mr_mtime=$(stat -c %Y "$_mr_claim" 2>/dev/null) || _mr_mtime=$(date +%s)
+        # Strip tabs from the label so a legacy/foreign flag can't misalign the rows.
+        _mr_label_raw=$(sed -n '4p' "$_mr_claim" 2>/dev/null)
+        _mr_rows+="${_mr_mtime}"$'\t'"${_mr_label_raw//$'\t'/ }"$'\t'"$(sed -n '2p' "$_mr_claim" 2>/dev/null)"$'\n'
+    fi
+    rm -f "$_mr_claim" 2>/dev/null   # one-shot: consume matched-cwd flags, fresh or stale
+done
+# Litter sweep: a hook killed between claim and rm, or a crashed writer, can
+# strand .mr-claimed.* / .mr-tmp.* files nothing else scans. Positive-staleness
+# only, same failure-means-keep rationale as above.
+find "$PLANS_DIR" \( -name '.mr-claimed.*' -o -name '.mr-tmp.*' \) -mmin +10080 -delete 2>/dev/null
+fi
+if [[ -n "$_mr_rows" ]]; then
+    _mr_rows=$(printf '%s' "$_mr_rows" | sort -t$'\t' -k1,1 -rn)
+    _mr_count=$(printf '%s\n' "$_mr_rows" | wc -l | tr -d ' ')
+    _mr_newest_label=$(printf '%s\n' "$_mr_rows" | head -1 | cut -f2)
+    if [[ "$_mr_count" -eq 1 ]]; then
+        MR_LABEL="$_mr_newest_label"
         MR_DIRECTIVE="**ACTION REQUIRED - MEMORY RESTORE"
         [[ -n "$MR_LABEL" ]] && MR_DIRECTIVE+=" (checkpoint: ${MR_LABEL})"
         MR_DIRECTIVE+=":**"
@@ -84,8 +145,17 @@ if [[ -f "$MR_FLAG" ]]; then
         MR_DIRECTIVE+="\n4. Report the restored context and continue the work thread"
         MR_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
         MR_DIRECTIVE+="\nIf the user's message contains a different request, address it first but still restore context."
+    else
+        MR_DIRECTIVE="**ACTION REQUIRED - MEMORY RESTORE (${_mr_count} checkpoints for this directory):**"
+        MR_DIRECTIVE+="\n\nMultiple /smith-checkpoint flags were saved for this directory (parallel sessions). Candidates, newest first (label — saved at):"
+        while IFS=$'\t' read -r _ _mr_l _mr_t; do
+            MR_DIRECTIVE+="\n- ${_mr_l:-(no label)} — ${_mr_t:-unknown time}"
+        done <<< "$_mr_rows"
+        MR_DIRECTIVE+="\n\nBEFORE doing anything else, use AskUserQuestion to ask which checkpoint to restore."
+        MR_DIRECTIVE+="\nIf unable to ask (headless/non-interactive), restore the newest (\`${_mr_newest_label:-(no label)}\`) and say so explicitly."
+        MR_DIRECTIVE+="\nThen restore it: Serena list_memories()/read_memory(), the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, and Basic-Memory recent notes."
+        MR_DIRECTIVE+="\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
     fi
-    rm -f "$MR_FLAG" 2>/dev/null   # one-shot: consume whether fresh or stale
 fi
 
 # Only auto-load plan if a flag file exists (explicit reload intent from

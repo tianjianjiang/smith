@@ -50,10 +50,14 @@ records.
    The script exits non-zero (without printing "Wrote reload flag") if the flag could not be
    written. If it fails — or on any non-Claude-Code platform where you don't run it — emit the
    block with the `Auto-reload` line dropped and rely on the manual `/smith-recon` line. It drops
-   a `.pending-memory-restore-<key>` flag that `on-session-clear.sh` reads to auto-inject the
-   memory-restore directive on the next `/clear` — see `@smith-plan-claude/SKILL.md`. Needs the
-   smith-plan-claude SessionStart hook registered and the Serena / Basic-Memory MCP servers
-   available (see README "Hooks").
+   a uniquely-keyed `.pending-memory-restore-*` flag that `on-session-clear.sh` discovers by
+   matching the flag's recorded cwd against the hook's cwd (no shared key), then auto-injects the
+   memory-restore directive on the next `/clear`; if several sessions checkpointed in the same
+   cwd, the directive asks which checkpoint to restore — see
+   `smith-plan-claude/references/HOOKS.md` ("Checkpoint memory-restore flag"). Needs
+   the smith-plan-claude SessionStart hook registered and the Serena / Basic-Memory MCP servers
+   available (see README "Hooks"). Exit 0 proves the flag was WRITTEN, not that the hook will
+   read it — word the block accordingly (below).
 
 ## Reload after /clear
 
@@ -64,7 +68,7 @@ reported success:
 
 ```
 ## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
-Auto-reload: on the next /clear on THIS machine, a memory-restore directive is injected (flag written).
+Auto-reload: flag written for the next /clear on THIS machine (discovered by cwd match; verify by seeing the directive after /clear).
 Manual resume: /smith-recon "resume my work thread on «label»"
 Where this checkpoint's state lives (reachable from):
 - auto-memory:  memory/«file».md          — this machine only (Claude Code home dir)
