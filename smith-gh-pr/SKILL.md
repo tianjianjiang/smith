@@ -1,11 +1,11 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows including creation, review cycles, merge strategies, and stacked PRs. Use when creating PRs, reviewing code, merging branches, or managing stacked PR workflows. Covers rebase decision trees and AI-generated descriptions.
+description: GitHub PR workflows including creation, review cycles, merge strategies, and posting review findings. Use when creating PRs, replying to review comments, merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
 ---
 
 # GitHub PR Workflows
 
-**Load if:** Creating PRs, reviewing code, merging, stacked PRs
+**Load if:** Creating PRs, replying to review comments, fetching PR threads, merging
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-git/SKILL.md`
 
 ## CRITICAL
@@ -154,7 +154,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - After pushing a fix: re-run review immediately
 - 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
   --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
-  (see Stacked PRs)
+  (see `@smith-stacks/SKILL.md`)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
@@ -169,11 +169,10 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - CI fails after a CR-driven fix (regression vs flake ambiguity)
 - User explicitly said "pause" or "wait" in recent turns
 
-**Convergence criteria:**
-- Clean round (0 Critical/Warning findings): ready to merge
-- Diminishing returns (2 consecutive rounds with only Info/Nitpick): merge
-- Flip-flop (reviewer alternates contradicting verdicts without
-  new evidence): escalate trade-off analysis to user, stop iterating
+**Convergence criteria:** owned by `@smith-review` — a clean round or two
+consecutive Info-only rounds, with a complete plugin-pass receipt. "Ready to
+merge" here means that loop reported converged; a flip-flopping reviewer ends
+the loop WITHOUT convergence (escalated to the user, not merged).
 
 **CodeRabbit fails OPEN — absence of review is NOT a pass:**
 - CodeRabbit silently skips review on exhausted credits / the hourly
@@ -259,17 +258,6 @@ URL patterns map to API endpoints:
 **Squash**: Small fixes, docs, single logical change
 **Rebase**: Linear history required, clean commits
 
-## Stacked PRs
-
-For stacked PRs, merge parent WITHOUT `--delete-branch` — via the gh CLI it
-closes the open child instead of retargeting it (cli/cli#1168). Then:
-```shell
-gh pr edit {CHILD} --base main
-git rebase --onto origin/main feat/parent_branch
-git push --force-with-lease
-git push origin --delete feat/parent_branch
-```
-
 ## /ultrareview — Cloud Deep-Review
 
 `/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than the built-in single-pass `/review` slash command: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
@@ -352,6 +340,7 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 ## Related
 
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands, pagination limits
+- `@smith-review/SKILL.md` - Local review loop, convergence criteria
 - `@smith-stacks/SKILL.md` - Stacked PR workflows
 - `@smith-git/SKILL.md` - Git operations, rebase
 - `@smith-style/SKILL.md` - Conventional commits, branch naming

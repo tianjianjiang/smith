@@ -34,11 +34,9 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    Then, if on the EnterWorktree path in a background session, enter the
    worktree (see `@smith-worktree`) and rename the branch to the
    `@smith-style` convention before any push.
-2. **Review to convergence** — run the `/smith-review` loop, which marshals ALL
-   relevant smith review skills AND Claude Code review plugins/skills (not just
-   one tool). Multi-round until a clean round (0 actionable); treat each return
-   as a claim and verify against the diff. Cost guard: bounded PER ROUND and
-   verify findings — never "use fewer tools".
+2. **Review to convergence** — run the `/smith-review` loop; it owns the tool
+   marshaling, per-round receipts, and convergence criteria. Do not ship until
+   it reports converged.
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
    body ≤72/line, `Assisted-by:` trailer (see `@smith-style`). One concern per
    commit.
@@ -47,19 +45,18 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    line (`@smith-style`). Link issues only if real. The body and title are
    content: show them and create on an explicit yes (`@smith-guidance`
    Harmless).
-5. **Address review** — fetch and reply to comments via the `gh pr-review`
-   extension (see `@smith-gh-pr`); fix high-confidence findings with **fix +
-   amend** (not new commits), reply with SHA + attribution ("on behalf of
-   @<user>", plus the `Assisted-by:` line — `@smith-style`), resolve threads.
-   Replies to an automated reviewer's own thread that no human has joined are
-   mechanics; a comment addressed to a human needs an explicit yes first, one
-   per turn (`@smith-guidance` Harmless).
-   When a reply proposes a specific code change instead of auto-applying it,
-   embed a committable `suggestion` block (see
-   `@smith-gh-pr` "Posting Review Findings"). Re-review after each push. Confirm
-   CodeRabbit actually ran (it fails open) before trusting 0.
-6. **Merge** — on convergence, `gh pr merge --squash --delete-branch` (targets
-   the current branch's PR).
+5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
+   Review Findings) for fetching, replying, attribution, suggestion blocks,
+   and the content-vs-mechanics gate. Ship-specific: fix high-confidence
+   findings with **fix + amend** (not new commits); after each push rerun the
+   `/smith-review` loop to a fresh converged verdict (full receipt + criteria —
+   a mechanics-only recheck is not convergence); confirm CodeRabbit actually
+   ran before trusting 0 (`@smith-gh-pr` "CodeRabbit fails OPEN").
+6. **Merge** — on a converged verdict for the LATEST pushed commit (earlier
+   convergence does not carry across new commits), `gh pr merge --squash
+   --delete-branch` (targets the current branch's PR). If this branch has an
+   open child PR stacked on it, OMIT `--delete-branch` and follow
+   `@smith-stacks` instead.
 7. **Sync & clean up** — `ExitWorktree` (remove), then ff-only pull the repo's
    DEFAULT branch in the primary checkout; clear any squash-merge orphan branch
    (`@smith-worktree` Sync-After-Squash-Merge).
