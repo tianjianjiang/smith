@@ -27,7 +27,7 @@ tools".
 
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
-- smith: `@smith-gh-pr` (Code Review Cycle + Convergence), `@smith-validation`,
+- smith: `@smith-gh-pr` (Code Review Cycle, Posting Review Findings), `@smith-validation`,
   `@smith-tests`, `@smith-subagents`, `@smith-skills`, `@smith-standards`,
   `@smith-style`, plus the language skills (`@smith-python`/`@smith-typescript`/
   `@smith-nuxt`/...) the diff touches.
@@ -48,20 +48,17 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    Cost guard is bounded PER ROUND + verify findings (not fewer tools). Drive
    iteration as a `/loop`/ralph loop that re-shares the relevant skills + diff
    each round (`@smith-ralph`, `@smith-automation`).
-5. **Converge** — stop on a clean round (0 actionable) or 2 consecutive
-   Info-only rounds, AND only once the latest round's plugin-pass receipt shows
-   no applicable tool skipped. Report findings + verdict + the receipt in-band.
+5. **Converge** — these criteria are canonical here (referenced from
+   `@smith-gh-pr` and `@smith-ship`): stop on a clean round (0 actionable) or
+   2 consecutive Info-only rounds, AND only once the latest round's plugin-pass
+   receipt shows no applicable tool skipped. A flip-flopping reviewer
+   (alternating contradicting verdicts without new evidence) is a terminal but
+   NON-converged state: escalate the trade-off to the user and stop iterating
+   — do not report converged. Report findings + verdict + the receipt in-band.
 
-**Delivery when a PR exists.** If the change under review already has an open PR
-and findings are being posted to it:
-- findings that map to specific line(s) are inline comments anchored to those
-  lines — prefer `/code-review --comment` — with a committable `suggestion`
-  block for concrete code changes, per `@smith-gh-pr` "Posting Review Findings";
-- non-code findings that still map to specific lines stay inline without a
-  suggestion block;
-- cross-cutting or otherwise non-representable findings (architecture, a missing
-  test file) use a PR-level comment.
-
-Without an open PR, line-local review-only findings are reported in-band.
+**Delivery when a PR exists.** Post findings to the PR per `@smith-gh-pr`
+"Posting Review Findings" (inline comments anchored to lines, committable
+`suggestion` blocks for concrete fixes, PR-level only for cross-cutting
+findings). Without an open PR, report findings in-band.
 
 Restate the outcome in your own message; do not point at tool output.
