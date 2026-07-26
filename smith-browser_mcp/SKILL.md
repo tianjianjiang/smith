@@ -1,6 +1,6 @@
 ---
 name: smith-browser_mcp
-description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Default to Chrome for Testing; Vivaldi/Edge/consumer-Chrome overrides are forbidden. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, or triaging browser MCP launch failures.
+description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Default to Chrome for Testing; Vivaldi/Edge/consumer-Chrome overrides are forbidden. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, triaging browser MCP launch failures, or when a site needs an interactive login the user must complete.
 ---
 
 # Browser MCP Plugin Reliability
@@ -100,6 +100,57 @@ Source: https://github.com/ChromeDevTools/chrome-devtools-mcp (README:
 
 No overrides — bundled Chromium handles all flows. Source: https://github.com/microsoft/playwright-mcp .
 
+## Interactive Login: Hand Off, Don't Guess
+
+When a page needs interactive authentication (login wall, single sign-on
+(SSO) redirect, multi-factor authentication (MFA) prompt, captcha), the
+browser is already the right tool — hand the keyboard over instead of asking
+abstractly or abandoning the task.
+
+- **Navigate first, then hand off.** Drive the Model Context Protocol (MCP)
+  browser to the exact login URL, then say in ONE message: the window is open
+  on «page name», complete the login there, tell me when you're done. Never
+  ask "do you have an account?" in the abstract, and never report the task
+  blocked as "requires authentication" without opening the page.
+- **Name the page, don't echo the URL.** Identify it by site and page ("the
+  Jira login page"), never by pasting the full URL with its query string or
+  fragment — login, magic-link, and password-reset URLs carry single-use
+  tokens, and the transcript is the wrong place for them. The user reads the
+  address from the browser they are already looking at.
+- **Never handle credentials.** Do not ask for a password, token, or one-time
+  password (OTP) in chat, and do not fill credential fields on the user's
+  behalf even if they offer the values — anything pasted into chat lands in
+  the transcript. The user types the credentials themselves, in the MCP-opened
+  window (not a separate browser of their own — that session is invisible to
+  MCP).
+- **Keep it headed.** Both servers are headed by default (chrome-devtools-mcp
+  `--headless` "Default: `false`"; Playwright MCP "headed by default"), so the
+  user can see the window. Never add `--headless` to a flow that may hit a
+  login.
+- **Verify, don't assume.** After the user reports done, take a FRESH snapshot
+  and confirm the post-login state before continuing — a cached pre-login view
+  is a common false positive (`@smith-validation`).
+- **Know the session lifetime.** `--isolated` (required above) gives
+  chrome-devtools-mcp a temporary user-data-dir "automatically cleaned up
+  after the browser is closed" — the login survives only while that browser
+  lives, so keep it open for the whole task. If the SAME login recurs across
+  runs and that churn is the real cost, prefer Playwright MCP — its default
+  recipe above stores login state in a persistent profile across runs. That
+  profile is single-holder: "A persistent profile can only be used by one
+  browser instance at a time, so concurrent MCP clients sharing the same
+  workspace will conflict" — so for parallel sessions give each extra client
+  `--isolated` or a distinct `--user-data-dir`, and accept that those lose the
+  saved login. The Escape Hatch below is NOT the general answer to login
+  churn: it applies only when you need the user's existing Vivaldi profile,
+  and carries its own "may work but not guaranteed" caveat.
+
+Sources: https://github.com/ChromeDevTools/chrome-devtools-mcp (`--headless`
+default `false`; `--isolated` "creates a temporary user-data-dir that is
+automatically cleaned up after the browser is closed") and
+https://github.com/microsoft/playwright-mcp ("run browser in headless mode,
+headed by default"; persistent profile stores login state and "can only be
+used by one browser instance at a time") — both retrieved 2026-07-27.
+
 ## Escape Hatch: Vivaldi via `--browserUrl` (advanced)
 
 If you need the user's Vivaldi profile (logged-in sessions, cookies), do **not** launch Vivaldi from MCP. Instead:
@@ -139,3 +190,7 @@ Incident history (2026-04 → 2026-05): Vivaldi launches via `--executablePath` 
 1. Match stderr against the failure signatures above
 2. If Vivaldi/non-Chrome detected → recommend removing override + retry
 3. If user requires Vivaldi profile → escape hatch via `--browserUrl`
+
+**On a login wall:** navigate to the login URL → hand off in one message,
+naming the page rather than echoing the URL → verify with a fresh snapshot.
+Never type credentials; never call it blocked without opening the page.
