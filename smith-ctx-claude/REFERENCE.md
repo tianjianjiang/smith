@@ -351,7 +351,7 @@ skill via the Skill tool:
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
   Playwright → `@smith-playwright/SKILL.md`
-**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation OR browser MCP launch failure → `@smith-browser_mcp/SKILL.md`
+**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-browser_mcp/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
@@ -362,10 +362,12 @@ skill via the Skill tool:
   Worktrees (raw git) → `@smith-git/SKILL.md`,
   Worktrees (Claude Code tools: EnterWorktree/ExitWorktree, bgIsolation, squash-merge sync) → `@smith-worktree/SKILL.md`,
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`,
-  Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md`
+  Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md`,
+  Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md`
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
-  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`
+  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`,
+  Permission denial wording ("denied", "denial", "blocked by auto-mode/classifier") → `@smith-auto_mode/SKILL.md` (router also emits: do not silently retry a denied action)
 **Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md`
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
