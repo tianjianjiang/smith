@@ -89,7 +89,7 @@ read-only.
   findings and stops has delivered nothing, and looks identical to one that
   found nothing.
 - Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
-  output alone does not reach me" — rather than chasing afterwards. Chasing
+  output alone does not reach me" — rather than chasing afterward. Chasing
   works, but costs a round trip per agent.
 - Treat an idle notification as "ready to be asked", never as "clean". Silence
   is the same fails-open shape as an unrun review (`@smith-gh-pr` CodeRabbit
