@@ -84,10 +84,13 @@ read-only.
 
 ## Delivery: a written report is not a delivered one
 
-- A subagent's ordinary text output does NOT reach the main thread. Only a
-  `SendMessage` addressed to `main` does. An agent that carefully writes its
-  findings and stops has delivered nothing, and looks identical to one that
-  found nothing.
+- A BACKGROUND subagent's ordinary text output does NOT reach the main
+  thread; only a `SendMessage` addressed to `main` does, and the tool scopes
+  that address to background subagents for exactly this reason. An agent that
+  carefully writes its findings and stops has delivered nothing, and looks
+  identical to one that found nothing. A synchronous subagent is the opposite
+  — its final text IS the tool result — so the trap belongs to the default
+  spawn mode, not to every spawn.
 - Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
   output alone does not reach me" — rather than chasing afterward. Chasing
   works, but costs a round trip per agent.

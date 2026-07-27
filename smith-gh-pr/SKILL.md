@@ -178,8 +178,9 @@ the loop WITHOUT convergence (escalated to the user, not merged).
 
 **CodeRabbit fails OPEN — absence of review is NOT a pass:**
 - CodeRabbit silently skips review on exhausted credits / the hourly
-  rate-limit (Pro = 1 review/hr): "Review limit reached". It also skips PRs
-  whose base is not the default branch (stacked PRs) and a PR closed mid-review.
+  rate-limit (Free = 1 pull-request review/hr, Pro = 5, Pro+ = 10,
+  Enterprise = 12): "Review limit reached". It also skips PRs whose base is
+  not the default branch (stacked PRs) and a PR closed mid-review.
 - Confirm a CodeRabbit review actually ran before treating "0 findings" as
   clean. In `--agent` output that means `"status":"review_completed"` **and** a
   non-empty `reviewedFiles` — `"findings":0` is printed on the skip path too,
@@ -188,14 +189,15 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   work is committed ("No uncommitted changes detected"). After committing use
   `--committed --base «the PR's own base ref»` — the default branch for a
   standalone PR, the parent branch for a stacked one; passing the default
-  branch to a stacked PR pulls its ancestors into the diff. The command line
-  reviews a stacked base fine; only the App skips it, per the bullet above.
-  Arming a
-  background review with `--uncommitted` and then committing before it fires
-  yields a clean-looking result from an empty diff.
-- The command line (free open-source quota) and the GitHub App (per-developer
-  limit) rate-limit **independently**; one refusing is not the other passing,
-  and neither refusal is a pass. Re-trigger the App with a `@coderabbitai
+  branch to a stacked PR pulls its ancestors into the diff. The skip for a
+  non-default base in the bullet above is App behaviour; the command line
+  takes `--base` as given. Arming a background review with `--uncommitted`
+  and then committing before it fires yields a clean-looking result from an
+  empty diff.
+- Pull-request, editor, and command-line reviews are three SEPARATE hourly
+  channels, each counted per developer, so one refusing is not the other
+  passing, and neither refusal is a pass. When the App is out of quota the
+  command line usually still runs. Re-trigger the App with a `@coderabbitai
   review` comment once its window resets.
 - The App's "Action performed — Review finished" reply is an acknowledgement,
   not a result. It posts within seconds and reads the same whether the review
@@ -208,12 +210,14 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   makes the App post a review event with an EMPTY body. Check
   `gh pr view «number» --json reviews` for an event that (a) has a non-empty
   body and (b) is timestamped after the head commit. Do not test for the
-  "Actionable comments posted: «count»" opener — a review carrying only
-  nitpicks omits that line entirely and opens straight into its findings. A
-  review older than the newest commit read an older tree, so zero open
-  threads under it says nothing about that commit. If that command errors or
-  comes back empty, record "not reviewed" — a failed lookup is the one
-  outcome that must never read as "no findings".
+  "Actionable comments posted: «count»" opener — reviews whose findings are
+  all nitpicks, or all outside the diff range, omit that line and open
+  straight into their findings, and an outside-diff review can carry a
+  Major, so a missing opener says nothing about severity. A review older
+  than the newest commit read an older tree, so zero open threads under it
+  says nothing about that commit. If that command errors or comes back
+  empty, record "not reviewed" — a failed lookup is the one outcome that
+  must never read as "no findings".
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
