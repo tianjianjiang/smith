@@ -177,10 +177,11 @@ merge" here means that loop reported converged; a flip-flopping reviewer ends
 the loop WITHOUT convergence (escalated to the user, not merged).
 
 **CodeRabbit fails OPEN — absence of review is NOT a pass:**
-- CodeRabbit silently skips review on exhausted credits / the hourly
-  rate-limit (Free = 1 pull-request review/hr, Pro = 5, Pro+ = 10,
-  Enterprise = 12): "Review limit reached". It also skips PRs whose base is
-  not the default branch (stacked PRs) and a PR closed mid-review.
+- CodeRabbit silently skips review on exhausted credits / the per-plan hourly
+  rate-limit: "Review limit reached". The cap is a ROLLING allowance that
+  differs per plan and per channel, with its own open-source tier — read the
+  current table rather than a number memorised here. It also skips PRs whose
+  base is not the default branch (stacked PRs) and a PR closed mid-review.
 - Confirm a CodeRabbit review actually ran before treating "0 findings" as
   clean. In `--agent` output that means `"status":"review_completed"` **and** a
   non-empty `reviewedFiles` — `"findings":0` is printed on the skip path too,
@@ -194,14 +195,15 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   behaviour; the command line takes `--base` as given.
 - Pull-request, editor, and command-line reviews are three SEPARATE hourly
   channels, each counted per developer, so one refusing says nothing about
-  another. When the App is out of quota the command line usually still runs.
-  Re-trigger the App with a `@coderabbitai review` comment once its window
-  resets.
-- The App's "Action performed — Review finished" reply is an acknowledgement,
-  not a result: it posts within seconds and reads the same whether the review
-  ran, was skipped, or was blocked (a blocked one admits it only further down
-  that same comment: "your included review limit is currently reached"). The
-  real review arrives minutes later as a separate submitted review.
+  another. Re-trigger the App with a `@coderabbitai review` comment as the
+  rolling window frees capacity.
+- The App's fast reply (currently "Action performed — Review finished") is an
+  acknowledgement, not a result: it posts within seconds and reads the same
+  whether the review ran, was skipped, or was blocked (a blocked one admits it
+  only further down that same comment: "your included review limit is
+  currently reached"). The real review arrives minutes later as a SEPARATE
+  submitted review, so ANY comment appearing seconds after the trigger proves
+  nothing either way — trust only the review-event test below.
 - A submitted review event is not sufficient either: replying to a thread
   makes the App post a review event with an EMPTY body. Check
   `gh pr view «number» --json reviews` for an event that (a) has a non-empty
@@ -211,6 +213,10 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   nitpick-only and outside-diff reviews omit it, and an outside-diff review
   can carry a Major. If that command errors or returns empty, record "not
   reviewed" — a failed lookup must never read as "no findings".
+
+Source: https://docs.coderabbit.ai/management/plans and the `--agent` output
+of `coderabbit review` (both retrieved 2026-07-27). The quotas and the App's
+comment wording are point-in-time; the review-event test is not.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an

@@ -81,6 +81,11 @@ read-only.
   @smith-guidance/SKILL.md Honest).
 - For a delegated fix/diff, audit the execution path — trace that the change
   runs on the real failing input — not just its style or quality.
+- Reviewers may legitimately DISAGREE, and a vote count ranks severity
+  without settling truth: check a dissenting finding's evidence yourself
+  before downgrading it. Where a tool sets a corroboration threshold
+  (`@smith-gh-pr` sets one for `pr-review-toolkit`), read it as triage, not
+  a verdict.
 
 ## Delivery: a written report is not a delivered one
 
@@ -98,18 +103,13 @@ read-only.
 - The `summary` on an idle notification goes STALE — it echoes the agent's
   last delivered report, so it can show a verdict already fixed. Re-read the
   message; never trust the summary line.
-- Re-pointing a long-running reviewer at an amended commit is required, not
-  optional: it reads the tree from when it started.
-- Reviewers may legitimately DISAGREE, and a vote count ranks severity
-  without settling truth: check a dissenting finding's evidence yourself
-  before downgrading it. Where a tool sets a corroboration threshold
-  (`@smith-gh-pr` sets one for `pr-review-toolkit`), read it as triage, not
-  a verdict.
 
 ## Reconcile vs live state
 
 - Between spawn and return, the world can change: a PR gets retitled, a file
   gets edited, a branch moves. The subagent's snapshot is already stale.
+- Re-pointing a long-running reviewer at an amended commit is required, not
+  optional: it reads the tree from when it started.
 - Before mutating a shared artifact a subagent reported on, RE-READ its current
   state and merge — never overwrite from the subagent's snapshot.
 - Incident this guards against: a subagent overwrote a PR title from a stale
