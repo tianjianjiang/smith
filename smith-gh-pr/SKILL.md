@@ -197,8 +197,13 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   limit — a blocked one admits it only further down that same comment ("your
   included review limit is currently reached"). The real review arrives
   minutes later as a separate submitted review, so checking right after the
-  reply proves nothing either way. Confirm via the review event
-  (`gh pr view «number» --json reviews`), never the reply.
+  reply proves nothing either way.
+- A submitted review event is not sufficient either: replying to a thread
+  makes the App post an empty-bodied review of its own. Check
+  `gh pr view «number» --json reviews` for an event that (a) has a body
+  opening "Actionable comments posted: «count»" and (b) is timestamped after
+  the head commit. A review older than the newest commit reviewed an older
+  tree, and zero open threads under it means nothing about that commit.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
