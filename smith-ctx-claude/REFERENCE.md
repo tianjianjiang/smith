@@ -362,8 +362,9 @@ skill via the Skill tool:
   Worktrees (raw git) → `@smith-git/SKILL.md`,
   Worktrees (Claude Code tools: EnterWorktree/ExitWorktree, bgIsolation, squash-merge sync) → `@smith-worktree/SKILL.md`,
   PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`,
-  Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md`,
-  Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md`
+  Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md` (router also emits the suggestion-block note below),
+  Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md` (router also emits: a mechanical fix MUST carry the block, not prose describing the edit)
+  Running or interpreting a CodeRabbit review, GitHub App or `coderabbit` command line → `@smith-gh-pr/SKILL.md` + `@smith-review/SKILL.md` (router also emits: a review that did not run looks identical to a clean one — check status, not the finding count)
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
   Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`,

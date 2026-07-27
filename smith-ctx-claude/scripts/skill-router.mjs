@@ -19,7 +19,9 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const MAX_RULES_SHOWN = 5; // cap output so the injection stays terse
+// Caps the skill lines so the injection stays terse. Notes are NOT capped —
+// dropping a deterministic reminder to save a line is the wrong trade.
+const MAX_RULES_SHOWN = 5;
 
 function readStdin() {
   try {
@@ -56,6 +58,7 @@ function main() {
   if (rules.length === 0) return;
 
   const matched = [];
+  const notes = new Set();
   const seenSkills = new Set();
 
   for (const rule of rules) {
@@ -75,6 +78,12 @@ function main() {
     }
     if (!re.test(prompt)) continue;
 
+    // A `note` is rule-level guidance, not an echo of a skill name — so it is
+    // collected above the filters below: gating it would drop the reminder
+    // exactly when the user names the skill (evidence they want it).
+    const note = typeof rule.note === "string" ? rule.note.trim() : "";
+    if (note) notes.add(note);
+
     // Skip skills the user already named explicitly (no point echoing them).
     const fresh = skills.filter((s) => {
       if (seenSkills.has(s)) return false;
@@ -89,28 +98,29 @@ function main() {
     });
     if (fresh.length === 0) continue;
     fresh.forEach((s) => seenSkills.add(s));
-    matched.push({
-      why: rule.why || "match",
-      skills: fresh,
-      note: typeof rule.note === "string" ? rule.note.trim() : "",
-    });
-    if (matched.length >= MAX_RULES_SHOWN) break;
+    matched.push({ why: rule.why || "match", skills: fresh });
   }
 
-  if (matched.length === 0) return;
+  if (matched.length === 0 && notes.size === 0) return;
 
-  const lines = matched.map(
-    (m) => `- ${m.why} -> ${m.skills.map((s) => "@" + s).join(", ")}`,
-  );
+  // The cap trims the DISPLAY, not the scan — every rule is still evaluated so
+  // its note can be collected above.
+  const lines = matched
+    .slice(0, MAX_RULES_SHOWN)
+    .map((m) => `- ${m.why} -> ${m.skills.map((s) => "@" + s).join(", ")}`);
   // A rule may carry a deterministic reminder (its `note`) beyond the skill
   // list — e.g. dev-initiation prompts get the branch-first rule verbatim.
-  const notes = matched.filter((m) => m.note).map((m) => `- note: ${m.note}`);
-  const additionalContext = [
-    "Skill router (deterministic hook): your input matches these smith skills —",
-    ...lines,
-    ...notes,
-    "Invoke the relevant one via the Skill tool (or Read its SKILL.md). Candidates, not commands.",
-  ].join("\n");
+  const noteLines = [...notes].map((n) => `- note: ${n}`);
+  // Notes outlive the skill list when the user already named every matching
+  // skill, so header/footer must not promise skills that are not listed.
+  const hasSkillLines = lines.length > 0;
+  const header = hasSkillLines
+    ? "Skill router (deterministic hook): your input matches these smith skills —"
+    : "Skill router (deterministic hook): reminders for your input —";
+  const footer = hasSkillLines
+    ? "Invoke the relevant one via the Skill tool (or Read its SKILL.md). Candidates, not commands."
+    : "Reminders only — the matching skills were already named in your input.";
+  const additionalContext = [header, ...lines, ...noteLines, footer].join("\n");
 
   process.stdout.write(
     JSON.stringify({

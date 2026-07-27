@@ -16,6 +16,9 @@ description: GitHub PR workflows including creation, review cycles, merge strate
 - MUST have all CI checks passing before merge
 - MUST have explicit user request before creating PRs
   -- listing is NOT consent to create
+- MUST attach a committable `suggestion` block to a review finding whose fix is
+  mechanical — prose describing an edit the reviewer could have written is a
+  defect, not a review (see "Posting Review Findings" for the two exemptions)
 
 ## Avoid GitHub MCP
 
@@ -64,9 +67,10 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 **Code review response rules:**
 - **File-inline comments** (on specific lines): MUST reply in-thread using `gh pr-review comments reply --pr {number} -R {owner}/{repo} --thread-id {PRRT_xxx}`, NOT as PR-level comment. This keeps discussion traceable to the code location.
-- **Propose edits as committable suggestions**: when a reply proposes a specific
-  code change, embed a committable ` ```suggestion ` block (see "Posting Review
-  Findings" below) so the author commits it in one click instead of re-typing.
+- **Propose edits as committable suggestions**: a reply proposing a mechanical
+  code change MUST embed a committable ` ```suggestion ` block (see "Posting
+  Review Findings" below) so the author commits it in one click instead of
+  re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
@@ -92,18 +96,21 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 When Claude Code is the reviewer and an open PR exists (including self-review
 before human review), deliver findings as **inline comments anchored to the
 line(s)**, carrying a **committable `suggestion` block** whenever the fix is
-concrete — not as one PR-level summary comment. With no open PR, report in-band
-(see `@smith-review`).
+mechanical — not as one PR-level summary comment. With no open PR, report
+in-band (see `@smith-review`).
 
 - **Anchor to the line(s).** A finding that maps to specific line(s) MUST be an
   inline review comment on those lines. Reserve PR-level/summary comments for
   cross-cutting findings with no single anchor (architecture, a missing test
   file, a cross-module concern).
-- **Carry a committable suggestion when the fix is concrete.** GitHub renders a
+- **A mechanical fix MUST carry a committable suggestion.** GitHub renders a
   "Commit suggestion" button from a fenced block tagged `suggestion`; the author
-  applies it in one click. Include one whenever the fix is a mechanical code
-  change. Omit it only when the fix needs design discussion or can't be
-  expressed as a line-range replacement — and say why in the comment.
+  applies it in one click. If you can state the replacement text, you can put it
+  in the block — describing that edit in prose instead makes the author retype
+  what you already wrote, and is the single most common way a review finding
+  wastes their time. Omit the block ONLY when the fix needs design discussion or
+  cannot be expressed as a line-range replacement — and say which in the
+  comment. "I did not bother" is not one of the two exemptions.
 - **Replace the whole commented range.** GitHub replaces the commented line(s)
   with the block's contents verbatim — the block may hold more or fewer lines
   than the range (a suggestion can add or drop lines). Comment on the full range
@@ -388,6 +395,10 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 - `@smith-validation/SKILL.md` - Debugging, root cause analysis for review issues
 
 ## Before You Finish
+
+**Before posting any review finding:** is the fix mechanical? Then the comment
+carries the replacement text in a fenced `suggestion` block (see "Posting
+Review Findings").
 
 **Create PR:**
 ```shell
