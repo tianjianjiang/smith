@@ -1,6 +1,6 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows including creation, review cycles, merge strategies, and posting review findings. Use when creating PRs, replying to review comments, merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
+description: GitHub PR workflows including creation, review cycles, merge strategies, posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
 ---
 
 # GitHub PR Workflows
@@ -176,7 +176,8 @@ consecutive Info-only rounds, with a complete plugin-pass receipt. "Ready to
 merge" here means that loop reported converged; a flip-flopping reviewer ends
 the loop WITHOUT convergence (escalated to the user, not merged).
 
-**CodeRabbit fails OPEN — absence of review is NOT a pass:**
+**CodeRabbit fails OPEN — absence of review is NOT a pass.** One instance of
+`@smith-guidance` "a missing signal is never a passing signal":
 - CodeRabbit silently skips review on exhausted credits / the per-plan hourly
   rate-limit: "Review limit reached". The cap is a ROLLING allowance that
   differs per plan and per channel, with its own open-source tier — read the

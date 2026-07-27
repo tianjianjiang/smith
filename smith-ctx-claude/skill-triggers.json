@@ -24,6 +24,7 @@
     { "pattern": "\\b(deni(?:ed|al)|blocked by (?:the )?(?:auto[- ]?mode|classifier))\\b", "skills": ["smith-auto_mode"], "why": "permission denial", "note": "do not silently retry a denied action -> check @smith-auto_mode for the recovery path" },
     { "pattern": "\\b(auto-?mode|classifier|hard_deny|force ?push)\\b", "skills": ["smith-auto_mode"], "why": "auto-mode classifier" },
     { "pattern": "\\b(inline (?:review )?comments?|committable|suggestion blocks?)\\b", "skills": ["smith-gh-pr"], "why": "inline review comments / committable suggestions" },
+    { "pattern": "\\b(coderabbit|coderabbitai)\\b", "skills": ["smith-gh-pr", "smith-review"], "why": "CodeRabbit review", "note": "a review that did not run looks identical to a clean one -> check status, not the finding count" },
     { "pattern": "\\b(architecture|design pattern|SOLID|refactor)\\b", "skills": ["smith-design"], "why": "design / architecture" },
     { "pattern": "\\b(grill|stress[ -]?test|challenge this|socratic|devil'?s advocate)\\b", "skills": ["smith-dialectic"], "why": "dialectic / stress-test" },
     { "pattern": "\\b(SKILL\\.md|AGENTS\\.md|progressive disclosure|skill authoring|write a skill)\\b", "skills": ["smith-skills"], "why": "skill authoring" },

@@ -185,6 +185,10 @@ starting a multi-step operation:**
 - Conclude only after a full scan when one is feasible, not sampled data
 - Treat partial completion as incomplete, not equivalent to full completion
 - Flag items with empty or unexpected results instead of silently skipping them
+- A missing signal is never a passing signal. "No findings", an empty result,
+  a silent tool, a fast acknowledgement, or a failed lookup all mean the check
+  may not have RUN — establish that it ran before reading its output as clean,
+  and otherwise record "not run", never "clean".
 
 For stack operations, see `@smith-stacks/SKILL.md` Stack Scope Verification
 and `smith-stacks/scripts/verify-stack-scope.sh`.
