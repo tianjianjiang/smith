@@ -47,12 +47,11 @@ internal-file exemption.
 - Spell out every acronym or abbreviation in full on its first use in each
   output. Write `Retrieval-Augmented Generation (RAG)` first, then `RAG`
   afterward.
-- Let identifiers keep their own rules: branch names, commit and
-  pull-request titles, their types and scopes, filenames, code symbols, and
+- Let identifiers keep their own rules: branch names, the `type(scope):`
+  prefix of commit and pull-request titles, filenames, code symbols, and
   literal code markers such as `TODO`. Identifiers follow
-  `@smith-style/SKILL.md`, where domain-standard `gh`, `pr`, `ci`, and `mcp`
-  stay abbreviated; in prose those four expand to GitHub, pull request,
-  continuous integration, and Model Context Protocol.
+  `@smith-style/SKILL.md`, which owns the length threshold and the list of
+  domain-standard terms. The description after the colon is prose.
 - Name any referenced work in full on first use — book, paper, dataset,
   tool, experiment variant, internal document — with a one-line gloss and a
   locator or attribution (URL, file path, issue reference, or author and
