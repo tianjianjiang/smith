@@ -149,8 +149,10 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   "Approving a PR by command".
 
 **Decide-and-proceed defaults (do NOT ask between obvious steps):**
-- CR finding is Critical/Warning + high-confidence: fix, commit, push silently
-- CR finding is Info/Nitpick: reply-and-resolve or skip with one-line reason
+- CodeRabbit finding is Critical/Warning + high-confidence: fix, commit, push
+  silently
+- CodeRabbit finding is Info/Nitpick: reply-and-resolve or skip with a
+  one-line reason
 - After pushing a fix: re-run review immediately
 - 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
   --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
@@ -166,7 +168,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Finding requires scope change beyond the PR's stated goal
 - Finding contradicts an existing smith-skill rule (meta-question)
 - Auto-mode classifier denial without a documented escape pattern
-- CI fails after a CR-driven fix (regression vs flake ambiguity)
+- CI fails after a CodeRabbit-driven fix (regression vs flake ambiguity)
 - User explicitly said "pause" or "wait" in recent turns
 
 **Convergence criteria:** owned by `@smith-review` — a clean round or two
