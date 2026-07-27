@@ -184,9 +184,11 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   alongside `"status":"review_skipped"`.
 - Match the flag to the tree state: `--uncommitted` reviews nothing once the
   work is committed ("No uncommitted changes detected"). After committing use
-  `--committed --base «default-branch»`. Arming a background review with
-  `--uncommitted` and then committing before it fires yields a clean-looking
-  result from an empty diff.
+  `--committed --base «the PR's own base ref»` — the default branch for a
+  standalone PR, the parent branch for a stacked one; passing the default
+  branch to a stacked PR pulls its ancestors into the diff. Arming a
+  background review with `--uncommitted` and then committing before it fires
+  yields a clean-looking result from an empty diff.
 - The command line (free open-source quota) and the GitHub App (per-developer
   limit) rate-limit **independently**; one refusing is not the other passing,
   and neither refusal is a pass. Re-trigger the App with a `@coderabbitai
