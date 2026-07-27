@@ -82,6 +82,27 @@ read-only.
 - For a delegated fix/diff, audit the execution path — trace that the change
   runs on the real failing input — not just its style or quality.
 
+## Delivery: a written report is not a delivered one
+
+- A subagent's ordinary text output does NOT reach the main thread. Only a
+  `SendMessage` addressed to `main` does. An agent that carefully writes its
+  findings and stops has delivered nothing, and looks identical to one that
+  found nothing.
+- Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
+  output alone does not reach me" — rather than chasing afterwards. Chasing
+  works, but costs a round trip per agent.
+- Treat an idle notification as "ready to be asked", never as "clean". Silence
+  is the same fails-open shape as an unrun review (`@smith-gh-pr` CodeRabbit
+  fails OPEN): absence of findings is not evidence of quality.
+- The `summary` on an idle notification goes STALE — it echoes the agent's
+  last delivered report, so a fresh ping can show an obsolete verdict after
+  the issue is fixed. Re-read the message; never trust the summary line.
+- Re-pointing a long-running reviewer at an amended commit is required, not
+  optional: it reads the tree from when it started.
+- Reviewers may legitimately DISAGREE. Resolve on evidence you can check
+  yourself, not by majority or by recency — the dissenting one may be the
+  correct one.
+
 ## Reconcile vs live state
 
 - Between spawn and return, the world can change: a PR gets retitled, a file

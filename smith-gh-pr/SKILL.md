@@ -178,7 +178,19 @@ the loop WITHOUT convergence (escalated to the user, not merged).
 - CodeRabbit silently skips review on exhausted credits / the hourly
   rate-limit (Pro = 1 review/hr): "Review limit reached". It also skips PRs
   whose base is not the default branch (stacked PRs) and a PR closed mid-review.
-- Confirm a CR review actually ran before treating "0 findings" as clean.
+- Confirm a CodeRabbit review actually ran before treating "0 findings" as
+  clean. In `--agent` output that means `"status":"review_completed"` **and** a
+  non-empty `reviewedFiles` — `"findings":0` is printed on the skip path too,
+  alongside `"status":"review_skipped"`.
+- Match the flag to the tree state: `--uncommitted` reviews nothing once the
+  work is committed ("No uncommitted changes detected"). After committing use
+  `--committed --base «default-branch»`. Arming a background review with
+  `--uncommitted` and then committing before it fires yields a clean-looking
+  result from an empty diff.
+- The command line (free open-source quota) and the GitHub App (per-developer
+  limit) rate-limit **independently**; one refusing is not the other passing,
+  and neither refusal is a pass. Re-trigger the App with a `@coderabbitai
+  review` comment once its window resets.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
