@@ -99,9 +99,11 @@ read-only.
   the issue is fixed. Re-read the message; never trust the summary line.
 - Re-pointing a long-running reviewer at an amended commit is required, not
   optional: it reads the tree from when it started.
-- Reviewers may legitimately DISAGREE. Resolve on evidence you can check
-  yourself, not by majority or by recency — the dissenting one may be the
-  correct one.
+- Reviewers may legitimately DISAGREE. A vote count ranks severity; it does
+  not settle truth. Check the dissenting finding's evidence yourself before
+  downgrading it — the dissenter may be the correct one. Where a tool sets a
+  corroboration threshold (`@smith-gh-pr` sets one for `pr-review-toolkit`),
+  read it as triage, not as a verdict.
 
 ## Reconcile vs live state
 

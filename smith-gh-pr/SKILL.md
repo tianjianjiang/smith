@@ -188,7 +188,9 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   work is committed ("No uncommitted changes detected"). After committing use
   `--committed --base «the PR's own base ref»` — the default branch for a
   standalone PR, the parent branch for a stacked one; passing the default
-  branch to a stacked PR pulls its ancestors into the diff. Arming a
+  branch to a stacked PR pulls its ancestors into the diff. The command line
+  reviews a stacked base fine; only the App skips it, per the bullet above.
+  Arming a
   background review with `--uncommitted` and then committing before it fires
   yields a clean-looking result from an empty diff.
 - The command line (free open-source quota) and the GitHub App (per-developer
@@ -209,7 +211,9 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   "Actionable comments posted: «count»" opener — a review carrying only
   nitpicks omits that line entirely and opens straight into its findings. A
   review older than the newest commit read an older tree, so zero open
-  threads under it says nothing about that commit.
+  threads under it says nothing about that commit. If that command errors or
+  comes back empty, record "not reviewed" — a failed lookup is the one
+  outcome that must never read as "no findings".
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
