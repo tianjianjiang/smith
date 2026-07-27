@@ -12,7 +12,7 @@ description: Universal coding standards for emoji usage, comments, acronym expan
 ## Universal Rules
 
 No decorative emoji; exactly one trailing newline; self-documenting code over
-comments; every acronym and shorthand expanded on first use; ISO 8601
+comments; shorthand you introduced expanded on first use; ISO 8601
 timestamps with timezone. Full rules in the sections below.
 
 Universal standards that apply to all code, logs, documentation, and outputs across all languages and contexts.
@@ -44,40 +44,34 @@ code comments, diagrams including Mermaid node labels, logs, Slack messages,
 and tickets. Assume every file you create or edit is an output; there is no
 internal-file exemption.
 
-- Spell out every acronym or abbreviation in full on its first use in each
-  output. Write `Retrieval-Augmented Generation (RAG)` first, then `RAG`
-  afterward.
-- Let identifiers keep their own rules: branch names, commit and
-  pull-request titles, their types and scopes, filenames, code symbols, and
+- Expand every short form you introduced, on its first use in each output. A
+  contraction made to fit a diagram node, a table cell, or a subject line is
+  one you introduced: write `ground truth`, not `GT`.
+- Leave the field's standing terms as they are — the vocabulary a reader of
+  this repository already brings, such as `API`, `JSON`, `MCP`, `RAG`,
+  `SQL`, and `URL`. Those are how the field writes; they are not
+  compressions you made.
+- Expand whatever you cannot place in either group — `LSP` reads as both
+  Language Server Protocol and the Liskov Substitution Principle here.
+- Let identifiers keep their own rules: branch names, the `type(scope):`
+  prefix of commit and pull-request titles, filenames, code symbols, and
   literal code markers such as `TODO`. Identifiers follow
-  `@smith-style/SKILL.md`, where domain-standard `gh`, `pr`, `ci`, and `mcp`
-  stay abbreviated; in prose those four expand to GitHub, pull request,
-  continuous integration, and Model Context Protocol.
-- Name any referenced work in full on first use — book, paper, dataset,
-  tool, experiment variant, internal document — with a one-line gloss and a
-  locator or attribution (URL, file path, issue reference, or author and
-  year), so a reader can follow the sentence without looking it up. Write
-  `Working Effectively with Legacy Code`, the 2004 book by Michael Feathers,
-  rather than a bare title.
-- Replace internal index codes (`M1`, `S5`, `C-6`), names coined for this
-  work whenever they were coined, and codes borrowed from another
-  document's table with a descriptive name — quote the row's content, not
-  its index code. A bare code carries no meaning outside the index that
-  defines it.
-- Exempt an abbreviation in prose in exactly two cases. First, you opened the
-  repository's session-start instructions (root `CLAUDE.md` / `AGENTS.md`
-  and the files they import) and saw its expansion there; that exemption
-  does not travel, so expand it in pull-request text, tickets, Slack, and
-  chat. Second, it appears in this list: `AI`, `API`, `CLI`, `CPU`, `CSV`,
-  `HTML`, `HTTP`, `ID`, `ISO`, `JSON`, `OS`, `PDF`, `SQL`, `UI`, `URL`,
-  `UTC`. Everything absent from the list expands, however obvious it feels —
-  your own field's everyday shorthand does not qualify, which is why `RAG`
-  above expands. Adding to the list is an edit to this file, not a call you
-  make while writing.
+  `@smith-style/SKILL.md`, which owns the length threshold and the list of
+  domain-standard terms. The description after the colon is prose.
+- Name any referenced work in full on first use — book, paper, dataset, tool,
+  experiment variant, internal document — with a one-line gloss and a locator
+  (URL, file path, issue reference, or author and year), so a reader can
+  follow the sentence without looking it up.
+- Replace internal index codes (`M1`, `S5`, `C-6`), names coined for this work
+  whenever they were coined, and codes borrowed from another document's table
+  with a descriptive name — quote the row's content, not its index code.
+- Expand a standing term too when the output leaves this repository. A pull
+  request, ticket, or Slack message reaches people who never load these
+  instructions.
 - Say you do not know an abbreviation's expansion rather than guessing one.
-- Before calling any output done, scan it for abbreviations, shorthand,
-  capitalized short forms, and codes, and confirm each has an expansion at
-  its first appearance.
+- Before calling any output done, scan it for short forms and codes, and
+  confirm each is an identifier, a standing term of the field, or expanded
+  at its first appearance.
 - Add a glossary near the top of a long document as well as, never instead
   of, the inline expansion at each term's first appearance.
 
@@ -115,5 +109,5 @@ internal-file exemption.
 1. No decorative emoji in code/logs
 2. Exactly one trailing newline
 3. Self-documenting names over comments
-4. Every acronym and shorthand expanded on first use
+4. Shorthand you introduced expanded on first use
 5. ISO 8601 timestamps with timezone
