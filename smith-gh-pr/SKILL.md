@@ -199,11 +199,13 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   minutes later as a separate submitted review, so checking right after the
   reply proves nothing either way.
 - A submitted review event is not sufficient either: replying to a thread
-  makes the App post an empty-bodied review of its own. Check
-  `gh pr view «number» --json reviews` for an event that (a) has a body
-  opening "Actionable comments posted: «count»" and (b) is timestamped after
-  the head commit. A review older than the newest commit reviewed an older
-  tree, and zero open threads under it means nothing about that commit.
+  makes the App post a review event with an EMPTY body. Check
+  `gh pr view «number» --json reviews` for an event that (a) has a non-empty
+  body and (b) is timestamped after the head commit. Do not test for the
+  "Actionable comments posted: «count»" opener — a review carrying only
+  nitpicks omits that line entirely and opens straight into its findings. A
+  review older than the newest commit read an older tree, so zero open
+  threads under it says nothing about that commit.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
