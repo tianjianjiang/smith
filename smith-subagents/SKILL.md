@@ -86,27 +86,25 @@ read-only.
 
 - A BACKGROUND subagent's ordinary text output does NOT reach the main
   thread; only a `SendMessage` addressed to `main` does, and the tool scopes
-  that address to background subagents for exactly this reason. An agent that
-  carefully writes its findings and stops has delivered nothing, and looks
-  identical to one that found nothing. A synchronous subagent is the opposite
-  — its final text IS the tool result — so the trap belongs to the default
-  spawn mode, not to every spawn.
+  that address to background subagents alone. An agent that writes its
+  findings and stops has delivered nothing. A synchronous subagent is the
+  opposite — its final text IS the tool result — so this trap belongs to the
+  default spawn mode, not to every spawn.
 - Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
-  output alone does not reach me" — rather than chasing afterward. Chasing
-  works, but costs a round trip per agent.
-- Treat an idle notification as "ready to be asked", never as "clean". Silence
-  is the same fails-open shape as an unrun review (`@smith-gh-pr` CodeRabbit
-  fails OPEN): absence of findings is not evidence of quality.
+  output alone does not reach me" — rather than chasing a round trip later.
+- Treat an idle notification as "ready to be asked", never as "clean" — the
+  same fails-open shape as an unrun review (`@smith-gh-pr` CodeRabbit fails
+  OPEN).
 - The `summary` on an idle notification goes STALE — it echoes the agent's
-  last delivered report, so a fresh ping can show an obsolete verdict after
-  the issue is fixed. Re-read the message; never trust the summary line.
+  last delivered report, so it can show a verdict already fixed. Re-read the
+  message; never trust the summary line.
 - Re-pointing a long-running reviewer at an amended commit is required, not
   optional: it reads the tree from when it started.
-- Reviewers may legitimately DISAGREE. A vote count ranks severity; it does
-  not settle truth. Check the dissenting finding's evidence yourself before
-  downgrading it — the dissenter may be the correct one. Where a tool sets a
-  corroboration threshold (`@smith-gh-pr` sets one for `pr-review-toolkit`),
-  read it as triage, not as a verdict.
+- Reviewers may legitimately DISAGREE, and a vote count ranks severity
+  without settling truth: check a dissenting finding's evidence yourself
+  before downgrading it. Where a tool sets a corroboration threshold
+  (`@smith-gh-pr` sets one for `pr-review-toolkit`), read it as triage, not
+  a verdict.
 
 ## Reconcile vs live state
 

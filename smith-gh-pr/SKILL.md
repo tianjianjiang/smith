@@ -186,38 +186,31 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   non-empty `reviewedFiles` — `"findings":0` is printed on the skip path too,
   alongside `"status":"review_skipped"`.
 - Match the flag to the tree state: `--uncommitted` reviews nothing once the
-  work is committed ("No uncommitted changes detected"). After committing use
-  `--committed --base «the PR's own base ref»` — the default branch for a
-  standalone PR, the parent branch for a stacked one; passing the default
-  branch to a stacked PR pulls its ancestors into the diff. The skip for a
-  non-default base in the bullet above is App behaviour; the command line
-  takes `--base` as given. Arming a background review with `--uncommitted`
-  and then committing before it fires yields a clean-looking result from an
-  empty diff.
+  work is committed ("No uncommitted changes detected") — including a
+  background review that fires after you commit, which reports clean off an
+  empty diff. After committing, pass `--committed` with `--base` set to
+  «the PR's own base ref»: the default branch for a standalone PR, the
+  parent branch for a stacked one. The non-default-base skip above is App
+  behaviour; the command line takes `--base` as given.
 - Pull-request, editor, and command-line reviews are three SEPARATE hourly
-  channels, each counted per developer, so one refusing is not the other
-  passing, and neither refusal is a pass. When the App is out of quota the
-  command line usually still runs. Re-trigger the App with a `@coderabbitai
-  review` comment once its window resets.
+  channels, each counted per developer, so one refusing says nothing about
+  another. When the App is out of quota the command line usually still runs.
+  Re-trigger the App with a `@coderabbitai review` comment once its window
+  resets.
 - The App's "Action performed — Review finished" reply is an acknowledgement,
-  not a result. It posts within seconds and reads the same whether the review
-  ran, was skipped as already-reviewed, or was blocked by the fair-usage
-  limit — a blocked one admits it only further down that same comment ("your
-  included review limit is currently reached"). The real review arrives
-  minutes later as a separate submitted review, so checking right after the
-  reply proves nothing either way.
+  not a result: it posts within seconds and reads the same whether the review
+  ran, was skipped, or was blocked (a blocked one admits it only further down
+  that same comment: "your included review limit is currently reached"). The
+  real review arrives minutes later as a separate submitted review.
 - A submitted review event is not sufficient either: replying to a thread
   makes the App post a review event with an EMPTY body. Check
   `gh pr view «number» --json reviews` for an event that (a) has a non-empty
-  body and (b) is timestamped after the head commit. Do not test for the
-  "Actionable comments posted: «count»" opener — reviews whose findings are
-  all nitpicks, or all outside the diff range, omit that line and open
-  straight into their findings, and an outside-diff review can carry a
-  Major, so a missing opener says nothing about severity. A review older
-  than the newest commit read an older tree, so zero open threads under it
-  says nothing about that commit. If that command errors or comes back
-  empty, record "not reviewed" — a failed lookup is the one outcome that
-  must never read as "no findings".
+  body and (b) is timestamped after the head commit — an older event read an
+  older tree, so zero open threads under it says nothing about the newest
+  commit. Do not test for the "Actionable comments posted: «count»" opener:
+  nitpick-only and outside-diff reviews omit it, and an outside-diff review
+  can carry a Major. If that command errors or returns empty, record "not
+  reviewed" — a failed lookup must never read as "no findings".
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
