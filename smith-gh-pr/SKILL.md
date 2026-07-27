@@ -191,6 +191,14 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   limit) rate-limit **independently**; one refusing is not the other passing,
   and neither refusal is a pass. Re-trigger the App with a `@coderabbitai
   review` comment once its window resets.
+- The App's "Action performed — Review finished" reply is an acknowledgement,
+  not a result. It posts within seconds and reads the same whether the review
+  ran, was skipped as already-reviewed, or was blocked by the fair-usage
+  limit — a blocked one admits it only further down that same comment ("your
+  included review limit is currently reached"). The real review arrives
+  minutes later as a separate submitted review, so checking right after the
+  reply proves nothing either way. Confirm via the review event
+  (`gh pr view «number» --json reviews`), never the reply.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
