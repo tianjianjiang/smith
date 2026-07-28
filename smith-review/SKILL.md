@@ -25,6 +25,11 @@ shows every applicable tool ran. Disclosing a skipped tool is not a substitute
 for running it (`@smith-guidance` close-gaps). Resist the bias to "use fewer
 tools".
 
+Mark `coderabbit` `ran` only on the evidence `@smith-gh-pr` "CodeRabbit fails
+OPEN" defines: a completed status over a non-empty file list. Every tool needs
+its own completion evidence (`@smith-guidance` close gaps: a missing signal is
+never a passing signal).
+
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
 - smith: `@smith-gh-pr` (Code Review Cycle, Posting Review Findings), `@smith-validation`,

@@ -81,11 +81,35 @@ read-only.
   @smith-guidance/SKILL.md Honest).
 - For a delegated fix/diff, audit the execution path — trace that the change
   runs on the real failing input — not just its style or quality.
+- Reviewers may legitimately DISAGREE, and a vote count ranks severity
+  without settling truth: check a dissenting finding's evidence yourself
+  before downgrading it. Where a tool sets a corroboration threshold
+  (`@smith-gh-pr` sets one for `pr-review-toolkit`), read it as triage, not
+  a verdict.
+
+## Delivery: a written report is not a delivered one
+
+- A BACKGROUND subagent's ordinary text output does NOT reach the main
+  thread; only a `SendMessage` addressed to `main` does, and the tool scopes
+  that address to background subagents alone. An agent that writes its
+  findings and stops has delivered nothing. A synchronous subagent is the
+  opposite — its final text IS the tool result — so this trap belongs to the
+  default spawn mode, not to every spawn.
+- Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
+  output alone does not reach me" — rather than chasing a round trip later.
+- Treat an idle notification as "ready to be asked", never as "clean".
+  Silence is a missing signal, not a passing one (`@smith-guidance` close
+  gaps).
+- The `summary` on an idle notification goes STALE — it echoes the agent's
+  last delivered report, so it can show a verdict already fixed. Re-read the
+  message; never trust the summary line.
 
 ## Reconcile vs live state
 
 - Between spawn and return, the world can change: a PR gets retitled, a file
   gets edited, a branch moves. The subagent's snapshot is already stale.
+- Re-pointing a long-running reviewer at an amended commit is required, not
+  optional: it reads the tree from when it started.
 - Before mutating a shared artifact a subagent reported on, RE-READ its current
   state and merge — never overwrite from the subagent's snapshot.
 - Incident this guards against: a subagent overwrote a PR title from a stale

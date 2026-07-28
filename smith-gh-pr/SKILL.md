@@ -1,6 +1,6 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows including creation, review cycles, merge strategies, and posting review findings. Use when creating PRs, replying to review comments, merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
+description: GitHub PR workflows including creation, review cycles, merge strategies, posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
 ---
 
 # GitHub PR Workflows
@@ -149,8 +149,10 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   "Approving a PR by command".
 
 **Decide-and-proceed defaults (do NOT ask between obvious steps):**
-- CR finding is Critical/Warning + high-confidence: fix, commit, push silently
-- CR finding is Info/Nitpick: reply-and-resolve or skip with one-line reason
+- CodeRabbit finding is Critical/Warning + high-confidence: fix, commit, push
+  silently
+- CodeRabbit finding is Info/Nitpick: reply-and-resolve or skip with a
+  one-line reason
 - After pushing a fix: re-run review immediately
 - 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
   --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
@@ -166,7 +168,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Finding requires scope change beyond the PR's stated goal
 - Finding contradicts an existing smith-skill rule (meta-question)
 - Auto-mode classifier denial without a documented escape pattern
-- CI fails after a CR-driven fix (regression vs flake ambiguity)
+- CI fails after a CodeRabbit-driven fix (regression vs flake ambiguity)
 - User explicitly said "pause" or "wait" in recent turns
 
 **Convergence criteria:** owned by `@smith-review` — a clean round or two
@@ -174,11 +176,48 @@ consecutive Info-only rounds, with a complete plugin-pass receipt. "Ready to
 merge" here means that loop reported converged; a flip-flopping reviewer ends
 the loop WITHOUT convergence (escalated to the user, not merged).
 
-**CodeRabbit fails OPEN — absence of review is NOT a pass:**
-- CodeRabbit silently skips review on exhausted credits / the hourly
-  rate-limit (Pro = 1 review/hr): "Review limit reached". It also skips PRs
-  whose base is not the default branch (stacked PRs) and a PR closed mid-review.
-- Confirm a CR review actually ran before treating "0 findings" as clean.
+**CodeRabbit fails OPEN — absence of review is NOT a pass.** One instance of
+`@smith-guidance` "a missing signal is never a passing signal":
+- CodeRabbit silently skips review on exhausted credits / the per-plan hourly
+  rate-limit: "Review limit reached". The cap is a ROLLING allowance that
+  differs per plan and per channel, with its own open-source tier — read the
+  current table rather than a number memorised here. It also skips PRs whose
+  base is not the default branch (stacked PRs) and a PR closed mid-review.
+- Confirm a CodeRabbit review actually ran before treating "0 findings" as
+  clean. In `--agent` output that means `"status":"review_completed"` **and** a
+  non-empty `reviewedFiles` — `"findings":0` is printed on the skip path too,
+  alongside `"status":"review_skipped"`.
+- Match the flag to the tree state: `--uncommitted` reviews nothing once the
+  work is committed ("No uncommitted changes detected") — including a
+  background review that fires after you commit, which reports clean off an
+  empty diff. After committing, pass `--committed` with `--base` set to
+  «the PR's own base ref»: the default branch for a standalone PR, the
+  parent branch for a stacked one. The non-default-base skip above is App
+  behaviour; the command line takes `--base` as given.
+- Pull-request, editor, and command-line reviews are three SEPARATE hourly
+  channels, each counted per developer, so one refusing says nothing about
+  another. Re-trigger the App with a `@coderabbitai review` comment as the
+  rolling window frees capacity.
+- The App's fast reply (currently "Action performed — Review finished") is an
+  acknowledgement, not a result: it posts within seconds and reads the same
+  whether the review ran, was skipped, or was blocked (a blocked one admits it
+  only further down that same comment: "your included review limit is
+  currently reached"). The real review arrives minutes later as a SEPARATE
+  submitted review, so ANY comment appearing seconds after the trigger proves
+  nothing either way — trust only the review-event test below.
+- A submitted review event is not sufficient either: replying to a thread
+  makes the App post a review event with an EMPTY body. Check
+  `gh pr view «number» --json reviews` for an event that (a) has a non-empty
+  body and (b) is timestamped after the head commit — an older event read an
+  older tree, so zero open threads under it says nothing about the newest
+  commit. Do not test for the "Actionable comments posted: «count»" opener:
+  nitpick-only and outside-diff reviews omit it, and an outside-diff review
+  can carry a Major. If that command errors or returns empty, record "not
+  reviewed" — a failed lookup must never read as "no findings".
+
+Source: https://docs.coderabbit.ai/management/plans and the `--agent` output
+of `coderabbit review` (both retrieved 2026-07-27). The quotas and the App's
+comment wording are point-in-time; the review-event test is not.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
 - A comment addressed to a **human** — a review finding, a PR description, an
