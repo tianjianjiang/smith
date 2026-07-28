@@ -48,7 +48,7 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    save effort.
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
-   (`@smith-validation` Bugfix Discipline).
+   (`@smith-validation` Bugfix Discipline, Adversarial Verification).
 4. **Fix & iterate** — apply high-confidence fixes; re-review with the full set.
    Cost guard is bounded PER ROUND + verify findings (not fewer tools). Drive
    iteration as a `/loop`/ralph loop that re-shares the relevant skills + diff
