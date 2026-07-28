@@ -13,6 +13,8 @@ description: Socratic interview that stress-tests a plan against project docs an
 ## CRITICAL: Interview Protocol
 
 **The interview targets the USER's plan, never a third party's work.**
+To red-team FINDINGS instead — your own or a third party's — use
+`@smith-validation` Adversarial Verification, not this interview.
 
 Interview the user relentlessly about every aspect of their plan until reaching shared understanding. Walk down each branch of the design decision tree, resolving dependencies one by one.
 
@@ -63,7 +65,7 @@ Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules through
 - @smith-guidance/SKILL.md - Socratic Method, Anti-Sycophancy (foundation)
 - `@smith-analysis/SKILL.md` - Constructive reasoning (complement)
 - `@smith-clarity/SKILL.md` - Cognitive traps (defensive complement)
-- `@smith-validation/SKILL.md` - Hypothesis testing (code-level complement)
+- `@smith-validation/SKILL.md` - Hypothesis testing; adversarial verification of findings
 
 ## Before You Finish
 

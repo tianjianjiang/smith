@@ -43,6 +43,10 @@ file, remote)
 
 - One concern per subagent. A locator finds; an editor changes one bounded
   thing; a reviewer critiques. Don't fuse roles.
+- A SKEPTIC role tries to REFUTE a finding under test — most often your own,
+  sometimes another agent's. Read-only tools like any reviewer; its contract
+  (what to withhold from it, and the verdict to ask for) is in
+  `@smith-validation` Adversarial Verification.
 - Parallelize INDEPENDENT subagents in a single message (multiple tool calls).
   Serialize only when one's input depends on another's output.
 - Match the tool grant to the role: read-only (Read/Grep/Glob) for
@@ -122,7 +126,7 @@ read-only.
 - `@smith-ralph/SKILL.md` - Iterative orchestration patterns
 - `@smith-skills/SKILL.md` - Subagents don't auto-load skills; pass rules inline
 - `@smith-worktree/SKILL.md` - Isolate parallel file-mutating subagents
-- `@smith-validation/SKILL.md` - Audit a delegated diff's execution path
+- `@smith-validation/SKILL.md` - Audit a delegated diff's execution path; adversarial verification of findings
 
 ## Before You Finish
 

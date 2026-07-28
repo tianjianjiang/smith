@@ -52,7 +52,7 @@ Mental fixation on familiar solutions.
 
 Seeking info that confirms existing beliefs.
 
-**Mitigation**: Actively seek disconfirming evidence
+**Mitigation**: Actively seek disconfirming evidence (`@smith-validation` Adversarial Verification)
 
 ### Anchoring
 
@@ -115,4 +115,4 @@ Work expands to fill the time available for completion.
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-analysis/SKILL.md` - Pre-mortem analysis, constraint thinking
-- `@smith-validation/SKILL.md` - Hypothesis testing, debugging
+- `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings

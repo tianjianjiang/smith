@@ -156,6 +156,9 @@ Think backward to avoid failure:
 - Instead of "How to make this fast?" ask "What would make this slow?"
 - Avoid stupidity rather than seeking brilliance
 
+Inversion and pre-mortem stress-test a PLAN. To adversarially verify FINDINGS
+already in hand, see `@smith-validation` Adversarial Verification.
+
 ## Comprehensive Review
 
 ### Six Thinking Hats
@@ -181,4 +184,4 @@ Ensure coverage by examining from 6 perspectives:
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
-- `@smith-validation/SKILL.md` - Hypothesis testing, debugging
+- `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings

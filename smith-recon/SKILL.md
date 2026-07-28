@@ -36,6 +36,8 @@ this — no separate "resume" command is needed.
    gaps, don't just disclose them). Quote source lines / URLs as you go.
 4. **Cross-verify** — reconcile sources; flag contradictions; mark anything
    unverified explicitly. Verify suspicious claims before relying on them.
+   Reconciling agreement between sources is not the same as trying to break a
+   finding — do both (`@smith-validation` Adversarial Verification).
 5. **Brief** — return a synthesis with evidence URLs/`file:line` for every
    claim, in the requested language. Note any source deliberately not covered
    and why (no silent omissions).

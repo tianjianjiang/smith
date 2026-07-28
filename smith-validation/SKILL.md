@@ -1,17 +1,18 @@
 ---
 name: smith-validation
-description: Hypothesis testing, root cause analysis, and debugging techniques. Use when debugging, testing hypotheses, validating solutions, proving correctness, or performing root cause analysis on failures.
+description: Hypothesis testing, adversarial verification of findings, root cause analysis, and debugging techniques. Use when debugging, investigating any question whose answer you will report as fact, verifying whether a claim or finding is true, red-teaming a conclusion, testing hypotheses, validating solutions, proving correctness, or performing root cause analysis on failures.
 ---
 
 # Verification Techniques
 
-**Scope:** Hypothesis testing, root cause analysis, and verification
-**Load if:** Bug reported, test failure, proving correctness, root cause analysis
+**Scope:** Hypothesis testing, root cause analysis, and adversarial verification of findings
+**Load if:** Bug reported, test failure, proving correctness, root cause
+analysis, OR any investigation whose findings will be reported as fact
 **Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Based on PDSA's Study phase (Deming) and Popper's Falsification - understanding WHY something works or doesn't, not just IF it works.
 
-**When to use**: Debugging, testing hypotheses, validating solutions, proving correctness.
+**When to use**: Debugging, testing hypotheses, validating solutions, proving correctness, and verifying findings before reporting them.
 
 ## Hypothesis Testing
 
@@ -46,6 +47,52 @@ A theory is scientific only if it can be proven false:
 **Good practice**: Actively try to break your own code
 
 **Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check. (Triggered 2026-06: proposed two Slack-MCP OAuth setups as if they'd work; both failed; a 30-second search would have found the closed-as-not-planned regression that made the whole route impossible.)
+
+## Adversarial Verification of Findings
+
+The Falsification Principle above, applied to FINDINGS rather than to a
+debugging hypothesis — for any investigation whose results will be reported as
+fact: code, documents, external systems, history.
+
+Two gates, not one. **Every** finding you report carries a locator. A
+**skeptic pass** is only for findings that would cost something to get wrong:
+one that contradicts a documented rule, one that drives an irreversible or
+externally-visible action (a merge, push, deploy, ticket transition, message
+send — reporting the finding itself is not one), or one you would not want to
+be wrong about in front of whoever asked.
+
+- **Name the disproof, then hunt it — for every finding you report.** Write
+  down the specific observation that would kill the FINDING — the log line,
+  file, or command output that, if it existed, would prove it wrong — then go
+  looking for exactly that. It stays unproven until a search that should have
+  surfaced the disproof comes back empty — not after a fixed number of passes.
+- **Red-team what qualifies.** Hand a read-only skeptic subagent
+  (`@smith-subagents` SKEPTIC role, contract pasted inline — subagents inherit
+  no skills) the claim and the evidence WITHOUT the reasoning that produced
+  them, so it cannot grade your argument; ask for a verdict of refuted /
+  survived / insufficient evidence, plus the evidence that would have changed
+  it. No skeptic available? Record "not run" and why, then conclude — never
+  promote it silently.
+- **Locator per claim.** Every claim carries a durable locator: a URL,
+  `file:line`, commit, ticket, or a command whose output can be re-run —
+  format per `@smith-research` Source Citation (external), `@smith-ctx`
+  Information Retention (in-repo), `@smith-recon` (multi-source briefs). No
+  locator means the claim is labelled unsourced, never asserted, and an
+  unsourced claim is a gap to close before concluding (`@smith-guidance` close
+  gaps).
+- **Scale the machinery, not the floor.** A trivial lookup needs a locator, not
+  a skeptic. Bias mechanics: `@smith-clarity` (Confirmation Bias, Premature
+  Closure).
+
+Source: Anthropic, "A harness for every task: dynamic workflows in Claude Code"
+(https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code,
+retrieved 2026-07-28) — "For each spawned agent, run a separate spawned agent
+to adversarially verify its output against a rubric or criteria", one of six
+workflow patterns it lists. The post separately names self-preferential bias
+("Claude's tendency to prefer its own results or findings, especially when
+asked to verify or judge them against a rubric") among three failure modes that
+isolated subagents combat. Aiming this pattern at that bias, and at your own
+findings, is our application — not a claim the post makes.
 
 ## Bugfix Discipline: Trace the Real Path, Reproduce First
 
@@ -230,6 +277,8 @@ See `@smith-ralph/SKILL.md` for full patterns.
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
 - `@smith-analysis/SKILL.md` - Reasoning patterns, problem decomposition
-- `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
+- `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies, confirmation bias, premature closure
 - `@smith-tests/SKILL.md` - Reproduce-first; never mock the branch under test
-- `@smith-subagents/SKILL.md` - Audit a delegated diff's execution path
+- `@smith-subagents/SKILL.md` - Audit a delegated diff's execution path; read-only skeptic role
+- `@smith-research/SKILL.md` - Source-citation format for evidence per claim
+- `@smith-recon/SKILL.md` - Multi-source briefs, cross-verification
