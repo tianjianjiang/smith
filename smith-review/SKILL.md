@@ -62,8 +62,8 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    — do not report converged. Report findings + verdict + the receipt in-band.
 
 **Delivery when a PR exists.** Post findings to the PR per `@smith-gh-pr`
-"Posting Review Findings" (inline comments anchored to lines, committable
-`suggestion` blocks for concrete fixes, PR-level only for cross-cutting
-findings). Without an open PR, report findings in-band.
+"Posting Review Findings" (inline comments anchored to lines, a committable
+`suggestion` block REQUIRED whenever the fix is mechanical, PR-level only for
+cross-cutting findings). Without an open PR, report findings in-band.
 
 Restate the outcome in your own message; do not point at tool output.
