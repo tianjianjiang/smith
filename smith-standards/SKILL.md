@@ -70,8 +70,7 @@ internal-file exemption.
   instructions.
 - Say you do not know an abbreviation's expansion rather than guessing one.
 - Before calling any output done, scan it for short forms and codes, and
-  confirm each is an identifier, a standing term of the field, or expanded
-  at its first appearance.
+  check each against the rules above rather than from memory.
 - Add a glossary near the top of a long document as well as, never instead
   of, the inline expansion at each term's first appearance.
 
