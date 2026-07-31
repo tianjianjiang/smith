@@ -335,6 +335,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <!-- Commands (invoke with /name; also auto-trigger on task match) -->
 <skill name="smith-ship" description="/smith-ship — review-to-convergence then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup">`@smith-ship/SKILL.md`</skill>
 <skill name="smith-review" description="/smith-review — multi-round local worktree review until convergence (no shipping)">`@smith-review/SKILL.md`</skill>
+<skill name="smith-preflight" description="/smith-preflight — gate the current change against the invariants; PASS, FAIL, SKIP or N/A per check plus a GO or NO-GO verdict">`@smith-preflight/SKILL.md`</skill>
 <skill name="smith-stack" description="/smith-stack — atomic stacked branches in separate worktrees → review each → stacked PRs">`@smith-stack/SKILL.md`</skill>
 <skill name="smith-checkpoint" description="/smith-checkpoint — save session state to all 3 memory systems in their formats">`@smith-checkpoint/SKILL.md`</skill>
 <skill name="smith-recon" description="/smith-recon — guided, bounded multi-source investigation; asks sources, cross-verifies, evidence-linked brief">`@smith-recon/SKILL.md`</skill>
@@ -376,7 +377,7 @@ skill via the Skill tool:
   Investigation / adversarial verification ("investigate X", "verify whether/that/if", "is this true", "prove me wrong", red-team, null hypothesis, refute, disprove, fact-check, falsify) → `@smith-validation/SKILL.md` + `@smith-clarity/SKILL.md` (router also emits: try to disprove a finding before reporting it, carry a durable locator for every claim, and add a separate skeptic when it contradicts a rule or drives an external write, which reporting it is not)
 **Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
-**Commands** (user types `/smith-X`, or auto-trigger on task match): ship a change end-to-end (also "commit and push", "open/create a PR") → `@smith-ship/SKILL.md`; review-to-convergence only → `@smith-review/SKILL.md`; stacked branches → `@smith-stack/SKILL.md`; save all 3 memories → `@smith-checkpoint/SKILL.md`; guided multi-source investigation → `@smith-recon/SKILL.md`; Jira tickets by convention → `@smith-tickets/SKILL.md`
+**Commands** (user types `/smith-X`, or auto-trigger on task match): ship a change end-to-end (also "commit and push", "open/create a PR") → `@smith-ship/SKILL.md`; review-to-convergence only → `@smith-review/SKILL.md`; gate a change against the invariants before shipping → `@smith-preflight/SKILL.md`; stacked branches → `@smith-stack/SKILL.md`; save all 3 memories → `@smith-checkpoint/SKILL.md`; guided multi-source investigation → `@smith-recon/SKILL.md`; Jira tickets by convention → `@smith-tickets/SKILL.md`
 
 ## JSONL State Recall (moved from SKILL.md `/clear` section)
 
