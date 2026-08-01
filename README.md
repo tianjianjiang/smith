@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **36 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
+Smith is a collection of **49 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -153,19 +153,20 @@ smith/
 └── ...
 ```
 
-### Skills (37 total)
+### Skills (49 total)
 
 | Category | Skills |
 |----------|--------|
 | **Core** | `smith-principles`, `smith-standards`, `smith-guidance` |
+| **Commands** (`/smith-X`) | `smith-ship`, `smith-review`, `smith-preflight`, `smith-stack`, `smith-checkpoint`, `smith-recon`, `smith-tickets` |
 | **Context** | `smith-ctx`, `smith-ctx-claude`, `smith-ctx-kiro`, `smith-ctx-cursor`, `smith-serena` |
-| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem` |
+| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem`, `smith-dialectic` |
 | **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
-| **Testing** | `smith-tests`, `smith-playwright` |
-| **Workflow** | `smith-ralph`, `smith-plan`, `smith-plan-claude`, `smith-subagents` |
-| **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks` |
+| **Testing** | `smith-tests`, `smith-playwright`, `smith-browser_mcp` |
+| **Workflow** | `smith-ralph`, `smith-plan`, `smith-plan-claude`, `smith-subagents`, `smith-automation` |
+| **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-stacks`, `smith-worktree` |
 | **Communication** | `smith-slack` |
-| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills`, `smith-settings` |
+| **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills`, `smith-settings`, `smith-auto_mode` |
 
 ### SKILL.md Format
 
