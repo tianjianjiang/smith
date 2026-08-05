@@ -80,9 +80,10 @@ Slack is a Smith convention.
 
 **Never add a `Signed-off-by:` trailer yourself** — only a human can certify the
 DCO, so the agent must not add one (a human may still add their own), and
-`Assisted-by:` does not replace human authorship/sign-off. This line is
-orthogonal to the "on behalf of @user" attribution (`@smith-gh-pr`): that names
-the human who directed the work; this names the AI that assisted.
+`Assisted-by:` does not replace human authorship/sign-off. It names the AI that
+assisted, not the human who directed the work — the commit's author field, or
+the account it posts under, already carries that name, so do not pair it
+with an "on behalf of" line (`@smith-gh-pr`).
 
 ## Branch Names
 
