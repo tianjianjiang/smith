@@ -67,8 +67,8 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
 
 **Browser MCP plugins (chrome-devtools-mcp, @playwright/mcp)**:
 - Purpose: Drive a real browser via Chrome DevTools Protocol
-- Configuration: Browser-channel choice is constrained — default to Chrome for Testing for chrome-devtools-mcp; bundled Chromium for Playwright MCP
-- Avoid: `--executablePath` pointing at Vivaldi / Edge / consumer Chrome — see `@smith-browser_mcp/SKILL.md`
+- Configuration: set no browser override — both resolve to Chrome's stable channel (chrome-devtools-mcp by omitting `--channel`, Playwright MCP because `chrome` is its documented `--browser` default)
+- Avoid: any browser-selecting flag — `--executablePath`, `--executable-path`, `--channel`, or Playwright's `--browser` (it accepts `msedge`) — see `@smith-browser_mcp/SKILL.md`
 
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 

@@ -297,7 +297,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
 <skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
-<skill name="smith-browser_mcp" description="Browser MCP reliability: Chrome for Testing default, non-CfT overrides forbidden">`@smith-browser_mcp/SKILL.md`</skill>
+<skill name="smith-browser_mcp" description="Browser MCP reliability: take each server's default browser, set no override at all">`@smith-browser_mcp/SKILL.md`</skill>
 
 <!-- Languages -->
 <skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
