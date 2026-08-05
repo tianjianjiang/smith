@@ -75,7 +75,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is content — show it and post on a yes (`@smith-guidance` Harmless)
-- **Attribution**: When Claude Code generates or posts a comment, state authorship with the user's @ mention per medium (e.g., GitHub: "Posted by Claude Code on behalf of @username", Notion: "Posted by Claude Code on behalf of @Display Name"), and end the comment with the `Assisted-by:` line (see `@smith-style`). Omit both when the user manually authors the comment.
+- **Attribution**: When Claude Code generates or posts a comment, end it with the `Assisted-by:` line (see `@smith-style`). No "on behalf of" line — the account it posts under already names that human. A handle in a body names the person the comment addresses, never its poster.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 - Keep `@copilot` out of replies — mentioning it triggers unwanted sub-PRs
 
@@ -115,6 +115,11 @@ in-band (see `@smith-review`).
   with the block's contents verbatim — the block may hold more or fewer lines
   than the range (a suggestion can add or drop lines). Comment on the full range
   you intend to replace and put the complete replacement in one block.
+- **Lead an author-directed comment with the author's `@«handle»`.** When a
+  finding is addressed to the PR author — a blocker, a question, a direct
+  request — put their handle on its own first line, then the body, so the
+  comment says on sight who it is for. For a purely informational inline note
+  it is optional.
 
 **Mechanism (prefer the built-in):**
 
@@ -235,15 +240,14 @@ comment wording are point-in-time; the review-event test is not.
 - Merging, `--force-with-lease`, ff-sync, and resolving threads are mechanics —
   decide-and-proceed inside an authorized ship (the PR ownership gate above
   bounds which PRs qualify).
-- Always include attribution line per medium convention, plus the `Assisted-by:` line (`@smith-style`)
+- Always end the body with the `Assisted-by:` line (`@smith-style`)
 
 ## Approving a PR by command
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
   write under the user's account, and an approval body is content: draft it,
   show it, and submit only on an explicit yes (`@smith-guidance` Harmless).
-  Attribute "on behalf of @user" plus the `Assisted-by:` line (`@smith-style`)
-  in the body.
+  End the body with the `Assisted-by:` line (`@smith-style`).
 - It **returns silently on success** (no output is normal, not a failure).
   ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
   and confirm the user shows `APPROVED` in `reviews`.
@@ -357,7 +361,7 @@ Run `/autofix-pr` while on the PR's branch. Claude Code detects the open PR with
 
 **Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
 
-Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Harmless) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: "on behalf of @user" plus the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
+Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Harmless) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
 
 **Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
 
