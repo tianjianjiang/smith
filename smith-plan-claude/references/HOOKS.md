@@ -353,14 +353,14 @@ ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 1. Verify Claude is writing to the correct file path
 2. Check the plan file manually between iterations:
    ```bash
-   cat ~/.claude/plans/my-plan.md
+   cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/my-plan.md"
    ```
 
 ### Stale Flag File
 
 Expired flag files (>1 hour old) are auto-cleaned. To manually clear all flags:
 ```bash
-rm -f ~/.claude/plans/.pending-reload-*
+rm -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"/.pending-reload-*
 ```
 
 ### jq Not Found

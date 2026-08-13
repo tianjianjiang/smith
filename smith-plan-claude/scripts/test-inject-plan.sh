@@ -2426,10 +2426,12 @@ fi
 echo "Test 68: list-plans.sh/load-plan.sh/plan-status.sh resolve PLANS_DIR via CLAUDE_CONFIG_DIR"
 PROFILE_68="$TEST_DIR/fake-profile-68"
 mkdir -p "$PROFILE_68/plans"
+FAKE_HOME_68="$TEST_DIR/fake-home-68"
+mkdir -p "$FAKE_HOME_68/.claude/plans"
 printf '%s\n' '# Test 68 Plan' '' '- [x] Task A' '- [ ] Task B' > "$PROFILE_68/plans/test68-plan.md"
-LIST_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/list-plans.sh" 2>&1)
-LOAD_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/load-plan.sh" test68-plan 2>&1)
-STATUS_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/plan-status.sh" test68-plan 2>&1)
+LIST_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/list-plans.sh" 2>&1)
+LOAD_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/load-plan.sh" test68-plan 2>&1)
+STATUS_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/plan-status.sh" test68-plan 2>&1)
 if assert_contains "68" "$LIST_OUT" "test68-plan" && \
    assert_contains "68" "$LOAD_OUT" "Test 68 Plan" && \
    assert_contains "68" "$STATUS_OUT" "test68-plan.md"; then
