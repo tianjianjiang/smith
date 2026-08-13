@@ -71,8 +71,13 @@ Add to `~/.claude/settings.json`:
 
 ### 3. Ensure Plans Directory Exists
 
+Paths in this document assume the default profile (`CLAUDE_CONFIG_DIR`
+unset), i.e. `~/.claude/plans` resolves to `${CLAUDE_CONFIG_DIR}/plans`
+under an explicit profile override. Examples that already read `$PLANS_DIR`
+(sourced from `lib-common.sh`) are already profile-aware as written.
+
 ```bash
-mkdir -p ~/.claude/plans
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
 ```
 
 ## Hook Details
@@ -280,7 +285,7 @@ CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in 
 
 echo '{"prompt":"go","session_id":"test1","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/inject-plan.sh
-ls ~/.claude/plans/.pending-reload-${CWD_KEY} 2>&1  # Should show "No such file"
+ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 ```
 
 ### Test context threshold detection
@@ -296,7 +301,7 @@ echo '{"prompt":"hello","session_id":"test2","transcript_path":"/tmp/test-transc
 ```bash
 source ~/.smith/smith-plan-claude/scripts/lib-common.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
-rm -f ~/.claude/plans/.pending-reload-${CWD_KEY}
+rm -f "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
 ```
@@ -306,7 +311,7 @@ echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
 ```bash
 source ~/.smith/smith-plan-claude/scripts/lib-common.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
-printf '/tmp/plan.md\ntest\n'"$(date +%Y-%m-%d)"'\n/tmp\n' > ~/.claude/plans/.pending-reload-${CWD_KEY}
+printf '/tmp/plan.md\ntest\n'"$(date +%Y-%m-%d)"'\n/tmp\n' > "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
 ```
@@ -316,12 +321,12 @@ echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
 ```bash
 source ~/.smith/smith-plan-claude/scripts/lib-common.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
-printf '/path/plan.md\nold_session\n'"$(date +%Y-%m-%dT%H:%M:%S%z)"'\n/old/path\n' > ~/.claude/plans/.pending-reload-${CWD_KEY}
+printf '/path/plan.md\nold_session\n'"$(date +%Y-%m-%dT%H:%M:%S%z)"'\n/old/path\n' > "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 # Set file mtime to 2 hours ago to trigger cleanup
-touch -t $(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M) ~/.claude/plans/.pending-reload-${CWD_KEY}
+touch -t $(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M) "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"prompt":"go","session_id":"different_session","cwd":"'$PWD'"}' | \
   ~/.smith/smith-plan-claude/scripts/inject-plan.sh
-ls ~/.claude/plans/.pending-reload-${CWD_KEY} 2>&1  # Should show "No such file"
+ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 ```
 
 ## Troubleshooting
@@ -348,14 +353,14 @@ ls ~/.claude/plans/.pending-reload-${CWD_KEY} 2>&1  # Should show "No such file"
 1. Verify Claude is writing to the correct file path
 2. Check the plan file manually between iterations:
    ```bash
-   cat ~/.claude/plans/my-plan.md
+   cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/my-plan.md"
    ```
 
 ### Stale Flag File
 
 Expired flag files (>1 hour old) are auto-cleaned. To manually clear all flags:
 ```bash
-rm -f ~/.claude/plans/.pending-reload-*
+rm -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"/.pending-reload-*
 ```
 
 ### jq Not Found

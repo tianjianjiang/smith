@@ -27,8 +27,9 @@ if ! command -v jq &>/dev/null; then
     exit 0  # Allow stop rather than permanently blocking
 fi
 
-# Shared directory with plan-claude for flag files (both use ~/.claude/plans/)
-FLAGS_DIR="${HOME}/.claude/plans"
+# Shared directory with plan-claude for flag files (both scoped to
+# CLAUDE_CONFIG_DIR, defaulting to ~/.claude/plans/ when unset)
+FLAGS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
 THRESHOLD_KB=${CTX_CONTEXT_THRESHOLD_KB:-500}
 if ! [[ "$THRESHOLD_KB" =~ ^[0-9]+$ ]] || [[ "$THRESHOLD_KB" -le 0 ]]; then
     echo "Error: CTX_CONTEXT_THRESHOLD_KB must be a positive integer, got: '$THRESHOLD_KB'" >&2

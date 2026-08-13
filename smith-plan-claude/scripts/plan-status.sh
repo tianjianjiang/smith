@@ -6,7 +6,7 @@
 #        If no name given, shows most recent plan
 #
 
-PLANS_DIR="${HOME}/.claude/plans"
+source "$(dirname "$0")/lib-common.sh"
 PLAN_NAME="$1"
 
 if [[ ! -d "$PLANS_DIR" ]]; then

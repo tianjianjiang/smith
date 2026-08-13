@@ -68,7 +68,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=66
+TOTAL=69
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -88,15 +88,36 @@ compute_session_key() {
     printf '%s' "${hash:0:16}"
 }
 
+# Patch a fresh copy of lib-common.sh into $TEST_DIR with PLANS_DIR pointed
+# at the test sandbox, and confirm the substitution actually took effect.
+# Returns 1 (copy still written) on a mismatch so callers can fail closed --
+# without this check, a PLANS_DIR line-format drift in lib-common.sh would
+# silently leave the copy pointed at the REAL ~/.claude/plans. Two call
+# sites (create_patched_scripts, Test 61) need different responses to that
+# failure (abort everything vs. fail just one test), so this only shares the
+# patch+check mechanism, not the response.
+patch_lib_common() {
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
+        "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
+    grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"
+}
+
 # Create patched copies of scripts that use our test PLANS_DIR
 # Only patches PLANS_DIR; flag/state files are computed dynamically from CWD/session key
 # Also patches lib-common.sh (shared library sourced by all hook scripts)
 create_patched_scripts() {
     # Patch lib-common.sh first (scripts source it from their own directory)
     LIB_COMMON="$SCRIPT_DIR/scripts/lib-common.sh"
-    sed \
-        -e 's|PLANS_DIR="\${HOME}/.claude/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
-        "$LIB_COMMON" > "$TEST_DIR/lib-common.sh"
+    # Fail-closed: nearly every test below sources this patched copy, so a
+    # silent substitution miss here would run the whole suite against the
+    # REAL ~/.claude/plans instead of $TEST_DIR -- a hard exit, because this
+    # setup is shared foundation for all tests and none of their results can
+    # be trusted if it's broken (unlike Test 61's guard, which only scopes a
+    # FAIL to its own assertion).
+    if ! patch_lib_common; then
+        echo "FATAL: PLANS_DIR substitution did not take effect in test lib-common.sh" >&2
+        exit 1
+    fi
     chmod +x "$TEST_DIR/lib-common.sh"
 
     # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-common.sh)
@@ -2238,15 +2259,11 @@ echo "Test 61: memory-restore: real write-reload-flag.sh output is discovered by
 CWD_61="$TEST_DIR/worktree-61"
 mkdir -p "$CWD_61"
 rm -f "$PLANS_DIR"/.pending-memory-restore-*
-sed -e 's|PLANS_DIR="\${HOME}/.claude/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
-    "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
-# Guard against a fail-open substitution: if the PLANS_DIR line format ever
-# changes, the copied writer would silently write into the REAL ~/.claude/plans.
-if grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
+# Fail-closed: without the substitution the writer would write into the
+# REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
+if patch_lib_common; then
     T61_SUBST_OK=true
 else
-    # Fail-closed: without the substitution the writer would write into the
-    # REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
     echo "  ASSERT FAILED: PLANS_DIR substitution did not take effect in test lib-common.sh"
     T61_SUBST_OK=false
 fi
@@ -2382,6 +2399,69 @@ if assert_contains "66" "$OUTPUT" "checkpoint: checkpoint-66-fresh" && \
     PASS=$((PASS + 1))
 else
     echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 67: PLANS_DIR resolves via CLAUDE_CONFIG_DIR, falls back to $HOME/.claude when unset ---
+# Every other test sources a sed-patched lib-common.sh whose PLANS_DIR line is
+# overwritten wholesale, so none of them exercise this expression itself.
+# Source the REAL lib-common.sh directly, with a throwaway HOME so a broken
+# fallback can't touch anything real.
+echo "Test 67: PLANS_DIR respects CLAUDE_CONFIG_DIR, falls back to \$HOME/.claude when unset or empty"
+FAKE_HOME="$TEST_DIR/fake-home-67"
+mkdir -p "$FAKE_HOME"
+RESOLVED_UNSET=$(env -u CLAUDE_CONFIG_DIR HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+RESOLVED_SET=$(env CLAUDE_CONFIG_DIR="$TEST_DIR/fake-profile-67" HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+RESOLVED_EMPTY=$(env CLAUDE_CONFIG_DIR="" HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+if [[ "$RESOLVED_UNSET" == "$FAKE_HOME/.claude/plans" ]] && \
+   [[ "$RESOLVED_SET" == "$TEST_DIR/fake-profile-67/plans" ]] && \
+   [[ "$RESOLVED_EMPTY" == "$FAKE_HOME/.claude/plans" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (unset -> '$RESOLVED_UNSET', set -> '$RESOLVED_SET', empty -> '$RESOLVED_EMPTY')"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 68: the 3 manually-invoked scripts (list/load/plan-status) pick up
+# CLAUDE_CONFIG_DIR via their new `source lib-common.sh` -- these are never
+# copied into $TEST_DIR by create_patched_scripts(), so this runs the REAL
+# scripts directly against a throwaway profile directory containing one
+# real plan file, and checks each picks the override up rather than the
+# default $HOME/.claude/plans.
+echo "Test 68: list-plans.sh/load-plan.sh/plan-status.sh resolve PLANS_DIR via CLAUDE_CONFIG_DIR"
+PROFILE_68="$TEST_DIR/fake-profile-68"
+mkdir -p "$PROFILE_68/plans"
+FAKE_HOME_68="$TEST_DIR/fake-home-68"
+mkdir -p "$FAKE_HOME_68/.claude/plans"
+printf '%s\n' '# Test 68 Plan' '' '- [x] Task A' '- [ ] Task B' > "$PROFILE_68/plans/test68-plan.md"
+LIST_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/list-plans.sh" 2>&1)
+LOAD_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/load-plan.sh" test68-plan 2>&1)
+STATUS_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/plan-status.sh" test68-plan 2>&1)
+if assert_contains "68" "$LIST_OUT" "test68-plan" && \
+   assert_contains "68" "$LOAD_OUT" "Test 68 Plan" && \
+   assert_contains "68" "$STATUS_OUT" "test68-plan.md"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 69: smith-ctx-claude/scripts/enforce-clear.sh FLAGS_DIR stays in
+# sync with lib-common.sh PLANS_DIR. That sibling hook hand-duplicates the
+# directory expression (different skill directory, can't source lib-common.sh),
+# so nothing else in this suite exercises it -- compare the two expressions
+# textually so an independent drift fails loudly here.
+echo "Test 69: smith-ctx-claude enforce-clear.sh FLAGS_DIR expression matches lib-common.sh PLANS_DIR"
+CTX_ENFORCE="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
+LIB_EXPR=$(grep -m1 '^PLANS_DIR=' "$SCRIPT_DIR/scripts/lib-common.sh" | sed 's/^PLANS_DIR=//')
+CTX_EXPR=$(grep -m1 '^FLAGS_DIR=' "$CTX_ENFORCE" | sed 's/^FLAGS_DIR=//')
+if [[ -n "$LIB_EXPR" ]] && [[ "$CTX_EXPR" == "$LIB_EXPR" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (lib-common.sh -> '$LIB_EXPR', enforce-clear.sh -> '$CTX_EXPR')"
     FAIL=$((FAIL + 1))
 fi
 

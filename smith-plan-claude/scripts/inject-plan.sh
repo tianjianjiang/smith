@@ -466,11 +466,11 @@ if [[ -z "$PLAN_FILE" ]] || [[ ! -f "$PLAN_FILE" ]]; then
     AVAILABLE=$(list_plans)
 
     if [[ -n "$PLAN_NAME" ]]; then
-        MSG=$(printf '**Plan Not Found**\n\nNo plan matching `%s` found.\n\n**Available plans:**\n%s\n\nCreate a plan using plan mode (Shift+Tab) or manually create a file in `~/.claude/plans/`' \
-            "$PLAN_NAME" "$AVAILABLE")
+        MSG=$(printf '**Plan Not Found**\n\nNo plan matching `%s` found.\n\n**Available plans:**\n%s\n\nCreate a plan using plan mode (Shift+Tab) or manually create a file in `%s/`' \
+            "$PLAN_NAME" "$AVAILABLE" "$PLANS_DIR")
     else
-        MSG=$(printf '**Plan Not Found**\n\n**Available plans:**\n%s\n\nCreate a plan using plan mode (Shift+Tab) or manually create a file in `~/.claude/plans/`' \
-            "$AVAILABLE")
+        MSG=$(printf '**Plan Not Found**\n\n**Available plans:**\n%s\n\nCreate a plan using plan mode (Shift+Tab) or manually create a file in `%s/`' \
+            "$AVAILABLE" "$PLANS_DIR")
     fi
 
     json_user_prompt_output "$MSG"

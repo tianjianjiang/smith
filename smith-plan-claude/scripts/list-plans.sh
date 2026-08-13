@@ -3,7 +3,7 @@
 # list-plans.sh - List available plan files with progress
 #
 
-PLANS_DIR="${HOME}/.claude/plans"
+source "$(dirname "$0")/lib-common.sh"
 
 if [[ ! -d "$PLANS_DIR" ]]; then
     echo "No plans directory found at $PLANS_DIR"
