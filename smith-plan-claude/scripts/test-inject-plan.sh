@@ -88,27 +88,37 @@ compute_session_key() {
     printf '%s' "${hash:0:16}"
 }
 
+# Patch a fresh copy of lib-common.sh into $TEST_DIR with PLANS_DIR pointed
+# at the test sandbox, and confirm the substitution actually took effect.
+# Returns 1 (copy still written) on a mismatch so callers can fail closed --
+# without this check, a PLANS_DIR line-format drift in lib-common.sh would
+# silently leave the copy pointed at the REAL ~/.claude/plans. Two call
+# sites (create_patched_scripts, Test 61) need different responses to that
+# failure (abort everything vs. fail just one test), so this only shares the
+# patch+check mechanism, not the response.
+patch_lib_common() {
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
+        "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
+    grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"
+}
+
 # Create patched copies of scripts that use our test PLANS_DIR
 # Only patches PLANS_DIR; flag/state files are computed dynamically from CWD/session key
 # Also patches lib-common.sh (shared library sourced by all hook scripts)
 create_patched_scripts() {
     # Patch lib-common.sh first (scripts source it from their own directory)
     LIB_COMMON="$SCRIPT_DIR/scripts/lib-common.sh"
-    sed \
-        -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
-        "$LIB_COMMON" > "$TEST_DIR/lib-common.sh"
-    chmod +x "$TEST_DIR/lib-common.sh"
     # Fail-closed: nearly every test below sources this patched copy, so a
     # silent substitution miss here would run the whole suite against the
-    # REAL ~/.claude/plans instead of $TEST_DIR. Same check as Test 61's
-    # guard, but a hard exit here (not a scoped FAIL) because this setup is
-    # shared foundation for all 67 tests -- if it's broken, none of their
-    # results can be trusted, unlike Test 61's guard which scopes only its
-    # own assertion.
-    if ! grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
+    # REAL ~/.claude/plans instead of $TEST_DIR -- a hard exit, because this
+    # setup is shared foundation for all tests and none of their results can
+    # be trusted if it's broken (unlike Test 61's guard, which only scopes a
+    # FAIL to its own assertion).
+    if ! patch_lib_common; then
         echo "FATAL: PLANS_DIR substitution did not take effect in test lib-common.sh" >&2
         exit 1
     fi
+    chmod +x "$TEST_DIR/lib-common.sh"
 
     # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-common.sh)
     cp "$INJECT_SCRIPT" "$TEST_DIR/inject-plan.sh"
@@ -2249,15 +2259,11 @@ echo "Test 61: memory-restore: real write-reload-flag.sh output is discovered by
 CWD_61="$TEST_DIR/worktree-61"
 mkdir -p "$CWD_61"
 rm -f "$PLANS_DIR"/.pending-memory-restore-*
-sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
-    "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
-# Guard against a fail-open substitution: if the PLANS_DIR line format ever
-# changes, the copied writer would silently write into the REAL ~/.claude/plans.
-if grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
+# Fail-closed: without the substitution the writer would write into the
+# REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
+if patch_lib_common; then
     T61_SUBST_OK=true
 else
-    # Fail-closed: without the substitution the writer would write into the
-    # REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
     echo "  ASSERT FAILED: PLANS_DIR substitution did not take effect in test lib-common.sh"
     T61_SUBST_OK=false
 fi
