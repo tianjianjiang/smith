@@ -68,7 +68,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=66
+TOTAL=67
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -98,6 +98,13 @@ create_patched_scripts() {
         -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
         "$LIB_COMMON" > "$TEST_DIR/lib-common.sh"
     chmod +x "$TEST_DIR/lib-common.sh"
+    # Fail-closed: nearly every test below sources this patched copy, so a
+    # silent substitution miss here would run the whole suite against the
+    # REAL ~/.claude/plans instead of $TEST_DIR (same guard as Test 61).
+    if ! grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
+        echo "FATAL: PLANS_DIR substitution did not take effect in test lib-common.sh" >&2
+        exit 1
+    fi
 
     # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-common.sh)
     cp "$INJECT_SCRIPT" "$TEST_DIR/inject-plan.sh"
@@ -2382,6 +2389,25 @@ if assert_contains "66" "$OUTPUT" "checkpoint: checkpoint-66-fresh" && \
     PASS=$((PASS + 1))
 else
     echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 67: PLANS_DIR resolves via CLAUDE_CONFIG_DIR, falls back to $HOME/.claude when unset ---
+# Every other test sources a sed-patched lib-common.sh whose PLANS_DIR line is
+# overwritten wholesale, so none of them exercise this expression itself.
+# Source the REAL lib-common.sh directly, with a throwaway HOME so a broken
+# fallback can't touch anything real.
+echo "Test 67: PLANS_DIR respects CLAUDE_CONFIG_DIR, falls back to \$HOME/.claude when unset"
+FAKE_HOME="$TEST_DIR/fake-home-67"
+mkdir -p "$FAKE_HOME"
+RESOLVED_UNSET=$(env -u CLAUDE_CONFIG_DIR HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+RESOLVED_SET=$(env CLAUDE_CONFIG_DIR="$TEST_DIR/fake-profile-67" HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+if [[ "$RESOLVED_UNSET" == "$FAKE_HOME/.claude/plans" ]] && \
+   [[ "$RESOLVED_SET" == "$TEST_DIR/fake-profile-67/plans" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (unset -> '$RESOLVED_UNSET', set -> '$RESOLVED_SET')"
     FAIL=$((FAIL + 1))
 fi
 
