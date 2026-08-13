@@ -94,6 +94,60 @@ asked to verify or judge them against a rubric") among three failure modes that
 isolated subagents combat. Aiming this pattern at that bias, and at your own
 findings, is our application — not a claim the post makes.
 
+## Deviation Is Not Discovery
+
+The failure this guards: a recorded decision gets violated unnoticed by a
+later session, which then narrates the consequences as a dramatic new finding
+("verdict overturned", "assumption disproven") — and the rewrite propagates
+through checkpoints. No internal trigger catches this; the read below is
+unconditional, not fired by suspicion.
+
+- Before interpreting ANY surprising or anomalous result, read the topic's
+  recorded memory/decision set FIRST — especially when your current
+  explanation feels coherent.
+- If a recorded decision covers the situation and was violated, report
+  **"I deviated from the recorded protocol"** — never "we discovered" /
+  "the verdict is overturned". Wrong-input or wrong-protocol runs are
+  **void measurements**: they support no claim about the system under test.
+- Tripwire words in your own draft that MANDATE the read before publishing:
+  "overturned", "exonerated", "contrary to what we thought", "it turns out
+  the assumption was false", 「翻案」「平反」.
+- A later checkpoint QUOTES the earlier recorded decision it builds on; it
+  never paraphrases it into a new story.
+- **Checkpoint hygiene**: writing a checkpoint triggers an artifact census —
+  enumerate EVERY file the session created outside the repo (temp dirs,
+  `/tmp`, `~/Downloads`) and record each path or move it somewhere durable;
+  no importance judgment (judging "which matter" is the part that fails).
+  A checkpoint may claim "persisted to X" only with a same-turn directory
+  listing of X quoted; without it the claim is fiction. Known gap: a session
+  that ends abruptly without a checkpoint remains exposed — a Stop/PreCompact
+  hook that scans the transcript for writes under volatile prefixes and lists
+  them before exit would close it; until then, checkpoint early when
+  artifacts accumulate.
+- **An empty search result is not evidence without a control.** Empty is
+  ambiguous between "absent" and "query broken"; the only discriminator is a
+  control query known to return hits through the same pipeline. A negative
+  reported without one is a claim about your query, not about the world.
+- **A queued decision carries its full payload**: the concrete proposal, why
+  it was raised, and what "yes" would change — recorded alongside. Can't
+  write those down → not ready to queue.
+- **Re-derive presented aggregates**: a count or "N open items" is a DERIVED
+  value — re-run the enumeration against the primary source in the session
+  that presents it; the cached value is only a checksum, and a mismatch is a
+  finding, never silently papered over.
+- **Re-derive every re-presented option from current state**: an option that
+  only made sense under conditions that no longer hold must be withdrawn by
+  you, not left for the user to shoot down.
+- **Check every conjunct of the requirement AS STATED BY ITS AUTHOR** — not
+  as reworded by your progress report. One unmet conjunct → the requirement
+  is open. Watch the substitution tell: renaming the requirement after the
+  part your last action satisfied. A snapshot is not version control:
+  ongoing edit-work needs history, not a one-time copy of its start state.
+- **Every proposed action traces to an open requirement.** After a
+  correction, re-derive from scratch — "we were in the middle of doing this"
+  is not a requirement; if the motivating question is answered, the
+  follow-up dissolved with it. Fabricated work manufactures real risks.
+
 ## Bugfix Discipline: Trace the Real Path, Reproduce First
 
 **Before writing ANY bugfix:**
@@ -258,6 +312,10 @@ suspiciousness(s) = failed(s) / sqrt(total_failed * (failed(s) + passed(s)))
 3. Use Git Bisect for regressions (binary search ~7 commits for 100-commit range)
 4. Run tests with coverage; inspect code paths common to failures
 5. Bugfix? Trace to the real branch and reproduce real input BEFORE fixing
+6. Surprising result? Check the topic's recorded decisions FIRST — deviation
+   is reported as deviation, not discovery
+7. Checkpoint written? Artifact census done; every "persisted" claim carries
+   its same-turn listing
 
 ## Claude Code Plugin Integration
 
