@@ -68,7 +68,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=67
+TOTAL=68
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -2401,17 +2401,42 @@ fi
 # overwritten wholesale, so none of them exercise this expression itself.
 # Source the REAL lib-common.sh directly, with a throwaway HOME so a broken
 # fallback can't touch anything real.
-echo "Test 67: PLANS_DIR respects CLAUDE_CONFIG_DIR, falls back to \$HOME/.claude when unset"
+echo "Test 67: PLANS_DIR respects CLAUDE_CONFIG_DIR, falls back to \$HOME/.claude when unset or empty"
 FAKE_HOME="$TEST_DIR/fake-home-67"
 mkdir -p "$FAKE_HOME"
 RESOLVED_UNSET=$(env -u CLAUDE_CONFIG_DIR HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
 RESOLVED_SET=$(env CLAUDE_CONFIG_DIR="$TEST_DIR/fake-profile-67" HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
+RESOLVED_EMPTY=$(env CLAUDE_CONFIG_DIR="" HOME="$FAKE_HOME" bash -c 'source "'"$LIB_COMMON"'"; printf %s "$PLANS_DIR"')
 if [[ "$RESOLVED_UNSET" == "$FAKE_HOME/.claude/plans" ]] && \
-   [[ "$RESOLVED_SET" == "$TEST_DIR/fake-profile-67/plans" ]]; then
+   [[ "$RESOLVED_SET" == "$TEST_DIR/fake-profile-67/plans" ]] && \
+   [[ "$RESOLVED_EMPTY" == "$FAKE_HOME/.claude/plans" ]]; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL (unset -> '$RESOLVED_UNSET', set -> '$RESOLVED_SET')"
+    echo "  FAIL (unset -> '$RESOLVED_UNSET', set -> '$RESOLVED_SET', empty -> '$RESOLVED_EMPTY')"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 68: the 3 manually-invoked scripts (list/load/plan-status) pick up
+# CLAUDE_CONFIG_DIR via their new `source lib-common.sh` -- these are never
+# copied into $TEST_DIR by create_patched_scripts(), so this runs the REAL
+# scripts directly against a throwaway profile directory containing one
+# real plan file, and checks each picks the override up rather than the
+# default $HOME/.claude/plans.
+echo "Test 68: list-plans.sh/load-plan.sh/plan-status.sh resolve PLANS_DIR via CLAUDE_CONFIG_DIR"
+PROFILE_68="$TEST_DIR/fake-profile-68"
+mkdir -p "$PROFILE_68/plans"
+printf '%s\n' '# Test 68 Plan' '' '- [x] Task A' '- [ ] Task B' > "$PROFILE_68/plans/test68-plan.md"
+LIST_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/list-plans.sh" 2>&1)
+LOAD_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/load-plan.sh" test68-plan 2>&1)
+STATUS_OUT=$(CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/plan-status.sh" test68-plan 2>&1)
+if assert_contains "68" "$LIST_OUT" "test68-plan" && \
+   assert_contains "68" "$LOAD_OUT" "Test 68 Plan" && \
+   assert_contains "68" "$STATUS_OUT" "test68-plan.md"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
 
