@@ -71,6 +71,10 @@ Add to `~/.claude/settings.json`:
 
 ### 3. Ensure Plans Directory Exists
 
+Paths in this document assume the default profile (`CLAUDE_CONFIG_DIR`
+unset). Under an explicit profile override, substitute
+`${CLAUDE_CONFIG_DIR}/plans` for `~/.claude/plans` everywhere below.
+
 ```bash
 mkdir -p ~/.claude/plans
 ```
