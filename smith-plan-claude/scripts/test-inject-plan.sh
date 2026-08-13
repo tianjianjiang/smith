@@ -100,7 +100,11 @@ create_patched_scripts() {
     chmod +x "$TEST_DIR/lib-common.sh"
     # Fail-closed: nearly every test below sources this patched copy, so a
     # silent substitution miss here would run the whole suite against the
-    # REAL ~/.claude/plans instead of $TEST_DIR (same guard as Test 61).
+    # REAL ~/.claude/plans instead of $TEST_DIR. Same check as Test 61's
+    # guard, but a hard exit here (not a scoped FAIL) because this setup is
+    # shared foundation for all 67 tests -- if it's broken, none of their
+    # results can be trusted, unlike Test 61's guard which scopes only its
+    # own assertion.
     if ! grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"; then
         echo "FATAL: PLANS_DIR substitution did not take effect in test lib-common.sh" >&2
         exit 1
