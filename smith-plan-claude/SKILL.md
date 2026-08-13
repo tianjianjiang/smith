@@ -264,7 +264,8 @@ explicit profile override, the plans directory scopes to that profile
 instead: `${CLAUDE_CONFIG_DIR}/plans/` — this keeps state/flag files from
 crossing accounts when switching profiles.
 
-- Plans directory — `~/.claude/plans/`
+- Plans directory — `~/.claude/plans/` (`${CLAUDE_CONFIG_DIR}/plans/` under
+  an override)
 - Active plan — Tracked in `.plan-state-«session-hash»` state file
 - Reload flag — `~/.claude/plans/.pending-reload-«session-hash»`
 - State file — `~/.claude/plans/.plan-state-«session-hash»`
