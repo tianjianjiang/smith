@@ -12,7 +12,7 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
 
 - MUST use `git mv` for renames (preserves history)
 - MUST GPG sign all commits: `git commit -S -m "..."`
-- MUST keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-stacks/SKILL.md`
+- MUST keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-gh-pr/SKILL.md` Stacked PRs
 - MUST verify current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase` — confirm it matches the branch you intend to modify
 - MUST create a dedicated branch (+worktree in background sessions, see
   `@smith-worktree/SKILL.md`) BEFORE the first edit of any repo-file-modifying
@@ -105,7 +105,7 @@ never adds `Signed-off-by:` (only humans certify the DCO) — see
 ## Non-Obvious Flags
 
 - **`-u`**: Use on first push to set upstream tracking
-- **`--force-with-lease`**: Safe force push for personal branches - required for stacked PRs after rebase, see `@smith-stacks/SKILL.md`
+- **`--force-with-lease`**: Safe force push for personal branches - required for stacked PRs after rebase, see `@smith-gh-pr/SKILL.md` Stacked PRs
 - **`--no-ff`**: Preserve merge commit for feature branches (maintains history)
 - **`-S`**: GPG sign commits
 
@@ -129,8 +129,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 
 ## Related
 
-- `@smith-stacks/SKILL.md` - Stacked PR workflows (uses linear history, force-with-lease)
-- `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies
+- `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies, stacked PRs (linear history, force-with-lease)
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands
 - `@smith-style/SKILL.md` - Naming conventions, conventional commits
 - `@smith-ctx-claude/SKILL.md` - Claude Code agent features and context management

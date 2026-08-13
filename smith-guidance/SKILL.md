@@ -203,8 +203,8 @@ starting a multi-step operation:**
   may not have RUN — establish that it ran before reading its output as clean,
   and otherwise record "not run", never "clean".
 
-For stack operations, see `@smith-stacks/SKILL.md` Stack Scope Verification
-and `smith-stacks/scripts/verify-stack-scope.sh`.
+For stack operations, see `@smith-gh-pr/SKILL.md` Stacked PRs
+and `smith-gh-pr/scripts/verify-stack-scope.sh`.
 
 ## In-Band Progress (Async / Background Work)
 
