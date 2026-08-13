@@ -8,7 +8,7 @@
 # Strict mode: pipe failures propagated (no set -e; hooks must not abort on transient errors)
 set -o pipefail
 
-PLANS_DIR="${HOME}/.claude/plans"
+PLANS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
 CONTEXT_WINDOW_TOKENS=${CONTEXT_WINDOW_TOKENS:-200000}
 RALPH_STATE_FILENAME="ralph-loop.local.md"
 

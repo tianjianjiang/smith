@@ -6,7 +6,7 @@
 #        If no name given, shows most recent plan
 #
 
-PLANS_DIR="${HOME}/.claude/plans"
+PLANS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
 PLAN_NAME="$1"
 
 if [[ ! -d "$PLANS_DIR" ]]; then

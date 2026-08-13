@@ -95,7 +95,7 @@ create_patched_scripts() {
     # Patch lib-common.sh first (scripts source it from their own directory)
     LIB_COMMON="$SCRIPT_DIR/scripts/lib-common.sh"
     sed \
-        -e 's|PLANS_DIR="\${HOME}/.claude/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
+        -e 's|PLANS_DIR="\${CLAUDE_CONFIG_DIR:-\$HOME/.claude}/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
         "$LIB_COMMON" > "$TEST_DIR/lib-common.sh"
     chmod +x "$TEST_DIR/lib-common.sh"
 
@@ -2238,7 +2238,7 @@ echo "Test 61: memory-restore: real write-reload-flag.sh output is discovered by
 CWD_61="$TEST_DIR/worktree-61"
 mkdir -p "$CWD_61"
 rm -f "$PLANS_DIR"/.pending-memory-restore-*
-sed -e 's|PLANS_DIR="\${HOME}/.claude/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
+sed -e 's|PLANS_DIR="\${CLAUDE_CONFIG_DIR:-\$HOME/.claude}/plans"|PLANS_DIR="'"$PLANS_DIR"'"|' \
     "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
 # Guard against a fail-open substitution: if the PLANS_DIR line format ever
 # changes, the copied writer would silently write into the REAL ~/.claude/plans.
