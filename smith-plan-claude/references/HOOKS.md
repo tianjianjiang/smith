@@ -76,7 +76,7 @@ unset). Under an explicit profile override, substitute
 `${CLAUDE_CONFIG_DIR}/plans` for `~/.claude/plans` everywhere below.
 
 ```bash
-mkdir -p ~/.claude/plans
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
 ```
 
 ## Hook Details
