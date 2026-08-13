@@ -1,6 +1,6 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows including creation, review cycles, merge strategies, posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For stacked-PR workflows see smith-stacks.
+description: GitHub PR workflows including creation, review cycles, merge strategies, stacked PRs (creation, merge order, rebase after parent merges, squash handling), posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, stacked PRs, or dependent PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For the stacked shipping pipeline see smith-ship (stacked mode).
 ---
 
 # GitHub PR Workflows
@@ -168,7 +168,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - After pushing a fix: re-run review immediately
 - 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
   --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
-  (see `@smith-stacks/SKILL.md`)
+  (see "Stacked PRs" below)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
@@ -387,11 +387,34 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 
 **Plugin commands complement** (not replace) manual `gh` workflows.
 
+## Stacked PRs
+
+Critical rules; full workflows (creation, cascade update, squash recovery,
+diagrams) in `references/STACKS.md` — load that file when actually operating
+on a stack.
+
+- Merge bottom-up: retarget each child's base onto its grandparent (or the
+  default branch) BEFORE merging or deleting the parent — never after.
+  `gh pr merge --delete-branch` on a parent whose child still targets it
+  CLOSES the child instead of retargeting (cli/cli#1168, still open; the
+  web-UI delete auto-retargets). Delete parent branches manually
+  (`git push origin --delete`) only after the child is retargeted.
+- Update child branches by merging their immediate parent (never the default
+  branch directly) — cascade through each level in order.
+- Keep stacks to 3-4 levels deep; one worktree per unit.
+- Every stacked PR body carries `Depends on:` / `Blocks:` and ends with the
+  `Assisted-by:` line; the stack's titles and bodies are shown together and
+  opened on one explicit yes (batched consent, `@smith-guidance` Harmless).
+- Before stack-wide operations on EXISTING branches, verify scope:
+  `./smith-gh-pr/scripts/verify-stack-scope.sh '«branch-glob»'` — enumerate
+  all branches, present the summary, get approval. The pre-branch
+  decomposition approval is a distinct earlier gate owned by `@smith-ship`
+  stacked mode. If a rebase produces 0 new commits, STOP and investigate.
+
 ## Related
 
 - `@smith-gh-cli/SKILL.md` - GitHub CLI commands, pagination limits
 - `@smith-review/SKILL.md` - Local review loop, convergence criteria
-- `@smith-stacks/SKILL.md` - Stacked PR workflows
 - `@smith-git/SKILL.md` - Git operations, rebase
 - `@smith-style/SKILL.md` - Conventional commits, branch naming
 - `@smith-tests/SKILL.md` - Testing standards (pre-PR checklist)
