@@ -259,6 +259,11 @@ At EVERY phase boundary (regardless of context level), the agent should exit Ral
 
 ## File Locations
 
+Paths below assume the default profile (`CLAUDE_CONFIG_DIR` unset). Under an
+explicit profile override, the plans directory scopes to that profile
+instead: `${CLAUDE_CONFIG_DIR}/plans/` — this keeps state/flag files from
+crossing accounts when switching profiles.
+
 - Plans directory — `~/.claude/plans/`
 - Active plan — Tracked in `.plan-state-«session-hash»` state file
 - Reload flag — `~/.claude/plans/.pending-reload-«session-hash»`
