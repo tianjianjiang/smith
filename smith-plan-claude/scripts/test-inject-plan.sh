@@ -68,7 +68,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=68
+TOTAL=69
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -2445,6 +2445,23 @@ if assert_contains "68" "$LIST_OUT" "test68-plan" && \
     PASS=$((PASS + 1))
 else
     echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 69: smith-ctx-claude/scripts/enforce-clear.sh FLAGS_DIR stays in
+# sync with lib-common.sh PLANS_DIR. That sibling hook hand-duplicates the
+# directory expression (different skill directory, can't source lib-common.sh),
+# so nothing else in this suite exercises it -- compare the two expressions
+# textually so an independent drift fails loudly here.
+echo "Test 69: smith-ctx-claude enforce-clear.sh FLAGS_DIR expression matches lib-common.sh PLANS_DIR"
+CTX_ENFORCE="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
+LIB_EXPR=$(grep -m1 '^PLANS_DIR=' "$SCRIPT_DIR/scripts/lib-common.sh" | sed 's/^PLANS_DIR=//')
+CTX_EXPR=$(grep -m1 '^FLAGS_DIR=' "$CTX_ENFORCE" | sed 's/^FLAGS_DIR=//')
+if [[ -n "$LIB_EXPR" ]] && [[ "$CTX_EXPR" == "$LIB_EXPR" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (lib-common.sh -> '$LIB_EXPR', enforce-clear.sh -> '$CTX_EXPR')"
     FAIL=$((FAIL + 1))
 fi
 
