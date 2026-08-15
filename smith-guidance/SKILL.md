@@ -142,6 +142,24 @@ Helpful: see @smith-principles/SKILL.md HHH summary.
 - Assumptions significantly affect implementation
 - Trade-offs exist that user should decide
 
+**Elaborate before asking anyone to decide.** A decision request carries its
+own context or it is not answerable. Before presenting options, write out:
+what the subject IS (define every term, index code, and artifact you
+introduced or the user has not seen before — not just abbreviations; see
+@smith-standards/SKILL.md Acronym and Shorthand Expansion), where it lives
+(a path, a git ref, a locator), how it got there, how large the affected
+population is — measure it if that's feasible, and only state "unknown" or
+"not yet verified" rather than invent a count (see "Close gaps" below) — and
+what each option would do to it. Only then list the options — this is the
+write-up half of Operating Discipline step 4's scope enumeration below.
+
+- The failure this closes is asking "how should I handle the 62 «coined-term»?"
+  when «coined-term» is a word you coined and never defined — the user must
+  reverse-engineer the vocabulary before they can even read the question.
+- Reaching a decision point is not permission to skip the write-up because
+  the investigation was long; the longer the investigation, the less of it
+  the user has seen.
+
 ## Operating Discipline
 
 **Before acting on external artifacts (PRs, Notion, Slack, Jira, roadmaps) or
