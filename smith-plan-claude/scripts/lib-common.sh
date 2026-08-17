@@ -226,6 +226,49 @@ mtime_human() {
     [[ -n "$_MTIME_HUMAN" ]] || _MTIME_HUMAN="unknown"
 }
 
+# Classify another artifact's recorded scope against THIS session's scope.
+#
+# Both arguments are scope_key() answers, so each may be "repo:<repository
+# identity>", "dir:<physical path>", or the empty string. The comparison lives here
+# because the two subsystems that will need it — checkpoint restore flags and plan
+# files — must not drift into two different answers to the same question. They
+# differ only in how the outcome is worded for the reader, which is why this
+# returns a CLASS rather than a sentence: a flag records a directory, so its
+# unverifiable case reads "recorded path unreachable", while a plan file records
+# no directory at all, so the same class there means "no scope was ever
+# recorded". One sentence covering both would state, for one of them, something
+# that was never checked.
+#
+# The two unresolvable cases are deliberately NOT merged. Merging them makes the
+# client-scope withholding contingent on our OWN directory resolving, so a
+# session whose cwd is unresolvable — a removed worktree, the motivating case —
+# would receive another project's recorded path under a legend asserting that
+# the path no longer exists.
+#
+# Sets variables rather than printing: callers need two values at once, and
+# command substitution costs a subshell per candidate. inject-plan.sh runs on
+# EVERY user prompt, so a fork per candidate file is a per-keystroke cost.
+#   SCOPE_CLASS — selfunver | unver | same | foreign | outside
+#   SCOPE_PRIO  — row priority; lower sorts first
+# Usage: scope_compare "$own_scope" "$other_scope"
+scope_compare() {
+    local own="$1" other="$2"
+    if [[ -z "$own" ]]; then
+        SCOPE_CLASS="selfunver"; SCOPE_PRIO=6
+    elif [[ -z "$other" ]]; then
+        SCOPE_CLASS="unver"; SCOPE_PRIO=5
+    elif [[ "$other" == "$own" ]]; then
+        SCOPE_CLASS="same"; SCOPE_PRIO=3
+    elif [[ "$other" == repo:* && "$own" == repo:* ]]; then
+        SCOPE_CLASS="foreign"; SCOPE_PRIO=6
+    else
+        # Both sides answered, but at least one is `dir:` — a directory CHECKED
+        # to be inside no repository. All that is established is that the scopes
+        # differ; "a different repository" would name something neither has.
+        SCOPE_CLASS="outside"; SCOPE_PRIO=6
+    fi
+}
+
 # Helper: output JSON for UserPromptSubmit hooks using jq for proper escaping
 json_user_prompt_output() {
     local content="$1"

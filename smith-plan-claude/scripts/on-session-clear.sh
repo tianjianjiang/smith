@@ -615,55 +615,77 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
                 continue
             fi
             _mr_scope_cached "$_mr_fcwd"; _mr_fscope="$_MR_SCOPE_OUT"
-            if [[ -z "$_mr_scope" ]]; then
-                # THIS SESSION's own directory could not be resolved, so no flag can
-                # be established as belonging here — including flags that do. The two
-                # unresolvable cases must NOT share one verdict: that makes the
-                # client-scope withholding contingent on our own cwd resolving, and
-                # with an unresolvable cwd — a removed worktree, the motivating
-                # scenario of this whole change — another project's recorded path and
-                # its label reach an unrelated session under a legend asserting its
-                # directory no longer exists. Withhold instead: nothing was
-                # compared, so nothing may be claimed, and a label is free text people
-                # fill with a ticket key or a codename
-                # (`~/.claude/rules/client-scope.md`). The flags are untouched on
-                # disk; the tail line below says where.
-                _mr_verdict="own scope unresolvable, withheld"
-                _mr_selfunver_n=$((_mr_selfunver_n + 1))
-                _mr_prio=6
-            elif [[ -z "$_mr_fscope" ]]; then
-                # NOT "a different repository" — not verifiable. The recorded path
-                # is unreachable, which is the normal state of a checkpoint armed
-                # inside a worktree that has since been removed. Calling that
-                # "different repository" states as fact something never checked,
-                # and the old wording then forbade acting on it — worse than the
-                # silence this contract replaced. Reaching here means our OWN scope
-                # resolved, so "no longer exists" is now a checked claim, not a guess.
-                _mr_verdict="scope unverifiable, recorded path unreachable"
-                _mr_unver_n=$((_mr_unver_n + 1))
-                _mr_prio=5
-            elif [[ "$_mr_fscope" == "$_mr_scope" ]]; then
-                # Reaching here means both sides are `repo:`, so naming a repository
-                # is a checked claim. Two equal `dir:` answers would mean one
-                # physical directory, and the match above already resolves both
-                # spellings with `pwd -P` — so that pair is reported as MATCHES and
-                # never arrives here. Verified in both spelling directions.
-                _mr_verdict="same repository, selectable"
-                _mr_same_n=$((_mr_same_n + 1))
-                _mr_prio=3
-            elif [[ "$_mr_fscope" == repo:* && "$_mr_scope" == repo:* ]]; then
-                _mr_verdict="different repository, counted only"
-                _mr_foreign_n=$((_mr_foreign_n + 1))
-                _mr_prio=6
-            else
-                # scope_key() answered for both sides, but at least one answer is
-                # `dir:` — a directory CHECKED to be inside no repository. They are
-                # not the same scope, which is all that was established; calling it
-                # "a different repository" would name something neither side has.
-                _mr_verdict="outside this session's scope, counted only"
-                _mr_outside_n=$((_mr_outside_n + 1))
-                _mr_prio=6
-            fi
+            # WHICH class this is, is decided by scope_compare() in lib-common.sh,
+            # so the plan-file path can consume the same answer rather than grow a
+            # second one. That path does NOT call it yet: this is the only caller,
+            # into two different answers to the same question. HOW it is worded
+            # stays here: every sentence below describes a flag, which records a
+            # directory. A plan file records none, so it must say something else
+            # for the same class.
+            scope_compare "$_mr_scope" "$_mr_fscope"
+            _mr_prio="$SCOPE_PRIO"
+            case "$SCOPE_CLASS" in
+                selfunver)
+                    # THIS SESSION's own directory could not be resolved, so no flag can
+                    # be established as belonging here — including flags that do. The two
+                    # unresolvable cases must NOT share one verdict: that makes the
+                    # client-scope withholding contingent on our own cwd resolving, and
+                    # with an unresolvable cwd — a removed worktree, the motivating
+                    # scenario of this whole change — another project's recorded path and
+                    # its label reach an unrelated session under a legend asserting its
+                    # directory no longer exists. Withhold instead: nothing was
+                    # compared, so nothing may be claimed, and a label is free text people
+                    # fill with a ticket key or a codename
+                    # (`~/.claude/rules/client-scope.md`). The flags are untouched on
+                    # disk; the tail line below says where.
+                    _mr_verdict="own scope unresolvable, withheld"
+                    _mr_selfunver_n=$((_mr_selfunver_n + 1))
+                    ;;
+                unver)
+                    # NOT "a different repository" — not verifiable. The recorded path
+                    # is unreachable, which is the normal state of a checkpoint armed
+                    # inside a worktree that has since been removed. Calling that
+                    # "different repository" states as fact something never checked,
+                    # and the old wording then forbade acting on it — worse than the
+                    # silence this contract replaced. Reaching here means our OWN scope
+                    # resolved, so "no longer exists" is now a checked claim, not a guess.
+                    _mr_verdict="scope unverifiable, recorded path unreachable"
+                    _mr_unver_n=$((_mr_unver_n + 1))
+                    ;;
+                same)
+                    # Reaching here means both sides are `repo:`, so naming a
+                    # repository is a checked claim. Two equal `dir:` answers would
+                    # mean one physical directory, and the match above already
+                    # resolves both spellings with `pwd -P` — so that pair is
+                    # reported as MATCHES and never arrives here. Verified in both
+                    # spelling directions.
+                    _mr_verdict="same repository, selectable"
+                    _mr_same_n=$((_mr_same_n + 1))
+                    ;;
+                foreign)
+                    _mr_verdict="different repository, counted only"
+                    _mr_foreign_n=$((_mr_foreign_n + 1))
+                    ;;
+                outside)
+                    # scope_key() answered for both sides, but at least one answer is
+                    # `dir:` — a directory CHECKED to be inside no repository. They are
+                    # not the same scope, which is all that was established; calling it
+                    # "a different repository" would name something neither side has.
+                    _mr_verdict="outside this session's scope, counted only"
+                    _mr_outside_n=$((_mr_outside_n + 1))
+                    ;;
+                *)
+                    # A class this caller does not know is not a classification. The
+                    # shared function is meant to grow a second consumer, and the
+                    # `outside` label used to sit on this arm — so a class added for
+                    # the other subsystem would have been reported here as a checked
+                    # verdict. Withhold instead: priority 6 is the band that prints
+                    # nothing, which is the only default that cannot disclose.
+                    _mr_verdict="own scope unresolvable, withheld"
+                    _mr_selfunver_n=$((_mr_selfunver_n + 1))
+                    _mr_prio=6
+                    ;;
+            esac
             _mr_append_row "$_mr_prio" "$_mr_mtime" "$_mr_verdict" "$_mr_l4" "$_mr_l2" "$_mr_fcwd" "$_mr_key"
         else
             _mr_stale_kept_n=$((_mr_stale_kept_n + 1))
