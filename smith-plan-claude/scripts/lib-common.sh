@@ -93,6 +93,139 @@ session_key() {
     printf '%s' "${hash:0:16}"
 }
 
+# Durable scope for a directory: the repository's MAIN working tree.
+#
+# A checkpoint is armed from wherever the session happens to stand, which for any
+# repo-modifying task is `.claude/worktrees/<name>/` — a directory that is removed
+# when the task ends. The repository it belongs to outlives it, so the repository
+# is what identifies the work; the working directory only identifies a moment.
+#
+# `--git-common-dir` is what distinguishes a worktree from its main checkout:
+# `--show-toplevel` would return the worktree's own root and defeat the purpose.
+# It answers with an absolute path from inside a worktree and a relative `.git`
+# from a main checkout, so the relative case is resolved against the input.
+# An existing directory in no repository falls back to its own physical path, which
+# also normalizes symlink spelling (/tmp vs /private/tmp).
+#
+# A directory that cannot be reached at all returns the EMPTY string, and callers
+# must treat that as "not verifiable" rather than as an answer. Returning the raw
+# input instead would make an unreachable path compare unequal to everything and so
+# masquerade as a confident "belongs somewhere else" — the exact wrong reading for
+# the common case of a checkpoint armed inside a worktree that has since been
+# removed.
+#
+# Usage: key=$(scope_key "/some/dir")
+# Answers one of three things, and they are distinguishable:
+#   "repo:<main working tree>" — resolved to a repository
+#   "dir:<physical path>"      — CHECKED to be inside no repository at all
+#   ""                         — could not determine; the caller must claim nothing
+#
+# git alone cannot separate the last two: `rev-parse` exits 128 both when the path
+# is not a repository and when git refuses to look (dubious ownership under
+# `safe.directory`), is missing from PATH, or the repository is damaged. Its
+# messages are translated, so matching them is not a discriminator either. So when
+# git declines to answer, the question is settled with a filesystem fact instead:
+# walk up for a `.git` entry. One found means a repository is there and only the
+# resolution failed — unverifiable. Reaching the root without one means "inside no
+# repository" is a checked result, not a guess, and the directory itself is then a
+# legitimate identity. The walk uses builtins, so the failing path costs no forks.
+#
+# The answer is an IDENTITY, not a display path, and that is the contract: a
+# repository's main working tree and every linked worktree must agree, so a flag
+# armed in one is selectable from the other. Under `git init --separate-git-dir` the
+# answer is the separate git directory rather than the working tree, which still
+# satisfies that contract — verified on git 2.54, where `git worktree list
+# --porcelain` reports the same directory in its first entry, so switching to it
+# would change nothing. `--show-toplevel` is the one that cannot be used: from a
+# linked worktree it answers the worktree, giving every worktree of one repository a
+# different identity.
+scope_key() {
+    local dir="${1:-}" phys common resolved probe
+    [[ -n "$dir" ]] || return 0
+    # `--` is load-bearing, not decoration: this operand is FLAG CONTENT, and `cd`
+    # takes its first word as an option. `-P`, `-L` and `-e` are consumed as flags,
+    # leaving no operand, so `cd` chdirs to $HOME and a planted flag recording `-P`
+    # resolves to the home directory — reported as a match, restored and consumed.
+    phys=$(cd -- "$dir" 2>/dev/null && pwd -P) || return 0
+    [[ -n "$phys" ]] || return 0
+    # `rev-parse` answers from the ENVIRONMENT before it looks at `-C`, so an inherited
+    # `GIT_DIR` makes every directory report that repository — including one inside no
+    # repository at all. This function exists to tell scopes apart, and the caller uses
+    # its answer to decide whether another session's recorded path and label may be
+    # printed, so a collapse to one identity does not merely lose precision: it turns
+    # the withholding rule inside out and discloses every foreign flag. The variables
+    # are exported by `git rebase --exec` and inside git hooks, so a session launched
+    # from either inherits them.
+    #
+    # The trade-off, recorded rather than left implicit: a setup where the repository is
+    # reachable ONLY through those variables — a separate git directory with an explicit
+    # `GIT_WORK_TREE` — now answers `dir:` instead of `repo:`, so its worktrees stop
+    # sharing one identity. That is a real narrowing, and it is the one worth taking:
+    # `dir:` still says something true, since the walk below checked the filesystem and
+    # found no repository, whereas honouring the variables makes EVERY directory share a
+    # single identity and discloses every foreign flag.
+    if common=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR \
+        git -C "$phys" rev-parse --git-common-dir 2>/dev/null) && [[ -n "$common" ]]; then
+        [[ "$common" != /* ]] && common="${phys}/${common}"
+        if resolved=$(cd -- "${common%/.git}" 2>/dev/null && pwd -P) && [[ -n "$resolved" ]]; then
+            printf 'repo:%s' "$resolved"
+            return 0
+        fi
+    fi
+    probe="$phys"
+    while :; do
+        # `.git` is a directory in a main working tree and a file in a linked
+        # worktree; either proves a repository is present.
+        [[ -e "$probe/.git" ]] && return 0
+        [[ "$probe" == "/" ]] && break
+        probe="${probe%/*}"; probe="${probe:-/}"
+    done
+    printf 'dir:%s' "$phys"
+}
+
+# File mtime in epoch seconds, into _MTIME_OUT; empty when none could be read.
+#
+# Select the fallback on the OUTPUT, not on the exit status. On GNU coreutils `-f`
+# means --file-system, so `stat -f %m` SUCCEEDS on a file and prints filesystem
+# information, never an mtime — an `||` chain on the exit status would then never
+# reach the `-c %Y` form and every file on Linux would carry whatever the first form
+# printed. What an empty answer MEANS is the caller's to decide, and the two callers
+# decide differently; neither may read it as an age of zero without saying so.
+# Sets a variable rather than printing: `$( )` would fork a subshell per file, and
+# this runs once per flag on every /clear.
+# A NEGATIVE epoch — a timestamp before 1970 — is deliberately rejected rather than
+# accepted as an established age. Every flag in this directory is written by
+# write-reload-flag.sh through mktemp and mv, so its mtime is always "now"; a
+# negative one is a corrupted timestamp, not a checkpoint from 1969. Accepting it
+# would make the age enormous and hand the flag to the seven-day sweep, destroying
+# the only pointer to a checkpoint on a number nobody should trust. Rejecting it
+# reports the age as unestablished and leaves the file alone, which is the direction
+# this subsystem takes for every reading it cannot rely on.
+# Usage: mtime_of "$file"; m="$_MTIME_OUT"
+_MTIME_OUT=""
+mtime_of() {
+    _MTIME_OUT=$(stat -f %m "$1" 2>/dev/null)
+    [[ "$_MTIME_OUT" =~ ^[0-9]+$ ]] || _MTIME_OUT=$(stat -c %Y "$1" 2>/dev/null)
+    [[ "$_MTIME_OUT" =~ ^[0-9]+$ ]] || _MTIME_OUT=""
+}
+
+# Human-readable file mtime into _MTIME_HUMAN; the literal "unknown" when none could
+# be read. Six call sites had their own copy of this two-form probe and four of them
+# asked BSD first, chained on the exit status -- which on GNU never reaches the
+# fallback, for the reason stated above mtime_of: `-f` means --file-system and
+# SUCCEEDS on a regular file. Unlike `%m`, the `-f` answer here cannot be recognised
+# as wrong from its shape, so the order carries the correctness: GNU's own `-c` form
+# is asked FIRST, and BSD, which has no `-c` at all and writes nothing to stdout when
+# handed one, falls through to its `-f`+`-t` form. Seconds are always produced;
+# callers wanting minute precision take the first 16 characters.
+# Usage: mtime_human "$file"; m="$_MTIME_HUMAN"
+_MTIME_HUMAN=""
+mtime_human() {
+    _MTIME_HUMAN=$(stat -c %y "$1" 2>/dev/null | cut -d'.' -f1)
+    [[ -n "$_MTIME_HUMAN" ]] || _MTIME_HUMAN=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$1" 2>/dev/null)
+    [[ -n "$_MTIME_HUMAN" ]] || _MTIME_HUMAN="unknown"
+}
+
 # Helper: output JSON for UserPromptSubmit hooks using jq for proper escaping
 json_user_prompt_output() {
     local content="$1"

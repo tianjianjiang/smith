@@ -410,7 +410,8 @@ list_plans() {
         local name
         name=$(basename "$file" .md)
         local modified
-        modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$file" 2>/dev/null || stat -c %y "$file" 2>/dev/null | cut -d'.' -f1 || echo "unknown")
+        mtime_human "$file"
+        modified="${_MTIME_HUMAN:0:16}"
         result+=$(printf '  - %s (modified: %s)\n' "$name" "$modified")
     done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     printf '%s' "$result"
@@ -484,10 +485,8 @@ if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
 fi
 PLAN_BASENAME=$(basename "$PLAN_FILE")
 
-# Get modification time (macOS first, then Linux fallback)
-PLAN_MODIFIED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$PLAN_FILE" 2>/dev/null) || \
-    PLAN_MODIFIED=$(stat -c %y "$PLAN_FILE" 2>/dev/null | cut -d'.' -f1) || \
-    PLAN_MODIFIED="unknown"
+mtime_human "$PLAN_FILE"
+PLAN_MODIFIED="$_MTIME_HUMAN"
 
 # Calculate progress
 PROGRESS=$(calculate_progress "$PLAN_CONTENT")

@@ -53,11 +53,8 @@ else
 fi
 
 # Get modification time
-if stat -c %y "$PLAN_FILE" &>/dev/null; then
-    MODIFIED=$(stat -c %y "$PLAN_FILE" | cut -d'.' -f1)
-else
-    MODIFIED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$PLAN_FILE" 2>/dev/null || echo "unknown")
-fi
+mtime_human "$PLAN_FILE"
+MODIFIED="$_MTIME_HUMAN"
 
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║                      PLAN STATUS                            ║"
