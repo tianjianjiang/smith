@@ -57,10 +57,40 @@ ENFORCE_SCRIPT="$SCRIPT_DIR/scripts/enforce-clear.sh"
 PLAN_EXIT_SCRIPT="$SCRIPT_DIR/scripts/on-plan-exit.sh"
 SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
 
-# Use temp directory for isolation
-TEST_DIR=$(mktemp -d)
+# Use temp directory for isolation. The template is explicit because BSD `mktemp -d`
+# ignores TMPDIR without one, which made the guard below advise a fix that could not
+# work on macOS — and made the guard's own failure path unreachable from a test.
+# The trailing slash matters: macOS sets TMPDIR with one, and pasting a template
+# straight on gives `…/T//smith-…`, a path that compares unequal to the same
+# directory spelled once. Tests assert on these paths, so normalise it here.
+TEST_TMPROOT="${TMPDIR:-/tmp}"; TEST_TMPROOT="${TEST_TMPROOT%/}"
+TEST_DIR=$(mktemp -d "${TEST_TMPROOT}/smith-plan-claude-tests.XXXXXX")
+# Every scenario below builds its own repositories, so an INHERITED git environment
+# has nothing to contribute and plenty to break: rev-parse reads GIT_DIR before it
+# looks at -C, so the sandbox guard below reports every directory as inside a
+# repository, and the `git init` fixtures then operate on the inherited directory
+# instead of their own. `git rebase --exec` and git hooks both export it, which is
+# how a suite that passes by hand fails from inside a rebase. scope_key() scrubs the
+# same three names per call, for the same reason.
+unset GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR
+
 PLANS_DIR="$TEST_DIR/plans"
 mkdir -p "$PLANS_DIR"
+
+# Fail closed if the sandbox landed inside a git repository. scope_key() searches
+# UPWARD for a repository, so with a repo-local TMPDIR the directories these tests
+# construct as belonging to different repositories would all resolve to the same
+# one: the foreign-flag scenarios would stop testing what their names say, and some
+# would fail for a reason that has nothing to do with the code under test.
+if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
+    echo "Error: sandbox $TEST_DIR is inside a git repository (TMPDIR=${TMPDIR:-unset})." >&2
+    echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
+    echo "       Re-run with TMPDIR pointing outside any repository." >&2
+    # The cleanup trap is installed further down, so this early exit would otherwise
+    # leave the sandbox behind on every run that trips the guard.
+    rm -rf "$TEST_DIR"
+    exit 1
+fi
 
 # Export _SMITH_PPID so session_key() in hooks uses a predictable value
 # (otherwise $PPID varies per subshell invocation, breaking key prediction)
@@ -68,7 +98,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=69
+TOTAL=171
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -2361,7 +2391,7 @@ fi
 rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 # --- Test 65: memory-restore, >7-day foreign flag -> swept ---
-echo "Test 65: memory-restore: 8-day-old foreign-cwd flag -> deleted by hygiene sweep, no directive"
+echo "Test 65: memory-restore: 8-day-old foreign-cwd flag -> swept, and the sweep is REPORTED (no restore directive)"
 CWD_65="$TEST_DIR/worktree-65"
 CWD_65_OTHER="$TEST_DIR/worktree-65-other"
 mkdir -p "$CWD_65" "$CWD_65_OTHER"
@@ -2370,7 +2400,10 @@ MR_FLAG_65="$PLANS_DIR/.pending-memory-restore-20260710T000000-10101"
 printf '%s\n%s\n%s\n%s\n' "sess_65" "2026-07-10T00:00:00+0900" "$CWD_65_OTHER" "checkpoint-65" > "$MR_FLAG_65"
 touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_65"
 OUTPUT=$(echo '{"cwd":"'"$CWD_65"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The sweep count is the ONLY audit trace this path leaves — the file is gone, so
+# an unreported sweep is indistinguishable from a flag that never existed.
 if assert_not_contains "65" "$OUTPUT" "MEMORY RESTORE" && \
+   assert_contains "65" "$OUTPUT" "1 removed as older than 7 days" && \
    assert_file_not_exists "65" "$MR_FLAG_65"; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -2390,9 +2423,14 @@ printf '%s\n%s\n%s\n%s\n' "sess_66a" "2026-07-16T00:00:01+0900" "$CWD_66" "check
 printf '%s\n%s\n%s\n%s\n' "sess_66b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_66" "checkpoint-66-fresh" > "$MR_FLAG_66B"
 touch -t "$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)" "$MR_FLAG_66A"
 OUTPUT=$(echo '{"cwd":"'"$CWD_66"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The stale flag matched, so it was consumed and destroyed. Its label is therefore
+# listed, under an explicit "consumed WITHOUT restoring" verdict: withholding it
+# would leave no handle for the manual read_memory() that is the only way back to
+# that checkpoint. The restore directive must still name only the fresh one.
 if assert_contains "66" "$OUTPUT" "checkpoint: checkpoint-66-fresh" && \
    assert_not_contains "66" "$OUTPUT" "checkpoints for this directory" && \
-   assert_not_contains "66" "$OUTPUT" "checkpoint-66-stale" && \
+   assert_contains "66" "$OUTPUT" "checkpoint-66-stale" && \
+   assert_contains "66" "$OUTPUT" "consumed WITHOUT restoring" && \
    assert_file_not_exists "66" "$MR_FLAG_66A" && \
    assert_file_not_exists "66" "$MR_FLAG_66B"; then
     echo "  PASS"
@@ -2463,6 +2501,2912 @@ if [[ -n "$LIB_EXPR" ]] && [[ "$CTX_EXPR" == "$LIB_EXPR" ]]; then
 else
     echo "  FAIL (lib-common.sh -> '$LIB_EXPR', enforce-clear.sh -> '$CTX_EXPR')"
     FAIL=$((FAIL + 1))
+fi
+
+# --- The reporting contract: a scan whose result is discarded must say what it saw.
+#     Numbering is carried by each test below, not by this header — a hand-kept
+#     range here rots the moment another scenario is appended. ---
+
+# --- Test 70: zero match, but a fresh flag from another worktree of the SAME repo ---
+echo "Test 70: memory-restore: same-repo flag, no exact match -> selectable candidate, NOT consumed"
+REPO_70="$TEST_DIR/repo-70"
+WT_70="$TEST_DIR/repo-70-worktree"
+mkdir -p "$REPO_70"
+git -C "$REPO_70" init -q 2>/dev/null
+git -C "$REPO_70" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_70" worktree add -q --detach "$WT_70" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_70="$PLANS_DIR/.pending-memory-restore-20260815T000070-70070"
+printf '%s\n%s\n%s\n%s\n' "sess_70" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_70" "checkpoint-70" > "$MR_FLAG_70"
+OUTPUT=$(echo '{"cwd":"'"$REPO_70"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_70" ]] && \
+   assert_contains "70" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+   assert_contains "70" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "70" "$OUTPUT" "checkpoint-70" && \
+   assert_contains "70" "$OUTPUT" "20260815T000070-70070" && \
+   assert_contains "70" "$OUTPUT" "AskUserQuestion" && \
+   assert_contains "70" "$OUTPUT" "rm -f $PLANS_DIR/.pending-memory-restore-" && \
+   assert_contains "70" "$OUTPUT" "Signal: resume" && \
+   assert_not_contains "70" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE" && \
+   assert_file_exists "70" "$MR_FLAG_70"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 71: zero match, only a flag from an unrelated location -> shown, never offered ---
+echo "Test 71: memory-restore: foreign-repo flag only -> shown only, no offer, not consumed, fresh-start"
+CWD_71="$TEST_DIR/worktree-71"
+CWD_71_FOREIGN="$TEST_DIR/elsewhere-71"
+mkdir -p "$CWD_71" "$CWD_71_FOREIGN"
+# BOTH sides must be repositories for the "different repository" verdict to be a
+# checked claim. Leaving this directory outside any repository lets the test pass
+# while the code says "another repository" about something that is not one: the
+# fixture, not the code, would be carrying the false claim.
+git -C "$CWD_71_FOREIGN" init -q 2>/dev/null
+git -C "$CWD_71" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_71="$PLANS_DIR/.pending-memory-restore-20260815T000071-71071"
+printf '%s\n%s\n%s\n%s\n' "sess_71" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_71_FOREIGN" "checkpoint-71" > "$MR_FLAG_71"
+OUTPUT=$(echo '{"cwd":"'"$CWD_71"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Another repository's flag is COUNTED, never printed: its path and label belong to
+# that project and nothing here permits acting on them.
+if assert_contains "71" "$OUTPUT" "1 recorded in another repository" && \
+   assert_contains "71" "$OUTPUT" "deliberately all you get" && \
+   assert_not_contains "71" "$OUTPUT" "checkpoint-71" && \
+   assert_not_contains "71" "$OUTPUT" "$CWD_71_FOREIGN" && \
+   assert_contains "71" "$OUTPUT" "nothing to offer" && \
+   assert_not_contains "71" "$OUTPUT" "AskUserQuestion" && \
+   assert_not_contains "71" "$OUTPUT" "20260815T000071-71071" && \
+   assert_contains "71" "$OUTPUT" "Signal: fresh-start" && \
+   assert_file_exists "71" "$MR_FLAG_71"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 72: no flags at all -> the block must NOT appear (silence is correct here) ---
+echo "Test 72: memory-restore: no flags at all -> no candidates block"
+CWD_72="$TEST_DIR/worktree-72"
+mkdir -p "$CWD_72"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OUTPUT=$(echo '{"cwd":"'"$CWD_72"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "72" "$OUTPUT" "Checkpoint candidates" && \
+   assert_not_contains "72" "$OUTPUT" "Checkpoint flags at this /clear" && \
+   assert_not_contains "72" "$OUTPUT" "MEMORY RESTORE"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 73: more fresh candidates than the row cap -> capped, remainder counted ---
+echo "Test 73: memory-restore: 6 listable flags -> 5 rows listed, 1 counted as not shown"
+CWD_73="$TEST_DIR/worktree-73"
+mkdir -p "$CWD_73"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# Unreachable recorded paths, not foreign ones: a flag belonging to another
+# repository is now counted rather than listed, so it could not exercise the cap.
+for n in 1 2 3 4 5 6; do
+    printf '%s\n%s\n%s\n%s\n' "sess_73_$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/never-created-73-$n" "checkpoint-73-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260815T000073-7307$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$CWD_73"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Count OCCURRENCES, not lines: the hook's output is a single JSON string whose
+# row separators are the two characters \n, so every row shares one physical line.
+# Count on "recorded", which only a listed row carries — the verdict wording also
+# appears in the explanatory sentence below the list and would inflate the count.
+T73_ROWS=$(printf '%s' "$OUTPUT" | grep -o -- '— recorded ' | wc -l | tr -d ' ')
+if [[ "$T73_ROWS" == "5" ]] && \
+   assert_contains "73" "$OUTPUT" "1 more not shown"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (listed rows: $T73_ROWS, expected 5)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 74: only stale flags -> one reporting line, never silence ---
+echo "Test 74: memory-restore: only a stale foreign flag -> one-line report, flag kept"
+CWD_74="$TEST_DIR/worktree-74"
+CWD_74_FOREIGN="$TEST_DIR/elsewhere-74"
+mkdir -p "$CWD_74" "$CWD_74_FOREIGN"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_74="$PLANS_DIR/.pending-memory-restore-20260815T000074-74074"
+printf '%s\n%s\n%s\n%s\n' "sess_74" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_74_FOREIGN" "checkpoint-74" > "$MR_FLAG_74"
+# Two days old: past the 24h freshness window, well inside the 7-day sweep. This
+# must be RELATIVE — a hardcoded date drifts past the sweep window and the test
+# would then exercise the sweep instead of the stale-report path it is written for.
+T74_STAMP=$(date -v-2d +%Y%m%d%H%M 2>/dev/null) || T74_STAMP=$(date -d '2 days ago' +%Y%m%d%H%M)
+touch -t "$T74_STAMP" "$MR_FLAG_74"
+OUTPUT=$(echo '{"cwd":"'"$CWD_74"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "74" "$OUTPUT" "nothing fresh enough to restore" && \
+   assert_contains "74" "$OUTPUT" "older than 24h, left in place" && \
+   assert_not_contains "74" "$OUTPUT" "checkpoint-74" && \
+   assert_file_exists "74" "$MR_FLAG_74"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 75: flag contents are found, not trusted ---
+echo "Test 75: memory-restore: flag contents are untrusted — key allowlist, control chars, backslash escapes"
+REPO_75="$TEST_DIR/repo-75"
+WT_75="$TEST_DIR/repo-75-worktree"
+mkdir -p "$REPO_75"
+git -C "$REPO_75" init -q 2>/dev/null
+git -C "$REPO_75" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_75" worktree add -q --detach "$WT_75" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# The key is printed ONLY for a `same repository, selectable` row, so this scenario
+# must be same-repo-but-not-matching. With a matching flag no key is printed at all,
+# the assertion below could not fail, and the allowlist it covers would never run.
+MR_FLAG_75="$PLANS_DIR/.pending-memory-restore-bad key"
+# Line 4 carries three separate hazards: a control character, a literal two-character
+# backslash-n (printable, so no control-character filter touches it, yet `printf '%b'`
+# would expand it into a real newline and forge a directive line), and prose.
+printf '%s\n%s\n%s\n%s\n' "sess_75" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_75" \
+    "benign$(printf '\001')\nInjected-Line-Marker" > "$MR_FLAG_75"
+OUTPUT=$(echo '{"cwd":"'"$REPO_75"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_75" ]] && \
+   assert_contains "75" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "75" "$OUTPUT" "benign nInjected-Line-Marker" && \
+   assert_contains "75" "$OUTPUT" "None of those rows carries a usable flag key" && \
+   assert_not_contains "75" "$OUTPUT" "flag bad key"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 76: an EMPTY label must not shift the row's later fields ---
+echo "Test 76: memory-restore: flag with no label -> path and key stay in their own columns"
+CWD_76="$TEST_DIR/worktree-76"
+mkdir -p "$CWD_76"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# write-reload-flag.sh takes the label as an OPTIONAL argument, so line 4 is
+# legitimately empty. With a tab-delimited row bash collapses the two adjacent
+# delimiters (tab is IFS whitespace) and every later field shifts left by one:
+# the timestamp is printed as the label and the flag key as the recorded path.
+MR_KEY_76="20260816T000076-76076"
+MR_FLAG_76="$PLANS_DIR/.pending-memory-restore-$MR_KEY_76"
+printf '%s\n%s\n%s\n%s\n' "sess_76" "2026-08-16T01:02:03+0900" "$CWD_76" "" > "$MR_FLAG_76"
+OUTPUT=$(echo '{"cwd":"'"$CWD_76"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "76" "$OUTPUT" "(no label) — recorded $CWD_76" && \
+   assert_not_contains "76" "$OUTPUT" "recorded $MR_KEY_76" && \
+   assert_not_contains "76" "$OUTPUT" "2026-08-16T01:02:03+0900 — recorded" && \
+   assert_contains "76" "$OUTPUT" "MEMORY RESTORE"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 77: a flag that MATCHED but was too old is destroyed — say so ---
+echo "Test 77: memory-restore: matching stale flag -> reported as matched-and-consumed, not as 'none matched'"
+CWD_77="$TEST_DIR/worktree-77"
+mkdir -p "$CWD_77"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_77="$PLANS_DIR/.pending-memory-restore-20260816T000077-77077"
+printf '%s\n%s\n%s\n%s\n' "sess_77" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_77" "checkpoint-77" > "$MR_FLAG_77"
+T77_STAMP=$(date -v-2d +%Y%m%d%H%M 2>/dev/null) || T77_STAMP=$(date -d '2 days ago' +%Y%m%d%H%M)
+touch -t "$T77_STAMP" "$MR_FLAG_77"
+OUTPUT=$(echo '{"cwd":"'"$CWD_77"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# This flag DID match — that is why it was consumed rather than left for another
+# session. Reporting it as an ordinary old flag hides the one case where the user
+# irreversibly loses the pointer to a checkpoint whose memory still exists.
+# The same directive must not also say nothing was consumed — one was destroyed.
+if assert_not_contains "77" "$OUTPUT" "no flag was consumed" && \
+   assert_contains "77" "$OUTPUT" "MATCHED but expired, consumed WITHOUT restoring" && \
+   assert_contains "77" "$OUTPUT" "checkpoint-77" && \
+   assert_contains "77" "$OUTPUT" "DID match this session" && \
+   assert_file_not_exists "77" "$MR_FLAG_77" && \
+   assert_not_contains "77" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 78: a matching flag the hook cannot claim must be REPORTED, not just logged ---
+echo "Test 78: memory-restore: unclaimable matching flag -> reported in context, kept on disk"
+CWD_78="$TEST_DIR/worktree-78"
+mkdir -p "$CWD_78"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_78="$PLANS_DIR/.pending-memory-restore-20260816T000078-78078"
+printf '%s\n%s\n%s\n%s\n' "sess_78" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_78" "checkpoint-78" > "$MR_FLAG_78"
+# A read-only PLANS_DIR makes the claiming `mv` fail. stderr is NOT a channel into
+# the session: additionalContext is the only one, so a warning there alone would be
+# invisible exactly when a matching checkpoint failed to restore.
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
+    PASS=$((PASS + 1))
+else
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 500 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_78"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "78" "$OUTPUT" "could NOT be claimed" && \
+       assert_contains "78" "$OUTPUT" "checkpoint-78" && \
+       assert_contains "78" "$OUTPUT" "filesystem error" && \
+       assert_file_exists "78" "$MR_FLAG_78"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 79: an unreachable recorded path is "unverifiable", never "different repository" ---
+echo "Test 79: memory-restore: removed-worktree path -> scope unverifiable, no false repository claim"
+CWD_79="$TEST_DIR/worktree-79"
+mkdir -p "$CWD_79"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_79="$PLANS_DIR/.pending-memory-restore-20260816T000079-79079"
+# The directory is never created: this is a checkpoint armed inside a worktree that
+# has since been removed, which is the headline scenario for this whole thread.
+printf '%s\n%s\n%s\n%s\n' "sess_79" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/gone-79" "checkpoint-79" > "$MR_FLAG_79"
+OUTPUT=$(echo '{"cwd":"'"$CWD_79"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The key names a flag to delete; an unverifiable row is not offerable, so
+# printing its key would name something the agent must not act on.
+if assert_not_contains "79" "$OUTPUT" "flag 20260816T000079-79079" && \
+   assert_contains "79" "$OUTPUT" "scope unverifiable, recorded path unreachable" && \
+   assert_contains "79" "$OUTPUT" "were NOT checked" && \
+   assert_contains "79" "$OUTPUT" "checkpoint-79" && \
+   assert_not_contains "79" "$OUTPUT" "different repository, shown only" && \
+   assert_file_exists "79" "$MR_FLAG_79"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 80: the row cap must never evict the only actionable candidate ---
+echo "Test 80: memory-restore: 5 newer foreign flags + 1 older same-repo flag -> the actionable row survives the cap"
+REPO_80="$TEST_DIR/repo-80"
+WT_80="$TEST_DIR/repo-80-worktree"
+FOREIGN_80="$TEST_DIR/elsewhere-80"
+mkdir -p "$REPO_80" "$FOREIGN_80"
+git -C "$REPO_80" init -q 2>/dev/null
+git -C "$REPO_80" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_80" worktree add -q --detach "$WT_80" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# The offerable row is the OLDEST, so ordering by time alone drops it past the cap
+# while the directive still tells the agent to offer "those rows only".
+MR_FLAG_80="$PLANS_DIR/.pending-memory-restore-20260816T000080-80080"
+printf '%s\n%s\n%s\n%s\n' "sess_80" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_80" "checkpoint-80-actionable" > "$MR_FLAG_80"
+touch -t "$(date -v-20H +%Y%m%d%H%M 2>/dev/null || date -d '20 hours ago' +%Y%m%d%H%M)" "$MR_FLAG_80"
+# Newer, listable, and LOWER priority than the offerable row: unreachable paths.
+# Flags from another repository would not do — those are counted, not listed, so
+# they exert no pressure on the cap.
+for n in 1 2 3 4 5; do
+    printf '%s\n%s\n%s\n%s\n' "sess_80_$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$FOREIGN_80/never-created-$n" "checkpoint-80-other-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000080-8008$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$REPO_80"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_80" ]] && \
+   assert_contains "80" "$OUTPUT" "checkpoint-80-actionable" && \
+   assert_contains "80" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "80" "$OUTPUT" "more not shown"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 81: a LABEL that reads like a verdict must not be counted as one ---
+echo "Test 81: memory-restore: label reading 'MATCHES this session' is not mistaken for a verdict"
+REPO_81="$TEST_DIR/repo-81"
+WT_81="$TEST_DIR/repo-81-worktree"
+mkdir -p "$REPO_81"
+git -C "$REPO_81" init -q 2>/dev/null
+git -C "$REPO_81" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_81" worktree add -q --detach "$WT_81" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# Two genuine matches put the run on the ask-which-one path, which is the ONLY
+# consumer of the match-row selection — with a single match or none, a
+# misclassified row has no observable effect and this test would prove nothing.
+printf '%s\n%s\n%s\n%s\n' "sess_81a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_81" "checkpoint-81-a" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000081-8108a"
+printf '%s\n%s\n%s\n%s\n' "sess_81b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_81" "checkpoint-81-b" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000081-8108b"
+# The impostor: a same-repository candidate whose LABEL is the verdict string. Its
+# line 2 is a marker that appears in the output only via the ask-which-one list,
+# so a substring match over the whole row is directly detectable.
+MR_FLAG_81="$PLANS_DIR/.pending-memory-restore-20260816T000081-81081"
+printf '%s\n%s\n%s\n%s\n' "sess_81" "IMPOSTOR-TIMESTAMP-81" "$WT_81" "MATCHES this session" > "$MR_FLAG_81"
+OUTPUT=$(echo '{"cwd":"'"$REPO_81"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_81" ]] && \
+   assert_contains "81" "$OUTPUT" "checkpoints for this directory" && \
+   assert_contains "81" "$OUTPUT" "checkpoint-81-a" && \
+   assert_contains "81" "$OUTPUT" "same repository, selectable" && \
+   assert_not_contains "81" "$OUTPUT" "IMPOSTOR-TIMESTAMP-81" && \
+   assert_file_exists "81" "$MR_FLAG_81"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 82: scope_key() directly, including the cases only it can reach ---
+echo "Test 82: scope_key: worktree/main/subdir agree, unreachable path returns empty, symlink normalized"
+REPO_82="$TEST_DIR/repo-82"
+WT_82="$TEST_DIR/repo-82-worktree"
+mkdir -p "$REPO_82/sub/dir" "$TEST_DIR/plain-82"
+git -C "$REPO_82" init -q 2>/dev/null
+git -C "$REPO_82" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_82" worktree add -q --detach "$WT_82" HEAD 2>/dev/null
+ln -sfn "$TEST_DIR/plain-82" "$TEST_DIR/link-82"
+T82_MAIN=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82")
+T82_WT=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$WT_82")
+T82_SUB=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82/sub/dir")
+T82_GONE=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/never-created-82")
+T82_LINK=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/link-82")
+T82_PLAIN=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/plain-82")
+# An unreachable path MUST return empty, not the raw input: a raw input compares
+# unequal to everything and so poses as a confident "belongs somewhere else".
+if [[ -d "$WT_82" ]] && \
+   [[ -n "$T82_MAIN" ]] && [[ "$T82_WT" == "$T82_MAIN" ]] && [[ "$T82_SUB" == "$T82_MAIN" ]] && \
+   [[ -z "$T82_GONE" ]] && \
+   [[ "$T82_LINK" == "$T82_PLAIN" ]] && [[ -n "$T82_PLAIN" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (main=$T82_MAIN worktree=$T82_WT subdir=$T82_SUB gone=[$T82_GONE] link=$T82_LINK plain=$T82_PLAIN)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 83: a recorded path with trailing whitespace must still match ---
+echo "Test 83: memory-restore: cwd with a trailing space still matches (IFS= read, not plain read)"
+CWD_83="$TEST_DIR/worktree 83 "
+mkdir -p "$CWD_83"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_83="$PLANS_DIR/.pending-memory-restore-20260816T000083-83083"
+# A bare `read` into one variable strips leading and trailing IFS whitespace, which
+# the `sed -n '3p'` it replaced did not. The flag would stop matching, and the
+# trimmed path would then fail to `cd`, so the row would claim the recorded
+# directory is unreachable while the hook is standing in it.
+printf '%s\n%s\n%s\n%s\n' "sess_83" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_83" "checkpoint-83" > "$MR_FLAG_83"
+OUTPUT=$(echo '{"cwd":"'"$CWD_83"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "83" "$OUTPUT" "MATCHES this session" && \
+   assert_contains "83" "$OUTPUT" "checkpoint: checkpoint-83" && \
+   assert_not_contains "83" "$OUTPUT" "scope unverifiable" && \
+   assert_file_not_exists "83" "$MR_FLAG_83"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 84: a truncated flag is malformed, not a removed worktree ---
+echo "Test 84: memory-restore: flag with no recorded path -> malformed, not 'path unreachable'"
+CWD_84="$TEST_DIR/worktree-84"
+mkdir -p "$CWD_84"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_84="$PLANS_DIR/.pending-memory-restore-20260816T000084-84084"
+printf 'only-one-line\n' > "$MR_FLAG_84"
+OUTPUT=$(echo '{"cwd":"'"$CWD_84"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "84" "$OUTPUT" "malformed flag, no recorded path" && \
+   assert_not_contains "84" "$OUTPUT" "recorded path unreachable" && \
+   assert_file_exists "84" "$MR_FLAG_84"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 85: an unclaimable flag is reported but is NOT work waiting ---
+echo "Test 85: memory-restore: unclaimable matching flag -> reported, Signal stays fresh-start"
+CWD_85="$TEST_DIR/worktree-85"
+mkdir -p "$CWD_85"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_85="$PLANS_DIR/.pending-memory-restore-20260816T000085-85085"
+printf '%s\n%s\n%s\n%s\n' "sess_85" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_85" "checkpoint-85" > "$MR_FLAG_85"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
+    PASS=$((PASS + 1))
+else
+    # Restore the mode even if the hook aborts: leaving PLANS_DIR read-only would
+    # fail every later test for a reason unrelated to the code under test.
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 500 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_85"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    # Nothing can be restored until the permissions are fixed, so this must not be
+    # signalled as a work thread waiting to resume.
+    if assert_contains "85" "$OUTPUT" "could NOT be claimed" && \
+       assert_contains "85" "$OUTPUT" "Signal: fresh-start" && \
+       assert_file_exists "85" "$MR_FLAG_85"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 86: one directory under two spellings still matches ---
+echo "Test 86: memory-restore: flag recorded under a symlinked spelling still MATCHES"
+CWD_86="$TEST_DIR/worktree-86"
+mkdir -p "$CWD_86"
+CWD_86_PHYS=$(cd "$CWD_86" && pwd -P)
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_86="$PLANS_DIR/.pending-memory-restore-20260816T000086-86086"
+# The writer records its logical $PWD; the hook receives whatever spelling the
+# session has. A raw string compare misses when they differ — which is the exact
+# silent no-match this whole change exists to remove.
+printf '%s\n%s\n%s\n%s\n' "sess_86" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_86" "checkpoint-86" > "$MR_FLAG_86"
+if [[ "$CWD_86_PHYS" == "$CWD_86" ]]; then
+    echo "  SKIP (sandbox path has no symlinked prefix on this machine)"
+    PASS=$((PASS + 1))
+else
+    OUTPUT=$(echo '{"cwd":"'"$CWD_86_PHYS"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+    if assert_contains "86" "$OUTPUT" "MATCHES this session" && \
+       assert_contains "86" "$OUTPUT" "checkpoint: checkpoint-86" && \
+       assert_file_not_exists "86" "$MR_FLAG_86"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 87: an unreadable mtime must KEEP the flag, never age it into the sweep ---
+echo "Test 87: memory-restore: stat failure treats the flag as fresh and keeps it"
+CWD_87="$TEST_DIR/worktree-87"
+CWD_87_OTHER="$TEST_DIR/elsewhere-87"
+mkdir -p "$CWD_87" "$CWD_87_OTHER" "$TEST_DIR/shim-87"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_87="$PLANS_DIR/.pending-memory-restore-20260816T000087-87087"
+printf '%s\n%s\n%s\n%s\n' "sess_87" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_87_OTHER" "checkpoint-87" > "$MR_FLAG_87"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_87"
+# A stat that fails establishes no age at all, and a flag with no established age is
+# never swept. The outcome this test pins is the same one the old substitute-now rule
+# produced — the pointer survives — but the reason is now that nothing was measured,
+# not that the failure was read as a fresh timestamp.
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/shim-87/stat"
+chmod +x "$TEST_DIR/shim-87/stat"
+OUTPUT=$(echo '{"cwd":"'"$CWD_87"'"}' | PATH="$TEST_DIR/shim-87:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_file_exists "87" "$MR_FLAG_87" && \
+   assert_not_contains "87" "$OUTPUT" "removed as older than 7 days"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 88: malformed flags must not evict the offerable row from the cap ---
+echo "Test 88: memory-restore: 5 malformed flags + 1 same-repo flag -> the offerable row survives"
+REPO_88="$TEST_DIR/repo-88"
+WT_88="$TEST_DIR/repo-88-worktree"
+mkdir -p "$REPO_88"
+git -C "$REPO_88" init -q 2>/dev/null
+git -C "$REPO_88" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_88" worktree add -q --detach "$WT_88" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_88" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_88" "checkpoint-88-offerable" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000088-88088"
+for n in 1 2 3 4 5; do
+    printf 'truncated-88-%s\n' "$n" > "$PLANS_DIR/.pending-memory-restore-20260816T000088-8808$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$REPO_88"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_88" ]] && \
+   assert_contains "88" "$OUTPUT" "checkpoint-88-offerable" && \
+   assert_contains "88" "$OUTPUT" "same repository, selectable"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 89: a flag the hook cannot read is counted, not called malformed ---
+echo "Test 89: memory-restore: unreadable flag file -> counted as unreadable, not 'malformed'"
+CWD_89="$TEST_DIR/worktree-89"
+mkdir -p "$CWD_89"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_89="$PLANS_DIR/.pending-memory-restore-20260816T000089-89089"
+printf '%s\n%s\n%s\n%s\n' "sess_89" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_89" "checkpoint-89" > "$MR_FLAG_89"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root reads regardless of mode)"
+    PASS=$((PASS + 1))
+else
+    chmod 000 "$MR_FLAG_89"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_89"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 600 "$MR_FLAG_89"
+    # Advising the user to delete a "corrupt" file whose only problem is a
+    # permission bit would destroy a perfectly good pointer.
+    if assert_contains "89" "$OUTPUT" "could NOT be read (permissions)" && \
+       assert_not_contains "89" "$OUTPUT" "malformed flag" && \
+       assert_file_exists "89" "$MR_FLAG_89"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 90: an irreversible row outranks recoverable ones at the cap ---
+echo "Test 90: memory-restore: destroyed-pointer row survives the cap against newer selectable rows"
+REPO_90="$TEST_DIR/repo-90"
+WT_90="$TEST_DIR/repo-90-worktree"
+mkdir -p "$REPO_90"
+git -C "$REPO_90" init -q 2>/dev/null
+git -C "$REPO_90" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_90" worktree add -q --detach "$WT_90" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# Seven newer selectable rows would fill the five-row cap on time alone. Their
+# flags SURVIVE and are offered again at the next /clear; the expired matched flag
+# is deleted by this very run, so its label is the only thing left of it.
+for n in 1 2 3 4 5 6 7; do
+    printf '%s\n%s\n%s\n%s\n' "sess_90_$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_90" "checkpoint-90-sel-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000090-9009$n"
+done
+MR_FLAG_90="$PLANS_DIR/.pending-memory-restore-20260816T000090-90090"
+printf '%s\n%s\n%s\n%s\n' "sess_90" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_90" "checkpoint-90-DESTROYED" > "$MR_FLAG_90"
+touch -t "$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)" "$MR_FLAG_90"
+OUTPUT=$(echo '{"cwd":"'"$REPO_90"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_90" ]] && \
+   assert_contains "90" "$OUTPUT" "checkpoint-90-DESTROYED" && \
+   assert_contains "90" "$OUTPUT" "consumed WITHOUT restoring" && \
+   assert_file_not_exists "90" "$MR_FLAG_90"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 91: a readable but NON-SEARCHABLE plans directory must not read as empty ---
+echo "Test 91: memory-restore: mode-600 PLANS_DIR is reported, not silently treated as having no flags"
+CWD_91="$TEST_DIR/worktree-91"
+mkdir -p "$CWD_91"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_91="$PLANS_DIR/.pending-memory-restore-20260816T000091-91091"
+printf '%s\n%s\n%s\n%s\n' "sess_91" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_91" "checkpoint-91" > "$MR_FLAG_91"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root searches a directory regardless of the execute bit)"
+    PASS=$((PASS + 1))
+else
+    # Mode 600 is the quieter failure: the glob still expands because the directory
+    # is readable, but every `[[ -f ]]` fails for want of the search bit, so each
+    # flag is dropped one at a time and the scan looks empty.
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 600 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_91"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "91" "$OUTPUT" "could NOT be inspected" && \
+       assert_not_contains "91" "$OUTPUT" "Signal: resume" && \
+       assert_file_exists "91" "$MR_FLAG_91"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 92: when the hook's OWN cwd cannot be resolved, assert nothing ---
+echo "Test 92: memory-restore: unresolvable hook cwd -> withheld, never a repository claim"
+CWD_92="$TEST_DIR/worktree-92"
+mkdir -p "$CWD_92"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_92="$PLANS_DIR/.pending-memory-restore-20260816T000092-92092"
+printf '%s\n%s\n%s\n%s\n' "sess_92" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_92" "checkpoint-92" > "$MR_FLAG_92"
+# scope_key returns empty for the hook's OWN cwd here, so no flag can be checked
+# against this session at all. Calling the difference "different repository" would
+# assert what was never checked; printing the row would put a path and a label into
+# a session that could not establish they are its own. Both are withheld and
+# counted, and the flag is left on disk for the user to read directly. Printing the
+# label here instead would publish another repository's path and label whenever this
+# branch is reached with a foreign flag present — see Test 94, which pins that.
+OUTPUT=$(echo '{"cwd":"'"$TEST_DIR/never-created-92"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Two assertions, not one: the phrase "own directory could not be resolved" appears in
+# BOTH the tail count and the legend, so either line could be deleted and the other
+# would satisfy a single assertion. Each string below appears in exactly one of them.
+if assert_contains "92" "$OUTPUT" "left unclassified because" && \
+   assert_contains "92" "$OUTPUT" "withholding is not a claim" && \
+   assert_not_contains "92" "$OUTPUT" "checkpoint-92" && \
+   assert_not_contains "92" "$OUTPUT" "$CWD_92" && \
+   assert_not_contains "92" "$OUTPUT" "different repository" && \
+   assert_not_contains "92" "$OUTPUT" "scope unverifiable" && \
+   assert_file_exists "92" "$MR_FLAG_92"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 93: a HIGHER-priority verdict must not evict the only selectable row ---
+# Test 80 pins the same guarantee against LOWER-priority pressure (unreachable
+# paths, priority 5), which the sort alone already handles. Priority 2
+# (`MATCHED but expired`) outranks priority 3, so only higher-priority pressure
+# reaches the reserved display slot.
+echo "Test 93: memory-restore: 5 expired-matched rows must not evict the only selectable row"
+REPO_93="$TEST_DIR/repo-93"
+WT_93="$TEST_DIR/repo-93-worktree"
+mkdir -p "$REPO_93"
+git -C "$REPO_93" init -q 2>/dev/null
+git -C "$REPO_93" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_93" worktree add -q --detach "$WT_93" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_93=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
+STAMP_93=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
+for n in 1 2 3 4 5; do
+    printf '%s\n%s\n%s\n%s\n' "sess_93_$n" "$OLD_93" "$REPO_93" "checkpoint-93-expired-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000093-9309$n"
+    touch -t "$STAMP_93" "$PLANS_DIR/.pending-memory-restore-20260816T000093-9309$n"
+done
+MR_FLAG_93="$PLANS_DIR/.pending-memory-restore-20260816T120093-93093"
+printf '%s\n%s\n%s\n%s\n' "sess_93" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_93" "checkpoint-93-selectable" > "$MR_FLAG_93"
+OUTPUT=$(echo '{"cwd":"'"$REPO_93"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The notes tell the agent to offer "those rows only" and to delete the chosen
+# row's flag, so BOTH the row and its key must be on screen, not merely counted.
+# The reserved slot must be SPENT, not added: five rows in, five rows out. Without
+# this count the cap could stay at five while the reservation also fires, printing
+# six rows, and every other assertion here would still hold.
+ROWS_93=$(printf '%s' "$OUTPUT" | grep -o 'n- checkpoint-93' | wc -l | tr -d ' ')
+if [[ -d "$WT_93" ]] && \
+   assert_contains "93" "$OUTPUT" "checkpoint-93-selectable" && \
+   assert_contains "93" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "93" "$OUTPUT" "flag 20260816T120093-93093" && \
+   assert_contains "93" "$OUTPUT" "AskUserQuestion" && \
+   [[ "$ROWS_93" -eq 5 ]] && \
+   assert_file_exists "93" "$MR_FLAG_93"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (rows printed: ${ROWS_93}, expected 5)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 94: an unresolvable hook cwd must not publish another repository's identifiers ---
+# The withholding must be a property of the classification, not a side effect of this
+# session's own cwd resolving. Control pair: the SAME flag, two hook cwds.
+echo "Test 94: memory-restore: foreign flag stays withheld even when the hook cwd is unresolvable"
+REPO_94="$TEST_DIR/repo-94"
+OTHER_94="$TEST_DIR/other-client-repo-94"
+mkdir -p "$REPO_94" "$OTHER_94"
+git -C "$OTHER_94" init -q 2>/dev/null
+git -C "$REPO_94" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# A label is free text people fill with a ticket key or a codename, so it is treated
+# as identifying material, not as a description.
+MR_FLAG_94="$PLANS_DIR/.pending-memory-restore-20260816T000094-94094"
+printf '%s\n%s\n%s\n%s\n' "sess_94" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$OTHER_94" "TICKET-9999-codename-94" > "$MR_FLAG_94"
+# TWO flags, not one: the count is the entire deliverable of the withheld band, and
+# with a single flag a hardcoded "1" would satisfy every assertion below.
+OTHER2_94="$TEST_DIR/other-client-repo-94b"
+mkdir -p "$OTHER2_94"
+git -C "$OTHER2_94" init -q 2>/dev/null
+MR_FLAG2_94="$PLANS_DIR/.pending-memory-restore-20260816T000094-94095"
+printf '%s\n%s\n%s\n%s\n' "sess_94b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$OTHER2_94" "TICKET-8888-codename-94b" > "$MR_FLAG2_94"
+OUT_94_OK=$(echo '{"cwd":"'"$REPO_94"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+OUT_94_BAD=$(echo '{"cwd":"'"$TEST_DIR/never-created-94"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "94" "$OUT_94_OK" "2 recorded in another repository" && \
+   assert_not_contains "94" "$OUT_94_OK" "TICKET-8888-codename-94b" && \
+   assert_not_contains "94" "$OUT_94_OK" "TICKET-9999-codename-94" && \
+   assert_not_contains "94" "$OUT_94_BAD" "TICKET-9999-codename-94" && \
+   assert_not_contains "94" "$OUT_94_BAD" "$OTHER_94" && \
+   assert_contains "94" "$OUT_94_BAD" "2 left unclassified because" && \
+   assert_contains "94" "$OUT_94_BAD" "withholding is not a claim" && \
+   assert_file_exists "94" "$MR_FLAG_94" && \
+   assert_file_exists "94" "$MR_FLAG2_94"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 95: two directories inside no repository are "outside this scope", not "another repository" ---
+echo "Test 95: memory-restore: non-repository directories -> outside this scope, no repository claim"
+PLAIN_95_HERE="$TEST_DIR/plain-95-here"
+PLAIN_95_THERE="$TEST_DIR/plain-95-there"
+PLAIN_95_THERE2="$TEST_DIR/plain-95-there-b"
+mkdir -p "$PLAIN_95_HERE" "$PLAIN_95_THERE" "$PLAIN_95_THERE2"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_95="$PLANS_DIR/.pending-memory-restore-20260816T000095-95095"
+printf '%s\n%s\n%s\n%s\n' "sess_95" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLAIN_95_THERE" "checkpoint-95" > "$MR_FLAG_95"
+# Two, so the reported number is load-bearing rather than a constant that happens to
+# match: the count is all this band ever gives the reader.
+MR_FLAG2_95="$PLANS_DIR/.pending-memory-restore-20260816T000095-95096"
+printf '%s\n%s\n%s\n%s\n' "sess_95b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLAIN_95_THERE2" "checkpoint-95b" > "$MR_FLAG2_95"
+# Neither directory is inside a repository, so "a different repository" names
+# something neither side has. Only the difference of scope was established, and the
+# withholding applies on the same rule.
+OUTPUT=$(echo '{"cwd":"'"$PLAIN_95_HERE"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "95" "$OUTPUT" "2 recorded outside this scope, in a directory" && \
+   assert_contains "95" "$OUTPUT" "the only established fact is that the scopes differ" && \
+   assert_not_contains "95" "$OUTPUT" "recorded in another repository" && \
+   assert_not_contains "95" "$OUTPUT" "checkpoint-95" && \
+   assert_not_contains "95" "$OUTPUT" "$PLAIN_95_THERE" && \
+   assert_file_exists "95" "$MR_FLAG_95"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 96: a git that refuses to answer must not become a repository claim ---
+# `git rev-parse` exits 128 both for "not a repository" and for a refusal by a git
+# that started (`safe.directory` dubious ownership, damaged repository), and its
+# messages are translated, so the exit status cannot separate them. A missing `git`
+# executable is a different status entirely -- command-not-found, 127 -- which is why
+# the shim below exits 128 rather than simply being absent. scope_key()
+# settles it with a filesystem fact: a `.git` above the path means a repository is
+# there and only the resolution failed.
+echo "Test 96: memory-restore: git refusing to answer -> withheld, never a repository claim"
+REPO_96="$TEST_DIR/repo-96"
+mkdir -p "$REPO_96/sub" "$TEST_DIR/shim-96"
+git -C "$REPO_96" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_96="$PLANS_DIR/.pending-memory-restore-20260816T000096-96096"
+printf '%s\n%s\n%s\n%s\n' "sess_96" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_96/sub" "checkpoint-96" > "$MR_FLAG_96"
+printf '#!/bin/sh\nexit 128\n' > "$TEST_DIR/shim-96/git"
+chmod +x "$TEST_DIR/shim-96/git"
+OUTPUT=$(echo '{"cwd":"'"$REPO_96"'"}' | PATH="$TEST_DIR/shim-96:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+# The flag genuinely belongs to this repository. Reporting it as another
+# repository's would withhold it under a claim that was never checked, and the
+# accompanying line would tell the reader not to go looking for it.
+if assert_not_contains "96" "$OUTPUT" "recorded in another repository" && \
+   assert_not_contains "96" "$OUTPUT" "recorded outside this scope" && \
+   assert_contains "96" "$OUTPUT" "left unclassified because" && \
+   assert_contains "96" "$OUTPUT" "withholding is not a claim" && \
+   assert_file_exists "96" "$MR_FLAG_96"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 97: an inaccessible directory ABOVE PLANS_DIR must not read as "no checkpoints" ---
+# `-d "$PLANS_DIR"` is false both when the directory is genuinely absent and when a
+# parent denies the search, and only the first justifies silence. This test uses its
+# own sandbox because the parent has to be locked, and the real PLANS_DIR's parent is
+# the directory holding the scripts under test.
+echo "Test 97: memory-restore: unsearchable parent of PLANS_DIR is reported, not silent"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root searches a directory regardless of the execute bit)"
+    PASS=$((PASS + 1))
+else
+    CFG_97="$TEST_DIR/cfg-97"
+    PLANS_97="$CFG_97/plans"
+    CWD_97="$TEST_DIR/worktree-97"
+    mkdir -p "$PLANS_97" "$CWD_97" "$TEST_DIR/t97"
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_97"'"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t97/lib-common.sh"
+    cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t97/on-session-clear.sh"
+    printf '%s\n%s\n%s\n%s\n' "sess_97" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_97" "checkpoint-97" \
+        > "$PLANS_97/.pending-memory-restore-20260816T000097-97097"
+    trap 'chmod 700 "$CFG_97" 2>/dev/null; cleanup' EXIT
+    chmod 600 "$CFG_97"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$CFG_97"
+    trap cleanup EXIT
+    # Two more runs, both with the permissions restored. The first proves the report
+    # was caused by the denial and not by the flag being there; the second proves a
+    # genuinely absent plans directory, with an inspectable parent, is still silent —
+    # otherwise the fix would trade one false report for another.
+    OUT_RECOVERED_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+    rm -rf "$PLANS_97"
+    OUT_GONE_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+    if assert_contains "97" "$OUTPUT" "could NOT be inspected" && \
+       assert_not_contains "97" "$OUT_GONE_97" "could NOT be inspected" && \
+       assert_contains "97" "$OUT_RECOVERED_97" "checkpoint-97"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 98: rows are ordered by priority, and no external sort is consulted ---
+# `sort` was the last fork in this path, and its result was captured unchecked: a
+# failure emptied the whole row set AFTER the matched flags had been consumed, so
+# the block printed a header with no rows and the labels were gone silently.
+echo "Test 98: memory-restore: priority ordering holds with sort(1) broken"
+REPO_98="$TEST_DIR/repo-98"
+WT_98="$TEST_DIR/repo-98-worktree"
+mkdir -p "$REPO_98" "$TEST_DIR/shim-98"
+git -C "$REPO_98" init -q 2>/dev/null
+git -C "$REPO_98" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_98" worktree add -q --detach "$WT_98" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# One matching flag (priority 1) and one same-repository flag (priority 3): the
+# order between them is what the replaced sort key decided.
+# The glob returns these in filename order, and the SELECTABLE one is named first on
+# purpose: if the fixture let scan order agree with priority order, the assertion
+# below would hold even with the ordering removed entirely, and would pin nothing.
+printf '%s\n%s\n%s\n%s\n' "sess_98b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_98" "checkpoint-98-selectable" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000098-98001"
+printf '%s\n%s\n%s\n%s\n' "sess_98a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_98" "checkpoint-98-match" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000098-98002"
+printf '#!/bin/sh\nexit 2\n' > "$TEST_DIR/shim-98/sort"
+chmod +x "$TEST_DIR/shim-98/sort"
+OUTPUT=$(echo '{"cwd":"'"$REPO_98"'"}' | PATH="$TEST_DIR/shim-98:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+# Offset by truncation, not by line: the hook emits one JSON line, so a line-number
+# comparison would call both rows equal, and a per-line column offset would only be
+# comparable by accident. The prefix length before each label is exact either way.
+PRE_MATCH_98="${OUTPUT%%checkpoint-98-match*}"
+PRE_SEL_98="${OUTPUT%%checkpoint-98-selectable*}"
+if [[ -d "$WT_98" ]] && \
+   assert_contains "98" "$OUTPUT" "checkpoint-98-match" && \
+   assert_contains "98" "$OUTPUT" "checkpoint-98-selectable" && \
+   [[ "${#PRE_MATCH_98}" -lt "${#PRE_SEL_98}" ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (match at ${#PRE_MATCH_98}, selectable at ${#PRE_SEL_98})"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Tests 99-100: the per-verdict notes must reach ALL THREE outcome branches ---
+# The notes are appended in all three outcome branches. Covering only the zero-match
+# append leaves the other two free to lose it, and a single match would then silence
+# every explanation while still printing the rows the explanations describe.
+echo "Test 99: memory-restore: a single match still carries the notes block"
+REPO_99="$TEST_DIR/repo-99"
+mkdir -p "$REPO_99"
+git -C "$REPO_99" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_99" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_99" "checkpoint-99" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000099-99099"
+printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000099-99098"
+OUTPUT=$(echo '{"cwd":"'"$REPO_99"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "99" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE (checkpoint: checkpoint-99)" && \
+   assert_contains "99" "$OUTPUT" "malformed flag, no recorded path" && \
+   assert_contains "99" "$OUTPUT" "are corrupt or truncated flag files"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+echo "Test 100: memory-restore: several matches still carry the notes block"
+REPO_100="$TEST_DIR/repo-100"
+mkdir -p "$REPO_100"
+git -C "$REPO_100" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_100a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_100" "checkpoint-100-a" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000100-10001"
+printf '%s\n%s\n%s\n%s\n' "sess_100b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_100" "checkpoint-100-b" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000100-10002"
+printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000100-10003"
+OUTPUT=$(echo '{"cwd":"'"$REPO_100"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The header promises `(label — saved at)`. Asserting the label alone is satisfied by
+# the candidates block ABOVE, which also carries it — so the collision list can have
+# its fields swapped or shifted and the assertion still holds.
+if assert_contains "100" "$OUTPUT" "2 checkpoints for this directory" && \
+   assert_contains "100" "$OUTPUT" "n- checkpoint-100-a — 2026-" && \
+   assert_contains "100" "$OUTPUT" "n- checkpoint-100-b — 2026-" && \
+   assert_contains "100" "$OUTPUT" "are corrupt or truncated flag files"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 101: the unclaimable note names the directory to fix ---
+# Tests 78 and 85 match text that comes from the ROW verdict, so the note itself
+# — the only line that says what to DO about it — was unpinned.
+echo "Test 101: memory-restore: an unclaimable match explains which directory to fix"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root writes a directory regardless of the write bit)"
+    PASS=$((PASS + 1))
+else
+    CWD_101="$TEST_DIR/worktree-101"
+    mkdir -p "$CWD_101"
+    rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    MR_FLAG_101="$PLANS_DIR/.pending-memory-restore-20260816T000101-10101"
+    printf '%s\n%s\n%s\n%s\n' "sess_101" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_101" "checkpoint-101" > "$MR_FLAG_101"
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 500 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_101"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "101" "$OUTPUT" "could NOT be claimed" && \
+       assert_contains "101" "$OUTPUT" "Check the permissions on" && \
+       assert_file_exists "101" "$MR_FLAG_101"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 102: a destroyed pointer the cap could not show must be counted and said ---
+echo "Test 102: memory-restore: expired-matched rows past the cap are counted as GONE labels"
+CWD_102="$TEST_DIR/worktree-102"
+mkdir -p "$CWD_102"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_102=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
+STAMP_102=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
+for n in 1 2 3 4 5 6 7; do
+    printf '%s\n%s\n%s\n%s\n' "sess_102_$n" "$OLD_102" "$CWD_102" "checkpoint-102-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000102-1020$n"
+    touch -t "$STAMP_102" "$PLANS_DIR/.pending-memory-restore-20260816T000102-1020$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$CWD_102"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Seven expired matches, five slots: two labels are destroyed AND unprintable, and
+# saying "their labels are in the list above" would then be false.
+if assert_contains "102" "$OUTPUT" "2 more not shown, 2 of them destroyed pointers" && \
+   assert_contains "102" "$OUTPUT" "those labels are GONE" && \
+   assert_not_contains "102" "$OUTPUT" "Their labels are in the list above"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 103: a name matching the glob that cannot be opened is counted, not skipped ---
+echo "Test 103: memory-restore: dangling symlink and directory sharing the flag prefix are counted"
+CWD_103="$TEST_DIR/worktree-103"
+mkdir -p "$CWD_103"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+ln -s "$TEST_DIR/never-created-103" "$PLANS_DIR/.pending-memory-restore-20260816T000103-10301"
+mkdir -p "$PLANS_DIR/.pending-memory-restore-20260816T000103-10302"
+OUTPUT=$(echo '{"cwd":"'"$CWD_103"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+rm -rf "$PLANS_DIR/.pending-memory-restore-20260816T000103-10302" "$PLANS_DIR/.pending-memory-restore-20260816T000103-10301"
+if assert_contains "103" "$OUTPUT" "2 matched the flag name but could NOT be opened"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 104: a flag lost to a concurrent hook is NOT a filesystem error ---
+# The two share a failing `mv` and are told apart by whether the file is still
+# there. Confusing them would tell the user to go fix permissions that are fine,
+# and would suppress the "no flag was consumed" sentence that depends on the count.
+echo "Test 104: memory-restore: a lost race is reported as a race, not as a permissions fault"
+CWD_104="$TEST_DIR/worktree-104"
+mkdir -p "$CWD_104" "$TEST_DIR/shim-104"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_104" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_104" "checkpoint-104" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000104-10401"
+# Stand in for the concurrent hook: remove the flag, then fail, so the claim finds
+# the file gone rather than still present.
+printf '#!/bin/sh\nrm -f "$1"\nexit 1\n' > "$TEST_DIR/shim-104/mv"
+chmod +x "$TEST_DIR/shim-104/mv"
+OUTPUT=$(echo '{"cwd":"'"$CWD_104"'"}' | PATH="$TEST_DIR/shim-104:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+if assert_contains "104" "$OUTPUT" "claimed concurrently by another session" && \
+   assert_not_contains "104" "$OUTPUT" "could NOT be claimed because of a filesystem error" && \
+   assert_not_contains "104" "$OUTPUT" "no flag was consumed"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 105: a plans directory without the READ bit must be reported ---
+# Test 91 covers mode 600 (readable, non-searchable). Mode 300 is the other bit and
+# fails differently: the glob cannot expand at all and yields its own pattern.
+echo "Test 105: memory-restore: mode-300 PLANS_DIR is reported, not treated as empty"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root reads a directory regardless of the read bit)"
+    PASS=$((PASS + 1))
+else
+    CWD_105="$TEST_DIR/worktree-105"
+    mkdir -p "$CWD_105"
+    rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    printf '%s\n%s\n%s\n%s\n' "sess_105" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_105" "checkpoint-105" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000105-10501"
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 300 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_105"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "105" "$OUTPUT" "could NOT be inspected"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 106: an over-long label is truncated, and says so ---
+echo "Test 106: memory-restore: an over-long label is cut and marked, not printed whole"
+CWD_106="$TEST_DIR/worktree-106"
+mkdir -p "$CWD_106"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+LABEL_106=$(printf 'x%.0s' $(seq 1 260))
+printf '%s\n%s\n%s\n%s\n' "sess_106" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_106" "$LABEL_106" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000106-10601"
+OUTPUT=$(echo '{"cwd":"'"$CWD_106"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# A label cut without a marker reads as a real label that simply is not the one on
+# disk, which is the failure the bound exists to prevent.
+if assert_not_contains "106" "$OUTPUT" "$LABEL_106" && \
+   assert_contains "106" "$OUTPUT" "xxx…"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 107: the 24-hour freshness window, pinned close to 24 hours ---
+# The suite's other flags sit at 20 hours and 2 days, so the window could be moved
+# anywhere between them without a test noticing.
+echo "Test 107: memory-restore: a 25-hour non-matching flag is stale, a 23-hour one is fresh"
+REPO_107="$TEST_DIR/repo-107"
+WT_107="$TEST_DIR/repo-107-worktree"
+mkdir -p "$REPO_107"
+git -C "$REPO_107" init -q 2>/dev/null
+git -C "$REPO_107" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_107" worktree add -q --detach "$WT_107" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_107="$PLANS_DIR/.pending-memory-restore-20260816T000107-10701"
+printf '%s\n%s\n%s\n%s\n' "sess_107" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_107" "checkpoint-107" > "$MR_FLAG_107"
+touch -t "$(date -v-25H +%Y%m%d%H%M 2>/dev/null || date -d '25 hours ago' +%Y%m%d%H%M)" "$MR_FLAG_107"
+OUT_STALE_107=$(echo '{"cwd":"'"$REPO_107"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+touch -t "$(date -v-23H +%Y%m%d%H%M 2>/dev/null || date -d '23 hours ago' +%Y%m%d%H%M)" "$MR_FLAG_107"
+OUT_FRESH_107=$(echo '{"cwd":"'"$REPO_107"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_107" ]] && \
+   assert_not_contains "107" "$OUT_STALE_107" "checkpoint-107" && \
+   assert_contains "107" "$OUT_STALE_107" "older than 24h, left in place" && \
+   assert_contains "107" "$OUT_FRESH_107" "checkpoint-107" && \
+   assert_contains "107" "$OUT_FRESH_107" "same repository, selectable"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 108: the reported scope is the repository root, not its .git ---
+# Every other assertion compares two scope_key results against each other, so the
+# value itself was never pinned to a path a reader could recognize.
+echo "Test 108: memory-restore: the scope shown is the repository main working tree"
+REPO_108="$TEST_DIR/repo-108"
+WT_108="$TEST_DIR/repo-108-worktree"
+mkdir -p "$REPO_108"
+git -C "$REPO_108" init -q 2>/dev/null
+git -C "$REPO_108" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_108" worktree add -q --detach "$WT_108" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000108-10801"
+REPO_108_PHYS=$(cd "$REPO_108" && pwd -P)
+OUTPUT=$(echo '{"cwd":"'"$WT_108"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_108" ]] && \
+   assert_contains "108" "$OUTPUT" "(scope: ${REPO_108_PHYS})" && \
+   assert_not_contains "108" "$OUTPUT" "${REPO_108_PHYS}/.git"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 109: one message must not say a row was withheld and then print it ---
+echo "Test 109: memory-restore: matched rows past the cap are not counted as withheld"
+REPO_109="$TEST_DIR/repo-109"
+mkdir -p "$REPO_109"
+git -C "$REPO_109" init -q 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+for n in 1 2 3 4 5 6 7 8; do
+    printf '%s\n%s\n%s\n%s\n' "sess_109_$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_109" "checkpoint-109-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000109-1090$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$REPO_109"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Eight matches, five display slots, and the ask-which-one list below prints all
+# eight — so "3 more not shown" was contradicted three lines later in the same
+# message. Every label must be present, and nothing may be called withheld.
+LISTED_109=0
+for n in 1 2 3 4 5 6 7 8; do
+    printf '%s' "$OUTPUT" | grep -q "checkpoint-109-$n" && LISTED_109=$((LISTED_109 + 1))
+done
+if assert_contains "109" "$OUTPUT" "8 checkpoints for this directory" && \
+   assert_contains "109" "$OUTPUT" "further matched flag(s) listed in full below" && \
+   assert_not_contains "109" "$OUTPUT" "more not shown" && \
+   [[ "$LISTED_109" -eq 8 ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (labels present: $LISTED_109/8)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 110: the seven-day sweep counts only what THIS hook removed ---
+# `rm -f` also succeeds on a file a concurrent hook already deleted, so the sweep
+# claims the flag with `mv` first. Without the claim the loser of a race reports a
+# removal it did not perform, and the count is the only audit trace this path leaves.
+echo "Test 110: memory-restore: a swept flag lost to a concurrent hook is not counted as removed"
+CWD_110="$TEST_DIR/worktree-110"
+mkdir -p "$CWD_110" "$TEST_DIR/shim-110"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_110="$PLANS_DIR/.pending-memory-restore-20260816T000110-11001"
+printf '%s\n%s\n%s\n%s\n' "sess_110" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-110" "checkpoint-110" > "$MR_FLAG_110"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_110"
+# Stand in for the concurrent hook: take the file, then fail, so the claim finds it gone.
+printf '#!/bin/sh\nrm -f "$1"\nexit 1\n' > "$TEST_DIR/shim-110/mv"
+chmod +x "$TEST_DIR/shim-110/mv"
+OUTPUT=$(echo '{"cwd":"'"$CWD_110"'"}' | PATH="$TEST_DIR/shim-110:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+if assert_not_contains "110" "$OUTPUT" "removed as older than 7 days"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 111: litter is reported by KIND, and an in-flight file is not litter ---
+# A `.mr-claimed.*` is the ORIGINAL flag, moved rather than rewritten, so it still
+# holds a label and a recorded path. A `.mr-tmp.*` may or may not: the writer fills
+# the temp file before renaming it, so only an EMPTY one holds nothing. This test
+# plants an empty one; tests 124-126 cover the non-empty cases. One counter for both
+# said something false about the second, and sent the reader to a glob it never matches.
+echo "Test 111: memory-restore: stranded claim files, interrupted writes and in-flight files are told apart"
+CWD_111="$TEST_DIR/worktree-111"
+mkdir -p "$CWD_111"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+OLD_111=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+MID_111=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+GONE_111="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11101"
+TMPOLD_111="$PLANS_DIR/.mr-tmp.99999.old-11102"
+KEPT_111="$PLANS_DIR/.mr-claimed.99999.20260810T000000-11103"
+FLIGHT_111="$PLANS_DIR/.mr-claimed.99999.inflight-11104"
+printf 'stranded\n' > "$GONE_111";  touch -t "$OLD_111" "$GONE_111"
+printf '' > "$TMPOLD_111";          touch -t "$OLD_111" "$TMPOLD_111"
+printf 'still-here\n' > "$KEPT_111"; touch -t "$MID_111" "$KEPT_111"
+printf 'in-flight\n' > "$FLIGHT_111"
+OUTPUT=$(echo '{"cwd":"'"$CWD_111"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The in-flight claim belongs to a concurrent hook, which has already reported it as
+# a row of its own; calling it stranded reports another session's work as wreckage.
+if [[ ! -e "$GONE_111" ]] && [[ ! -e "$TMPOLD_111" ]] && [[ -e "$KEPT_111" ]] && [[ -e "$FLIGHT_111" ]] && \
+   assert_contains "111" "$OUTPUT" "1 stranded claim file(s) removed, whatever pointer they held is gone" && \
+   assert_contains "111" "$OUTPUT" "1 stranded claim file(s)" && \
+   assert_contains "111" "$OUTPUT" "still hold a checkpoint pointer no scan reads" && \
+   assert_not_contains "111" "$OUTPUT" "2 stranded claim file(s)" && \
+   assert_contains "111" "$OUTPUT" "1 interrupted flag write(s)" && \
+   assert_contains "111" "$OUTPUT" "verified empty, so nothing was lost"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$KEPT_111" "$FLIGHT_111"
+
+# --- Test 119: litter this hook could not remove must not vanish from the report ---
+# `rm` needs write permission on the DIRECTORY. Counting only the successes let a
+# stranded pointer disappear from the output entirely while staying on disk — the
+# same silence this loop was rewritten to remove, reintroduced in a third outcome.
+echo "Test 119: memory-restore: a stranded file that cannot be removed is reported, not passed over"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root writes a directory regardless of the write bit)"
+    PASS=$((PASS + 1))
+else
+    CWD_119="$TEST_DIR/worktree-119"
+    mkdir -p "$CWD_119"
+    rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    STUCK_119="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11901"
+    printf 'k\n2026-01-01T00:00:00+0900\n%s\nIMPORTANT-119\n' "$CWD_119" > "$STUCK_119"
+    touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_119"
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 0555 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_119"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if [[ -e "$STUCK_119" ]] && \
+       assert_contains "119" "$OUTPUT" "could NOT be removed" && \
+       assert_not_contains "119" "$OUTPUT" "IMPORTANT-119"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+    rm -f "$STUCK_119"
+fi
+
+# --- Test 112: the candidates block survives without sort(1) or awk(1) ---
+# Ordering and row selection are builtins. Forking for them and capturing the result
+# unchecked empties the row set or the matched-row list AFTER the flags have been
+# consumed, taking the labels with it. This pins that the forks are gone rather than
+# merely unused today.
+echo "Test 112: memory-restore: the whole report is produced without sort(1) or awk(1)"
+REPO_112="$TEST_DIR/repo-112"
+WT_112="$TEST_DIR/repo-112-worktree"
+mkdir -p "$REPO_112" "$TEST_DIR/shim-112"
+git -C "$REPO_112" init -q 2>/dev/null
+git -C "$REPO_112" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_112" worktree add -q --detach "$WT_112" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_112a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_112" "checkpoint-112-a" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000112-11201"
+printf '%s\n%s\n%s\n%s\n' "sess_112b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_112" "checkpoint-112-b" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000112-11202"
+printf '%s\n%s\n%s\n%s\n' "sess_112c" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_112" "checkpoint-112-selectable" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000112-11203"
+for helper in sort awk; do
+    printf '#!/bin/sh\nexit 127\n' > "$TEST_DIR/shim-112/$helper"
+    chmod +x "$TEST_DIR/shim-112/$helper"
+done
+OUTPUT=$(echo '{"cwd":"'"$REPO_112"'"}' | PATH="$TEST_DIR/shim-112:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+if [[ -d "$WT_112" ]] && \
+   assert_contains "112" "$OUTPUT" "2 checkpoints for this directory" && \
+   assert_contains "112" "$OUTPUT" "checkpoint-112-a" && \
+   assert_contains "112" "$OUTPUT" "checkpoint-112-b" && \
+   assert_contains "112" "$OUTPUT" "checkpoint-112-selectable" && \
+   assert_contains "112" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "112" "$OUTPUT" "AskUserQuestion"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 113: a separate git directory must not split one repository's identity ---
+# scope_key() answers an identity, not a display path. Under
+# `git init --separate-git-dir` it answers the separate git directory; what matters is
+# that the working tree and its linked worktrees still agree, because a flag armed in
+# one must be selectable from the other.
+echo "Test 113: memory-restore: --separate-git-dir repo and its worktree share one scope"
+WORK_113="$TEST_DIR/work-113"
+GITDIR_113="$TEST_DIR/gitdir-113"
+WT_113="$TEST_DIR/wt-113"
+mkdir -p "$WORK_113"
+git -C "$WORK_113" init -q --separate-git-dir="$GITDIR_113" 2>/dev/null
+git -C "$WORK_113" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$WORK_113" worktree add -q --detach "$WT_113" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_113="$PLANS_DIR/.pending-memory-restore-20260816T000113-11301"
+printf '%s\n%s\n%s\n%s\n' "sess_113" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_113" "checkpoint-113" > "$MR_FLAG_113"
+OUTPUT=$(echo '{"cwd":"'"$WORK_113"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_113" ]] && \
+   assert_contains "113" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "113" "$OUTPUT" "checkpoint-113" && \
+   assert_not_contains "113" "$OUTPUT" "recorded outside this scope" && \
+   assert_not_contains "113" "$OUTPUT" "recorded in another repository" && \
+   assert_file_exists "113" "$MR_FLAG_113"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 114: a relative, missing PLANS_DIR must not hang the hook ---
+# `${d%/*}` returns a slashless string UNCHANGED, so walking up by that alone never
+# terminates once the last separator is gone. Reachable whenever CLAUDE_CONFIG_DIR is
+# relative and its first component is missing. The hook is then killed at the
+# SessionStart timeout: no checkpoint report, no plan restore, no error the session
+# can see — a worse silence than the one the guard was added to remove.
+echo "Test 114: memory-restore: a relative missing PLANS_DIR terminates instead of spinning"
+mkdir -p "$TEST_DIR/t114" "$TEST_DIR/cwd-114"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="cfg-114-missing/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t114/lib-common.sh"
+cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t114/on-session-clear.sh"
+OUT_114="$TEST_DIR/out-114.txt"
+: > "$OUT_114"
+( cd "$TEST_DIR" && echo '{"cwd":"'"$TEST_DIR/cwd-114"'"}' | bash "$TEST_DIR/t114/on-session-clear.sh" > "$OUT_114" 2>/dev/null ) &
+HOOK_PID_114=$!
+WAITED_114=0
+while kill -0 "$HOOK_PID_114" 2>/dev/null && [[ "$WAITED_114" -lt 10 ]]; do
+    sleep 1
+    WAITED_114=$((WAITED_114 + 1))
+done
+if kill -0 "$HOOK_PID_114" 2>/dev/null; then
+    kill -9 "$HOOK_PID_114" 2>/dev/null
+    HUNG_114="yes"
+else
+    HUNG_114="no"
+fi
+wait "$HOOK_PID_114" 2>/dev/null || true
+OUTPUT=$(cat "$OUT_114")
+# The working directory IS inspectable, so the plans directory is verifiably absent
+# and silence about checkpoints is the correct answer — not a report of denied access.
+if [[ "$HUNG_114" == "no" ]] && \
+   assert_not_contains "114" "$OUTPUT" "could NOT be inspected"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (hung: $HUNG_114 after ${WAITED_114}s)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 115: an undeterminable working directory must be reported, not silent ---
+# The scan is skipped on an empty cwd because "" would match every truncated flag.
+# Skipping is right; saying nothing about it is the pre-fix failure mode. Bash leaves
+# PWD empty when it is unset in the environment AND getcwd() fails — which is what a
+# REMOVED working directory does, the motivating scenario of this whole change.
+echo "Test 115: memory-restore: an undeterminable cwd is reported, not passed over in silence"
+CWD_115="$TEST_DIR/gone-115"
+mkdir -p "$CWD_115"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_115="$PLANS_DIR/.pending-memory-restore-20260816T000115-11501"
+printf '%s\n%s\n%s\n%s\n' "sess_115" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_115" "checkpoint-115" > "$MR_FLAG_115"
+OUTPUT=$( cd "$CWD_115" && rmdir "$CWD_115" && echo '{}' | env -u PWD /bin/bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null )
+PWD_SEEN_115=$( cd / && env -u PWD /bin/bash -c 'echo "[$PWD]"' )
+# Nothing may be consumed either: with no cwd, no flag can be shown to be this
+# session's, so claiming one would destroy a pointer on a guess.
+if assert_contains "115" "$OUTPUT" "working directory could not be determined" && \
+   assert_not_contains "115" "$OUTPUT" "Checkpoint candidates seen" && \
+   assert_file_exists "115" "$MR_FLAG_115"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (control: bash with a normal cwd reports PWD=$PWD_SEEN_115)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 116: the row ordering agrees with the sort(1) key it replaced, and is stable ---
+# Checked at the function level, not through the hook: the hook cannot be made to
+# produce two rows with an identical mtime AND timestamp on demand, and ties are
+# exactly where a hand-written sort goes wrong.
+echo "Test 116: memory-restore: _mr_sort_rows matches sort(1) and preserves input order on ties"
+SORTFN_116="$TEST_DIR/sortfn-116.sh"
+sed -n '/^_mr_sort_rows() {/,/^}/p' "$SCRIPT_DIR/scripts/on-session-clear.sh" > "$SORTFN_116"
+SORT_OK_116=1
+[[ -s "$SORTFN_116" ]] || SORT_OK_116=0
+if [[ "$SORT_OK_116" -eq 1 ]]; then
+    ORDER_116=$(bash -c '
+        . "'"$SORTFN_116"'"
+        _mr_rows=""
+        # Same priority, same mtime, same timestamp: only input order can decide.
+        for i in A B C D E F; do
+            _mr_rows+="3"$'"'"'\037'"'"'"1700000000"$'"'"'\037'"'"'"v"$'"'"'\037'"'"'"tie-$i"$'"'"'\037'"'"'"2026-08-16T00:00:00+0900"$'"'"'\037'"'"'"/p"$'"'"'\037'"'"'"k$i"$'"'"'\n'"'"'
+        done
+        _mr_sort_rows
+        printf "%s" "$_mr_rows" | cut -d$'"'"'\037'"'"' -f4 | tr "\n" " "
+    ')
+    AGREE_116=$(bash -c '
+        . "'"$SORTFN_116"'"
+        _mr_rows=""
+        # Distinct keys, deliberately fed in the order the glob produces: priority
+        # interleaved and mtime ASCENDING, which is the order flag filenames impose.
+        for i in 1 2 3 4 5 6; do
+            p=$(( (i % 3) + 1 ))
+            _mr_rows+="${p}"$'"'"'\037'"'"'"$((1700000000 + i))"$'"'"'\037'"'"'"v"$'"'"'\037'"'"'"l$i"$'"'"'\037'"'"'"2026-08-16T00:00:0${i}+0900"$'"'"'\037'"'"'"/p"$'"'"'\037'"'"'"k$i"$'"'"'\n'"'"'
+        done
+        expected=$(printf "%s" "$_mr_rows" | sort -t$'"'"'\037'"'"' -k1,1n -k2,2rn -k5,5r)
+        _mr_sort_rows
+        [[ "$(printf "%s" "$_mr_rows")" == "$expected" ]] && echo same || echo differs
+    ')
+    # The third key decides only when priority AND mtime tie, which no end-to-end
+    # fixture can arrange on demand: reversing it, or deleting the branch entirely,
+    # changes nothing anywhere else in the suite.
+    THIRDKEY_116=$(bash -c '
+        . "'"$SORTFN_116"'"
+        _mr_rows=""
+        for i in 1 2 3; do
+            _mr_rows+="1"$'"'"'\037'"'"'"1700000000"$'"'"'\037'"'"'"v"$'"'"'\037'"'"'"tk-$i"$'"'"'\037'"'"'"2026-08-16T00:00:0${i}+0900"$'"'"'\037'"'"'"/p"$'"'"'\037'"'"'"k$i"$'"'"'\n'"'"'
+        done
+        _mr_sort_rows
+        printf "%s" "$_mr_rows" | cut -d$'"'"'\037'"'"' -f4 | tr "\n" " "
+    ')
+else
+    ORDER_116="(function not extracted)"
+    AGREE_116="(function not extracted)"
+    THIRDKEY_116="(function not extracted)"
+fi
+if [[ "$ORDER_116" == "tie-A tie-B tie-C tie-D tie-E tie-F " ]] && [[ "$AGREE_116" == "same" ]] && \
+   [[ "$THIRDKEY_116" == "tk-3 tk-2 tk-1 " ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (tie order: '$ORDER_116'; vs sort: $AGREE_116; third key: '$THIRDKEY_116')"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 117: every counted match must appear in the list the agent is told to offer ---
+echo "Test 117: memory-restore: a matched flag with no label and no timestamp is still offered"
+CWD_117="$TEST_DIR/worktree-117"
+mkdir -p "$CWD_117"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_117" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_117" "checkpoint-117-good" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000117-11701"
+# Truncated flag: line 2 (timestamp) and line 4 (label) both blank. It still matched,
+# so it was consumed and its pointer is gone; leaving it out of the ask list means
+# the user is never offered the checkpoint this run destroyed.
+printf '%s\n%s\n%s\n%s\n' "sess_117b" "" "$CWD_117" "" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000117-11702"
+OUTPUT=$(echo '{"cwd":"'"$CWD_117"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+LIST_117="${OUTPUT#*Candidates, newest first}"
+LIST_117="${LIST_117%%BEFORE doing anything else*}"
+# Count OCCURRENCES, not lines: the hook emits one JSON line, so `grep -c` would
+# answer 1 however many rows the list holds.
+OFFERED_117=$(printf '%s' "$LIST_117" | grep -o 'n- ' | wc -l | tr -d ' ')
+if assert_contains "117" "$OUTPUT" "2 checkpoints for this directory" && \
+   [[ "$OFFERED_117" -eq 2 ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (header says 2, list offers $OFFERED_117)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 118: a failing date(1) must not drop rows the header counts ---
+# `_mr_now` feeds the mtime fallback. An empty one propagates into `_mr_mtime`, which
+# the display loop drops on its `-n` guard with no count, while the match count in
+# the header still includes the flag. That is what this test is for, and it still is.
+#
+# What changed: this fixture breaks `stat` as well as `date`, so the age is not merely
+# skewed, it was never established. The assertion used to be "MATCHES this session",
+# which pinned the behaviour where an unmeasured age read as zero — an arbitrarily old
+# checkpoint restored as this session's and then deleted. The row must still be listed
+# with its label, which was always the point; it must now also survive on disk.
+echo "Test 118: memory-restore: a failing date(1) still lists every counted match"
+CWD_118="$TEST_DIR/worktree-118"
+mkdir -p "$CWD_118" "$TEST_DIR/shim-118"
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_118" "2026-08-16T00:00:00+0900" "$CWD_118" "checkpoint-118" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000118-11801"
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/shim-118/date"
+chmod +x "$TEST_DIR/shim-118/date"
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/shim-118/stat"
+chmod +x "$TEST_DIR/shim-118/stat"
+OUTPUT=$(echo '{"cwd":"'"$CWD_118"'"}' | PATH="$TEST_DIR/shim-118:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+# Failure means keep, and keep now means keep: the flag cannot be shown to be stale,
+# so it is neither swept nor consumed, and it is listed with its label so the reader
+# can act on it.
+if [[ -e "$PLANS_DIR/.pending-memory-restore-20260816T000118-11801" ]] && \
+   assert_contains "118" "$OUTPUT" "checkpoint-118" && \
+   assert_contains "118" "$OUTPUT" "age could NOT be established" && \
+   assert_not_contains "118" "$OUTPUT" "MATCHES this session" && \
+   assert_not_contains "118" "$OUTPUT" "removed as older than 7 days"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 120: the reserved slot is taken ONCE, by the first selectable row ---
+# Test 93 pins that a selectable row survives the cap. It cannot pin "once": with a
+# single selectable row, a slot taken twice looks the same as a slot taken once.
+echo "Test 120: memory-restore: two selectable rows past the cap still yield one reserved slot"
+REPO_120="$TEST_DIR/repo-120"
+WTA_120="$TEST_DIR/repo-120-wt-a"
+WTB_120="$TEST_DIR/repo-120-wt-b"
+mkdir -p "$REPO_120"
+git -C "$REPO_120" init -q 2>/dev/null
+git -C "$REPO_120" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_120" worktree add -q --detach "$WTA_120" HEAD 2>/dev/null
+git -C "$REPO_120" worktree add -q --detach "$WTB_120" HEAD 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_120=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
+STAMP_120=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
+for n in 1 2 3 4 5; do
+    printf '%s\n%s\n%s\n%s\n' "sess_120_$n" "$OLD_120" "$REPO_120" "checkpoint-120-expired-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000120-1200$n"
+    touch -t "$STAMP_120" "$PLANS_DIR/.pending-memory-restore-20260816T000120-1200$n"
+done
+# Two selectable rows, distinguishable by mtime so "the first" is well defined: the
+# newer one sorts ahead within its priority band.
+SEL_A_120="$PLANS_DIR/.pending-memory-restore-20260816T120120-12011"
+SEL_B_120="$PLANS_DIR/.pending-memory-restore-20260816T120120-12012"
+printf '%s\n%s\n%s\n%s\n' "sess_120a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WTA_120" "checkpoint-120-sel-newer" > "$SEL_A_120"
+printf '%s\n%s\n%s\n%s\n' "sess_120b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WTB_120" "checkpoint-120-sel-older" > "$SEL_B_120"
+touch -t "$(date -v-3H +%Y%m%d%H%M 2>/dev/null || date -d '3 hours ago' +%Y%m%d%H%M)" "$SEL_B_120"
+OUTPUT=$(echo '{"cwd":"'"$REPO_120"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+ROWS_120=$(printf '%s' "$OUTPUT" | grep -o 'n- checkpoint-120' | wc -l | tr -d ' ')
+if [[ -d "$WTA_120" ]] && [[ -d "$WTB_120" ]] && \
+   [[ "$ROWS_120" -eq 5 ]] && \
+   assert_contains "120" "$OUTPUT" "checkpoint-120-sel-newer" && \
+   assert_not_contains "120" "$OUTPUT" "checkpoint-120-sel-older" && \
+   assert_contains "120" "$OUTPUT" "1 further selectable row(s) could NOT be shown" && \
+   assert_file_exists "120" "$SEL_A_120" && \
+   assert_file_exists "120" "$SEL_B_120"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL (rows printed: ${ROWS_120}, expected 5)"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 121: the position scan must stop at the FIRST selectable row ---
+# The scan decides whether a slot needs reserving. Reading the LAST selectable
+# position instead of the first over-states how far down the list the actionable rows
+# begin, arms the reservation when it is not needed, and costs a display slot that a
+# row would otherwise have had.
+echo "Test 121: memory-restore: the reservation is decided by the first selectable row, not the last"
+REPO_121="$TEST_DIR/repo-121"
+mkdir -p "$REPO_121"
+git -C "$REPO_121" init -q 2>/dev/null
+git -C "$REPO_121" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_121=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
+STAMP_121=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
+for n in 1 2 3; do
+    printf '%s\n%s\n%s\n%s\n' "sess_121_$n" "$OLD_121" "$REPO_121" "checkpoint-121-expired-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T000121-1210$n"
+    touch -t "$STAMP_121" "$PLANS_DIR/.pending-memory-restore-20260816T000121-1210$n"
+done
+WT_OK_121=1
+for n in 1 2 3; do
+    W_121="$TEST_DIR/repo-121-wt-$n"
+    git -C "$REPO_121" worktree add -q --detach "$W_121" HEAD 2>/dev/null
+    [[ -d "$W_121" ]] || WT_OK_121=0
+    printf '%s\n%s\n%s\n%s\n' "sess_121_s$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$W_121" "checkpoint-121-sel-$n" \
+        > "$PLANS_DIR/.pending-memory-restore-20260816T12012$n-1211$n"
+    # Stagger by hours so "first" is well defined: newest sorts ahead within a band.
+    touch -t "$(date -v-${n}H +%Y%m%d%H%M 2>/dev/null || date -d "$n hours ago" +%Y%m%d%H%M)" \
+        "$PLANS_DIR/.pending-memory-restore-20260816T12012$n-1211$n"
+done
+OUTPUT=$(echo '{"cwd":"'"$REPO_121"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Three expired rows then three selectable: the first selectable sits at position 4,
+# inside the cap, so NO slot needs reserving and five rows fit — three expired plus
+# the two newest selectable, with exactly one selectable held back.
+if [[ "$WT_OK_121" -eq 1 ]] && \
+   assert_contains "121" "$OUTPUT" "checkpoint-121-sel-1" && \
+   assert_contains "121" "$OUTPUT" "checkpoint-121-sel-2" && \
+   assert_not_contains "121" "$OUTPUT" "checkpoint-121-sel-3" && \
+   assert_contains "121" "$OUTPUT" "1 more not shown" && \
+   assert_contains "121" "$OUTPUT" "1 further selectable row(s) could NOT be shown"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 122: an ancestor that is searchable but NOT readable is still "cannot tell" ---
+# Test 97 locks the parent to mode 600 — readable, non-searchable — so only the `-x`
+# half of the guard is exercised. Mode 300 is the other half: the directory can be
+# entered but not listed, so absence cannot be established either.
+echo "Test 122: memory-restore: a mode-300 ancestor of PLANS_DIR is reported, not read as absence"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root reads a directory regardless of the read bit)"
+    PASS=$((PASS + 1))
+else
+    CFG_122="$TEST_DIR/cfg-122"
+    CWD_122="$TEST_DIR/worktree-122"
+    mkdir -p "$CFG_122" "$CWD_122" "$TEST_DIR/t122"
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t122/lib-common.sh"
+    cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t122/on-session-clear.sh"
+    trap 'chmod 700 "$CFG_122" 2>/dev/null; cleanup' EXIT
+    chmod 300 "$CFG_122"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_122"'"}' | bash "$TEST_DIR/t122/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$CFG_122"
+    trap cleanup EXIT
+    if assert_contains "122" "$OUTPUT" "could NOT be inspected"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# --- Test 123: an age that could not be established is not an age of zero ---
+# Both `stat` forms failing collapsed the mtime to `now`, and the 60-second in-flight
+# guard then dropped the file from the report entirely. A FUTURE mtime reaches the same
+# state through the positive-staleness clamp, and is the portable way to reach it here.
+echo "Test 123: memory-restore: litter whose age cannot be established is reported, not skipped as in-flight"
+CWD_123="$TEST_DIR/worktree-123"
+mkdir -p "$CWD_123" "$TEST_DIR/fakebin-123"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+# A `stat` that always fails is the real shape of this case. An 8-day-old mtime makes
+# the fixture sweepable, so the assertion that it SURVIVES also pins that nothing is
+# deleted on an age nobody established.
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/fakebin-123/stat"
+chmod +x "$TEST_DIR/fakebin-123/stat"
+OLD_123=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+UNMEASURED_123="$PLANS_DIR/.mr-tmp.99999.nostat-12301"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-123\n' "$CWD_123" > "$UNMEASURED_123"
+touch -t "$OLD_123" "$UNMEASURED_123"
+OUTPUT=$(echo '{"cwd":"'"$CWD_123"'"}' | PATH="$TEST_DIR/fakebin-123:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$UNMEASURED_123" ]] && \
+   assert_contains "123" "$OUTPUT" "1 litter file(s)" && \
+   assert_contains "123" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_not_contains "123" "$OUTPUT" "verified empty" && \
+   assert_not_contains "123" "$OUTPUT" "are NOT empty" && \
+   assert_not_contains "123" "$OUTPUT" "stranded claim file(s)" && \
+   assert_not_contains "123" "$OUTPUT" "could NOT be removed" && \
+   assert_not_contains "123" "$OUTPUT" "LABEL-123"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$UNMEASURED_123"
+rm -rf "$TEST_DIR/fakebin-123"
+
+# --- Test 124: a NON-EMPTY interrupted write that gets swept destroyed a pointer ---
+# `write-reload-flag.sh` writes the whole body into the temp file and only then renames
+# it, so a writer killed before the `mv` leaves a complete flag. Sweeping that while the
+# report says it held no checkpoint deletes a pointer and denies having done so.
+echo "Test 124: memory-restore: sweeping a non-empty interrupted write is reported as a destroyed pointer"
+CWD_124="$TEST_DIR/worktree-124"
+mkdir -p "$CWD_124"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+OLD_124=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+BODY_124="$PLANS_DIR/.mr-tmp.99999.body-12401"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-124\n' "$CWD_124" > "$BODY_124"
+touch -t "$OLD_124" "$BODY_124"
+OUTPUT=$(echo '{"cwd":"'"$CWD_124"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ ! -e "$BODY_124" ]] && \
+   assert_contains "124" "$OUTPUT" "1 interrupted flag write(s)" && \
+   assert_contains "124" "$OUTPUT" "were NOT empty, so whatever they held is gone" && \
+   assert_not_contains "124" "$OUTPUT" "verified empty" && \
+   assert_not_contains "124" "$OUTPUT" "LABEL-124"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 125: a NON-EMPTY interrupted write young enough to keep is not called empty ---
+echo "Test 125: memory-restore: a surviving non-empty interrupted write is reported as still holding a body"
+CWD_125="$TEST_DIR/worktree-125"
+mkdir -p "$CWD_125"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MID_125=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+KEPT_125="$PLANS_DIR/.mr-tmp.99999.body-12501"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-125\n' "$CWD_125" > "$KEPT_125"
+touch -t "$MID_125" "$KEPT_125"
+OUTPUT=$(echo '{"cwd":"'"$CWD_125"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$KEPT_125" ]] && \
+   assert_contains "125" "$OUTPUT" "1 interrupted flag write(s)" && \
+   assert_contains "125" "$OUTPUT" "are NOT empty, so they may hold a checkpoint body" && \
+   assert_not_contains "125" "$OUTPUT" "verified empty" && \
+   assert_not_contains "125" "$OUTPUT" "LABEL-125"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$KEPT_125"
+
+# --- Test 126: an EMPTY interrupted write must still be reported as holding nothing ---
+# Guards the opposite over-correction: testing the file must not turn into claiming a
+# body for every temp file, which would send the reader hunting for a checkpoint that
+# genuinely is not there.
+echo "Test 126: memory-restore: an empty interrupted write is still reported as holding no checkpoint"
+CWD_126="$TEST_DIR/worktree-126"
+mkdir -p "$CWD_126"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MID_126=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+EMPTY_126="$PLANS_DIR/.mr-tmp.99999.empty-12601"
+printf '' > "$EMPTY_126"
+touch -t "$MID_126" "$EMPTY_126"
+OUTPUT=$(echo '{"cwd":"'"$CWD_126"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$EMPTY_126" ]] && \
+   assert_contains "126" "$OUTPUT" "left in" && \
+   assert_contains "126" "$OUTPUT" "verified empty, so they hold no checkpoint and can be deleted" && \
+   assert_not_contains "126" "$OUTPUT" "are NOT empty" && \
+   assert_not_contains "126" "$OUTPUT" "removed as older than 7 days"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$EMPTY_126"
+
+# --- Test 127: claim-versus-temp is decided by the basename, not the whole path ---
+# A whole-path test also fires on any ANCESTOR directory named `.mr-claimed.*`, filing
+# every temp file below it under a glob it never matches.
+echo "Test 127: memory-restore: an ancestor directory named .mr-claimed.* does not make a temp file a claim"
+CFG_127="$TEST_DIR/.mr-claimed.decoy/cfg-127"
+CWD_127="$TEST_DIR/worktree-127"
+mkdir -p "$CFG_127/plans" "$CWD_127" "$TEST_DIR/t127"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_127"'/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t127/lib-common.sh"
+cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t127/on-session-clear.sh"
+MID_127=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+TMP_127="$CFG_127/plans/.mr-tmp.99999.decoy-12701"
+printf '' > "$TMP_127"
+touch -t "$MID_127" "$TMP_127"
+OUTPUT=$(echo '{"cwd":"'"$CWD_127"'"}' | bash "$TEST_DIR/t127/on-session-clear.sh")
+if assert_contains "127" "$OUTPUT" "1 interrupted flag write(s)" && \
+   assert_contains "127" "$OUTPUT" "verified empty, so they hold no checkpoint and can be deleted" && \
+   assert_not_contains "127" "$OUTPUT" "stranded claim file(s)"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$TMP_127"
+
+# --- Test 128: a FUTURE mtime is a file in flight, not a file of unknown age ---
+# `_mr_now` is sampled once, before a per-flag scan that forks several times. A
+# concurrent `write-reload-flag.sh` creating its temp file after that sample leaves an
+# mtime AHEAD of the sample, so this is the ordinary case, not clock skew. It says the
+# file is at most zero seconds old, which is exactly the in-flight case: reporting it
+# as litter reports a live writer's work in progress as wreckage.
+echo "Test 128: memory-restore: a future mtime takes the in-flight exit, not the unexamined one"
+CWD_128="$TEST_DIR/worktree-128"
+mkdir -p "$CWD_128"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+FUTURE_128=$(date -v+30S +%Y%m%d%H%M.%S 2>/dev/null || date -d '30 seconds' +%Y%m%d%H%M.%S)
+LIVE_128="$PLANS_DIR/.mr-tmp.99999.live-12801"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-128\n' "$CWD_128" > "$LIVE_128"
+touch -t "$FUTURE_128" "$LIVE_128"
+OUTPUT=$(echo '{"cwd":"'"$CWD_128"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$LIVE_128" ]] && \
+   assert_not_contains "128" "$OUTPUT" "interrupted flag write(s)" && \
+   assert_not_contains "128" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_not_contains "128" "$OUTPUT" "LABEL-128"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$LIVE_128"
+
+# --- Test 129: sweeping an EMPTY interrupted write must not be reported as still there ---
+# One counter for both outcomes made the hook delete the file and then tell the reader
+# it was "seen in <dir>" and "can be deleted" — two claims the code had just falsified.
+echo "Test 129: memory-restore: a swept empty interrupted write is reported as removed, not as still on disk"
+CWD_129="$TEST_DIR/worktree-129"
+mkdir -p "$CWD_129"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+OLD_129=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+SWEPT_129="$PLANS_DIR/.mr-tmp.99999.empty-12901"
+printf '' > "$SWEPT_129"
+touch -t "$OLD_129" "$SWEPT_129"
+OUTPUT=$(echo '{"cwd":"'"$CWD_129"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ ! -e "$SWEPT_129" ]] && \
+   assert_contains "129" "$OUTPUT" "verified empty, so nothing was lost" && \
+   assert_not_contains "129" "$OUTPUT" "can be deleted"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 130: a mtime FAR ahead of the clock is not a live writer ---
+# The in-flight reading is bounded by the same 60s the guard uses, because it exists for
+# one phenomenon: `_mr_now` is sampled once, so a concurrent writer lands just after it.
+# A restored backup, a `cp -p` from a machine running ahead or an NFS server's clock puts
+# a file years out, and reading THAT as "at most zero seconds old" hides it forever.
+echo "Test 130: memory-restore: a mtime far ahead of the clock is reported, not read as in-flight"
+CWD_130="$TEST_DIR/worktree-130"
+mkdir -p "$CWD_130"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+FAR_130=$(date -v+2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days' +%Y%m%d%H%M)
+FAR_FILE_130="$PLANS_DIR/.mr-claimed.99999.20991231T235959-13001"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-130\n' "$CWD_130" > "$FAR_FILE_130"
+touch -t "$FAR_130" "$FAR_FILE_130"
+OUTPUT=$(echo '{"cwd":"'"$CWD_130"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$FAR_FILE_130" ]] && \
+   assert_contains "130" "$OUTPUT" "1 litter file(s)" && \
+   assert_contains "130" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_not_contains "130" "$OUTPUT" "stranded claim file(s)" && \
+   assert_not_contains "130" "$OUTPUT" "LABEL-130"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$FAR_FILE_130"
+
+# --- Test 131: a failing clock must not silence the whole sweep ---
+# `_mr_now` is forced to 0 when `date +%s` gives a non-number. Reading that as "every file
+# is at most zero seconds old" sends EVERY litter file out the in-flight exit, so the
+# report is empty and the session sees fresh-start while the files sit there untouched.
+# A global clock failure is not a per-file freshness fact.
+echo "Test 131: memory-restore: a failing date(1) does not silence the litter sweep"
+CWD_131="$TEST_DIR/worktree-131"
+mkdir -p "$CWD_131" "$TEST_DIR/fakebin-131"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+cat > "$TEST_DIR/fakebin-131/date" <<'FAKEDATE'
+#!/bin/sh
+for a in "$@"; do
+    if [ "$a" = "+%s" ]; then echo "notanumber"; exit 0; fi
+done
+exec /bin/date "$@"
+FAKEDATE
+chmod +x "$TEST_DIR/fakebin-131/date"
+OLD_131=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+CLAIM_131="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13101"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-131\n' "$CWD_131" > "$CLAIM_131"
+touch -t "$OLD_131" "$CLAIM_131"
+OUTPUT=$(echo '{"cwd":"'"$CWD_131"'"}' | PATH="$TEST_DIR/fakebin-131:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$CLAIM_131" ]] && \
+   assert_contains "131" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_not_contains "131" "$OUTPUT" "LABEL-131"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$CLAIM_131"
+rm -rf "$TEST_DIR/fakebin-131"
+
+# --- Test 132: the candidates-block tail reports litter too ---
+# The tail renders only when the flag scan produced a row, so a sweep holding ONLY litter
+# never reaches it. Every other litter test clears the flags first, which left all eight
+# tail sentences unexecuted: a mutation blanking them kept the suite green. The two sites
+# word the same counter differently, so a fallback assertion cannot cover this one.
+echo "Test 132: memory-restore: litter is reported inside the candidates block, not only in the fallback"
+CWD_132="$TEST_DIR/worktree-132"
+mkdir -p "$CWD_132"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MR_FLAG_132="$PLANS_DIR/.pending-memory-restore-20260718T000000-13201"
+printf '%s\n%s\n%s\n%s\n' "sess_132" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_132" "checkpoint-132" > "$MR_FLAG_132"
+MID_132=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+BODY_132="$PLANS_DIR/.mr-tmp.99999.body-13202"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-132\n' "$CWD_132" > "$BODY_132"
+touch -t "$MID_132" "$BODY_132"
+OUTPUT=$(echo '{"cwd":"'"$CWD_132"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$BODY_132" ]] && \
+   assert_contains "132" "$OUTPUT" "1 interrupted flag write(s) left in place are NOT empty" && \
+   assert_not_contains "132" "$OUTPUT" "LABEL-132"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$BODY_132"
+
+# --- Test 133: a swept claim file alone must reach the directive ---
+# The `elif` that decides whether a directive is emitted lists every counter by name.
+# With no test where a claim counter is the ONLY non-zero one, its term could be deleted
+# and the suite would stay green while a scan that found something reported nothing.
+echo "Test 133: memory-restore: a swept stranded claim file alone still produces a directive"
+CWD_133="$TEST_DIR/worktree-133"
+mkdir -p "$CWD_133"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+OLD_133=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+GONE_133="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13301"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-133\n' "$CWD_133" > "$GONE_133"
+touch -t "$OLD_133" "$GONE_133"
+OUTPUT=$(echo '{"cwd":"'"$CWD_133"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ ! -e "$GONE_133" ]] && \
+   assert_contains "133" "$OUTPUT" "1 stranded claim file(s) removed, whatever pointer they held is gone" && \
+   assert_not_contains "133" "$OUTPUT" "LABEL-133"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 134: a surviving claim file alone must reach the directive ---
+echo "Test 134: memory-restore: a surviving stranded claim file alone still produces a directive"
+CWD_134="$TEST_DIR/worktree-134"
+mkdir -p "$CWD_134"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MID_134=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+KEPT_134="$PLANS_DIR/.mr-claimed.99999.20260810T000000-13401"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-134\n' "$CWD_134" > "$KEPT_134"
+touch -t "$MID_134" "$KEPT_134"
+OUTPUT=$(echo '{"cwd":"'"$CWD_134"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$KEPT_134" ]] && \
+   assert_contains "134" "$OUTPUT" "1 stranded claim file(s)" && \
+   assert_contains "134" "$OUTPUT" "should still hold a checkpoint pointer no scan reads" && \
+   assert_not_contains "134" "$OUTPUT" "LABEL-134"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$KEPT_134"
+
+# --- Test 135: one file with no establishable age must not end the sweep ---
+# The unmeasured branch leaves the iteration with `continue`. A `break` there would look
+# identical in every single-file fixture, and would silently abandon every later file in
+# the directory while the report still read as complete.
+echo "Test 135: memory-restore: an unmeasurable file does not abort the rest of the sweep"
+CWD_135="$TEST_DIR/worktree-135"
+mkdir -p "$CWD_135" "$TEST_DIR/fakebin-135"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+REAL_STAT_135=$(command -v stat)
+cat > "$TEST_DIR/fakebin-135/stat" <<FAKESTAT
+#!/bin/sh
+for a in "\$@"; do
+    case "\$a" in *nostat*) exit 1;; esac
+done
+exec $REAL_STAT_135 "\$@"
+FAKESTAT
+chmod +x "$TEST_DIR/fakebin-135/stat"
+OLD_135=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+# Glob order decides which one the loop meets first; the unmeasurable one goes first, so
+# a `break` would take the second file with it.
+NOSTAT_135="$PLANS_DIR/.mr-tmp.99999.a-nostat-13501"
+AFTER_135="$PLANS_DIR/.mr-tmp.99999.b-empty-13502"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-135\n' "$CWD_135" > "$NOSTAT_135"
+printf '' > "$AFTER_135"
+touch -t "$OLD_135" "$NOSTAT_135" "$AFTER_135"
+OUTPUT=$(echo '{"cwd":"'"$CWD_135"'"}' | PATH="$TEST_DIR/fakebin-135:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$NOSTAT_135" ]] && [[ ! -e "$AFTER_135" ]] && \
+   assert_contains "135" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_contains "135" "$OUTPUT" "verified empty, so nothing was lost" && \
+   assert_not_contains "135" "$OUTPUT" "LABEL-135"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$NOSTAT_135"
+rm -rf "$TEST_DIR/fakebin-135"
+
+# --- Test 136: the candidates-block tail carries every litter outcome, not one ---
+# The tail renders only when the flag scan produced a row, and its wording differs from
+# the fallback's, so a fallback assertion transfers nothing. Deleting any one tail
+# sentence used to leave the suite green.
+echo "Test 136: memory-restore: every litter outcome is worded in the candidates block too"
+CWD_136="$TEST_DIR/worktree-136"
+mkdir -p "$CWD_136"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MR_FLAG_136="$PLANS_DIR/.pending-memory-restore-20260718T000000-13601"
+printf '%s\n%s\n%s\n%s\n' "sess_136" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_136" "checkpoint-136" > "$MR_FLAG_136"
+OLD_136=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+MID_136=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+CGONE_136="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13602"
+CKEPT_136="$PLANS_DIR/.mr-claimed.99999.20260810T000000-13603"
+TGONE_136="$PLANS_DIR/.mr-tmp.99999.a-empty-13604"
+TKEPT_136="$PLANS_DIR/.mr-tmp.99999.b-empty-13605"
+TBODY_136="$PLANS_DIR/.mr-tmp.99999.c-body-13606"
+# The recorded path deliberately is NOT this session's cwd. Writing $CWD_136 there would
+# make an absence assertion meaningless, since the matched flag's own row prints that
+# directory legitimately — the label assertions would pass while a leak of line 3 went
+# unnoticed.
+DECOY_136="$TEST_DIR/decoy-136-another-project"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-136A\n' "$DECOY_136" > "$CGONE_136"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-136B\n' "$DECOY_136" > "$CKEPT_136"
+printf '' > "$TGONE_136"
+printf '' > "$TKEPT_136"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-136C\n' "$DECOY_136" > "$TBODY_136"
+touch -t "$OLD_136" "$CGONE_136" "$TGONE_136" "$TBODY_136"
+touch -t "$MID_136" "$CKEPT_136" "$TKEPT_136"
+OUTPUT=$(echo '{"cwd":"'"$CWD_136"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "136" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+   assert_contains "136" "$OUTPUT" "1 stranded claim file(s) removed, whatever pointer they held is gone" && \
+   assert_contains "136" "$OUTPUT" "1 stranded claim file(s) should still hold a checkpoint pointer no scan reads" && \
+   assert_contains "136" "$OUTPUT" "1 interrupted flag write(s) removed, verified empty, nothing lost" && \
+   assert_contains "136" "$OUTPUT" "1 interrupted flag write(s) left in place, verified empty" && \
+   assert_contains "136" "$OUTPUT" "1 interrupted flag write(s) removed were NOT empty" && \
+   assert_not_contains "136" "$OUTPUT" "LABEL-136A" && \
+   assert_not_contains "136" "$OUTPUT" "LABEL-136B" && \
+   assert_not_contains "136" "$OUTPUT" "LABEL-136C" && \
+   assert_not_contains "136" "$OUTPUT" "decoy-136-another-project"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$CKEPT_136" "$TKEPT_136"
+
+# --- Test 137: the candidates block reports litter it could not remove ---
+# Test 136 cannot reach this sentence: making `rm` fail needs a non-writable plans
+# directory, which also stops the flag being claimed. That is fine — an unclaimable flag
+# still produces a row, so the tail still renders, and the two outcomes coexist.
+echo "Test 137: memory-restore: unremovable litter is reported inside the candidates block"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root writes a directory regardless of the write bit)"
+    PASS=$((PASS + 1))
+else
+    CWD_137="$TEST_DIR/worktree-137"
+    mkdir -p "$CWD_137"
+    rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    MR_FLAG_137="$PLANS_DIR/.pending-memory-restore-20260718T000000-13701"
+    printf '%s\n%s\n%s\n%s\n' "sess_137" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_137" "checkpoint-137" > "$MR_FLAG_137"
+    STUCK_137="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13702"
+    printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-137\n' "$TEST_DIR/decoy-137-another-project" > "$STUCK_137"
+    touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_137"
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 0555 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_137"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "137" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+       assert_contains "137" "$OUTPUT" "1 litter file(s) could NOT be removed" && \
+       assert_not_contains "137" "$OUTPUT" "LABEL-137" && \
+       assert_not_contains "137" "$OUTPUT" "decoy-137-another-project"; then
+        echo "  PASS"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL"
+        FAIL=$((FAIL + 1))
+    fi
+    rm -f "$STUCK_137" "$MR_FLAG_137"
+fi
+
+# --- Test 138: the candidates block reports litter whose age it could not establish ---
+# The `stat` shim has to fail for the LITTER file only. A blanket failure takes the flag's
+# own row out, and without a row the tail never renders, which is how this sentence stayed
+# untested: every fixture that produced it landed in the fallback instead.
+echo "Test 138: memory-restore: litter with no establishable age is reported inside the candidates block"
+CWD_138="$TEST_DIR/worktree-138"
+mkdir -p "$CWD_138" "$TEST_DIR/fakebin-138"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+REAL_STAT_138=$(command -v stat)
+cat > "$TEST_DIR/fakebin-138/stat" <<FAKESTAT
+#!/bin/sh
+for a in "\$@"; do
+    case "\$a" in *nostat138*) exit 1;; esac
+done
+exec $REAL_STAT_138 "\$@"
+FAKESTAT
+chmod +x "$TEST_DIR/fakebin-138/stat"
+MR_FLAG_138="$PLANS_DIR/.pending-memory-restore-20260718T000000-13801"
+printf '%s\n%s\n%s\n%s\n' "sess_138" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_138" "checkpoint-138" > "$MR_FLAG_138"
+NOSTAT_138="$PLANS_DIR/.mr-tmp.99999.nostat138-13802"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-138\n' "$TEST_DIR/decoy-138-another-project" > "$NOSTAT_138"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$NOSTAT_138"
+OUTPUT=$(echo '{"cwd":"'"$CWD_138"'"}' | PATH="$TEST_DIR/fakebin-138:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$NOSTAT_138" ]] && \
+   assert_contains "138" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+   assert_contains "138" "$OUTPUT" "1 litter file(s) whose age could NOT be established" && \
+   assert_not_contains "138" "$OUTPUT" "LABEL-138" && \
+   assert_not_contains "138" "$OUTPUT" "decoy-138-another-project"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$NOSTAT_138"
+rm -rf "$TEST_DIR/fakebin-138"
+
+# --- Test 139: scope_key() must not answer from an inherited GIT_DIR ---
+# `rev-parse` reads the environment before it looks at `-C`, so an exported GIT_DIR makes
+# every directory report that repository — including one inside no repository at all.
+# on-session-clear.sh uses this answer to decide whether another session's recorded path
+# and label may be printed, so collapsing every scope to one identity does not merely lose
+# precision: every foreign flag compares as "same repository, selectable" and is disclosed.
+# `git rebase --exec` and git hooks both export it, so a session launched from either
+# inherits it.
+echo "Test 139: scope_key: an inherited GIT_DIR does not make a non-repository report a repository"
+REPO_139="$TEST_DIR/repo-139"
+PLAIN_139="$TEST_DIR/plain-139"
+mkdir -p "$REPO_139" "$PLAIN_139"
+git -C "$REPO_139" init -q . 2>/dev/null
+# The control comes first: if the sandbox itself sat inside a repository, or scope_key were
+# broken outright, the plain directory would not answer `dir:` even without GIT_DIR, and the
+# main assertion below would prove nothing.
+CONTROL_139=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR bash -c 'source "'"$LIB_COMMON"'"; scope_key "'"$PLAIN_139"'"')
+# Only GIT_DIR is meant to be inherited here; leaving the other two to whatever the
+# ambient environment holds would make the result depend on how the suite was launched.
+INHERITED_139=$(env -u GIT_WORK_TREE -u GIT_COMMON_DIR GIT_DIR="$REPO_139/.git" bash -c 'source "'"$LIB_COMMON"'"; scope_key "'"$PLAIN_139"'"')
+REALREPO_139=$(env -u GIT_WORK_TREE -u GIT_COMMON_DIR GIT_DIR="$REPO_139/.git" bash -c 'source "'"$LIB_COMMON"'"; scope_key "'"$REPO_139"'"')
+if [[ "$CONTROL_139" == dir:* ]] && \
+   [[ "$INHERITED_139" == "$CONTROL_139" ]] && \
+   [[ "$REALREPO_139" == repo:* ]]; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    echo "    control (no GIT_DIR):   $CONTROL_139"
+    echo "    with GIT_DIR inherited: $INHERITED_139"
+    echo "    the repository itself:  $REALREPO_139"
+    FAIL=$((FAIL + 1))
+fi
+
+# --- Test 140: an ancient matching flag is not restored on an age nobody measured ---
+# Substituting `now` for a failed `stat` made the age zero, which reads as fresh: a
+# checkpoint from years ago was announced as this session's, a full restore directive was
+# emitted for it, and then the flag was deleted — the one path that destroys the pointer,
+# taken on a number the hook never established. Unlike test 118 the clock works here, so
+# the only thing missing is the file's own mtime.
+echo "Test 140: memory-restore: a matching flag with no establishable age is reported, not restored or consumed"
+CWD_140="$TEST_DIR/worktree-140"
+mkdir -p "$CWD_140" "$TEST_DIR/fakebin-140"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/fakebin-140/stat"
+chmod +x "$TEST_DIR/fakebin-140/stat"
+FLAG_140="$PLANS_DIR/.pending-memory-restore-20230101T000000-14001"
+printf '%s\n%s\n%s\n%s\n' "sess_140" "2023-01-01T00:00:00+0900" "$CWD_140" "ancient-checkpoint-140" > "$FLAG_140"
+touch -t 202301010000 "$FLAG_140"
+OUTPUT=$(echo '{"cwd":"'"$CWD_140"'"}' | PATH="$TEST_DIR/fakebin-140:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$FLAG_140" ]] && \
+   assert_contains "140" "$OUTPUT" "ancient-checkpoint-140" && \
+   assert_contains "140" "$OUTPUT" "age unknown" && \
+   assert_contains "140" "$OUTPUT" "age could NOT be established" && \
+   assert_not_contains "140" "$OUTPUT" "MATCHES this session" && \
+   assert_not_contains "140" "$OUTPUT" "0m ago" && \
+   assert_not_contains "140" "$OUTPUT" "MEMORY RESTORE"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$FLAG_140"
+rm -rf "$TEST_DIR/fakebin-140"
+
+# --- Test 141: entries that are not plain regular files are reported, never swept ---
+# `-f` and `-s` follow a symlink while `stat` does not, so a link to a live file read as
+# old and non-empty, was deleted — taking only the LINK — and was then reported as a
+# destroyed body while the target sat untouched. A dangling link, a directory or a socket
+# left through the old `-f` guard counted by nothing at all. Nothing this hook writes is
+# anything but a regular file, so all of these arrived from outside and none of them can
+# be measured on its own terms.
+echo "Test 141: memory-restore: symlinks and non-regular entries are reported, not swept or misreported"
+CWD_141="$TEST_DIR/worktree-141"
+mkdir -p "$CWD_141"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+rm -rf "$PLANS_DIR"/.mr-tmp.99999.adir-14103
+OLD_141=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+TARGET_141="$TEST_DIR/live-target-141"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-141\n' "$CWD_141" > "$TARGET_141"
+LINK_141="$PLANS_DIR/.mr-tmp.99999.link-14101"
+DANGLE_141="$PLANS_DIR/.mr-tmp.99999.dangle-14102"
+ADIR_141="$PLANS_DIR/.mr-tmp.99999.adir-14103"
+ln -s "$TARGET_141" "$LINK_141"
+ln -s "$TEST_DIR/no-such-file-141" "$DANGLE_141"
+mkdir -p "$ADIR_141"
+touch -h -t "$OLD_141" "$LINK_141" "$DANGLE_141" 2>/dev/null || true
+OUTPUT=$(echo '{"cwd":"'"$CWD_141"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -L "$LINK_141" ]] && [[ -L "$DANGLE_141" ]] && [[ -d "$ADIR_141" ]] && [[ -s "$TARGET_141" ]] && \
+   assert_contains "141" "$OUTPUT" "3 litter file(s)" && \
+   assert_contains "141" "$OUTPUT" "have an age this hook could NOT establish" && \
+   assert_not_contains "141" "$OUTPUT" "were NOT empty" && \
+   assert_not_contains "141" "$OUTPUT" "verified empty" && \
+   assert_not_contains "141" "$OUTPUT" "LABEL-141"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$LINK_141" "$DANGLE_141" "$TARGET_141"
+rm -rf "$ADIR_141"
+
+# --- Test 142: a legend must not describe a row the cap kept off screen ---
+# The two hidden-row counters exist so a legend never talks about a row nobody can see.
+# These two legends fired on the total count instead, so five expired rows could push the
+# only unverifiable row past the cap while the notes still said "Rows marked ... Show the
+# recorded path", with no such row printed and no count of what was withheld.
+echo "Test 142: memory-restore: the scope-unverifiable legend fires only when such a row is on screen"
+CWD_142="$TEST_DIR/worktree-142"
+mkdir -p "$CWD_142"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+OLD_142=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+for n in 1 2 3 4 5; do
+    F="$PLANS_DIR/.pending-memory-restore-2026081600014${n}-1420${n}"
+    printf '%s\n%s\n%s\n%s\n' "sess_142_${n}" "2026-08-16T00:00:00+0900" "$CWD_142" "expired-142-${n}" > "$F"
+    touch -t "$OLD_142" "$F"
+done
+UNVER_142="$PLANS_DIR/.pending-memory-restore-20260816000146-14206"
+printf '%s\n%s\n%s\n%s\n' "sess_142_u" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/removed-worktree-142" "unver-142" > "$UNVER_142"
+OUTPUT=$(echo '{"cwd":"'"$CWD_142"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Every assertion here is a negative, so an empty report would satisfy all of them. The
+# two positives are what make the negatives mean something: the block was produced and it
+# does carry rows, and the row that is missing is missing because the cap withheld it.
+if assert_contains "142" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+   assert_contains "142" "$OUTPUT" "expired-142-1" && \
+   assert_not_contains "142" "$OUTPUT" "unver-142" && \
+   assert_not_contains "142" "$OUTPUT" "Show the recorded path and let the user decide"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
+
+# --- Test 143: a claim this hook could not delete is reported, not asserted away ---
+# `mv` then `rm` is the one-shot contract. The `rm` was unchecked, so a failure left the
+# file alive as `.mr-claimed.*` — outside the scan glob — while the report said the flag
+# had been consumed or swept.
+echo "Test 143: memory-restore: a flag claimed but not deleted is reported as surviving"
+CWD_143="$TEST_DIR/worktree-143"
+mkdir -p "$CWD_143" "$TEST_DIR/fakebin-143"
+rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+REAL_RM_143=$(command -v rm)
+cat > "$TEST_DIR/fakebin-143/rm" <<FAKERM
+#!/bin/sh
+for a in "\$@"; do
+    case "\$a" in *.mr-claimed.*) exit 1;; esac
+done
+exec $REAL_RM_143 "\$@"
+FAKERM
+chmod +x "$TEST_DIR/fakebin-143/rm"
+FLAG_143="$PLANS_DIR/.pending-memory-restore-20260816000143-14301"
+printf '%s\n%s\n%s\n%s\n' "sess_143" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_143" "checkpoint-143" > "$FLAG_143"
+OUTPUT=$(echo '{"cwd":"'"$CWD_143"'"}' | PATH="$TEST_DIR/fakebin-143:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+CLAIMED_143=$(find "$PLANS_DIR" -name '.mr-claimed.*' | wc -l | tr -d ' ')
+if [[ "$CLAIMED_143" == "1" ]] && \
+   assert_contains "143" "$OUTPUT" "could NOT delete"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+rm -rf "$TEST_DIR/fakebin-143"
+/bin/rm -f "$PLANS_DIR"/.mr-claimed.* "$FLAG_143"
+
+# --- Test 144: the seven-day sweep must not count a removal that failed ---
+# Sibling of 143 on the other `rm`. A non-matching flag past seven days is claimed and
+# deleted; counting the sweep without checking the delete asserted a removal that may not
+# have happened. This one produces no row, so it also pins the assembled fallback
+# sentence, which is the only place that reports it here.
+echo "Test 144: memory-restore: a sweep whose delete failed is not counted as removed"
+CWD_144="$TEST_DIR/worktree-144"
+mkdir -p "$CWD_144" "$TEST_DIR/fakebin-144"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+REAL_RM_144=$(command -v rm)
+cat > "$TEST_DIR/fakebin-144/rm" <<FAKERM
+#!/bin/sh
+for a in "\$@"; do
+    case "\$a" in *.mr-claimed.*) exit 1;; esac
+done
+exec $REAL_RM_144 "\$@"
+FAKERM
+chmod +x "$TEST_DIR/fakebin-144/rm"
+OLD_144=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
+FLAG_144="$PLANS_DIR/.pending-memory-restore-20260101000144-14401"
+printf '%s\n%s\n%s\n%s\n' "sess_144" "2026-01-01T00:00:00+0900" "$TEST_DIR/elsewhere-144" "checkpoint-144" > "$FLAG_144"
+touch -t "$OLD_144" "$FLAG_144"
+OUTPUT=$(echo '{"cwd":"'"$CWD_144"'"}' | PATH="$TEST_DIR/fakebin-144:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "144" "$OUTPUT" "could NOT delete" && \
+   assert_not_contains "144" "$OUTPUT" "removed as older than 7 days" && \
+   assert_not_contains "144" "$OUTPUT" "checkpoint-144"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+/bin/rm -rf "$TEST_DIR/fakebin-144"
+/bin/rm -f "$PLANS_DIR"/.mr-claimed.* "$FLAG_144"
+
+# --- Test 145: a broken clock is as disqualifying as a broken stat ---
+# It takes both to have an age. `date` failing sets the sampled clock to 0, so every real
+# mtime is in the future and the negative difference was clamped to zero — "fresh" in
+# every comparison below it. Test 140 breaks `stat`; here `stat` works and only the clock
+# is gone, which is the half that was still live.
+echo "Test 145: memory-restore: a matching flag is not restored when only the clock is broken"
+CWD_145="$TEST_DIR/worktree-145"
+mkdir -p "$CWD_145" "$TEST_DIR/fakebin-145"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/fakebin-145/date"
+chmod +x "$TEST_DIR/fakebin-145/date"
+FLAG_145="$PLANS_DIR/.pending-memory-restore-20230101000145-14501"
+printf '%s\n%s\n%s\n%s\n' "sess_145" "2023-01-01T00:00:00+0900" "$CWD_145" "ancient-checkpoint-145" > "$FLAG_145"
+touch -t 202301010000 "$FLAG_145"
+OUTPUT=$(echo '{"cwd":"'"$CWD_145"'"}' | PATH="$TEST_DIR/fakebin-145:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if [[ -e "$FLAG_145" ]] && \
+   assert_contains "145" "$OUTPUT" "ancient-checkpoint-145" && \
+   assert_contains "145" "$OUTPUT" "age could NOT be established" && \
+   assert_not_contains "145" "$OUTPUT" "MATCHES this session" && \
+   assert_not_contains "145" "$OUTPUT" "MEMORY RESTORE"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_145"
+/bin/rm -rf "$TEST_DIR/fakebin-145"
+
+# --- Test 146: an unverifiable flag forbids the "none recorded this scope" claim ---
+# The sentence asserts that every flag was compared and none matched. A flag whose
+# recorded path could not be resolved was never compared at all, so the claim states
+# as fact the one thing this scan failed to establish.
+echo "Test 146: memory-restore: an unverifiable flag suppresses the none-matched claim"
+CWD_146="$TEST_DIR/worktree-146"
+mkdir -p "$CWD_146"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+FLAG_146="$PLANS_DIR/.pending-memory-restore-20260818T000146-14601"
+printf '%s\n%s\n%s\n%s\n' "sess_146" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/gone-146" "checkpoint-146" > "$FLAG_146"
+OUTPUT=$(echo '{"cwd":"'"$CWD_146"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# The positive assertion is load-bearing: without it an empty report would satisfy
+# the absence check, which is how a negative-only test guards nothing.
+if assert_contains "146" "$OUTPUT" "scope unverifiable, recorded path unreachable" && \
+   assert_not_contains "146" "$OUTPUT" "No checkpoint flag recorded this session's working directory" && \
+   assert_file_exists "146" "$FLAG_146"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_146"
+
+# --- Test 147: the same claim is unfounded when NOTHING could be compared ---
+# The hook's own directory does not resolve, so no flag was checked against this
+# session at all — a stronger version of Test 146's objection.
+echo "Test 147: memory-restore: an unresolvable own scope suppresses the none-matched claim"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+FLAG_147="$PLANS_DIR/.pending-memory-restore-20260818T000147-14701"
+printf '%s\n%s\n%s\n%s\n' "sess_147" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/worktree-147" "checkpoint-147" > "$FLAG_147"
+OUTPUT=$(echo '{"cwd":"'"$TEST_DIR/never-created-147"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "147" "$OUTPUT" "left unclassified because" && \
+   assert_not_contains "147" "$OUTPUT" "No checkpoint flag recorded this session's working directory" && \
+   assert_file_exists "147" "$FLAG_147"; then
+    echo "  PASS"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_147"
+
+# --- Tests 148-151: every state that bears on the none-matched sentence ---
+# The sentence claims BOTH that no flag recorded this session's working directory and that
+# nothing was consumed. Each fixture below adds one flag that contradicts it
+# alongside a row-producing flag, because the whole block is gated on at least
+# one displayed row existing — in isolation these states take the fallback path
+# and the sentence never appears, which is why they went unnoticed.
+# Each test asserts the row IS present as well, so an empty report cannot pass.
+mr_bearing_repo() {   # $1 = test number -> sets REPO_N, WT_N, plants the row-maker
+    MR_R="$TEST_DIR/repo-$1"; MR_W="$TEST_DIR/wt-$1"
+    mkdir -p "$MR_R"
+    git -C "$MR_R" init -q 2>/dev/null
+    git -C "$MR_R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+    git -C "$MR_R" worktree add -q --detach "$MR_W" HEAD 2>/dev/null
+    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    /bin/rm -rf "$PLANS_DIR"/.pending-memory-restore-dir
+    printf '%s\n%s\n%s\n%s\n' "sess_$1" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_W" "row-maker-$1" \
+        > "$PLANS_DIR/.pending-memory-restore-2026081800$1-$1"
+}
+mr_bearing_check() {  # $1 = test number
+    if assert_contains "$1" "$OUTPUT" "same repository, selectable" && \
+       assert_not_contains "$1" "$OUTPUT" "No checkpoint flag recorded this session's working directory"; then
+        echo "  PASS"; PASS=$((PASS + 1))
+    else
+        echo "  FAIL"; FAIL=$((FAIL + 1))
+    fi
+}
+
+echo "Test 148: memory-restore: an unreadable flag suppresses the none-matched claim"
+mr_bearing_repo 148
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root reads a mode-000 file, so the flag would not be unreadable)"
+    PASS=$((PASS + 1))
+else
+    printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_R" "unreadable-148" > "$PLANS_DIR/.pending-memory-restore-x148"
+    chmod 000 "$PLANS_DIR/.pending-memory-restore-x148"
+    OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+    mr_bearing_check 148
+    chmod 644 "$PLANS_DIR/.pending-memory-restore-x148"; /bin/rm -f "$PLANS_DIR/.pending-memory-restore-x148"
+fi
+
+echo "Test 149: memory-restore: an unopenable flag name suppresses the none-matched claim"
+mr_bearing_repo 149
+mkdir -p "$PLANS_DIR/.pending-memory-restore-dir"
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_bearing_check 149
+/bin/rm -rf "$PLANS_DIR/.pending-memory-restore-dir"
+
+# The sweep DELETES this flag, so the sentence's second half — "no flag was
+# consumed" — is false in the same message that reports the removal.
+echo "Test 150: memory-restore: a swept flag falsifies the no-flag-consumed half"
+mr_bearing_repo 150
+printf '%s\n%s\n%s\n%s\n' "s" "2018-01-01T00:00:00+0900" "$TEST_DIR/other-150" "old-150" > "$PLANS_DIR/.pending-memory-restore-x150"
+mkdir -p "$TEST_DIR/other-150"
+touch -t 201801010000 "$PLANS_DIR/.pending-memory-restore-x150"
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_bearing_check 150
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x150"
+
+echo "Test 151: memory-restore: a malformed flag suppresses the none-matched claim"
+mr_bearing_repo 151
+printf '%s\n%s\n\n\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" > "$PLANS_DIR/.pending-memory-restore-x151"
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_bearing_check 151
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x151"
+
+# --- Test 152: the sentence must still be PRINTED when nothing bears against it ---
+# Tests 146-151 all assert its ABSENCE. Absence-only coverage cannot tell a correct
+# suppression from a permanent one: deleting any subtracted term from the bearing
+# sum would silence the sentence forever and every one of those tests would still
+# pass. This is the positive direction, and it is what makes those subtractions
+# load-bearing.
+echo "Test 152: memory-restore: the none-matched sentence is printed when nothing bears"
+mr_bearing_repo 152
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "152" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "152" "$OUTPUT" "No checkpoint flag recorded this session's working directory"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+
+# --- Tests 153-154: a flag name that is a link is never read ---
+# `-f` follows a symlink, so before this guard the loop read lines 2-4 of whatever
+# the link pointed at and PRINTED lines 3 and 4 in the row — an arbitrary file the
+# user can read, injected into this session's context and re-read at every /clear,
+# since a non-matching flag is never consumed. A hard link reaches the same
+# disclosure while being neither -L nor irregular, so the link count closes it.
+# Both fixtures put a marker in the target that must never appear in the output.
+mr_link_target() {   # $1 = test number -> sets MR_T to a file with markers on lines 3 and 4
+    MR_T="$TEST_DIR/link-target-$1"
+    printf '%s\n%s\n%s\n%s\n' "x" "2026-08-18T00:00:00+0900" "LEAKPATH-$1" "LEAKLABEL-$1" > "$MR_T"
+    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+}
+mr_link_check() {    # $1 = test number
+    if assert_not_contains "$1" "$OUTPUT" "LEAKLABEL-$1" && \
+       assert_not_contains "$1" "$OUTPUT" "LEAKPATH-$1" && \
+       assert_contains "$1" "$OUTPUT" "are a link or share an inode and were NOT read"; then
+        echo "  PASS"; PASS=$((PASS + 1))
+    else
+        echo "  FAIL"; FAIL=$((FAIL + 1))
+    fi
+}
+
+echo "Test 153: memory-restore: a symlinked flag name is never read or printed"
+CWD_153="$TEST_DIR/wd-153"; mkdir -p "$CWD_153"
+mr_link_target 153
+ln -s "$MR_T" "$PLANS_DIR/.pending-memory-restore-20260818T000153-153"
+OUTPUT=$(echo '{"cwd":"'"$CWD_153"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_link_check 153
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260818T000153-153"
+
+echo "Test 154: memory-restore: a hard-linked flag name is never read or printed"
+CWD_154="$TEST_DIR/wd-154"; mkdir -p "$CWD_154"
+mr_link_target 154
+ln "$MR_T" "$PLANS_DIR/.pending-memory-restore-20260818T000154-154"
+OUTPUT=$(echo '{"cwd":"'"$CWD_154"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_link_check 154
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260818T000154-154"
+
+# --- Test 155: the three states declared NOT to bear must not suppress the sentence ---
+# The bearing sum subtracts stale-kept, foreign and outside because each was compared
+# and established to be somewhere this session can name. Only the `same` subtraction
+# was covered before: deleting any of the other three silently withheld a true
+# sentence and every test still passed. One fixture carries all three at once.
+echo "Test 155: memory-restore: compared-and-elsewhere flags do not suppress the sentence"
+mr_bearing_repo 155
+OTHER_155="$TEST_DIR/otherrepo-155"; mkdir -p "$OTHER_155" "$TEST_DIR/plain-155"
+git -C "$OTHER_155" init -q 2>/dev/null
+git -C "$OTHER_155" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+# foreign: both sides resolve to a repository, and they differ
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$OTHER_155" "foreign-155" > "$PLANS_DIR/.pending-memory-restore-f155"
+# outside: resolves, but is a directory inside no repository
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/plain-155" "outside-155" > "$PLANS_DIR/.pending-memory-restore-o155"
+# stale-kept: non-matching and past the 24-hour window, left where it is
+# Three days back: past the 24-hour window, well short of the seven-day sweep.
+# A fixed date drifts into the sweep as the calendar moves, which is what a literal
+# 2026-08-01 did here — it was removed as older than 7 days, not kept.
+STALE_155=$(date -v-3d +%Y%m%d%H%M 2>/dev/null || date -d '3 days ago' +%Y%m%d%H%M)
+printf '%s\n%s\n%s\n%s\n' "s" "$(date -v-3d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '3 days ago' +%Y-%m-%dT%H:%M:%S%z)" "$OTHER_155" "stale-155" > "$PLANS_DIR/.pending-memory-restore-s155"
+touch -t "$STALE_155" "$PLANS_DIR/.pending-memory-restore-s155"
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "155" "$OUTPUT" "same repository, selectable" && \
+   assert_contains "155" "$OUTPUT" "No checkpoint flag recorded this session's working directory"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-[fos]155
+
+# --- Tests 156-157: the `stat` probes must select the form, not trust a number ---
+# The probes here pick their fallback on the OUTPUT rather than the exit status,
+# because GNU `-f` means --file-system and SUCCEEDS on a regular file. For `%m`
+# that is sufficient: GNU prints a mount point, which is not numeric. For `%l` it
+# is NOT — GNU's `-f %l` is "maximum length of filenames", typically 255, and a
+# number satisfies the same guard the real link count does. The probe order is
+# therefore load-bearing: the GNU form has to be asked first, and the BSD form
+# kept as its fallback. See https://man7.org/linux/man-pages/man1/stat.1.html
+mr_gnu_stat() {   # $1 = test number -> MR_SHIM holds a PATH dir whose `stat` is GNU-like
+    MR_SHIM="$TEST_DIR/gnustat-$1"; mkdir -p "$MR_SHIM"
+    cat > "$MR_SHIM/stat" <<'GNUSTAT'
+#!/bin/sh
+# GNU coreutils stat(1), emulated for the forms this hook uses. Under `-c` the
+# default sequences apply (%h number of hard links, %Y seconds since Epoch, %y a
+# human-readable time); under `-f` the FILE SYSTEM is reported, where %l is the
+# maximum length of filenames and %m the mount point. Unknown directives print
+# `?`. Terse mode (-t) is not emulated.
+# https://man7.org/linux/man-pages/man1/stat.1.html
+#
+# The `-c` answers are DETERMINISTIC STAND-INS, not readings of the file, and
+# deliberately so: delegating to the host's own stat would make this shim mean
+# different things on a BSD host and a GNU host -- on GNU, `stat -f %l` is the
+# 255 this shim exists to simulate, so the fixture would contradict itself on
+# the very platform the behaviour is about. A link count of 1 stands for the
+# plain file every fixture here plants; no fixture combines this shim with a
+# link, which is what tests 153 and 154 cover against the real stat.
+case "$1" in
+  -c) case "$2" in
+        %h) echo 1; exit 0 ;;
+        %Y) date +%s; exit 0 ;;
+        %y) date '+%Y-%m-%d %H:%M:%S.000000000 +0000'; exit 0 ;;
+      esac
+      echo '?'; exit 0 ;;
+  -f) case "$2" in
+        %l) echo 255; exit 0 ;;
+        %m) echo /; exit 0 ;;
+      esac
+      echo '?'; exit 0 ;;
+esac
+exit 1
+GNUSTAT
+    chmod +x "$MR_SHIM/stat"
+}
+echo "Test 156: memory-restore: a plain flag survives the link probe under GNU stat"
+mr_bearing_repo 156
+mr_gnu_stat 156
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | PATH="$MR_SHIM:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "156" "$OUTPUT" "same repository, selectable" && \
+   assert_not_contains "156" "$OUTPUT" "share an inode and were NOT read"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+
+echo "Test 157: state file age is established under GNU stat, not left unknown"
+CWD_157="$TEST_DIR/wd-157"; mkdir -p "$CWD_157"
+KEY_157=$(compute_session_key "$CWD_157")
+mr_gnu_stat 157
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_157" "$TEST_DIR/transcript-157" "51200" \
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_157}"
+OUTPUT=$(echo '{"cwd":"'"$CWD_157"'"}' | PATH="$MR_SHIM:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "157" "$OUTPUT" "State file: found (no plan recorded, age: [0-9]"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_157}"
+
+# --- Test 158: the human-readable mtime probe must also ask GNU first ---
+# Six call sites carried their own copy of this two-form probe and four asked BSD
+# first, chained on the exit status -- which on GNU never reaches the fallback,
+# because `-f` means --file-system and succeeds on a regular file. All six now go
+# through mtime_human(). The GNU shim answers `-c %y` and gives `-f` the `?` that
+# GNU prints for a directive it does not recognise, so a BSD-first probe surfaces
+# `?` where the timestamp belongs.
+echo "Test 158: plan load reports a real modification time under GNU stat"
+create_test_plan
+mr_gnu_stat 158
+OUTPUT=$(echo '{"prompt":"load the plan","session_id":"sess_158","cwd":"'"$PWD"'"}' \
+    | PATH="$MR_SHIM:$PATH" bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "158" "$OUTPUT" '\*\*Modified:\*\* 20[0-9][0-9]-'; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+
+# --- Test 159: an unverifiable scope must not be blamed on a missing directory ---
+# The legend used to assert the recorded directory no longer exists. A directory
+# that still exists and merely cannot be entered reaches the same row, and so does a
+# repository git declines to resolve, so the hook was stating a cause it never
+# established -- the failure this whole change exists to remove. The row is correct;
+# only the explanation was invented. Asserting the corrected sentence rather than the
+# absence of the old one, so this test can fail when it stops being true.
+echo "Test 159: memory-restore: an unenterable but EXISTING path is not called missing"
+CWD_159="$TEST_DIR/wd-159"; SEALED_159="$TEST_DIR/sealed-159"
+mkdir -p "$CWD_159" "$SEALED_159"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root enters a mode-000 directory, so the path would be reachable)"
+    PASS=$((PASS + 1))
+else
+    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$SEALED_159" "sealed-159" \
+        > "$PLANS_DIR/.pending-memory-restore-x159"
+    chmod 000 "$SEALED_159"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_159"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+    chmod 755 "$SEALED_159"
+    if [[ -d "$SEALED_159" ]] && \
+       assert_contains "159" "$OUTPUT" "scope unverifiable, recorded path unreachable" && \
+       assert_contains "159" "$OUTPUT" "the recorded path could not be resolved" && \
+       assert_not_contains "159" "$OUTPUT" "the recorded directory no longer exists"; then
+        echo "  PASS"; PASS=$((PASS + 1))
+    else
+        echo "  FAIL"; FAIL=$((FAIL + 1))
+    fi
+    /bin/rm -f "$PLANS_DIR/.pending-memory-restore-x159"
+fi
+
+# --- Test 160: a malformed row must name the file the note tells the user to delete ---
+# The note fires on malformed rows and asks the user to delete them, but a malformed
+# flag has no label and no recorded path, so the row identified nothing and the
+# instruction could not be carried out. The key names a file this hook did NOT
+# consume and that belongs to no repository -- neither of the two cases the key was
+# withheld for (a matched flag is already gone; a foreign one must not be acted on).
+echo "Test 160: memory-restore: a malformed row names its flag so the note is actionable"
+CWD_160="$TEST_DIR/wd-160"; mkdir -p "$CWD_160"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf 'sess\n2026-08-19T00:00:00+0900\n' > "$PLANS_DIR/.pending-memory-restore-20260819T000160-160"
+OUTPUT=$(echo '{"cwd":"'"$CWD_160"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "160" "$OUTPUT" "malformed flag, no recorded path" && \
+   assert_contains "160" "$OUTPUT" "flag 20260819T000160-160"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260819T000160-160"
+
+# --- Test 161: a flag a parallel /clear consumed is a race, not an unopenable name ---
+# The glob expands to a list of names; a concurrent session's /clear may legitimately
+# consume one before this loop reaches it. The `-f` branch counted that under
+# "matched the flag name but could NOT be opened", which reads as a broken permission
+# or a corrupt entry when nothing was wrong -- and its own comment listed three causes
+# without this one. The shim deletes the SECOND flag while the FIRST is being probed,
+# which is exactly where the race falls, and is deterministic.
+echo "Test 161: memory-restore: a concurrently consumed flag is reported as a race"
+CWD_161="$TEST_DIR/wd-161"; mkdir -p "$CWD_161" "$TEST_DIR/race-161"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-161" "first-161" \
+    > "$PLANS_DIR/.pending-memory-restore-a161"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-161" "second-161" \
+    > "$PLANS_DIR/.pending-memory-restore-b161"
+REAL_STAT_161=$(command -v stat)
+printf '#!/bin/sh\nrm -f "%s"\nexec %s "$@"\n' "$PLANS_DIR/.pending-memory-restore-b161" "$REAL_STAT_161" \
+    > "$TEST_DIR/race-161/stat"
+chmod +x "$TEST_DIR/race-161/stat"
+OUTPUT=$(echo '{"cwd":"'"$CWD_161"'"}' | PATH="$TEST_DIR/race-161:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "161" "$OUTPUT" "claimed concurrently by another session" && \
+   assert_not_contains "161" "$OUTPUT" "matched the flag name but could NOT be opened"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-[ab]161
+
+# --- Test 162: a backslash in a displayed path must not truncate the directive ---
+# The assembled directive is emitted with `printf '%b'`, which is why labels, paths
+# and timestamps go through _mr_clean. The scope line and PLANS_DIR did not, and both
+# come from the environment: a directory named with a `\c` sequence ended printf
+# output there, silently dropping the candidate rows, the restore directive, the
+# state block and -- on the plan path -- the whole plan injection. A `\n` forges
+# structure instead of truncating. The control is the same fixture under a plain
+# directory name.
+echo "Test 162: memory-restore: a backslash in the session path does not truncate output"
+CWD_162_PLAIN="$TEST_DIR/wd-162-plain"
+CWD_162_BS="$TEST_DIR/wd-162-a\\cb"
+mkdir -p "$CWD_162_PLAIN" "$CWD_162_BS"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+mk_162() {
+    printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-162" "lbl-162" \
+        > "$PLANS_DIR/.pending-memory-restore-x162"
+}
+mk_162
+OUT_PLAIN=$(printf '{"cwd":"%s"}' "$CWD_162_PLAIN" | bash "$TEST_DIR/on-session-clear.sh")
+mk_162
+# The only JSON-hostile character in this path is the backslash, so doubling it is
+# the whole of the escaping needed -- no interpreter required.
+CWD_162_BS_JSON=${CWD_162_BS//\\/\\\\}
+OUT_BS=$(printf '{"cwd":"%s"}' "$CWD_162_BS_JSON" | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "162" "$OUT_PLAIN" "State check" && \
+   assert_contains "162" "$OUT_BS" "State check"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x162"
+
+# --- Test 163: a failed clock must leave the state age unknown, not enormous ---
+# This was the one unguarded `date` fork left in the file. An empty capture makes
+# bash evaluate `(( ( - <mtime>) / 60 ))`, so the state line reported an age of
+# roughly minus twenty-nine million minutes -- a number, and therefore not obviously
+# a failure to whoever reads it. `?` is already the initialised value; the sibling
+# capture for the flag scan validates the same reading for the same reason.
+echo "Test 163: state age is left unknown when the clock cannot be read"
+CWD_163="$TEST_DIR/wd-163"; mkdir -p "$CWD_163" "$TEST_DIR/nodate-163"
+KEY_163=$(compute_session_key "$CWD_163")
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_163" "$TEST_DIR/transcript-163" "51200" \
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_163}"
+printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/nodate-163/date"
+chmod +x "$TEST_DIR/nodate-163/date"
+OUTPUT=$(echo '{"cwd":"'"$CWD_163"'"}' | PATH="$TEST_DIR/nodate-163:$PATH" bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "163" "$OUTPUT" "age: ?m" && \
+   assert_not_contains "163" "$OUTPUT" "age: -"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_163}"
+
+# --- Tests 164-165: the two skipped-scan directives must NAME the directory ---
+# Both exist to tell the reader which path to look at, and both ran with an empty one.
+# The sanitised display copy of PLANS_DIR was assigned inside the scan block, and
+# these two branches are the `elif`s of the very `if` that opens it -- they run
+# exactly when that assignment did not. Nothing covered either branch's path text.
+echo "Test 164: an uninspectable plans directory is named in the directive"
+CWD_164="$TEST_DIR/wd-164"; mkdir -p "$CWD_164"
+if [[ "$(id -u)" == "0" ]]; then
+    echo "  SKIP (root inspects a mode-000 directory, so the branch is unreachable)"
+    PASS=$((PASS + 1))
+else
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    chmod 000 "$PLANS_DIR"
+    OUTPUT=$(echo '{"cwd":"'"$CWD_164"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+    chmod 700 "$PLANS_DIR"
+    trap cleanup EXIT
+    if assert_contains "164" "$OUTPUT" "\`$PLANS_DIR\` could NOT be inspected"; then
+        echo "  PASS"; PASS=$((PASS + 1))
+    else
+        echo "  FAIL"; FAIL=$((FAIL + 1))
+    fi
+fi
+
+# A working directory that no longer exists is what the branch documents as its
+# reachable case, and it is exactly the removed worktree this change is about.
+echo "Test 165: a session whose directory is gone is told where its pointers are"
+DOOMED_165="$TEST_DIR/doomed-165"; mkdir -p "$DOOMED_165"
+OUTPUT=$( cd "$DOOMED_165" && rmdir "$DOOMED_165" && echo '{}' | env -u PWD bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null )
+if assert_contains "165" "$OUTPUT" "working directory could not be determined" && \
+   assert_contains "165" "$OUTPUT" "still in \`$PLANS_DIR\`"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+
+# --- Test 166: a flag the scan called fresh must not be displayed as ageless ---
+# `_mr_now` is read once, before a forking per-flag loop, so a flag written during
+# that loop lands slightly AHEAD of the sample. The scan treats that as the ordinary
+# race, gives it an age of zero, and restores and consumes it -- but the display
+# required now >= mtime, so the row read "age unknown" beside "MATCHES this session":
+# the same report saying the age was established and that it was not.
+echo "Test 166: a flag written during the scan is displayed with an age, not as unknown"
+CWD_166="$TEST_DIR/wd-166"; mkdir -p "$CWD_166"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_166" "ahead-166" \
+    > "$PLANS_DIR/.pending-memory-restore-ahead166"
+# `touch -t` only reaches minute granularity, so a 30-second offset rounds away and
+# the fixture stops being ahead at all -- the mutation pass caught exactly that.
+# Selecting on the exit status is safe here, unlike the `stat -f` case: `-A` is not a
+# GNU option at all, so it fails there rather than succeeding with another meaning.
+touch -A 000030 "$PLANS_DIR/.pending-memory-restore-ahead166" 2>/dev/null || \
+    touch -d '+30 seconds' "$PLANS_DIR/.pending-memory-restore-ahead166"
+OUTPUT=$(echo '{"cwd":"'"$CWD_166"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "166" "$OUTPUT" "MATCHES this session" && \
+   assert_contains "166" "$OUTPUT" "0m ago" && \
+   assert_not_contains "166" "$OUTPUT" "age unknown"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-ahead166
+
+# --- Test 167: "nothing belongs to this repository" must not follow a matched row ---
+# The sentence was gated on the priority-3 counter alone, so it fired beside rows at
+# priority 2 and 4 -- flags that matched this session's exact directory. The row then
+# said MATCHED while the next line said nothing was verified as belonging here, and
+# the directive told the agent to say so and move on. The second fixture is the
+# control: with only a foreign flag the sentence is TRUE and must still be printed,
+# so this test fails if the gate is simply deleted.
+echo "Test 167: a matched-but-expired row suppresses the nothing-belongs-here sentence"
+CWD_167="$TEST_DIR/wd-167"; mkdir -p "$CWD_167"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_167=$(date -v-2d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '2 days ago' +%Y-%m-%dT%H:%M:%S%z)
+printf '%s\n%s\n%s\n%s\n' "s" "$OLD_167" "$CWD_167" "expired-167" \
+    > "$PLANS_DIR/.pending-memory-restore-x167"
+touch -t "$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)" \
+    "$PLANS_DIR/.pending-memory-restore-x167"
+OUT_MINE=$(echo '{"cwd":"'"$CWD_167"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+# Control: a flag recorded in a directory inside no repository, nothing of ours.
+mkdir -p "$TEST_DIR/foreign-167"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/foreign-167" "other-167" \
+    > "$PLANS_DIR/.pending-memory-restore-f167"
+OUT_OTHER=$(echo '{"cwd":"'"$CWD_167"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "167" "$OUT_MINE" "MATCHED but expired" && \
+   assert_not_contains "167" "$OUT_MINE" "No row was verified as belonging to this repository" && \
+   assert_contains "167" "$OUT_OTHER" "No row was verified as belonging to this repository"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-f167
+
+# --- Test 168: hidden-row counts are subsets of the cap overflow, and say so ---
+# `_mr_over`, `_mr_gone_hidden_n` and `_mr_same_hidden_n` are all incremented in the
+# same `continue` branch, so the second two are subsets of the first. Printed as
+# separate clauses they invited the reader to add them: six expired flags, five
+# displayed, one hidden, and the tail said "1 more not shown; 1 destroyed pointers
+# NOT shown above" -- two counts of one row. The point of a count is that it can be
+# totalled.
+echo "Test 168: hidden-row counts are reported as a subset, not as a second population"
+CWD_168="$TEST_DIR/wd-168"; mkdir -p "$CWD_168"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+OLD_168=$(date -v-2d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '2 days ago' +%Y-%m-%dT%H:%M:%S%z)
+OLDST_168=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
+for i in 1 2 3 4 5 6; do
+    printf '%s\n%s\n%s\n%s\n' "s" "$OLD_168" "$CWD_168" "exp-168-$i" \
+        > "$PLANS_DIR/.pending-memory-restore-e168$i"
+    touch -t "$OLDST_168" "$PLANS_DIR/.pending-memory-restore-e168$i"
+done
+OUTPUT=$(echo '{"cwd":"'"$CWD_168"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "168" "$OUTPUT" "1 more not shown, 1 of them destroyed pointers" && \
+   assert_not_contains "168" "$OUTPUT" "destroyed pointers NOT shown above"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-e168*
+
+# --- Test 169: one message must not issue two AskUserQuestion orders ---
+# With two or more matched flags the directive enumerates them and says "BEFORE
+# doing anything else, use AskUserQuestion to ask which checkpoint to restore". The
+# selectable note then said "use AskUserQuestion to ask whether to restore one of
+# them (offer those rows only)" over a DISJOINT set -- rows the first list excludes.
+# Only one question can be asked, and "those rows only" pointed at the wrong ones.
+# The control is the same note when no such question is being issued: there it is
+# the only instruction and must keep asking on its own.
+echo "Test 169: selectable rows join the existing question instead of starting a second"
+REPO_169="$TEST_DIR/repo-169"; WT_169="$TEST_DIR/wt-169"
+mkdir -p "$REPO_169"
+git -C "$REPO_169" init -q 2>/dev/null
+git -C "$REPO_169" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_169" worktree add -q --detach "$WT_169" HEAD 2>/dev/null
+NOW_169=$(date +%Y-%m-%dT%H:%M:%S%z)
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$REPO_169" "m1-169" > "$PLANS_DIR/.pending-memory-restore-m1_169"
+printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$REPO_169" "m2-169" > "$PLANS_DIR/.pending-memory-restore-m2_169"
+printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$WT_169" "sel-169" > "$PLANS_DIR/.pending-memory-restore-s1_169"
+OUT_TWO=$(echo '{"cwd":"'"$REPO_169"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+# Control: only a selectable row, no matched ones -> the note must still ask.
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$WT_169" "sel-only-169" > "$PLANS_DIR/.pending-memory-restore-s2_169"
+OUT_SEL=$(echo '{"cwd":"'"$REPO_169"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "169" "$OUT_TWO" "ask which checkpoint to restore" && \
+   assert_contains "169" "$OUT_TWO" "add them to the SAME AskUserQuestion" && \
+   assert_not_contains "169" "$OUT_TWO" "ask whether to restore one of them" && \
+   assert_contains "169" "$OUT_SEL" "ask whether to restore one of them"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*169
+
+# --- Test 170: a recorded path that looks like an option must not become $HOME ---
+# `cd "$dir"` takes the flag's own line 3 as its FIRST WORD, so `-P`, `-L` and `-e`
+# are consumed as options and `cd` then chdirs to $HOME with no operand left. A
+# planted flag recording `-P`, scanned by a hook standing in $HOME, was resolved to
+# $HOME, reported as MATCHES this session, given the full restore directive with the
+# planted label, and CONSUMED -- destroying a pointer and injecting chosen text. Same
+# threat model as the planted symlink and hard link this scan already refuses; only
+# write-reload-flag.sh's own output is trustworthy content.
+echo "Test 170: a recorded path beginning with a dash is not resolved to \$HOME"
+HOME_170="$TEST_DIR/fakehome-170"; mkdir -p "$HOME_170"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+FLAG_170="$PLANS_DIR/.pending-memory-restore-planted170"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "-P" "PLANTED-170" > "$FLAG_170"
+OUTPUT=$(echo '{"cwd":"'"$HOME_170"'"}' | HOME="$HOME_170" bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "170" "$OUTPUT" "MATCHES this session" && \
+   assert_not_contains "170" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE" && \
+   assert_file_exists "170" "$FLAG_170"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_170"
+
+# --- Test 171: scope_key must not resolve an option-shaped path to $HOME ---
+# The match site is covered by test 170; this pins the other half. Without `--`,
+# scope_key "-P" answers `dir:$HOME` -- a real scope for a path that does not exist,
+# which a flag recording `-P` could then be compared against as though it belonged
+# somewhere. The honest answer is the empty string: nothing was resolved.
+echo "Test 171: scope_key answers nothing for an option-shaped path"
+OUT_171=$(HOME="$TEST_DIR" bash -c 'source "'"$LIB_COMMON"'"; scope_key "-P"')
+if [[ -z "$OUT_171" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  ASSERT FAILED: scope_key \"-P\" returned '$OUT_171', expected nothing"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
 
 # --- Summary ---

@@ -30,8 +30,11 @@
 #
 # Usage: write-reload-flag.sh ["<checkpoint label>"] ["<session_id>"]
 #   $1 - optional short checkpoint label (line 4; names the checkpoint in the restore
-#        directive). Newlines and tabs are stripped so they can't corrupt the line
-#        schema or the reader's tab-delimited candidate rows.
+#        directive). Newlines are stripped so they cannot shift the line schema, and
+#        tabs with them: the reader separates its candidate rows with 0x1F rather than
+#        a tab because bash treats tab as IFS WHITESPACE, so `IFS=$'\t' read` merges
+#        adjacent tabs and shifts every later field left. That makes the stripping no
+#        longer load-bearing, but a tab in a label still buys nothing.
 #   $2 - optional session id (line 1, informational; defaults to "smith-checkpoint").
 #
 # Exit status: 0 and prints "Wrote reload flag" only after the flag is persisted;
@@ -42,8 +45,11 @@
 
 source "$(dirname "$0")/lib-common.sh"
 
-# Strip newlines so a multi-line arg cannot shift the line schema readers depend on,
-# and tabs so a label cannot misalign the reader's tab-delimited candidate rows.
+# Strip newlines so a multi-line arg cannot shift the line schema readers depend on.
+# Tabs go too. The reader's row separator is 0x1F rather than a tab — bash treats tab
+# as IFS whitespace, so adjacent tabs merge and every later field shifts left — which
+# makes this no longer load-bearing, but a tab in a label only ever misaligns what
+# prints it.
 LABEL=${1//$'\n'/ }
 LABEL=${LABEL//$'\t'/ }
 SESSION_ID=${2:-smith-checkpoint}

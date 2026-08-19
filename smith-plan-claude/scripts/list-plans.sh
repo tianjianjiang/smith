@@ -29,13 +29,8 @@ fi
 ls -t "$PLANS_DIR"/*.md 2>/dev/null | while read -r file; do
     name=$(basename "$file" .md)
     
-    # Get modification time (macOS first, then Linux fallback)
-    if stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$file" &>/dev/null; then
-        modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$file")
-    else
-        modified=$(stat -c %y "$file" 2>/dev/null | cut -d'.' -f1)
-        modified="${modified:-unknown}"
-    fi
+    mtime_human "$file"
+    modified="${_MTIME_HUMAN:0:16}"
     
     # Calculate progress
     total=$(grep -c '^[[:space:]]*- \[.\]' "$file" 2>/dev/null || echo "0")
