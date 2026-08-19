@@ -98,7 +98,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=171
+TOTAL=172
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -4996,6 +4996,46 @@ touch -t "$STALE_155" "$PLANS_DIR/.pending-memory-restore-s155"
 OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "155" "$OUTPUT" "same repository, selectable" && \
    assert_contains "155" "$OUTPUT" "No checkpoint flag recorded this session's working directory"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+
+# --- Test 156: scope_compare's class/priority table, and the caller's coverage ---
+# The function decides which flags are printed and which are withheld, and it had no
+# direct test: only end-to-end fixtures reached it, so the SET of classes it can emit
+# was never pinned. Test 82 sets the precedent for calling a lib-common function
+# directly. The second half asserts the caller handles every class the function can
+# emit by name, so adding a class for the plan-file subsystem cannot silently land on
+# a verdict written for a different one.
+echo "Test 156: scope_compare: class and priority for every documented input"
+# Chained with && so a failed source or a missing function yields no output at all
+# rather than a partial one. Measured, not assumed: with scope_compare renamed away,
+# the unchained form prints "/" and this form prints "", and BOTH fail the comparison
+# below — each bash -c is a fresh shell, so there is no stale value to publish. The
+# chain states the invariant; it does not close a hole.
+sc() { bash -c 'source "$1" && scope_compare "$2" "$3" && printf "%s/%s" "$SCOPE_CLASS" "$SCOPE_PRIO"' _ "$LIB_COMMON" "$1" "$2"; }
+SC_OK=1
+check_sc() {  # $1 own, $2 other, $3 expected
+    local got; got=$(sc "$1" "$2")
+    if [[ "$got" != "$3" ]]; then
+        echo "  scope_compare('$1','$2') = $got, expected $3"; SC_OK=0
+    fi
+}
+check_sc ""            "repo:/a"     "selfunver/6"
+check_sc "repo:/a"     ""            "unver/5"
+check_sc "repo:/a"     "repo:/a"     "same/3"
+check_sc "repo:/a"     "repo:/b"     "foreign/6"
+check_sc "dir:/a"      "dir:/b"      "outside/6"
+check_sc "repo:/a"     "dir:/b"      "outside/6"
+check_sc ""            ""            "selfunver/6"
+# Every class the function can emit must be named by an arm in the caller.
+SC_CLASSES=$(grep -o 'SCOPE_CLASS="[a-z]*"' "$LIB_COMMON" | sed 's/.*="//;s/"//' | sort -u)
+for c in $SC_CLASSES; do
+    grep -q "^ *${c})" "$TEST_DIR/on-session-clear.sh" || { echo "  class '$c' has no arm in the caller"; SC_OK=0; }
+done
+[[ -n "$SC_CLASSES" ]] || { echo "  no classes found - the grep is broken, not the code"; SC_OK=0; }
+if [[ "$SC_OK" -eq 1 ]]; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
