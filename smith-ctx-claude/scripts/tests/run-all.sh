@@ -7,7 +7,8 @@ for check in \
   volatile-artifact-guard \
   branch-rename-open-pr \
   comment-density-lint \
-  coined-shorthand-lint
+  coined-shorthand-lint \
+  review-orchestration-guard
 do
   sh "$HERE/$check.test.sh" || status=1
 done
