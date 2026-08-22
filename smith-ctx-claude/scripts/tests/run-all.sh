@@ -9,7 +9,8 @@ for check in \
   comment-density-lint \
   coined-shorthand-lint \
   review-orchestration-guard \
-  skill-read-substitution-guard
+  skill-read-substitution-guard \
+  skill-claim-lint
 do
   sh "$HERE/$check.test.sh" || status=1
 done
