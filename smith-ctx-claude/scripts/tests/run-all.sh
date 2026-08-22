@@ -4,7 +4,8 @@ status=0
 for check in \
   external-write-guard \
   askuserquestion-arity \
-  volatile-artifact-guard
+  volatile-artifact-guard \
+  branch-rename-open-pr
 do
   sh "$HERE/$check.test.sh" || status=1
 done
