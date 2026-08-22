@@ -8,7 +8,8 @@ for check in \
   branch-rename-open-pr \
   comment-density-lint \
   coined-shorthand-lint \
-  review-orchestration-guard
+  review-orchestration-guard \
+  skill-read-substitution-guard
 do
   sh "$HERE/$check.test.sh" || status=1
 done

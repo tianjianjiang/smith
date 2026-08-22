@@ -1,0 +1,4 @@
+{
+  "_comment": "skill-read-substitution-guard.mjs: path markers identifying a skill directory. A Read of a SKILL.md under one advises invoking via the Skill tool. See README hooks section.",
+  "skillRootMarkers": ["/skills/", "/.smith/"]
+}
