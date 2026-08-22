@@ -152,6 +152,14 @@ through.
   tool that turn (mentioning or reading a skill is not using it). The read-time
   companion to `skill-read-substitution-guard`. Advisory only, never blocks.
 
+- **gh-stack-guard** (`smith-ctx-claude/scripts/gh-stack-guard.mjs`)
+  — PreToolUse guard (matcher `Bash`) that emits an **advisory** when a command
+  hand-builds a stacked pull request (`gh pr create` with a non-default `--base`,
+  or `git rebase --onto`) while the native `gh stack` extension (markers in
+  `smith-ctx-claude/gh-stack-config.json`) is installed: prefer `gh stack`
+  over the manual base-retarget and rebase cascade. Only fires when the extension
+  is actually present (`gh extension list`); advisory only, never blocks.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -209,7 +217,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" }
         ]
       },
       {
@@ -292,6 +301,9 @@ then:
     confirm the advisory points you to the Skill tool.
 12. **skill-claim-lint** — end a turn whose message says `using @some-skill`
     without invoking it via the Skill tool; confirm the advisory appears.
+13. **gh-stack-guard** — with the `gh stack` extension installed,
+    run `gh pr create --base <a-non-default-branch>`; confirm the advisory points
+    you to `gh stack`. Without the extension it stays silent.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
