@@ -78,6 +78,12 @@ never breaks unrelated work.
   disable it. Covers the MCP channel only — the Bash channel (`gh pr comment`,
   `git push`) is a separate future guard.
 
+- **askuserquestion-arity** (`smith-ctx-claude/scripts/askuserquestion-arity.mjs`)
+  — PreToolUse guard (matcher `AskUserQuestion`) that blocks a call carrying
+  more than one question object: one item per turn. Note this also blocks
+  legitimate multi-question clarification; skip registering it if you want the
+  tool's native 1–4-question behaviour.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -125,6 +131,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" }
         ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/askuserquestion-arity.mjs\"" }
+        ]
       }
     ]
   }
@@ -148,6 +160,8 @@ then:
    Jira issue); confirm a permission prompt appears citing the external-write
    rule. If your settings already `allow` that MCP tool, the `ask` may be
    overridden — see the note below.
+5. **askuserquestion-arity** — send a 2-question `AskUserQuestion`; confirm it
+   is blocked. A single question proceeds.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
