@@ -153,6 +153,30 @@ starting a multi-step operation:**
 4. Enumerate full scope (all items, branches, files), present the numbered
    list, and get explicit scope approval before proceeding
 
+**Elaborate before asking anyone to decide.** This applies to every
+decision request; step 4 above is the most common trigger, not the only
+one. A decision request carries its own context or it is not answerable.
+Before presenting options, write out:
+- **What the subject IS** — define every term, index code, and artifact
+  introduced or not yet seen by the user, not just abbreviations (already
+  required by @smith-standards/SKILL.md Acronym and Shorthand Expansion —
+  what's new here is timing, not content).
+- **Where it lives, and how it got there** — a path, a git ref, a locator.
+- **How many instances the subject covers** — the population each option
+  would act on. Measure it when feasible; if measuring isn't feasible,
+  write "unknown" or "not yet verified" instead of inventing a count.
+  That label does not end the obligation: "Close gaps" below still
+  requires closing the gap, or getting the user's explicit agreement to
+  proceed without closing it.
+- **What each option would do** — its effect on those instances.
+
+This closes two rationalizations:
+- Asking "how should I handle the 62 «coined-term» cases?" when
+  «coined-term» is a word you coined and never defined — the user must
+  reverse-engineer the vocabulary before they can even read the question.
+- Treating a long investigation as permission to skip the write-up — the
+  longer the investigation, the less of it the user has seen.
+
 **When to Ask vs When to Decide:**
 - ASK: ambiguous requirement AND no smith convention covers it
 - ASK: scope change beyond the stated goal
