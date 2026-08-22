@@ -120,6 +120,16 @@ through.
   (`TODO`/`FIXME`/`NOQA`/`eslint-disable`/`SPDX`/…) are exempt; config, `.md`,
   and `.json` files are out of scope.
 
+- **coined-shorthand-lint** (`smith-ctx-claude/scripts/coined-shorthand-lint.mjs`)
+  — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that emits an
+  **advisory** when an edit introduces a cluster of meaningless coined labels
+  matching `[A-Z][0-9]{1,2}` (e.g. `T1`, `S5`) — the internal index codes
+  `smith-standards` says to replace with descriptive names. Fires at
+  `minDistinctTokens` distinct labels (default 2) so an incidental single use is
+  not flagged; genuinely-standard tokens go in
+  `smith-ctx-claude/coined-shorthand-config.json`'s allowlist. Advisory only,
+  never blocks (a script cannot tell a meaningless code from a meaningful one).
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -183,7 +193,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/comment-density-lint.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/comment-density-lint.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/coined-shorthand-lint.mjs\"" }
         ]
       }
     ],
@@ -238,6 +249,8 @@ then:
 8. **comment-density-lint** — write a code file whose new content is heavy on
    inline comments; confirm the advisory reminder appears (the write still
    proceeds).
+9. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
+   labels (e.g. `T1`, `T2`); confirm the advisory appears.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a

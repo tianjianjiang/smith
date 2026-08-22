@@ -1,0 +1,5 @@
+{
+  "_comment": "coined-shorthand-lint.mjs (advisory): flags an edit that introduces at least minDistinctTokens distinct meaningless coined labels matching [A-Z][0-9]{1,2}. Add genuinely-standard tokens to allowlist. See README hooks section.",
+  "minDistinctTokens": 2,
+  "allowlist": []
+}
