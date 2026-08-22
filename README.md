@@ -46,7 +46,7 @@ Claude Code discovers skills and offers them based on task context. All skills u
 Some scripts in this repo are hooks, NOT self-activating skills — they only
 take effect once registered in `$HOME/.claude/settings.json` (see
 `@smith-settings/SKILL.md`). With the skills symlink above in place, register
-the three hooks below.
+the hooks below.
 
 - **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
   UserPromptSubmit router that surfaces candidate smith skills per prompt from
@@ -58,6 +58,29 @@ the three hooks below.
 - **worktree-dirty-guard** (`smith-ctx-claude/scripts/worktree-dirty-guard.mjs`)
   — PreToolUse guard that blocks `EnterWorktree` while the checkout has
   uncommitted changes (they would not carry into the new worktree).
+
+The hooks below are deterministic guards for recurring agent-discipline
+mistakes (each mechanises a rule that prose alone kept failing to hold). They
+all **fail open** — any parse/tool error lets the call through, so a guard bug
+never breaks unrelated work.
+
+- **external-write-guard** (`smith-ctx-claude/scripts/external-write-guard.mjs`)
+  — PreToolUse guard (matcher `mcp__.*`) that escalates the human-facing MCP
+  **write** tools (Jira/Confluence create·edit·transition·comment, Notion
+  create·update·move·duplicate, non-draft Slack sends) to a
+  `permissionDecision:"ask"` prompt, so an external write cannot fire without a
+  per-artifact yes. Read/search/fetch tools and every `*_draft` variant fall
+  through untouched. The write set is a pre-compiled `const` in the script
+  itself (its single source of truth), so no missing or malformed file can
+  silently disable this loss-bearing guard — a core rule of a loss-bearing
+  guard lives in code, and any future client-specific patterns would come from
+  a gitignored `*.local/` overlay that can only ADD to the built-in set, never
+  disable it. Covers the MCP channel only — the Bash channel (`gh pr comment`,
+  `git push`) is a separate future guard.
+
+Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
+stdin, assert exit code + stdout); run them all with
+`sh smith-ctx-claude/scripts/tests/run-all.sh`.
 
 **Where to save it**: these are user-level hooks, so they belong in
 `$HOME/.claude/settings.json` — not a project's `.claude/settings.json`.
@@ -96,6 +119,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/worktree-dirty-guard.mjs\"" }
         ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" }
+        ]
       }
     ]
   }
@@ -115,6 +144,17 @@ then:
    branch/worktree and confirm the same edit proceeds normally.
 3. **worktree-dirty-guard** — with uncommitted changes present, invoke
    `EnterWorktree`; confirm it's blocked citing the dirty checkout.
+4. **external-write-guard** — trigger a human-facing MCP write (e.g. edit a
+   Jira issue); confirm a permission prompt appears citing the external-write
+   rule. If your settings already `allow` that MCP tool, the `ask` may be
+   overridden — see the note below.
+
+**Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
+`permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
+matched MCP tool via `permissions.allow`, verify (step 4) that the `ask` still
+prompts. If a standing `allow` wins, either remove that allow rule or switch the
+script's decision to `"deny"` (the Slack-send deny is the proven template) so
+the guard is not silently bypassed.
 
 ### Checkpoint & reload prerequisites
 
