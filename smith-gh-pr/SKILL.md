@@ -393,6 +393,15 @@ Critical rules; full workflows (creation, cascade update, squash recovery,
 diagrams) in `references/STACKS.md` — load that file when actually operating
 on a stack.
 
+- **Prefer the native `gh stack` extension (github/gh-stack) when it is
+  installed** — it builds and manages the whole stack (`gh stack init` / `add`
+  / `submit` / `push` / `sync` / `rebase` / `merge`) instead of hand-rolling
+  the base-retarget and rebase cascade. Confirm availability with `gh
+  extension list`; never assert from memory that it is absent (recurring
+  miss — verify from source, `@smith-guidance` Honest). The manual git/gh
+  workflows in `references/STACKS.md` are the fallback when the extension is
+  unavailable, and remain the reference for WHY each step matters (e.g. the
+  cli/cli#1168 child-close race).
 - Merge bottom-up: retarget each child's base onto its grandparent (or the
   default branch) BEFORE merging or deleting the parent — never after.
   `gh pr merge --delete-branch` on a parent whose child still targets it

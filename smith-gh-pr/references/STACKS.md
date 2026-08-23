@@ -4,6 +4,29 @@ Detail behind the "Stacked PRs" section of `../SKILL.md`. Load this file when
 actually operating on a stack (creation, cascade update, merge, recovery);
 the SKILL.md section alone covers the critical rules.
 
+## Native tooling: `gh stack` (github/gh-stack)
+
+When the `gh stack` extension is installed (`gh extension list` to confirm —
+never assume it is absent from memory), it is the preferred way to run a stack
+and it automates most of the manual dance documented below:
+
+- `gh stack init [branch...]` — start a stack on the trunk, or adopt existing
+  branches into one
+- `gh stack add <branch>` — put the current commit on a new branch atop the
+  stack (the one-commit-per-branch unit)
+- `gh stack submit` — push the branches AND create/update the whole PR chain
+  on GitHub (the create-the-PRs step)
+- `gh stack push` — push the active branches in the stack to the remote only,
+  without creating or updating PRs
+- `gh stack sync` / `rebase` — keep local and remote in sync after changes
+- `gh stack merge` — merge the chain bottom-up
+- `gh stack view` / `modify` — inspect or restructure
+
+The manual `git rebase --onto` cascade and per-child base-retargeting in the
+sections below remain the fallback when the extension is unavailable, and the
+explanation for WHY each safeguard exists (e.g. the cli/cli#1168 child-close
+race) so a manual recovery stays correct.
+
 ## When to stack
 
 - Feature requires 500+ lines of changes
