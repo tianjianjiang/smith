@@ -61,8 +61,12 @@ the hooks below.
 
 The hooks below are deterministic guards for recurring agent-discipline
 mistakes (each mechanises a rule that prose alone kept failing to hold). They
-all **fail open** — any parse/tool error lets the call through, so a guard bug
-never breaks unrelated work.
+all **fail open** — a parse or tool error inside a guard lets the call through,
+so a guard bug never breaks unrelated work. Failing open on error is separate
+from a guard's intended action on valid input: `askuserquestion-arity` blocks a
+multi-question call, and `branch-rename-open-pr` blocks an unrecoverable rename
+(or escalates to a prompt when it cannot verify PR state) rather than letting it
+through.
 
 - **external-write-guard** (`smith-ctx-claude/scripts/external-write-guard.mjs`)
   — PreToolUse guard (matcher `mcp__.*`) that escalates the human-facing MCP
@@ -89,6 +93,14 @@ never breaks unrelated work.
   session wrote files under volatile prefixes (`/tmp`, `~/Downloads`,
   `$CLAUDE_JOB_DIR/tmp`), prints an **advisory** `systemMessage` listing them so
   nothing durable is stranded before exit. Advisory only — it never blocks.
+
+- **branch-rename-open-pr** (`smith-ctx-claude/scripts/branch-rename-open-pr.mjs`)
+  — PreToolUse guard (matcher `Bash`) that blocks a `git branch -m`/`-M`/`--move`
+  rename of a branch whose head still has an open PR (renaming closes the PR
+  unrecoverably). If `gh` cannot verify PR state (error or timeout) it
+  escalates to a permission prompt rather than silently allowing — because the
+  action it guards is unrecoverable; when `gh` is not installed it allows
+  (the check is not applicable).
 
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
@@ -143,6 +155,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/askuserquestion-arity.mjs\"" }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" }
+        ]
       }
     ],
     "Stop": [
@@ -191,6 +209,8 @@ then:
    is blocked. A single question proceeds.
 6. **volatile-artifact-guard** — write a file under `/tmp`, then stop; confirm
    the advisory lists it.
+7. **branch-rename-open-pr** — on a branch with an open PR, attempt
+   `git branch -m`; confirm it is blocked.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
