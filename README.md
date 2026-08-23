@@ -84,6 +84,12 @@ never breaks unrelated work.
   legitimate multi-question clarification; skip registering it if you want the
   tool's native 1–4-question behaviour.
 
+- **volatile-artifact-guard** (`smith-ctx-claude/scripts/volatile-artifact-guard.mjs`)
+  — Stop/SubagentStop/SessionEnd guard that streams the transcript and, if the
+  session wrote files under volatile prefixes (`/tmp`, `~/Downloads`,
+  `$CLAUDE_JOB_DIR/tmp`), prints an **advisory** `systemMessage` listing them so
+  nothing durable is stranded before exit. Advisory only — it never blocks.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -138,6 +144,27 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/askuserquestion-arity.mjs\"" }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/volatile-artifact-guard.mjs\"" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/volatile-artifact-guard.mjs\"" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/volatile-artifact-guard.mjs\"" }
+        ]
+      }
     ]
   }
 }
@@ -162,6 +189,8 @@ then:
    overridden — see the note below.
 5. **askuserquestion-arity** — send a 2-question `AskUserQuestion`; confirm it
    is blocked. A single question proceeds.
+6. **volatile-artifact-guard** — write a file under `/tmp`, then stop; confirm
+   the advisory lists it.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a

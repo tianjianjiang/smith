@@ -3,7 +3,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
   external-write-guard \
-  askuserquestion-arity
+  askuserquestion-arity \
+  volatile-artifact-guard
 do
   sh "$HERE/$check.test.sh" || status=1
 done
