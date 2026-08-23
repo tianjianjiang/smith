@@ -139,6 +139,13 @@ through.
   applicable agent set runs, instead of hand-picking individual agents. Advisory
   only (a one-off targeted spawn is legitimate).
 
+- **skill-read-substitution-guard** (`smith-ctx-claude/scripts/skill-read-substitution-guard.mjs`)
+  — PreToolUse guard (matcher `Read`) that emits an **advisory** when a
+  `SKILL.md` under a skills root (markers in
+  `smith-ctx-claude/skill-read-config.json`) is Read: to USE a skill, invoke it
+  via the Skill tool (which loads and runs it); Read the `SKILL.md` directly only
+  to quote or edit it. Advisory only.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -211,6 +218,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/review-orchestration-guard.mjs\"" }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-read-substitution-guard.mjs\"" }
+        ]
       }
     ],
     "Stop": [
@@ -268,6 +281,8 @@ then:
    labels (e.g. `T1`, `T2`); confirm the advisory appears.
 10. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;
     confirm the advisory points you to `/review-pr` / `/smith-review`.
+11. **skill-read-substitution-guard** — Read a `SKILL.md` under a skills root;
+    confirm the advisory points you to the Skill tool.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
