@@ -146,6 +146,12 @@ through.
   via the Skill tool (which loads and runs it); Read the `SKILL.md` directly only
   to quote or edit it. Advisory only.
 
+- **skill-claim-lint** (`smith-ctx-claude/scripts/skill-claim-lint.mjs`) — Stop
+  guard that streams the transcript and emits an **advisory** when the turn's
+  message says `using @X` for a skill that was not actually invoked via the Skill
+  tool that turn (mentioning or reading a skill is not using it). The read-time
+  companion to `skill-read-substitution-guard`. Advisory only, never blocks.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -229,7 +235,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/volatile-artifact-guard.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/volatile-artifact-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-claim-lint.mjs\"" }
         ]
       }
     ],
@@ -283,6 +290,8 @@ then:
     confirm the advisory points you to `/review-pr` / `/smith-review`.
 11. **skill-read-substitution-guard** — Read a `SKILL.md` under a skills root;
     confirm the advisory points you to the Skill tool.
+12. **skill-claim-lint** — end a turn whose message says `using @some-skill`
+    without invoking it via the Skill tool; confirm the advisory appears.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
