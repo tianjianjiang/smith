@@ -2,7 +2,8 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
-  external-write-guard
+  external-write-guard \
+  askuserquestion-arity
 do
   sh "$HERE/$check.test.sh" || status=1
 done
