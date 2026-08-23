@@ -1,0 +1,4 @@
+{
+  "_comment": "review-orchestration-guard.mjs: subagent-type prefixes that must run via their orchestrator (/review-pr), not be spawned individually. See README hooks section.",
+  "orchestratedSubagentPrefixes": ["pr-review-toolkit:"]
+}

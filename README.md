@@ -130,6 +130,15 @@ through.
   `smith-ctx-claude/coined-shorthand-config.json`'s allowlist. Advisory only,
   never blocks (a script cannot tell a meaningless code from a meaningful one).
 
+- **review-orchestration-guard** (`smith-ctx-claude/scripts/review-orchestration-guard.mjs`)
+  — PreToolUse guard (matcher `Agent|Task`) that emits an **advisory** when a
+  subagent is spawned whose `subagent_type` starts with an orchestrated-toolkit
+  prefix (default `pr-review-toolkit:`, in
+  `smith-ctx-claude/review-orchestration-config.json`): invoke the toolkit's
+  orchestrator (`/review-pr`, or `/smith-review` which marshals it) so its full
+  applicable agent set runs, instead of hand-picking individual agents. Advisory
+  only (a one-off targeted spawn is legitimate).
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -196,6 +205,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/comment-density-lint.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/coined-shorthand-lint.mjs\"" }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/review-orchestration-guard.mjs\"" }
+        ]
       }
     ],
     "Stop": [
@@ -251,6 +266,8 @@ then:
    proceeds).
 9. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
    labels (e.g. `T1`, `T2`); confirm the advisory appears.
+10. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;
+    confirm the advisory points you to `/review-pr` / `/smith-review`.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
