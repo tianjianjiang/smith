@@ -11,7 +11,8 @@ for check in \
   review-orchestration-guard \
   skill-read-substitution-guard \
   skill-claim-lint \
-  gh-stack-guard
+  gh-stack-guard \
+  attribution
 do
   sh "$HERE/$check.test.sh" || status=1
 done
