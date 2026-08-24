@@ -160,6 +160,50 @@ through.
   over the manual base-retarget and rebase cascade. Only fires when the extension
   is actually present (`gh extension list`); advisory only, never blocks.
 
+- **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
+  — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
+  attribution mechanism. It is target-agnostic and **never inspects or rewrites the
+  tool's arguments**: on each Bash call it reads the newest assistant
+  `.message.model` from the session transcript and refreshes a cwd-keyed model file
+  (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-<cwd-hash>`), so the
+  companion `attribution.sh` command has a fresh, correct model id. Keyed by working
+  directory (git toplevel, else `pwd -P`) rather than by `session_key`, because
+  `session_key` hashes `$PPID` and a Bash-tool subprocess cannot reproduce a hook's
+  PPID — the working directory is the only coordinate both the hook and the command
+  share. It picks up a mid-session `/model` switch from the next turn's Bash calls
+  onward (the model id has no environment variable — `ANTHROPIC_MODEL` goes stale on
+  switch; the switching turn's own commit can still read the prior model, since the
+  new model's assistant line may not be flushed yet) and always exits 0 (fail-open);
+  it emits no permission decision and never blocks a Bash call. Needs `jq`.
+
+  `attribution.sh` (the single source of truth) reads that file and prints
+  `Assisted-by: Claude:<model>` (or `Claude:<model>` with the `value` argument), or
+  exits non-zero printing nothing if the model is unknown — so a trailer is omitted,
+  never guessed. Every target **pulls** it, so the line is never hand-typed:
+  - git commit → capture into an arg array so an unknown model omits the trailer
+    rather than aborting the commit (a bare `git commit --trailer "$(…/attribution.sh)"`
+    fails with `empty --trailer argument` when the model is unknown, and the
+    `trailer.assisted-by.cmd` config form appends a dangling empty `Assisted-by:`):
+    ```
+    args=(-m "your message")
+    ab=$(…/attribution.sh) && args+=(--trailer "$ab")
+    git commit "${args[@]}"
+    ```
+    git parses the full `Assisted-by: Claude:<model>` line into a trailer.
+  - gh PR body/comment → embed `$(…/attribution.sh)` in the body.
+  - MCP writes (Slack/Jira/Confluence/Notion) → their arguments are not a shell, so
+    the composer runs `attribution.sh` and includes its output when authoring the
+    message. No MCP hook: the single source guarantees the format; only presence
+    depends on remembering to include it.
+
+  Limitations (by design; the model id is not reachable as an environment variable,
+  so the file keyed by working directory is the only coordinate a hook and a
+  Bash-context pull can share): two concurrent sessions in the SAME checkout on
+  different models overwrite each other's `.assisted-model-<hash>` (worktrees are
+  isolated by distinct git toplevel); the commit made in the same turn as a `/model`
+  switch can still read the prior model; and each distinct repo leaves a small
+  persistent `.assisted-model-<hash>` cache file under `plans/`.
+
 Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
 stdin, assert exit code + stdout); run them all with
 `sh smith-ctx-claude/scripts/tests/run-all.sh`.
@@ -218,7 +262,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "Bash",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" },
+          { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
         ]
       },
       {
@@ -304,6 +349,10 @@ then:
 13. **gh-stack-guard** — with the `gh stack` extension installed,
     run `gh pr create --base <a-non-default-branch>`; confirm the advisory points
     you to `gh stack`. Without the extension it stays silent.
+14. **attribution-model-stamp** — run any Bash command, then confirm
+    `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
+    model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
+    `Assisted-by: Claude:<model>`. The Bash call is never blocked or altered.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
