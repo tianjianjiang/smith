@@ -24,7 +24,7 @@ injected-prompt strings.
 - Prose / inline: use the «project-slug»; `claude mcp remove «name»`
 - Path / value: `` `~/.claude/projects/«project-slug»/memory/` ``
 - Compound (join sub-tokens with literal separators): `«plugin»@«marketplace»`,
-  `«type»/«scope»_«description»`
+  `«type»/«description»`
 - Code identifier: `ralph_«task»_state`, `def test_«action»_when_«condition»()`
 - CLI usage synopsis: `verify-stack-scope.sh «branch-pattern»`
 
@@ -59,7 +59,7 @@ identifier the reader edits rather than a substituted argument:
 
 ```shell
 export API_KEY="YOUR_API_KEY"
-git checkout -b "feat/«scope»_«description»"
+git checkout -b "feat/«description»"
 ```
 
 ## Before You Finish

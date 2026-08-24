@@ -102,6 +102,42 @@ through.
   action it guards is unrecoverable; when `gh` is not installed it allows
   (the check is not applicable).
 
+- **branch-name-guard** (`smith-ctx-claude/scripts/branch-name-guard.mjs`)
+  — PreToolUse guard (matcher `Bash`) that blocks `git checkout -b`/`-B`/
+  `--orphan`, `git switch -c`/`-C`/`--create`/`--orphan`, `git branch <name>`/
+  `-m`/`-M`/`--move`/`-c`/`-C`/`--copy`, `git stash branch`, and
+  `git worktree add -b`/`-B` (short
+  flags, jammed short flags like `-bname`, and `--long=value` forms all
+  recognized) when the target name doesn't match the Conventional Branch
+  pattern `type/description` (`@smith-style/SKILL.md` Branch Names) —
+  lowercase type from the Conventional Commits set, kebab-case description
+  (hyphen-separated segments that may contain dots, e.g.
+  `chore/deps-node18.20-bump`), no underscores/uppercase/consecutive-hyphens
+  — or contains `post-review`/`after-review`. The pattern and
+  forbidden-substring list are
+  pre-compiled `const`s in the script itself, so no external config can
+  silently disable the check. Blocks with an auto-corrected suggestion
+  (lowercase, `_`→`-`, collapsed hyphens) rather than a bare rejection.
+  Skips names containing an unresolved shell substitution (`$VAR`, `` `cmd` ``)
+  rather than validating the literal syntax. **Known limitation** (shared
+  with `branch-rename-open-pr`/`gh-stack-guard`, which parse Bash command
+  text the same way): it only sees the command as typed, so a name resolved
+  through a git/shell alias, or a branch created through a non-Bash path
+  (`EnterWorktree`, an IDE git panel, an external terminal) is not checked.
+  Closing that gap would need a git-native hook (e.g. `pre-push`) validating
+  the resolved ref instead of Bash-command text — tracked as a follow-up,
+  not attempted here. `git branch`'s create/rename/copy/listing/upstream
+  flags are classified by a single per-token scan (`branchTokenCategory`)
+  that stops at the first recognized flag character, so a value-taking
+  flag's attached value (e.g. `-umain`) is never rescanned as if its
+  characters were further bundled flags. `checkout`/`switch`'s flag lists
+  only recognize `-b`/`-B`/`-c`/`-C`/`--create`/`--orphan` as create
+  signals — plain `git checkout <name>`/`git switch <name>` DWIM-creating a
+  local branch from a single matching remote-tracking branch, and
+  `--track`/`-t` against a remote ref, are not recognized as creates at
+  all, so no validation happens on those paths; tracked as a follow-up,
+  not attempted here.
+
 - **comment-density-lint** (`smith-ctx-claude/scripts/comment-density-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that, for code files
   only, counts the **full-line** comments a single edit adds and emits an
@@ -262,6 +298,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "Bash",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-name-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" },
           { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
         ]
@@ -335,21 +372,26 @@ then:
    the advisory lists it.
 7. **branch-rename-open-pr** — on a branch with an open PR, attempt
    `git branch -m`; confirm it is blocked.
-8. **comment-density-lint** — write a code file whose new content is heavy on
+8. **branch-name-guard** — attempt `git checkout -b feat/bad_name`; confirm
+   it is blocked with a suggested fix (`feat/bad-name`). Attempt
+   `git checkout -b wip/no-type-prefix`; confirm it is blocked (no
+   suggestion offered — `wip` isn't a fixable typo of a known type). Then
+   `git checkout -b feat/good-name`; confirm it proceeds.
+9. **comment-density-lint** — write a code file whose new content is heavy on
    inline comments; confirm the advisory reminder appears (the write still
    proceeds).
-9. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
-   labels (e.g. `T1`, `T2`); confirm the advisory appears.
-10. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;
+10. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
+    labels (e.g. `T1`, `T2`); confirm the advisory appears.
+11. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;
     confirm the advisory points you to `/review-pr` / `/smith-review`.
-11. **skill-read-substitution-guard** — Read a `SKILL.md` under a skills root;
+12. **skill-read-substitution-guard** — Read a `SKILL.md` under a skills root;
     confirm the advisory points you to the Skill tool.
-12. **skill-claim-lint** — end a turn whose message says `using @some-skill`
+13. **skill-claim-lint** — end a turn whose message says `using @some-skill`
     without invoking it via the Skill tool; confirm the advisory appears.
-13. **gh-stack-guard** — with the `gh stack` extension installed,
+14. **gh-stack-guard** — with the `gh stack` extension installed,
     run `gh pr create --base <a-non-default-branch>`; confirm the advisory points
     you to `gh stack`. Without the extension it stays silent.
-14. **attribution-model-stamp** — run any Bash command, then confirm
+15. **attribution-model-stamp** — run any Bash command, then confirm
     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
     model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
     `Assisted-by: Claude:<model>`. The Bash call is never blocked or altered.

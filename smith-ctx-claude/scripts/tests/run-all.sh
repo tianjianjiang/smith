@@ -12,7 +12,9 @@ for check in \
   skill-read-substitution-guard \
   skill-claim-lint \
   gh-stack-guard \
-  attribution
+  attribution \
+  branch-name-guard \
+  git-command-tokenizer
 do
   sh "$HERE/$check.test.sh" || status=1
 done
