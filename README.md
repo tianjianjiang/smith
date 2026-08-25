@@ -196,6 +196,27 @@ through.
   over the manual base-retarget and rebase cascade. Only fires when the extension
   is actually present (`gh extension list`); advisory only, never blocks.
 
+- **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`)
+  — PreToolUse guard (matcher `ExitPlanMode`) enforcing
+  `smith-plan-claude/SKILL.md` §Explain Before ExitPlanMode: the plan
+  explanation must be sent as its own turn (plain text, no tool call)
+  before `ExitPlanMode` is called in a later, separate turn — never
+  bundled into the same message, where the approval modal hides it. Blocks
+  in two cases: (1) `last_assistant_message` (the hook payload's text
+  emitted earlier in the SAME message as this tool call) is non-empty —
+  text sharing a turn with the call is exactly what the modal hides; (2)
+  scanning `transcript_path`, no assistant message in the current exchange
+  is text-only (no `tool_use` block) with at least 80 characters of
+  combined text — i.e. no separate elaboration turn was ever sent. The
+  elaboration window resets on a genuine new user message (mirrors
+  `skill-claim-lint`'s reset logic) but survives a `tool_result`
+  continuation, so an elaboration turn followed by a quick verification
+  tool call still counts. Fails open on a missing/unreadable transcript or
+  malformed hook input. **Known limitation**: the 80-character floor and
+  whole-window scan are a structural proxy for "was this explained," not a
+  semantic one — a long but low-content message (e.g. a wall of pasted
+  code) satisfies it, and the threshold itself is untuned.
+
 - **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
   — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
   attribution mechanism. It is target-agnostic and **never inspects or rewrites the
@@ -292,6 +313,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "AskUserQuestion",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/askuserquestion-arity.mjs\"" }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/exit-plan-mode-guard.mjs\"" }
         ]
       },
       {
@@ -395,6 +422,11 @@ then:
     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
     model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
     `Assisted-by: Claude:<model>`. The Bash call is never blocked or altered.
+16. **exit-plan-mode-guard** — in plan mode, call `ExitPlanMode` in the same
+    message as the plan explanation (or with no prior elaboration turn at
+    all); confirm it is blocked. Then send the explanation as its own
+    plain-text turn first, and call `ExitPlanMode` with no accompanying
+    text in a later turn; confirm it proceeds.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a

@@ -103,11 +103,14 @@ Simulates Claude Code's "clear context and auto-accept edits" behavior for plan 
 ### Explain Before ExitPlanMode
 
 The approval modal shows the plan FILE and draws the user's eye away from your
-chat message -- in-message prose is easily missed. So when the plan is
-non-obvious or you want the user to read reasoning first, put the explanation
+chat message -- in-message prose is easily missed. Always put the explanation
 (plain text; zh-Hant per user preference) in its OWN turn FIRST, then call
 ExitPlanMode in a LATER turn. Do not bury a substantial explanation in the same
-turn as the ExitPlanMode call.
+turn as the ExitPlanMode call. There is no "plan is obvious enough to skip"
+exception -- deterministically enforced by the `exit-plan-mode-guard.mjs`
+PreToolUse hook (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`, README.md
+Hooks), which blocks the call unless a prior turn in the exchange was
+plain-text-only elaboration.
 
 ### ExitPlanMode Rejection Handling
 
