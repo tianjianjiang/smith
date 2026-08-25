@@ -48,7 +48,8 @@ printf '%s\n' \
 text_and_tool_same_message="$TMPD/text-and-tool-same-message.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"go"}}' \
-  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"},{\"type\":\"tool_use\",\"name\":\"ExitPlanMode\",\"input\":{}}]}}" \
+  "{\"type\":\"assistant\",\"message\":{\"id\":\"msg_a\",\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"id":"msg_a","content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
   > "$text_and_tool_same_message"
 
 elaboration_cleared_by_new_turn="$TMPD/elaboration-cleared-by-new-turn.jsonl"
@@ -110,22 +111,33 @@ printf '%s\n' \
 current_call_flushed_bundled_no_prior_elaboration="$TMPD/current-call-flushed-bundled-no-prior-elaboration.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"go"}}' \
-  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"},{\"type\":\"tool_use\",\"name\":\"ExitPlanMode\",\"input\":{}}]}}" \
+  "{\"type\":\"assistant\",\"message\":{\"id\":\"msg_b\",\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"id":"msg_b","content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
   > "$current_call_flushed_bundled_no_prior_elaboration"
 
 current_call_flushed_bundled_after_prior_elaboration="$TMPD/current-call-flushed-bundled-after-prior-elaboration.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"go"}}' \
   "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
-  '{"type":"assistant","message":{"content":[{"type":"text","text":"trivial trailing remark"},{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
+  '{"type":"assistant","message":{"id":"msg_c","content":[{"type":"text","text":"trivial trailing remark"}]}}' \
+  '{"type":"assistant","message":{"id":"msg_c","content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
   > "$current_call_flushed_bundled_after_prior_elaboration"
 
 current_call_flushed_substantial_bundle_after_prior_elaboration="$TMPD/current-call-flushed-substantial-bundle-after-prior-elaboration.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"go"}}' \
   "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
-  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT revised again with unrelated new reasoning.\"},{\"type\":\"tool_use\",\"name\":\"ExitPlanMode\",\"input\":{}}]}}" \
+  "{\"type\":\"assistant\",\"message\":{\"id\":\"msg_d\",\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT revised again with unrelated new reasoning.\"}]}}" \
+  '{"type":"assistant","message":{"id":"msg_d","content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
   > "$current_call_flushed_substantial_bundle_after_prior_elaboration"
+
+text_bundled_with_non_exitplanmode_tool="$TMPD/text-bundled-with-non-exitplanmode-tool.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"go"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"id\":\"msg_e\",\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"id":"msg_e","content":[{"type":"tool_use","name":"Write","input":{"file_path":"plan.md"}}]}}' \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
+  > "$text_bundled_with_non_exitplanmode_tool"
 
 allows "$prior_elaboration" \
   "clean call after a genuine prior elaboration turn"
@@ -160,6 +172,8 @@ blocks "$current_call_flushed_bundled_no_prior_elaboration" \
   "the current call is flushed, bundling text with the tool call, with no genuine prior elaboration"
 blocks "$current_call_flushed_substantial_bundle_after_prior_elaboration" \
   "the current call is flushed bundling SUBSTANTIAL new text, even though earlier elaboration exists"
+blocks "$text_bundled_with_non_exitplanmode_tool" \
+  "text bundled with a non-ExitPlanMode tool call (Write) does not count as elaboration"
 
 allows "$TMPD/does-not-exist.jsonl" \
   "missing transcript file fails open"

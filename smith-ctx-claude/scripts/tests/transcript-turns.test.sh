@@ -64,4 +64,35 @@ got=$(node --input-type=module -e "
   console.log(JSON.stringify(events));
 " 2>&1) && fail "readTranscriptEvents: missing file should reject, not resolve silently"
 
+split_turn="$TMPD/split-turn.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"go"}}' \
+  '{"type":"assistant","message":{"id":"msg_1","content":[{"type":"text","text":"explaining"}]}}' \
+  '{"type":"assistant","message":{"id":"msg_1","content":[{"type":"tool_use","name":"ExitPlanMode","input":{}}]}}' \
+  '{"type":"assistant","message":{"id":"msg_2","content":[{"type":"text","text":"unrelated later turn"}]}}' \
+  > "$split_turn"
+
+got=$(node --input-type=module -e "
+  import { readTranscriptTurns } from \"$MODULE\";
+  const turns = [];
+  for await (const t of readTranscriptTurns(\"$split_turn\")) {
+    turns.push(t.type === 'user' ? 'user' : t.message.content.map((b) => b.type).join('+'));
+  }
+  console.log(JSON.stringify(turns));
+")
+[ "$got" = '["user","text+tool_use","text"]' ] || fail "readTranscriptTurns: expected lines sharing message.id merged into one turn, got $got"
+
+sidechain_turn="$TMPD/sidechain-turn.jsonl"
+printf '%s\n' \
+  '{"type":"assistant","isSidechain":true,"message":{"id":"msg_side","content":[{"type":"text","text":"sub"}]}}' \
+  > "$sidechain_turn"
+
+got=$(node --input-type=module -e "
+  import { readTranscriptTurns } from \"$MODULE\";
+  const turns = [];
+  for await (const t of readTranscriptTurns(\"$sidechain_turn\")) turns.push(t.isSidechain);
+  console.log(JSON.stringify(turns));
+")
+[ "$got" = '[true]' ] || fail "readTranscriptTurns: expected isSidechain preserved on the merged turn, got $got"
+
 echo "PASS: transcript-turns"

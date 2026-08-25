@@ -3,7 +3,7 @@ import { readFileSync, writeSync } from "node:fs";
 import {
   hasBlockType,
   isGenuineNewUserTurn,
-  readTranscriptEvents,
+  readTranscriptTurns,
   toolUseNames,
 } from "./lib/transcript-turns.mjs";
 
@@ -23,7 +23,7 @@ function hasSubstantialText(content) {
 async function priorElaborationFound(transcriptPath) {
   let found = false;
   let pendingReset = false;
-  for await (const event of readTranscriptEvents(transcriptPath)) {
+  for await (const event of readTranscriptTurns(transcriptPath)) {
     if (!event || event.isSidechain === true) continue;
 
     if (pendingReset) {
@@ -83,7 +83,13 @@ async function main() {
   let found;
   try {
     found = await priorElaborationFound(transcriptPath);
-  } catch {
+  } catch (error) {
+    if (!error || error.code !== "ENOENT") {
+      writeSync(
+        2,
+        `exit-plan-mode-guard: unexpected error, allowing the call: ${error && error.message}\n`,
+      );
+    }
     return;
   }
 

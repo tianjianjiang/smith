@@ -30,3 +30,38 @@ export async function* readTranscriptEvents(transcriptPath) {
     }
   }
 }
+
+function assistantMessageId(event) {
+  return event && event.type === "assistant" && event.message && typeof event.message.id === "string"
+    ? event.message.id
+    : null;
+}
+
+function contentBlocks(event) {
+  return Array.isArray(event.message.content) ? [...event.message.content] : [];
+}
+
+export async function* readTranscriptTurns(transcriptPath) {
+  let buffered = null;
+
+  for await (const event of readTranscriptEvents(transcriptPath)) {
+    const id = assistantMessageId(event);
+    if (buffered && buffered.message.id === id) {
+      buffered.message.content.push(...contentBlocks(event));
+      continue;
+    }
+
+    if (buffered) yield buffered;
+    if (id === null) {
+      buffered = null;
+      yield event;
+      continue;
+    }
+    buffered = {
+      type: "assistant",
+      isSidechain: event.isSidechain === true,
+      message: { id, content: contentBlocks(event) },
+    };
+  }
+  if (buffered) yield buffered;
+}
