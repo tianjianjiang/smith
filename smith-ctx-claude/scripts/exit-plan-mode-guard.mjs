@@ -1,59 +1,65 @@
 #!/usr/bin/env node
-import { readFileSync, createReadStream, writeSync } from "node:fs";
-import { createInterface } from "node:readline";
+import { readFileSync, writeSync } from "node:fs";
+import {
+  hasBlockType,
+  isGenuineNewUserTurn,
+  readTranscriptEvents,
+  toolUseNames,
+} from "./lib/transcript-turns.mjs";
 
 const MIN_ELABORATION_CHARS = 80;
 
-function textLength(content) {
-  if (!Array.isArray(content)) return 0;
+function hasSubstantialText(content) {
+  if (!Array.isArray(content)) return false;
   let total = 0;
   for (const block of content) {
     if (block && block.type === "text" && typeof block.text === "string") {
       total += block.text.trim().length;
     }
   }
-  return total;
-}
-
-function hasToolUse(content) {
-  return Array.isArray(content) && content.some((block) => block && block.type === "tool_use");
+  return total >= MIN_ELABORATION_CHARS;
 }
 
 async function priorElaborationFound(transcriptPath) {
   let found = false;
-  const lines = createInterface({
-    input: createReadStream(transcriptPath, { encoding: "utf-8" }),
-    crlfDelay: Infinity,
-  });
-  for await (const line of lines) {
-    if (!line.trim()) continue;
-    let event;
-    try {
-      event = JSON.parse(line);
-    } catch {
+  let pendingReset = false;
+  for await (const event of readTranscriptEvents(transcriptPath)) {
+    if (!event || event.isSidechain === true) continue;
+
+    if (pendingReset) {
+      found = false;
+      pendingReset = false;
+    }
+
+    if (event.type === "user") {
+      if (isGenuineNewUserTurn(event)) found = false;
       continue;
     }
-    if (event && event.type === "user") {
-      const blocks = event.message && event.message.content;
-      const carriesToolResult =
-        Array.isArray(blocks) && blocks.some((block) => block && block.type === "tool_result");
-      if (!carriesToolResult) found = false;
+
+    const content = event.message && event.message.content;
+    if (toolUseNames(content).includes("ExitPlanMode")) {
+      if (hasSubstantialText(content)) {
+        found = false;
+      } else {
+        pendingReset = true;
+      }
       continue;
     }
-    const content = event && event.message && event.message.content;
-    if (!content) continue;
-    if (!hasToolUse(content) && textLength(content) >= MIN_ELABORATION_CHARS) {
+    if (!hasBlockType(content, "tool_use") && hasSubstantialText(content)) {
       found = true;
     }
   }
   return found;
 }
 
-function emitBlock(reason) {
+function blockAndExit() {
   writeSync(
     2,
     [
-      `Blocked: ExitPlanMode ${reason}`,
+      "Blocked: ExitPlanMode was called with no prior turn of plain-text " +
+        "elaboration since the last real user message or ExitPlanMode " +
+        "attempt. Send the explanation as its own turn (text only, no tool " +
+        "call) first.",
       "Per smith-plan-claude/SKILL.md §Explain Before ExitPlanMode: " +
         "deliver the explanation as plain text in its own turn first, " +
         "then call ExitPlanMode in a separate, later turn.",
@@ -71,16 +77,6 @@ async function main() {
   }
   if (!input || typeof input !== "object") return;
 
-  const lastMessage =
-    typeof input.last_assistant_message === "string" ? input.last_assistant_message.trim() : "";
-  if (lastMessage.length > 0) {
-    emitBlock(
-      "was called with explanatory text in the same message. The approval " +
-        "modal hides text that shares a turn with the tool call.",
-    );
-    return;
-  }
-
   const transcriptPath = input.transcript_path;
   if (typeof transcriptPath !== "string") return;
 
@@ -91,13 +87,7 @@ async function main() {
     return;
   }
 
-  if (!found) {
-    emitBlock(
-      "was called with no prior turn of plain-text elaboration in this " +
-        "exchange. Send the explanation as its own turn (text only, no " +
-        "tool call) first.",
-    );
-  }
+  if (!found) blockAndExit();
 }
 
 main().catch(() => {});

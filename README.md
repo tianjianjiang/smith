@@ -196,26 +196,57 @@ through.
   over the manual base-retarget and rebase cascade. Only fires when the extension
   is actually present (`gh extension list`); advisory only, never blocks.
 
-- **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`)
+- **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/transcript-turns.mjs`)
   — PreToolUse guard (matcher `ExitPlanMode`) enforcing
   `smith-plan-claude/SKILL.md` §Explain Before ExitPlanMode: the plan
   explanation must be sent as its own turn (plain text, no tool call)
-  before `ExitPlanMode` is called in a later, separate turn — never
-  bundled into the same message, where the approval modal hides it. Blocks
-  in two cases: (1) `last_assistant_message` (the hook payload's text
-  emitted earlier in the SAME message as this tool call) is non-empty —
-  text sharing a turn with the call is exactly what the modal hides; (2)
-  scanning `transcript_path`, no assistant message in the current exchange
-  is text-only (no `tool_use` block) with at least 80 characters of
-  combined text — i.e. no separate elaboration turn was ever sent. The
-  elaboration window resets on a genuine new user message (mirrors
-  `skill-claim-lint`'s reset logic) but survives a `tool_result`
-  continuation, so an elaboration turn followed by a quick verification
-  tool call still counts. Fails open on a missing/unreadable transcript or
-  malformed hook input. **Known limitation**: the 80-character floor and
+  before `ExitPlanMode` is called in a later, separate turn — never bundled
+  into the same message, where the approval modal hides it. Blocks unless
+  scanning `transcript_path` finds an assistant message, since the last
+  qualifying reset point, that is text-only (no `tool_use` block) with at
+  least 80 characters of combined text. A message bundling text with the
+  `ExitPlanMode` call itself can never qualify as that elaboration (it has
+  a `tool_use` block by definition) — an earlier version of this guard also
+  tried to read `last_assistant_message` to specifically detect that
+  bundling, but per the official hooks docs (code.claude.com/docs/en/hooks)
+  that field is populated only on `Stop`/`SubagentStop`, never
+  `PreToolUse`, so that branch was silently dead code and has been
+  removed. The window resets to "not found" on: a genuine new top-level
+  user message (real human input, not an `isMeta` system-reminder
+  injection, not a `tool_result` continuation — mirrors
+  `skill-claim-lint`'s reset logic via the shared `isGenuineNewUserTurn`
+  helper); or a prior `ExitPlanMode` tool-call attempt, so a rejected
+  attempt always requires fresh elaboration before the retry rather than
+  carrying the original stale elaboration through. The docs warn
+  `transcript_path` "may not yet include the current turn's most recent
+  messages when a hook fires," so the reset from an `ExitPlanMode`
+  tool-call attempt is applied differently depending on whether that same
+  event ALSO carries at least 80 characters of its own text: if so
+  (substantial text bundled directly into the call), the reset applies
+  immediately, blocking regardless of any earlier elaboration — this is the
+  exact same-message-bundling threat, and it's visible in this event's own
+  content whether or not the transcript write lagged behind; if not (a
+  clean call, or only trivial bundled text), the reset is deferred to the
+  next event, never applied to the event that triggered it, so a clean call
+  can never self-block just because its own line happened to already be
+  flushed. Both flush-timing cases, and both bundled-text sizes, are
+  covered by dedicated tests. Sidechain
+  (subagent) transcript events are skipped entirely — a subagent's own
+  text-only response can never satisfy the main thread's elaboration
+  requirement. Fails open on a missing/unreadable transcript or malformed
+  hook input. **Known limitations**: the 80-character floor and
   whole-window scan are a structural proxy for "was this explained," not a
   semantic one — a long but low-content message (e.g. a wall of pasted
-  code) satisfies it, and the threshold itself is untuned.
+  code) satisfies it, the threshold itself is untuned, and the scan does
+  not check that the elaboration is topically about the plan actually
+  being submitted (any qualifying prior text since the last reset point
+  counts). `skill-claim-lint.mjs`
+  has the same turn-boundary duplication this guard used to have and has not
+  been migrated to the shared lib — tracked as a follow-up, not attempted
+  here (same "migrate later, don't retrofit silently" precedent as
+  `branch-name-guard`'s Known Limitation above, which flags the analogous
+  un-migrated duplication in `branch-rename-open-pr.mjs`/`gh-stack-guard.mjs`).
 
 - **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
   — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
@@ -426,7 +457,9 @@ then:
     message as the plan explanation (or with no prior elaboration turn at
     all); confirm it is blocked. Then send the explanation as its own
     plain-text turn first, and call `ExitPlanMode` with no accompanying
-    text in a later turn; confirm it proceeds.
+    text in a later turn; confirm it proceeds. If the call is rejected with
+    feedback, confirm a bare retry (no fresh elaboration turn) is blocked,
+    and that sending fresh elaboration before the retry proceeds.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a

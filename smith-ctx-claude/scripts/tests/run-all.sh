@@ -15,6 +15,7 @@ for check in \
   attribution \
   branch-name-guard \
   git-command-tokenizer \
+  transcript-turns \
   exit-plan-mode-guard
 do
   sh "$HERE/$check.test.sh" || status=1

@@ -119,7 +119,11 @@ ExitPlanMode rejection has three scenarios -- handle each differently:
 1. **Rejection WITH user feedback** (normal revision flow):
    - Read the user's feedback from the rejection message
    - Revise the plan file based on their feedback
-   - Call ExitPlanMode again with the updated plan
+   - Send the revised explanation as its own plain-text turn first (the
+     exit-plan-mode-guard hook requires fresh elaboration after ANY prior
+     ExitPlanMode attempt, approved or rejected -- the original elaboration
+     does not carry over)
+   - Call ExitPlanMode again with the updated plan, in a later turn
    - Never call ExitPlanMode twice without making changes between calls
 
 2. **Rejection WITHOUT feedback + "Re-entering Plan Mode"** (silent redirect):
