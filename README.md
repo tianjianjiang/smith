@@ -196,6 +196,80 @@ through.
   over the manual base-retarget and rebase cascade. Only fires when the extension
   is actually present (`gh extension list`); advisory only, never blocks.
 
+- **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/transcript-turns.mjs`)
+  — PreToolUse guard (matcher `ExitPlanMode`) enforcing
+  `smith-plan-claude/SKILL.md` §Explain Before ExitPlanMode: the plan
+  explanation must be sent as its own turn (plain text, no tool call)
+  before `ExitPlanMode` is called in a later, separate turn — never bundled
+  into the same message, where the approval modal hides it. An earlier
+  version of this guard also tried to read `last_assistant_message` to
+  specifically detect that bundling, but per the official hooks docs
+  (code.claude.com/docs/en/hooks) that field is populated only on
+  `Stop`/`SubagentStop`, never `PreToolUse`, so that branch was silently
+  dead code and has been removed.
+
+  Claude Code writes one JSONL line per content block, not one line per
+  logical turn — verified against live transcripts (18 sessions, 6,323
+  assistant lines): text and `tool_use` never share a content array, only a
+  `message.id`. A naive per-line scan for "an assistant message with both a
+  substantial text block and a `tool_use` block" therefore never matches
+  anything real (confirmed: 0 of 1,427 real mixed-content turns bundled
+  both in one array), silently defeating the guard's whole purpose — this
+  was caught and fixed before merge. `readTranscriptTurns` in the shared
+  lib groups consecutive same-`message.id` lines into one logical turn
+  first; only that grouped turn is checked for a `tool_use` block or
+  summed for text length. Blocks unless scanning `transcript_path` finds a
+  turn, since the last qualifying reset point, that is text-only (no
+  `tool_use` block anywhere in the group) with at least 80 characters of
+  combined text — text bundled into a turn that also contains a `tool_use`
+  block (`ExitPlanMode` or otherwise) never qualifies, matching the actual
+  transcript shape rather than an array that never occurs.
+
+  The window resets to "not found" on: a genuine new top-level user
+  message (real human input, not an `isMeta` system-reminder injection,
+  not a `tool_result` continuation, via the shared `isGenuineNewUserTurn`
+  helper — `skill-claim-lint.mjs` has its own inline version of this same
+  check but does not import the helper and lacks the `isMeta` exclusion,
+  so the two do not currently behave identically); or a prior `ExitPlanMode`
+  tool-call attempt, so a rejected attempt always requires fresh
+  elaboration before the retry rather than carrying the original stale
+  elaboration through. The docs warn `transcript_path` "may not yet
+  include the current turn's most recent messages when a hook fires," so
+  the reset from an `ExitPlanMode` tool-call turn is applied differently
+  depending on whether that same (grouped) turn ALSO carries at least 80
+  characters of its own text: if so (substantial text bundled directly
+  into the call), the reset applies immediately, blocking regardless of
+  any earlier elaboration — this is the exact same-message-bundling
+  threat, and it's visible in this turn's own content whether or not the
+  transcript write lagged behind; if not (a clean call, or only trivial
+  bundled text), the reset is deferred to the next turn, never applied to
+  the turn that triggered it, so a clean call can never self-block just
+  because its own line(s) happened to already be flushed. Both
+  flush-timing cases, and both bundled-text sizes, are covered by
+  dedicated tests. Sidechain (subagent) transcript events are skipped
+  entirely — a subagent's own text-only response can never satisfy the
+  main thread's elaboration requirement. Fails open on a missing/unreadable
+  transcript or malformed hook input, distinguishing (stderr-only, never
+  blocking either way) an expected missing-file case from an unexpected
+  internal error, so a future logic bug is less likely to masquerade as
+  intended fail-open silence. **Known limitations**: the 80-character
+  floor and whole-window scan are a structural proxy for "was this
+  explained," not a semantic one — a long but low-content message (e.g. a
+  wall of pasted code) satisfies it, the threshold itself is untuned, and
+  the scan does not check that the elaboration is topically about the plan
+  actually being submitted (any qualifying prior turn's text since the
+  last reset point counts). `skill-claim-lint.mjs` has the same
+  turn-boundary duplication this guard used to have and has not been
+  migrated to the shared lib — tracked as a follow-up, not attempted here
+  (same "migrate later, don't retrofit silently" precedent as
+  `branch-name-guard`'s Known Limitation above, which flags the analogous
+  un-migrated duplication in `branch-rename-open-pr.mjs`/`gh-stack-guard.mjs`).
+  `readTranscriptTurns`/`readTranscriptEvents` scan the transcript from the
+  start on every `ExitPlanMode` call rather than backward from EOF —
+  accepted as a low-priority inefficiency given how rarely `ExitPlanMode`
+  fires per session, not attempted here.
+
 - **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
   — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
   attribution mechanism. It is target-agnostic and **never inspects or rewrites the
@@ -292,6 +366,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "AskUserQuestion",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/askuserquestion-arity.mjs\"" }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/exit-plan-mode-guard.mjs\"" }
         ]
       },
       {
@@ -395,6 +475,13 @@ then:
     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
     model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
     `Assisted-by: Claude:<model>`. The Bash call is never blocked or altered.
+16. **exit-plan-mode-guard** — in plan mode, call `ExitPlanMode` in the same
+    message as the plan explanation (or with no prior elaboration turn at
+    all); confirm it is blocked. Then send the explanation as its own
+    plain-text turn first, and call `ExitPlanMode` with no accompanying
+    text in a later turn; confirm it proceeds. If the call is rejected with
+    feedback, confirm a bare retry (no fresh elaboration turn) is blocked,
+    and that sending fresh elaboration before the retry proceeds.
 
 **Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
 `permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
