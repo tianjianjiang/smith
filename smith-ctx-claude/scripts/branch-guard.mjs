@@ -128,7 +128,7 @@ function main() {
       `Blocked: edit on protected branch '${branch}' of ${repoRoot}.`,
       "Create a dedicated branch+worktree BEFORE the first edit:",
       "EnterWorktree (then rename the branch), or `git switch -c",
-      "«type»/«scope»_«description»`. Per the @smith-git branch-first rule.",
+      "«type»/«description»`. Per the @smith-git branch-first rule.",
       `Per-repo opt-out: touch ${OPT_OUT_MARKER} in the repo root.`,
     ].join(" ") + "\n",
   );

@@ -452,7 +452,7 @@ Options: `--squash`, `--merge`, or `--rebase`
 ```shell
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git checkout "$DEFAULT_BRANCH" && git fetch --prune origin && git pull --ff-only
-git branch -d feat/my_feature
+git branch -d feat/my-feature
 ```
 `--ff-only` is mandatory: it refuses to create a stray merge commit if local has
 diverged (e.g. after a squash-merge), surfacing the problem instead of hiding it.

@@ -20,7 +20,7 @@ description: Claude Code worktree TOOLS — EnterWorktree/ExitWorktree, the bgIs
 - After a squash-merge of a worktree branch, the local copy of that feature branch is an **orphan** (its commit is not in main's history under the same SHA). `git branch -d` will refuse it with "not fully merged"; use `git branch -D` (force) once the squash commit is confirmed on main.
 - **Branch naming:** `EnterWorktree` auto-names the branch
   `worktree-«name»` which violates `@smith-style/SKILL.md`. MUST
-  rename before pushing: `git branch -m «type»/«scope»_«description»`
+  rename before pushing: `git branch -m «type»/«description»`
   Alternative: create branch first, then `EnterWorktree({path: ...})`
 
 ## EnterWorktree Semantics
@@ -110,7 +110,7 @@ git pull --ff-only
 **On bg-isolation guard refusal:**
 1. `EnterWorktree({name: "«short-slug»"})` — any short name works
 2. Rename branch per the CRITICAL-section rule above:
-   `git branch -m «type»/«scope»_«description»`
+   `git branch -m «type»/«description»`
 3. Mirror prior uncommitted changes from the main copy via `cp`
    only when the user has asked for "evaluate-in-place"
 

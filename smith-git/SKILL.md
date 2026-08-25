@@ -86,11 +86,9 @@ git worktree remove ../feature-branch
 
 ## Branch Naming
 
-**Pattern**: `type/descriptive_name` — type MUST match commit type
-
-**Separators** (abbreviated quick-ref; see `@smith-style/SKILL.md` for full rules):
-- **Underscore (_)**: Multi-word single concept → `fix/query_processor`
-- **Hyphen (-)**: Hierarchy/variant/ticket → `feat/auth-login`, `fix/JIRA-1234-query_processor`
+**Pattern**: `type/description` (Conventional Branch spec) — type MUST match
+commit type, description is lowercase hyphen-separated words, e.g.
+`feat/auth-login`. Full rules in `@smith-style/SKILL.md` Branch Names.
 
 ## Commit Standards
 
@@ -139,17 +137,17 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 
 **First push to new branch:**
 ```shell
-git push -u origin feat/my_feature
+git push -u origin feat/my-feature
 ```
 
 **Safe force push (personal branches only):**
 ```shell
-git push --force-with-lease origin feat/my_feature
+git push --force-with-lease origin feat/my-feature
 ```
 
 **Feature merge (preserve history):**
 ```shell
-git merge --no-ff feat/my_feature
+git merge --no-ff feat/my-feature
 ```
 
 **Interactive rebase (local commits only):**

@@ -98,57 +98,64 @@ with an "on behalf of" line (`@smith-gh-pr`).
 
 ## Branch Names
 
-**Patterns** (in order of frequency in this repo):
+**Pattern**: `type/description` — the Conventional Branch specification
+(https://conventionalbranch.org/, retrieved 2026-08-24), adopted verbatim
+instead of a smith-invented hyphen/underscore split.
 
-1. **Compound** (most common): `type/«hierarchical-scope»_«single-concept-description»`
-   - Hyphens preserve the hierarchical scope (matches the commit scope).
-   - A single `_` separates scope from description.
-   - Underscores inside the description treat the whole phrase as one concept.
+- `description` is one or more lowercase-and-digit segments joined by a
+  **single hyphen** (`-`) — never an underscore, space, or uppercase letter.
+  No consecutive, leading, or trailing hyphens. A segment MAY contain dots
+  (`.`) — the spec allows this for version-like text, e.g.
+  `chore/deps-node18.20-bump`.
+- `type` matches the Conventional Commits type of the work (feat, fix, docs,
+  refactor, style, test, chore, perf, build, ci) — branch type MUST match
+  commit type.
+- Prefer full words over abbreviations (`cmd`, `cfg`, `auth`) unless the full
+  word exceeds 15 chars OR the abbreviation is a domain-standard term in this
+  repo (`gh` = GitHub, `pr` = pull request, `ci` = continuous integration,
+  `mcp` = Model Context Protocol). `command`, `configuration`,
+  `authentication` all fit — spell them out.
+- Never put `post-review`/`after-review` in a branch or commit — that names
+  the change's ORIGIN (a review round), not what the change does. Name the
+  effect instead: `fix/auth-token-expiry`, not `fix/auth-post-review`.
 
-2. **Description-only**: `type/«single-concept-description»` — when there's no
-   meaningful hierarchical scope, just underscored words.
+**Examples**: `feat/user-authentication`, `fix/plan-claude-model-detection`,
+`docs/gh-pr-attribution-wording`.
 
-3. **Scope-only-hierarchy**: `type/«hierarchical-scope»-«sub-hierarchy»` — when
-   the whole name is hierarchy (e.g. `smith-tools-ext`).
+**Why not encode scope hierarchy in the branch name.** The previous
+two-separator convention (hyphen = hierarchy, underscore = single concept)
+was retired after two real, independent misapplications of its own
+documented examples — the examples themselves didn't follow one derivable
+rule (`gh-pr-attribution_wording`'s `attribution` sits on the hyphen side
+despite its own annotation calling it part of the description), because
+branch names in this repo's history were chosen by feel and rationalized
+afterward, not generated from an algorithm. Checking why that scope
+information seemed to matter surfaced the real answer: it doesn't, to any
+tooling that exists. release-please (https://github.com/googleapis/
+release-please, retrieved 2026-08-24) — the standard tool for automating
+versions/changelogs from Conventional Commits, should this repo ever adopt
+it — parses only commit messages on the default branch; it never reads
+branch names. Scope belongs in the commit's `type(scope): description`
+header, where release-please-class tooling actually looks; the branch name
+only needs to be unambiguous and human-readable, which a single separator
+already guarantees.
 
-**Real examples from merged PRs:**
-- `fix/plan-claude_model_detection_improvements` (scope: plan→claude; desc: "model detection improvements" → all underscores)
-- `fix/plan-claude-review_polish` (scope: plan→claude→review; desc: "polish")
-- `docs/gh-pr-attribution_wording` (scope: gh→pr; desc: "attribution wording")
-- `fix/smith_convention_renames` (no hierarchy; desc only: "smith convention renames")
-- `feat/smith-ctx-claude-ext` (all hierarchy: smith→ctx→claude→ext, no description)
-- `feat/smith-automation_skill` (scope: smith→automation; desc: "skill")
+**Enforced deterministically for Bash-driven git.**
+`smith-ctx-claude/scripts/branch-name-guard.mjs` (PreToolUse, matcher `Bash`)
+blocks the branch-creating/renaming `git` invocations run via Bash when the
+target name doesn't match the pattern above, or contains
+`post-review`/`after-review` — no manual pre-push checklist or blacklist
+needed, the character-set rule and the type list are the only things a name
+has to satisfy. It does not see a branch created outside Bash
+(`EnterWorktree`, an IDE git panel, an external terminal) or pushed under a
+different name (`git push -u origin HEAD:name`) — see the hook's README
+entry for the full known-limitation note. If the name was not explicitly
+given by the user, still confirm it with them before the first push — the
+hook checks *format*, not *what the user actually wanted named*.
 
-Branch type MUST match commit type. Prefer full words over abbreviations
-(`cmd`, `cfg`, `auth`) unless the full word exceeds 15 chars OR the
-abbreviation is a domain-standard term in this repo (`gh` = GitHub,
-`pr` = pull request, `ci` = continuous integration, `mcp` = Model Context
-Protocol). `command`, `configuration`, `authentication` all fit — spell
-them out.
-
-### Avoid
-
-- `feat/user-authentication` — multi-word single concept; should be `feat/user_authentication`
-- `feat/auth_login` — hierarchy (login is part of auth); should be `feat/auth-login`
-- `feat/ctx-claude-slash-cmd-rule` — three errors in one: (a) `slash-cmd` should be `slash_command` (multi-word single concept); (b) `cmd` is an unnecessary abbreviation; (c) the separator between scope `ctx-claude` and description should be `_`, not `-`. Correct: `feat/ctx-claude_slash_command_rule`.
-- `fix/auth_post_review` / `fix/auth_after_review` — names the change's ORIGIN (a review round), not the change. Name what it does: `fix/auth_token_expiry`. Never put `post_review`/`post-review`/`after_review` in a branch or commit.
-
-**Pre-push checklist (use this before every `git push`):**
-
-1. Read the branch name out loud.
-2. For each `-` and `_` in the name, justify it:
-   - `-` ← "this is hierarchy or a parallel variant"
-   - `_` ← "this is a multi-word single concept" OR "this separates the scope from the description"
-3. If any separator can't be justified — the name is wrong; rename before push.
-4. If the branch name contains an abbreviation, ask: "is the full word ≤15 chars AND not a domain-standard term (`gh`, `pr`, `ci`, `mcp`)? If yes, use the full word."
-5. If the name was not explicitly given by the user, confirm it with them before
-   the first push — don't ship a name you invented without a chance to correct it.
-
-This checklist is a blocking gate, not advisory — run it before every first push
-(referenced from `@smith-gh-pr` Pre-PR checklist). It exists because the same underscore-vs-hyphen mistake has recurred
-across multiple PRs (#71/#72 skill names, #80 branch name) — both rounds
-required follow-up fixes. The rule itself was always documented; the failure
-mode was not pausing to apply it before pushing.
+Pre-2026-08-24 branch names used the retired two-separator convention
+(visible in old PR history) — this section governs branches created from
+now on; do not rename already-merged branches to match retroactively.
 
 ## External Communication Standards
 
