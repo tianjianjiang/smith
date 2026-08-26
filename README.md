@@ -321,6 +321,99 @@ through.
   over the manual base-retarget and rebase cascade. Only fires when the extension
   is actually present (`gh extension list`); advisory only, never blocks.
 
+- **rtk-find-symlink-guard** (`smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+  — PreToolUse guard (matcher `Bash`) that emits an **advisory** when a command
+  invokes `find ... -L ...` or `rtk find ... -L ...`. Verified directly
+  against the installed rtk 0.45.0: `rtk find` doesn't recognize `-L`, prints
+  `rtk find: unknown flag '-L', ignored` to stderr, and exits 0 — but when
+  `-L` precedes the search path (the idiomatic order, e.g. `-L . -type f`)
+  it also drops that path and silently scans the current directory instead,
+  so the result set isn't just missing a symlinked subtree, it can come from
+  the wrong location entirely. Same known-unfixed bug class as
+  github.com/rtk-ai/rtk#2821 — an unrecognized flag is warned on stderr, but
+  the broader/wrong query still runs at exit 0; that report's own repro used
+  `-newermt`, not `-L`, but it's the identical code path (verified open via
+  `gh api repos/rtk-ai/rtk/issues/2821` on 2026-08-27; no open upstream issue
+  names `-L` specifically, so this cites the matching bug class rather than
+  implying `-L` itself was reported). Points to `test -f`
+  for a plain existence check or `rtk proxy find ... -L ...` (per `RTK.md`,
+  `rtk proxy <cmd>` executes the raw command "without filtering," i.e. real
+  GNU/BSD find semantics, not rtk's own filtering) for unfiltered
+  native-find output — `rtk proxy find` itself is correctly never flagged,
+  since it already is the documented workaround. A `-L` that is itself the
+  *value* of a preceding value-taking find predicate (`-name`, `-newer`,
+  `-perm`, etc. — see `VALUE_TAKING_FIND_PREDICATES` in the script) is
+  correctly NOT flagged — e.g. `find . -name "-L"` (searching for a file
+  literally named `-L`) or `find . -newer -L` (comparing against a file
+  named `L`) stay silent. Only fires when `rtk --help` lists a `gain`
+  subcommand — `RTK.md` names `rtk gain` itself as the collision check
+  ("If `rtk gain` fails, you may have reachingforthejack/rtk (Rust Type
+  Kit) installed instead"), but actually RUNNING `rtk gain` as a presence
+  probe has a real side effect: verified directly (`rtk gain` three times
+  in a row) that it increments its own reported `Total commands` count on
+  every invocation, so a probe run silently pollutes the user's own
+  token-savings history. `--help` listing the documented `gain` subcommand
+  is the same identity signal without that side effect (verified
+  side-effect-free the same way) and without the `--version` output-shape
+  ambiguity a same-shaped clap-based collision tool could also satisfy. A bare
+  `find -L` is otherwise perfectly safe (real find). A bare `-L` occurring
+  after `-exec`/`-execdir`/`-ok`/`-okdir` is not treated as the outer find's
+  own flag, since it usually belongs to the wrapped sub-command — but that
+  sub-command's own argument list (up to its `;`/`+` terminator) IS checked
+  for being itself a `find`/`rtk find` invocation with its own `-L`, so
+  `find . -exec rtk find -L {} \;` is still flagged (the sub-command's `-L`
+  belongs to the nested `rtk find`, not the outer one, and the advisory's
+  `'... ... -L'` wording names whichever invocation the `-L` actually sits
+  on — the nested `rtk find`, not the outer bare `find`, which has no `-L`
+  and would otherwise be blamed incorrectly). When a sub-command turns out
+  NOT to be risky, the scan resumes past its terminator rather than
+  abandoning the rest of the outer tokens, so a command with more than one
+  `-exec`/`-execdir`/`-ok`/`-okdir` block still has every block checked —
+  `find . -type f -exec true {} + -exec rtk find {} -L +` is flagged from
+  the second block even though the first is benign. This is also true for
+  a wrapped form like `find . -exec sudo rtk find -L {} +`, since the
+  sub-command's own tokens are re-run through `unwrappedCommandSegments`
+  (the same sudo/env/nohup/command unwrapping top-level segments get)
+  rather than checked as raw tokens. Re-joining already-dequoted tokens
+  with a plain space to do that re-run loses the original quote
+  boundaries, so a quoted sub-command argument that happens to contain the
+  literal substring `-L` as its own space-separated word (e.g. `-exec find
+  -iname "report -L final.txt" {} \;`) can misfire as a false positive —
+  accepted as a narrow, low-stakes trade-off of reusing the shared
+  tokenizer rather than hand-rolling a second one, not attempted here. The
+  sub-command's token span also ends at the first bare `;`/`+` token even
+  when that token is itself one of the sub-command's own arguments rather
+  than the real `-exec` terminator, which can under-warn if a genuinely
+  risky nested invocation's `-L` sits after it — same narrow-edge-case
+  trade-off, not attempted here. A `-L` placed on the OUTER find after a
+  benign (non-risky) sub-command's terminator IS still caught, since the
+  scan resumes from there rather than stopping at the first
+  `-exec`/`-execdir`/`-ok`/`-okdir` block — verified: `find . -exec
+  someprog {} + -L` is flagged.
+  **Known limitation**: an explicit `rtk find -L` nested inside `xargs` (e.g.
+  `xargs -I{} rtk find -L {} -type f`) or the shared tokenizer's own
+  documented command-substitution limitation (see `external-write-guard`
+  above) is not unwrapped, so it stays silent — the shared tokenizer has no
+  xargs-unwrapping at all, and this would be a shared-lib enhancement
+  benefiting every guard, not something to add ad hoc here. A deliberately
+  obfuscated command name (`f\ind -L .`, which bash still resolves to and
+  runs as `find`) also bypasses the cheap `FIND_HINT` pre-filter — this
+  guard detects ordinary usage, not adversarial evasion, matching every
+  other advisory-only guard in this file that inherits the shared
+  tokenizer's own disclosed limitations rather than hardening against
+  deliberate obfuscation; not attempted here. This does NOT
+  extend to `gfind` (Homebrew findutils' binary name): verified directly via
+  `rtk hook claude` that rtk's own transparent-rewrite hook rewrites bare
+  `find` but leaves `gfind` untouched, so `gfind -L` runs real GNU find
+  unaffected by rtk's `-L` handling — deliberately not flagged, and flagging
+  it would be a false positive, not a fix. `-L` is one instance of a broader
+  class rtk-ai/rtk#2821 documents (any unrecognized find flag gets the same
+  warn-then-run-a-different-query treatment, e.g. `-newermt`) — this guard
+  intentionally targets `-L` only; generalizing to arbitrary unrecognized
+  flags is a natural follow-up, not attempted here. Advisory only, never
+  blocks.
+
 - **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
   using shared helpers from `smith-ctx-claude/scripts/lib/transcript-turns.mjs`)
   — PreToolUse guard (matcher `ExitPlanMode`) enforcing
@@ -608,6 +701,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-name-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/stack-merge-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/amend-shared-commit-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" },
@@ -735,6 +829,10 @@ then:
     **deny** the prompt (a real amend would otherwise rewrite the parent
     branch's commit). Make a real commit on `scratch/probe`, then run
     `git commit --amend --no-edit`; confirm it proceeds without prompting.
+19. **rtk-find-symlink-guard** — with rtk installed, run `find -L . -type f`
+    (or `rtk find -L . -type f`); confirm the advisory appears pointing to
+    `test -f` / `rtk proxy find`. Confirm `rtk proxy find -L . -type f` and a
+    plain `find . -type f` (no `-L`) stay silent.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not
