@@ -90,6 +90,81 @@ assert_json "unwrapped: command -p (POSIX default-PATH flag) is also stripped" u
 assert_json "unwrapped: absolute-path invocation is normalized to its basename" unwrappedCommandSegments \
   '"/usr/bin/git branch bad_name"' \
   '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sudo-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"sudo git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sudo with a boolean flag before the target still strips the prefix" unwrappedCommandSegments \
+  '"sudo -n git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: nohup-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"nohup git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: nice-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"nice git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: time-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"time git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: time -f (value-taking format flag) still resolves the real target" unwrappedCommandSegments \
+  '"time -f \"%e\" git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: env-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"env git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: env with a leading VAR=value assignment still strips the prefix" unwrappedCommandSegments \
+  '"env FOO=bar git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: env -S (split-string) word-splits its value and resolves the real target" unwrappedCommandSegments \
+  '"env -S \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sudo --chdir (value-taking long flag) still resolves the real target" unwrappedCommandSegments \
+  '"sudo --chdir /tmp git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a glued bare subshell (cmd) strips both parens" unwrappedCommandSegments \
+  '"(git branch bad_name)"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a spaced bare subshell ( cmd ) strips both parens" unwrappedCommandSegments \
+  '"( git branch bad_name )"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a subshell-wrapped wrapper command unwraps both layers" unwrappedCommandSegments \
+  '"(sudo git branch bad_name)"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sudo -u user (value-taking flag) still resolves the real target" unwrappedCommandSegments \
+  '"sudo -u root git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: nice -n value (value-taking flag) still resolves the real target" unwrappedCommandSegments \
+  '"nice -n 10 git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: env -u name (value-taking flag) still resolves the real target" unwrappedCommandSegments \
+  '"env -u FOO git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: doubly-nested bare subshell ((cmd)) resolves after two layers" unwrappedCommandSegments \
+  '"((git branch bad_name))"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a paren-wrapped command preserves a quoted multi-word argument as one token" unwrappedCommandSegments \
+  '"(git commit -m \"a message with spaces\")"' \
+  '[["git","commit","-m","a message with spaces"]]'
+assert_json "unwrapped: a wrapper-then-shell composition (sudo sh -c ...) is fully unwrapped" unwrappedCommandSegments \
+  '"sudo sh -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a wrapper-then-eval composition (sudo eval ...) is fully unwrapped" unwrappedCommandSegments \
+  '"sudo eval \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: env-then-wrapper-value-flag then shell composition is fully unwrapped" unwrappedCommandSegments \
+  '"sudo -u root sh -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: a subshell containing a && separator splits into both real commands, parens fully stripped" unwrappedCommandSegments \
+  '"(cd /tmp && git branch bad_name)"' \
+  '[["cd","/tmp"],["git","branch","bad_name"]]'
+assert_json "unwrapped: a subshell containing a ; separator splits into both real commands, parens fully stripped" unwrappedCommandSegments \
+  '"(cd /tmp; git branch bad_name)"' \
+  '[["cd","/tmp"],["git","branch","bad_name"]]'
+assert_json "unwrapped: content after a closing paren group is still processed as its own segment" unwrappedCommandSegments \
+  '"(cd /tmp && git branch bad_name) && echo done"' \
+  '[["cd","/tmp"],["git","branch","bad_name"],["echo","done"]]'
+assert_json "unwrapped: a lone opening paren with no closer is left untouched" unwrappedCommandSegments \
+  '"(git branch bad_name"' \
+  '[["(git","branch","bad_name"]]'
 assert_json "unwrapped: nested eval inside sh -c is unwrapped recursively" unwrappedCommandSegments \
   '"sh -c \"eval \\\"git branch bad_name\\\"\""' \
   '[["git","branch","bad_name"]]'
@@ -109,5 +184,14 @@ shallow_not_exceeded=$(node --input-type=module -e "
   console.log(String(segments[UNWRAP_DEPTH_EXCEEDED] === undefined));
 ")
 [ "$shallow_not_exceeded" = "true" ] || fail "unwrapped: a shallow eval does not set UNWRAP_DEPTH_EXCEEDED (got $shallow_not_exceeded)"
+
+paren_depth_exceeded=$(node --input-type=module -e "
+  import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from \"$MODULE\";
+  let cmd = 'git branch bad_name';
+  for (let i = 0; i < 9; i++) cmd = '(' + cmd + ')';
+  const segments = unwrappedCommandSegments(cmd);
+  console.log(String(segments[UNWRAP_DEPTH_EXCEEDED] === true));
+")
+[ "$paren_depth_exceeded" = "true" ] || fail "unwrapped: exceeding MAX_UNWRAP_DEPTH via nested parens sets UNWRAP_DEPTH_EXCEEDED (got $paren_depth_exceeded)"
 
 echo "PASS: git-command-tokenizer"
