@@ -21,7 +21,10 @@ owning skill, and the owner's wording wins over this file's.
 - Default branch: !`git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo unset`
 - Changes: !`git status --porcelain -uall`
 - Hooks path: !`git config --get core.hooksPath || echo unset`
-- GitHub CLI: !`command -v gh >/dev/null 2>&1 && { gh auth status >/dev/null 2>&1 && echo ok || echo auth-failed; } || echo missing`
+- GitHub CLI on PATH: !`command -v gh 2>&1`
+- GitHub CLI auth (gh's own `--json`/`--jq` machine fields, not its
+  prose — see pr-ownership below):
+  !`gh auth status --json hosts --active --jq '[.hosts[][].state] | unique | join(",")' 2>&1`
 - PR author: !`gh pr view --json author --jq .author.login 2>&1 | head -1`
 - Authenticated login: !`gh api user --jq .login 2>/dev/null | head -1`
 
@@ -102,13 +105,29 @@ local and gitignored. Do not `FAIL` it: scan the same scope yourself for
 credential-shaped content and answer from what you found.
 
 **pr-ownership.** Owner `@smith-gh-pr` PR ownership gate, which fails
-closed. Read the probes in this order:
+closed. Its probes run independently of each other, so evaluate the
+bullets below as an ordered if/elif chain — stop at the first one whose
+condition matches, never check a later bullet once an earlier one has:
 
-- GitHub CLI `missing` → `SKIP`.
+- GitHub CLI on PATH probe empty (no `gh` binary found) → `SKIP`.
 - An author line reporting no GitHub remote, or no remotes at all →
   `SKIP`. The repository is not on GitHub, so the question does not
   arise; failing it would block every push outside GitHub.
-- GitHub CLI `auth-failed` → `FAIL`. A failed lookup is never a `SKIP`.
+- GitHub CLI auth probe reading anything other than `success` (gh's own
+  "not logged into any GitHub hosts" text on a never-authenticated
+  machine, an auth error state, or an `unknown flag` error from a
+  pre-2.81.0 gh) → `FAIL`. A failed lookup is never a `SKIP`; this
+  bullet is reached only once the on-PATH bullet above has already
+  ruled out a missing `gh` binary, so a missing binary never reaches it.
+  The probe (`--json hosts --active --jq '[.hosts[][].state] | unique |
+  join(",")'`) reads gh's own documented `state` field rather than its
+  free-form prose, which a future gh release could reword; `--active`
+  scopes it to each host's active account, so a stale secondary account
+  doesn't fail this check; and it reports only that field, never the
+  token/scope detail plain `gh auth status` would print into the Live
+  State block. Requires gh ≥ 2.81.0 for `--json` support (cli/cli#11544,
+  first shipped in the v2.81.0 release notes) — an older gh's `unknown
+  flag` error also reads as `FAIL` here.
 - An author line reading `no pull requests found for branch ...` →
   `SKIP`. `gh pr view` writes it to stderr and exits non-zero, so it
   arrives looking like an error; reading it as one would fail every
