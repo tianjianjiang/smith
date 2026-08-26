@@ -16,7 +16,9 @@ for check in \
   branch-name-guard \
   git-command-tokenizer \
   transcript-turns \
-  exit-plan-mode-guard
+  exit-plan-mode-guard \
+  amend-shared-commit-guard \
+  stack-merge-guard
 do
   sh "$HERE/$check.test.sh" || status=1
 done

@@ -29,6 +29,7 @@ function segmentsRespectingQuotes(command) {
   const segments = [];
   let current = "";
   let quoteChar = null;
+  let parenDepth = 0;
   for (let i = 0; i < command.length; i += 1) {
     const char = command[i];
     if (char === ESCAPE_CHAR && quoteChar !== "'" && i + 1 < command.length) {
@@ -47,7 +48,17 @@ function segmentsRespectingQuotes(command) {
       current += char;
       continue;
     }
-    if (COMMAND_SEGMENT_SEPARATOR_CHAR.test(char)) {
+    if (char === "(") {
+      parenDepth += 1;
+      current += char;
+      continue;
+    }
+    if (char === ")") {
+      if (parenDepth > 0) parenDepth -= 1;
+      current += char;
+      continue;
+    }
+    if (parenDepth === 0 && COMMAND_SEGMENT_SEPARATOR_CHAR.test(char)) {
       segments.push(current);
       current = "";
       continue;
@@ -119,6 +130,69 @@ function commandBuiltinTargetIndex(tokens) {
   return index;
 }
 
+const WRAPPER_VALUE_FLAGS = {
+  sudo: new Set([
+    "-u",
+    "--user",
+    "-g",
+    "--group",
+    "-h",
+    "--host",
+    "-p",
+    "--prompt",
+    "-C",
+    "-D",
+    "--chdir",
+    "-R",
+    "-T",
+    "-U",
+  ]),
+  nice: new Set(["-n", "--adjustment"]),
+  time: new Set(["-o", "-f", "--format"]),
+};
+
+function wrapperTargetIndex(tokens, valueFlags) {
+  let index = 1;
+  while (index < tokens.length && tokens[index].startsWith("-")) {
+    index += valueFlags && valueFlags.has(tokens[index]) ? 2 : 1;
+  }
+  return index;
+}
+
+const ENV_VALUE_FLAGS = new Set(["-u", "--unset", "-C", "--chdir", "-a", "--argv0"]);
+const ENV_SPLIT_STRING_FLAGS = new Set(["-S", "--split-string"]);
+
+function splitStringWords(value) {
+  return value.split(WHITESPACE).filter(Boolean);
+}
+
+function envWrapperRemainder(tokens) {
+  let index = 1;
+  while (index < tokens.length) {
+    const token = tokens[index];
+    if (ENV_SPLIT_STRING_FLAGS.has(token)) {
+      const value = tokens[index + 1];
+      if (typeof value !== "string") return null;
+      const words = splitStringWords(value);
+      return words.length > 0 ? [...words, ...tokens.slice(index + 2)] : null;
+    }
+    if (token.startsWith("-S") && token.length > 2 && !token.startsWith("--")) {
+      const words = splitStringWords(token.slice(2));
+      return words.length > 0 ? [...words, ...tokens.slice(index + 1)] : null;
+    }
+    if (ENV_VALUE_FLAGS.has(token)) {
+      index += 2;
+      continue;
+    }
+    if (token.startsWith("-") || ENV_ASSIGNMENT.test(token)) {
+      index += 1;
+      continue;
+    }
+    break;
+  }
+  return index < tokens.length ? tokens.slice(index) : null;
+}
+
 const SHELL_OPTIONS_TAKING_A_VALUE = new Set(["-o", "-O", "+o", "+O"]);
 
 function isShortDashCFlag(token) {
@@ -140,35 +214,112 @@ function shellDashCIndex(tokens) {
 
 export const UNWRAP_DEPTH_EXCEEDED = Symbol("unwrap-depth-exceeded");
 
+function parenGroupInner(rawSegment) {
+  const trimmed = rawSegment.trim();
+  if (!trimmed.startsWith("(")) return null;
+  let quoteChar = null;
+  let parenDepth = 0;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const char = trimmed[i];
+    if (char === ESCAPE_CHAR && quoteChar !== "'" && i + 1 < trimmed.length) {
+      i += 1;
+      continue;
+    }
+    if (quoteChar) {
+      if (char === quoteChar) quoteChar = null;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      quoteChar = char;
+      continue;
+    }
+    if (char === "(") {
+      parenDepth += 1;
+      continue;
+    }
+    if (char === ")") {
+      parenDepth -= 1;
+      if (parenDepth === 0) return i === trimmed.length - 1 ? trimmed.slice(1, i) : null;
+    }
+  }
+  return null;
+}
+
+function unwrapTokenWrappers(tokens, depth, exceeded) {
+  let current = tokens;
+  let currentDepth = depth;
+  while (true) {
+    if (currentDepth >= MAX_UNWRAP_DEPTH) {
+      exceeded.flag = true;
+      return null;
+    }
+    const head = basename(current[0]);
+    if (head === "command") {
+      const targetIndex = commandBuiltinTargetIndex(current);
+      if (targetIndex < current.length) {
+        current = [basename(current[targetIndex]), ...current.slice(targetIndex + 1)];
+        currentDepth += 1;
+        continue;
+      }
+    }
+    if (head === "nohup" && current.length > 1) {
+      current = [basename(current[1]), ...current.slice(2)];
+      currentDepth += 1;
+      continue;
+    }
+    if (Object.hasOwn(WRAPPER_VALUE_FLAGS, head)) {
+      const targetIndex = wrapperTargetIndex(current, WRAPPER_VALUE_FLAGS[head]);
+      if (targetIndex < current.length) {
+        current = [basename(current[targetIndex]), ...current.slice(targetIndex + 1)];
+        currentDepth += 1;
+        continue;
+      }
+    }
+    if (head === "env") {
+      const remainder = envWrapperRemainder(current);
+      if (remainder !== null) {
+        current = [basename(remainder[0]), ...remainder.slice(1)];
+        currentDepth += 1;
+        continue;
+      }
+    }
+    return { tokens: current, depth: currentDepth };
+  }
+}
+
 export function unwrappedCommandSegments(command, depth = 0, exceeded = { flag: false }) {
   if (depth >= MAX_UNWRAP_DEPTH) {
     exceeded.flag = true;
     return [];
   }
   const segments = [];
-  for (const tokens of commandSegments(command)) {
-    const head = basename(tokens[0]);
-    if (head === "eval" && tokens.length > 1) {
+  for (const rawSegment of segmentsRespectingQuotes(command)) {
+    const inner = parenGroupInner(rawSegment);
+    if (inner !== null) {
+      segments.push(...unwrappedCommandSegments(inner, depth + 1, exceeded));
+      continue;
+    }
+    const tokens = withoutLeadingEnvAssignments(tokensRespectingQuotes(rawSegment));
+    if (tokens.length === 0) continue;
+    const unwrapped = unwrapTokenWrappers(tokens, depth, exceeded);
+    if (unwrapped === null) continue;
+    const finalTokens = unwrapped.tokens;
+    const tokenDepth = unwrapped.depth;
+    const head = basename(finalTokens[0]);
+    if (head === "eval" && finalTokens.length > 1) {
       segments.push(
-        ...unwrappedCommandSegments(tokens.slice(1).join(" "), depth + 1, exceeded),
+        ...unwrappedCommandSegments(finalTokens.slice(1).join(" "), tokenDepth + 1, exceeded),
       );
       continue;
     }
     if (SHELL_C_INVOCATIONS.has(head)) {
-      const cIndex = shellDashCIndex(tokens);
-      if (cIndex !== -1 && typeof tokens[cIndex + 1] === "string") {
-        segments.push(...unwrappedCommandSegments(tokens[cIndex + 1], depth + 1, exceeded));
+      const cIndex = shellDashCIndex(finalTokens);
+      if (cIndex !== -1 && typeof finalTokens[cIndex + 1] === "string") {
+        segments.push(...unwrappedCommandSegments(finalTokens[cIndex + 1], tokenDepth + 1, exceeded));
         continue;
       }
     }
-    if (head === "command") {
-      const targetIndex = commandBuiltinTargetIndex(tokens);
-      if (targetIndex < tokens.length) {
-        segments.push([basename(tokens[targetIndex]), ...tokens.slice(targetIndex + 1)]);
-        continue;
-      }
-    }
-    segments.push([head, ...tokens.slice(1)]);
+    segments.push([head, ...finalTokens.slice(1)]);
   }
   if (exceeded.flag) segments[UNWRAP_DEPTH_EXCEEDED] = true;
   return segments;

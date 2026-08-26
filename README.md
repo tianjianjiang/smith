@@ -81,15 +81,63 @@ through.
   (separate option flags before `-c`, e.g. `bash -e -c "..."`, AND clustered
   single-dash short flags ending in `c`, e.g. `bash -ec "..."`/`sh -xc "..."`,
   are both recognized, not just the bare `-c` form)/`command`-prefix
-  (including POSIX `command -p`)/
-  absolute-path unwrapping, recursively up to 7 levels deep (an 8th nested
-  wrap hits the depth limit and fails closed — see below), on top of the
-  existing quote/escape-aware `commandSegments` tokenization, and normalizes
-  flag position and attached/assignment forms — `-Xvalue`, `-X=value`,
+  (including POSIX `command -p`)/`sudo`/`nice`/`time`/`nohup`/`env`-prefix
+  (including a leading `VAR=value` before the real command for `env`, and each
+  wrapper's own common value-taking flags — `sudo -u`/`-g`/`-h`/`-p`/
+  `--chdir`, `nice -n`, `time -f`/`--format`, `env -u`/`--chdir` — so the
+  flag's value is never misread as the real command; `env -S`/`--split-string`
+  is a special case, since its value is itself a shell-word-split
+  mini-command-line, not an opaque value to skip — its whitespace-separated
+  words become the real command and arguments, e.g. `env -S "git commit
+  --amend"` correctly resolves to `git commit --amend`)/bare subshell-paren (`` (cmd) ``/`` ( cmd ) ``, including combined
+  with another wrapper like `` (sudo cmd) `` or nested like `` ((cmd)) ``,
+  recursively — each stripped paren layer consumes one level of the same
+  depth budget as `eval`/`sh -c`, so a deeply-nested subshell fails closed the
+  same way)/absolute-path unwrapping — ALL of the above compose freely with
+  each other, in any order and any depth (e.g. `sudo sh -c '...'`, a wrapper
+  followed by a shell, is fully unwrapped, not just the reverse `sh -c 'sudo
+  ...'`), each layer consuming one level of the shared depth budget. A
+  subshell containing a `;`/`&&`/`||`-joined compound command (e.g. `(cd /tmp
+  && git commit --amend)`) is recognized as ONE balanced, quote-aware group at
+  the string level BEFORE tokenization (not by naively splitting on those
+  characters first and gluing the parens back on afterward), so its inner
+  content is re-processed as its own independent command list — `cd /tmp` and
+  `git commit --amend` both surface as their own detected segments, and
+  whatever follows the closing paren (e.g. `&& echo done`) is still processed
+  too. This inner re-processing works on the ORIGINAL raw string content, not
+  a rejoin of already-dequoted tokens, so a quoted multi-word argument inside
+  the parens (e.g. a commit message containing text that looks like a flag)
+  survives as the single token it always was — unlike `eval`/`sh -c`, which DO
+  rejoin already-split tokens with plain spaces before re-parsing, faithfully
+  reproducing real bash's own loss of quote boundaries when `eval` is given
+  multiple pre-split arguments (verified against real bash; this asymmetry
+  between paren-handling and `eval`/`sh -c` is intentional, not an
+  inconsistency — parens don't re-tokenize their content in real bash the way
+  `eval` does, so this hook doesn't either). Clustered short flags are split
+  at
+  whichever character in the cluster is the first value-taking one (e.g.
+  `gh pr merge -dR owner/repo` splits into `-d` and `-R owner/repo`, not one
+  opaque `-dR` token), recursively up to 7 levels deep (an 8th nested wrap hits
+  the depth limit and fails closed — see below), on top of the existing
+  quote/escape-aware `commandSegments` tokenization, and normalizes flag
+  position and attached/assignment forms — `-Xvalue`, `-X=value`,
   `--flag=value` — before matching; a command nested deeper than the unwrap
   limit fails CLOSED — treated as an external write requiring `ask` — rather
   than silently falling through unrecognized, since giving up on unwrapping
-  is not evidence the command is safe): `gh pr comment`/`gh issue comment`
+  is not evidence the command is safe. **Known gaps**: each wrapper's
+  value-taking flags are modeled against its common/likely usage, not its full
+  flag surface — `sudo`'s `-r`/`--role`/`-t`/`--type` (SELinux), and a bare
+  `sudo VAR=value` (unlike `env`, `sudo` does not treat a leading
+  `VAR=value` as an environment assignment by convention), are not recognized
+  as consuming a value, so in those specific cases the value could be misread
+  as the real command, silently missing the wrapped command underneath.
+  `env -S`'s word-splitting only handles plain whitespace separation, not its
+  documented backslash escape sequences or `${VAR}` substitution — an `-S`
+  value relying on either of those is not evaluated the way real `env` would
+  evaluate it, so the resulting "command" could differ from what real `env`
+  would actually run; this is a narrow, shebang-line-oriented feature
+  (`#!/usr/bin/env -S ...`), not common in interactive/agentic use):
+  `gh pr comment`/`gh issue comment`
   (always), `gh pr review` when a submit flag is present (`-a/--approve`,
   `-c/--comment`, `-r/--request-changes`, including a clustered short form like
   `-ab`), `gh pr close`/`gh pr reopen`/`gh issue close`/`gh issue reopen` when
@@ -347,6 +395,109 @@ through.
   accepted as a low-priority inefficiency given how rarely `ExitPlanMode`
   fires per session, not attempted here.
 
+- **stack-merge-guard** (`smith-ctx-claude/scripts/stack-merge-guard.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+  — PreToolUse guard (matcher `Bash`) that asks for confirmation on `gh pr merge
+  --delete-branch` (or `-d`, including clustered short forms like `-sd`, and a
+  boolean short flag clustered BEFORE a value-taking one like `-dt subject` —
+  `gh`'s own short-flag clustering consumes everything after the first
+  value-taking character as that flag's value, so `-d` is only a real,
+  independent flag when it appears at or before that point; verified against
+  the installed `gh` CLI, e.g. `-dt "text" <pr>` parses past flags. A cluster
+  with `d` AFTER a value-taking char, like `-td`, is correctly NOT detected —
+  the `d` there is consumed as `-t`'s value, not a separate flag) when
+  another open PR has the branch being deleted as its base — deleting it leaves
+  that child PR pointing at a deleted branch. Real incident this closes:
+  `#86`->`#87` (2026-06-15). Resolves the PR's head branch via
+  `gh pr view --json headRefName` (falling back to the current branch when no
+  positional target is given) and searches for open children via `gh pr list
+  --base <headRefName> --state open`. Falls back to `ask` (never silently
+  allows) when either `gh` call errors or times out, or when a shell-wrapped command
+  nests deeper than the shared tokenizer's unwrap limit, OR when an unexpected
+  internal error occurs anywhere in the check itself — an unverified merge
+  could just as easily be the dangerous case as the safe one, and an
+  uncaught exception exits non-zero-but-not-2, which this repo's hooks treat
+  as "does not block" rather than "ask," so leaving any part of the check
+  outside a catch would silently defeat the guard on a future regression. A
+  `-R`/`--repo` flag is recognized whether it appears BEFORE the `pr merge`
+  subcommand (a global `gh` flag, e.g. `gh -R owner/repo pr merge ...` — the
+  subcommand position itself is resolved by walking past recognized global
+  flags rather than a naive first-match search, so a value that happens to
+  read `pr`, e.g. `-R pr/pr`, can't be mistaken for the subcommand either) or
+  AFTER it (a per-command flag, which takes precedence over a global one if
+  both are present), and forwarded to the hook's own `gh pr view`/`gh pr list`
+  verification calls either way, so cross-repo merges are checked against the
+  actual target repo rather than the hook's own `cwd`. An explicit
+  `--delete-branch=false`/`=0`/`=f`/`=F`/`=False`/`=FALSE` is recognized as
+  the flag NOT being set, matching every spelling Go's `strconv.ParseBool`
+  (which `gh`'s flag parser uses) accepts as false, verified against the
+  installed `gh` CLI — so it does not trigger a spurious `ask` — and any
+  `--delete-branch=<value>` token (any value, not just a negation) is removed
+  from consideration before merge-target detection runs, so its split-off
+  value can never be misread as the PR number/branch (e.g. `gh pr merge
+  --delete-branch=true` with no other positional argument correctly falls
+  back to the current branch's PR, not a literal `"true"` target). When
+  `--delete-branch` appears more than once in any mix of forms (bare,
+  `=value`, or clustered), the LAST occurrence decides the final state — a
+  left-to-right scan, matching `gh`'s/pflag's own repeated-flag semantics —
+  rather than always trusting whichever attached `=value` occurrence happens
+  to appear first, verified against the installed `gh` CLI (a later flag
+  overriding an earlier one is standard pflag/cobra behavior for a repeated
+  flag). Suggests
+  retargeting the child PR (`gh pr edit <number> --base <new-base>`) or using
+  `gh stack` before merging. Value-taking short flags (`-A`/`-b`/`-F`/`-t`/`-R`)
+  are recognized in space-separated, `--long=value`, attached short
+  (`-Atext`), AND clustered form (e.g. `gh pr merge -dR owner/repo` splits
+  into `-d` and `-R owner/repo`, so the repo is still correctly forwarded and
+  `owner/repo` is never misread as the PR target — clustering is split at
+  whichever character is the first value-taking one, matching the same
+  left-to-right scan the delete-branch detector itself uses), verified against
+  the installed `gh` CLI. Every `gh pr merge`/`gh pr view`/`gh pr list` call
+  in the same hook invocation shares the PreToolUse 5-second subprocess
+  timeout with no retry. Inherits the shared tokenizer's command-substitution
+  limitation documented under `external-write-guard` above (`` gh $(echo pr)
+  merge ``) — permanent, not tracked-fixable.
+
+- **amend-shared-commit-guard** (`smith-ctx-claude/scripts/amend-shared-commit-guard.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+  — PreToolUse guard (matcher `Bash`) that asks for confirmation on `git commit
+  --amend` when HEAD is also the tip of another local branch (`git branch
+  --points-at HEAD`) — meaning the current branch has no commit of its own yet,
+  so the commit being amended most likely belongs to a parent/base branch, not
+  this one. This is the general, git-native form of the stacked-branch near-miss
+  in `reference_amend_on_fresh_stacked_branch_rewrites_parent` (2026-08-17): a
+  fresh child branch created off a parent's tip shares that tip until its first
+  commit, so an early `--amend` silently rewrites the parent's history instead
+  of creating the child's own commit. The same check also catches amending the
+  very first commit on a fresh branch off the default branch, since HEAD then
+  equals the default branch's tip too. A later `--no-amend` correctly
+  overrides an earlier `--amend` (and vice versa) — git respects last-flag-wins
+  for this pair, verified empirically (`git commit --amend --no-amend
+  --allow-empty` creates a new commit, not an amend). Both flags are matched
+  by any git-accepted unambiguous abbreviation (`--am`/`--amen`/`--amend`,
+  `--no-am`/`--no-ame`/.../`--no-amend`), not just the full spelling — `--a`
+  alone is genuinely ambiguous in git itself (errors with "could be
+  --allow-empty or --allow-empty-message") and is correctly NOT treated as
+  `--amend`; verified against the installed git CLI via `--dry-run`'s
+  amend-specific restore hint. Detection scans forward, skipping the value of
+  `git commit`'s own value-taking flags (`-m`/`-F`/`-C`/`-c`/`-A`/`--date`/
+  `-t`/`--fixup`/`--squash`) — so a commit message that literally contains the
+  text `--no-amend` is never misread as negating a real `--amend` elsewhere in
+  the same command (verified: `git commit --amend -m "--no-amend"` still asks
+  correctly), and the mirror case (a message reading `--amend` with no real
+  amend flag present) correctly stays silent rather than firing a spurious
+  ask. Falls back to `ask` (never silently allows)
+  on an unverifiable `git rev-parse`/`git branch --points-at` call, an
+  over-deep shell-wrapped command, or an unexpected internal error anywhere
+  in the check itself, same rationale as `stack-merge-guard`.
+  Skips detached `HEAD` (`git rev-parse --abbrev-ref HEAD` returns the literal
+  string `HEAD`) since there is no branch to protect. **Known limitation**: a
+  `git -C <other-repo> commit --amend` is evaluated against the hook's own
+  `cwd`, not the command's `-C` target, matching `branch-rename-open-pr`'s
+  existing precedent — not attempted here. Inherits the shared tokenizer's
+  command-substitution limitation documented under `external-write-guard`
+  above (`` X=$(git commit --amend) ``) — permanent, not tracked-fixable.
+
 - **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
   — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
   attribution mechanism. It is target-agnostic and **never inspects or rewrites the
@@ -457,6 +608,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-name-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/stack-merge-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/amend-shared-commit-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" },
           { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
         ]
@@ -570,6 +723,18 @@ then:
     text in a later turn; confirm it proceeds. If the call is rejected with
     feedback, confirm a bare retry (no fresh elaboration turn) is blocked,
     and that sending fresh elaboration before the retry proceeds.
+17. **stack-merge-guard** — with an open PR whose base is a branch that has
+    its own open PR, run `gh pr merge <the-base-PR> --delete-branch`; confirm
+    it prompts naming the still-open child PR, then **deny** the prompt (a
+    real merge would otherwise delete the base branch out from under the
+    child). Confirm `gh pr merge <either-PR>` without `--delete-branch` does
+    NOT prompt.
+18. **amend-shared-commit-guard** — create a branch off another branch's tip
+    with no commit of your own yet (`git switch -c scratch/probe`), then run
+    `git commit --amend`; confirm it prompts naming the other branch, then
+    **deny** the prompt (a real amend would otherwise rewrite the parent
+    branch's commit). Make a real commit on `scratch/probe`, then run
+    `git commit --amend --no-edit`; confirm it proceeds without prompting.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not
