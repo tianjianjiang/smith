@@ -103,6 +103,77 @@ export function commandSegments(command) {
     .filter((tokens) => tokens.length > 0);
 }
 
+const SHELL_C_INVOCATIONS = new Set(["sh", "bash", "zsh", "ksh"]);
+const MAX_UNWRAP_DEPTH = 8;
+
+function basename(token) {
+  const parts = token.split("/");
+  return parts[parts.length - 1];
+}
+
+function commandBuiltinTargetIndex(tokens) {
+  let index = 1;
+  while (index < tokens.length && tokens[index].startsWith("-") && tokens[index] !== "-c") {
+    index += 1;
+  }
+  return index;
+}
+
+const SHELL_OPTIONS_TAKING_A_VALUE = new Set(["-o", "-O", "+o", "+O"]);
+
+function isShortDashCFlag(token) {
+  return token.length >= 2 && token[0] === "-" && token[1] !== "-" && token.endsWith("c");
+}
+
+function shellDashCIndex(tokens) {
+  let index = 1;
+  while (index < tokens.length && (tokens[index].startsWith("-") || tokens[index].startsWith("+"))) {
+    if (isShortDashCFlag(tokens[index])) return index;
+    if (SHELL_OPTIONS_TAKING_A_VALUE.has(tokens[index])) {
+      index += 2;
+      continue;
+    }
+    index += 1;
+  }
+  return -1;
+}
+
+export const UNWRAP_DEPTH_EXCEEDED = Symbol("unwrap-depth-exceeded");
+
+export function unwrappedCommandSegments(command, depth = 0, exceeded = { flag: false }) {
+  if (depth >= MAX_UNWRAP_DEPTH) {
+    exceeded.flag = true;
+    return [];
+  }
+  const segments = [];
+  for (const tokens of commandSegments(command)) {
+    const head = basename(tokens[0]);
+    if (head === "eval" && tokens.length > 1) {
+      segments.push(
+        ...unwrappedCommandSegments(tokens.slice(1).join(" "), depth + 1, exceeded),
+      );
+      continue;
+    }
+    if (SHELL_C_INVOCATIONS.has(head)) {
+      const cIndex = shellDashCIndex(tokens);
+      if (cIndex !== -1 && typeof tokens[cIndex + 1] === "string") {
+        segments.push(...unwrappedCommandSegments(tokens[cIndex + 1], depth + 1, exceeded));
+        continue;
+      }
+    }
+    if (head === "command") {
+      const targetIndex = commandBuiltinTargetIndex(tokens);
+      if (targetIndex < tokens.length) {
+        segments.push([basename(tokens[targetIndex]), ...tokens.slice(targetIndex + 1)]);
+        continue;
+      }
+    }
+    segments.push([head, ...tokens.slice(1)]);
+  }
+  if (exceeded.flag) segments[UNWRAP_DEPTH_EXCEEDED] = true;
+  return segments;
+}
+
 export function gitSubcommandArguments(tokens) {
   if (tokens[0] !== "git") return null;
   let index = 1;

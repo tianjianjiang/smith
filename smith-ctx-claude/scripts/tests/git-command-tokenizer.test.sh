@@ -55,4 +55,59 @@ assert_json "non-git first token returns null" gitSubcommandArguments '["echo","
 assert_json "git with no subcommand returns null" gitSubcommandArguments '["git"]' \
   'null'
 
+assert_json "unwrapped: plain command passes through" unwrappedCommandSegments '"git status"' \
+  '[["git","status"]]'
+assert_json "unwrapped: eval-wrapped command is unwrapped" unwrappedCommandSegments \
+  '"eval \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sh -c wrapped command is unwrapped" unwrappedCommandSegments \
+  '"sh -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: bash -c wrapped command is unwrapped" unwrappedCommandSegments \
+  '"bash -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: bash -e -c (option flags before -c) is still unwrapped" unwrappedCommandSegments \
+  '"bash -e -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: bash -ec (clustered short flags ending in c) is still unwrapped" unwrappedCommandSegments \
+  '"bash -ec \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: sh -xc (clustered short flags ending in c) is still unwrapped" unwrappedCommandSegments \
+  '"sh -xc \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: bash -O extglob -c (value-taking shell option before -c) is still unwrapped" unwrappedCommandSegments \
+  '"bash -O extglob -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: bash -o pipefail -c (value-taking shell option before -c) is still unwrapped" unwrappedCommandSegments \
+  '"bash -o pipefail -c \"git branch bad_name\""' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: command-prefixed invocation strips the prefix" unwrappedCommandSegments \
+  '"command git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: command -p (POSIX default-PATH flag) is also stripped" unwrappedCommandSegments \
+  '"command -p git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: absolute-path invocation is normalized to its basename" unwrappedCommandSegments \
+  '"/usr/bin/git branch bad_name"' \
+  '[["git","branch","bad_name"]]'
+assert_json "unwrapped: nested eval inside sh -c is unwrapped recursively" unwrappedCommandSegments \
+  '"sh -c \"eval \\\"git branch bad_name\\\"\""' \
+  '[["git","branch","bad_name"]]'
+
+depth_exceeded=$(node --input-type=module -e "
+  import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from \"$MODULE\";
+  let cmd = 'echo done';
+  for (let i = 0; i < 9; i++) cmd = 'eval ' + JSON.stringify(cmd);
+  const segments = unwrappedCommandSegments(cmd);
+  console.log(String(segments[UNWRAP_DEPTH_EXCEEDED] === true));
+")
+[ "$depth_exceeded" = "true" ] || fail "unwrapped: exceeding MAX_UNWRAP_DEPTH sets the UNWRAP_DEPTH_EXCEEDED signal (got $depth_exceeded)"
+
+shallow_not_exceeded=$(node --input-type=module -e "
+  import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from \"$MODULE\";
+  const segments = unwrappedCommandSegments('eval \"git branch bad_name\"');
+  console.log(String(segments[UNWRAP_DEPTH_EXCEEDED] === undefined));
+")
+[ "$shallow_not_exceeded" = "true" ] || fail "unwrapped: a shallow eval does not set UNWRAP_DEPTH_EXCEEDED (got $shallow_not_exceeded)"
+
 echo "PASS: git-command-tokenizer"
