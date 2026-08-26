@@ -69,18 +69,95 @@ multi-question call, and `branch-rename-open-pr` blocks an unrecoverable rename
 through.
 
 - **external-write-guard** (`smith-ctx-claude/scripts/external-write-guard.mjs`)
-  — PreToolUse guard (matcher `mcp__.*`) that escalates the human-facing MCP
-  **write** tools (Jira/Confluence create·edit·transition·comment, Notion
-  create·update·move·duplicate, non-draft Slack sends) to a
-  `permissionDecision:"ask"` prompt, so an external write cannot fire without a
-  per-artifact yes. Read/search/fetch tools and every `*_draft` variant fall
-  through untouched. The write set is a pre-compiled `const` in the script
-  itself (its single source of truth), so no missing or malformed file can
-  silently disable this loss-bearing guard — a core rule of a loss-bearing
-  guard lives in code, and any future client-specific patterns would come from
-  a gitignored `*.local/` overlay that can only ADD to the built-in set, never
-  disable it. Covers the MCP channel only — the Bash channel (`gh pr comment`,
-  `git push`) is a separate future guard.
+  — PreToolUse guard (matchers `mcp__.*` and `Bash`) that escalates
+  human-facing writes to a `permissionDecision:"ask"` prompt, so an external
+  write cannot fire without a per-artifact yes. On the **MCP channel**: the
+  human-facing write tools (Jira/Confluence create·edit·transition·comment,
+  Notion create·update·move·duplicate, non-draft Slack sends). Read/search/fetch
+  tools and every `*_draft` variant fall through untouched. The write set is a
+  pre-compiled `const` in the script itself (its single source of truth). On
+  the **Bash channel** (reusing `unwrappedCommandSegments` from
+  `lib/git-command-tokenizer.mjs`, which layers `eval`/`sh -c`/`bash -c`
+  (separate option flags before `-c`, e.g. `bash -e -c "..."`, AND clustered
+  single-dash short flags ending in `c`, e.g. `bash -ec "..."`/`sh -xc "..."`,
+  are both recognized, not just the bare `-c` form)/`command`-prefix
+  (including POSIX `command -p`)/
+  absolute-path unwrapping, recursively up to 7 levels deep (an 8th nested
+  wrap hits the depth limit and fails closed — see below), on top of the
+  existing quote/escape-aware `commandSegments` tokenization, and normalizes
+  flag position and attached/assignment forms — `-Xvalue`, `-X=value`,
+  `--flag=value` — before matching; a command nested deeper than the unwrap
+  limit fails CLOSED — treated as an external write requiring `ask` — rather
+  than silently falling through unrecognized, since giving up on unwrapping
+  is not evidence the command is safe): `gh pr comment`/`gh issue comment`
+  (always), `gh pr review` when a submit flag is present (`-a/--approve`,
+  `-c/--comment`, `-r/--request-changes`, including a clustered short form like
+  `-ab`), `gh pr close`/`gh pr reopen`/`gh issue close`/`gh issue reopen` when
+  a `-c`/`--comment`/attached `-cVALUE` value is present, `gh pr-review
+  comments reply` (this repo's own documented review-thread-reply path,
+  `@smith-gh-pr` "Posting Review Findings" — detected by the literal `reply`
+  token appearing anywhere in the command, not by its position, so a
+  documented-valid reordering like `gh pr-review comments --pr 1 reply ...`
+  is still caught; `gh pr-review threads resolve`/`list` are not flagged —
+  mechanics/read, same allowlist principle as `resolveReviewThread` below),
+  `gh api` against an endpoint matching `/comments` or `/reviews` (with or without a
+  trailing query string) when the request is a write (explicit
+  `-X`/`--method` `POST/PUT/PATCH/DELETE`, or an implied `POST` from
+  `-f`/`-F`/`--raw-field`/`--field`/`--input` not overridden by an explicit
+  `--method GET` — verified
+  against real `gh api` traffic via `GH_DEBUG=api`, not inferred from
+  `gh api --help`'s silence on `--input`: an earlier draft of this guard
+  wrongly excluded `--input` on that inference and a review round caught it),
+  and `gh api graphql`/`gh api /graphql` whose query text names a
+  comment/review/discussion write mutation from a fixed allowlist verified
+  against GitHub's live GraphQL schema (`gh api graphql -f query='{ __type(name:
+  "Mutation") { fields { name isDeprecated } } }'`) — every name in that
+  allowlist is a real, explicit `const`, not an inferred pattern; anything not
+  listed (including `resolveReviewThread`/`unresolveReviewThread`, mechanics
+  per `@smith-guidance`'s External-writes split, and non-comment mutations)
+  falls through unflagged by construction, not by semantic judgment. A global
+  flag like `-R`/`--repo` may appear anywhere in the command (before or after
+  the resource/subcommand) without defeating detection. A single Bash call
+  chaining more than one detected write (e.g. `gh pr comment ... &&
+  gh pr review ... --approve`) still triggers only one `ask` prompt — Claude
+  Code intercepts the whole tool call, not each `gh` invocation separately —
+  but the prompt names every write found across the whole command, not just
+  the first, so approving it is an informed decision about all of them.
+
+  **Known limitations** (verified, not assumed — each checked against real
+  `gh`/shell behavior before being accepted as out of scope): true shell
+  **command substitution and variable expansion** (`` gh $(echo pr) comment ``,
+  `` X=comment; gh pr $X ``) cannot be resolved by a static hook without
+  actually executing the untrusted substituted text, which the hook itself
+  must not do — permanent, not a tracked-fixable gap. `gh api graphql`/`gh
+  api /graphql` with the query sourced from a file (`-f`/`-F query=@file`) or
+  a raw `--input file` body is flagged unconditionally, not scanned for a
+  mutation name — the file content is opaque to the hook, so there is nothing
+  for the mutation-name allowlist to match against, and "can't tell" is
+  treated the same as the unwrap-depth-exceeded case above: `ask`, not
+  silently pass. This means an opaque-sourced GraphQL *read* also prompts
+  (a safe-direction false positive, not a bypass). PR/issue *creation* (`gh pr create`,
+  `gh issue create`) and *edit* (`gh pr edit --body`, `gh issue edit --body`,
+  `gh api -X PATCH .../issues/{n}` without a `/comments` or `/reviews` path
+  segment) are both out of scope here — a separate, narrower future guard is
+  planned for blocking `gh pr create --draft` before local review reaches
+  convergence (CodeRabbit skips draft PRs); PR/issue *edit* coverage is not
+  yet planned as its own item and should be before relying on this guard for
+  PR/issue body edits. Other `gh` resources that can carry human-authored
+  content — `gh release create/edit --notes`, `gh gist create/edit`, `gh repo
+  edit --description` and similar — are NOT audited or covered here; this
+  guard's scope is PR/issue comment, review, reply, and close/reopen comment
+  only. `git push` remains uncovered — mechanics under `@smith-guidance`'s split, not
+  content. `lib/git-command-tokenizer.mjs` is loaded via a `dynamic import()`
+  inside the Bash-channel path only, not statically at the top of the file —
+  a missing or malformed copy of that shared file therefore can't disable the
+  MCP channel (which has no file dependency of its own) and, on the Bash
+  channel specifically, is treated the same as the unwrap-depth-exceeded case
+  above: fails CLOSED (`ask`), not open, since a tokenizer that can't load
+  means the command can't be shown safe. Verified directly: renaming the
+  shared file to simulate a missing copy still asks on a real MCP write and
+  now also asks (rather than silently allowing) on a Bash write that would
+  otherwise have matched.
 
 - **askuserquestion-arity** (`smith-ctx-claude/scripts/askuserquestion-arity.mjs`)
   — PreToolUse guard (matcher `AskUserQuestion`) that blocks a call carrying
@@ -380,6 +457,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-rename-open-pr.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/branch-name-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/gh-stack-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" },
           { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
         ]
       },
@@ -444,8 +522,18 @@ then:
    `EnterWorktree`; confirm it's blocked citing the dirty checkout.
 4. **external-write-guard** — trigger a human-facing MCP write (e.g. edit a
    Jira issue); confirm a permission prompt appears citing the external-write
-   rule. If your settings already `allow` that MCP tool, the `ask` may be
-   overridden — see the note below.
+   rule. If your settings already `allow` that MCP tool, the `ask` should
+   still prompt per the "Resolved" note below; if it doesn't, that note's
+   verified-from-docs claim doesn't hold on your install/version — report it.
+   On the Bash channel: run `gh pr comment <n> --body "test"` and `gh pr
+   review <n> --approve` against a scratch PR; confirm both prompt, then
+   **deny** the prompt each time (a real comment/approval would otherwise post
+   to the scratch PR). Confirm `gh pr view <n>` and `gh api graphql -f
+   query='mutation { resolveReviewThread(input: {threadId: "PRRT_invalid"}) {
+   thread { isResolved } } }'` do NOT prompt (the deliberately-invalid
+   `threadId` makes the request itself fail harmlessly server-side — nothing
+   real gets resolved — while still confirming the guard doesn't intercept
+   it).
 5. **askuserquestion-arity** — send a 2-question `AskUserQuestion`; confirm it
    is blocked. A single question proceeds.
 6. **volatile-artifact-guard** — write a file under `/tmp`, then stop; confirm
@@ -483,12 +571,40 @@ then:
     feedback, confirm a bare retry (no fresh elaboration turn) is blocked,
     and that sending fresh elaboration before the retry proceeds.
 
-**Note on `ask` vs a pre-existing `allow`.** external-write-guard emits
-`permissionDecision:"ask"`. If `$HOME/.claude/settings.json` already grants a
-matched MCP tool via `permissions.allow`, verify (step 4) that the `ask` still
-prompts. If a standing `allow` wins, either remove that allow rule or switch the
-script's decision to `"deny"` (the Slack-send deny is the proven template) so
-the guard is not silently bypassed.
+**Note on `ask` vs another matching hook's decision.** Verified against the
+raw current text of code.claude.com/docs/en/hooks (fetched directly, not
+through a summarizing pass — an earlier summarized fetch fabricated a
+"most restrictive: deny beats allow, both beat ask" claim that does not
+appear anywhere on the page): "When multiple `PreToolUse` hooks return
+different decisions, precedence is `deny > defer > ask > allow`." So a
+plain `"allow"` from another hook matching the same tool call cannot
+silently downgrade this guard's `"ask"`. A CodeRabbit finding on PR #170
+claimed the opposite (another matching `PreToolUse` hook "can override or
+drop this hook's permission decision, allowing the external write without
+prompting") — checked against this verified precedence and found
+inapplicable; no code or doc change made for that specific claim (same
+checked-and-rejected precedent as the `isMeta` finding on PR #183).
+
+**Resolved: a pre-existing `permissions.allow` grant does not skip this
+guard.** Verified against the same raw doc fetch as above: "PreToolUse hooks
+run before every tool call, whether or not it needs permission" — so a
+standing `allow` for a matched tool in `$HOME/.claude/settings.json` cannot
+cause the hook to be skipped; it still runs and its `"ask"` still applies.
+Separately: "A hook's `\"ask\"` also forces a permission prompt in auto mode:
+the classifier can still deny the tool call, but it can't approve the call
+silently. Before v2.1.211, the classifier could approve a Bash command
+running outside the sandbox without showing the prompt the hook requested
+[...]; a hook `\"deny\"` was always honored" — that narrower pre-v2.1.211
+exception is fixed upstream (this machine runs 2.1.245). Manually confirm
+(step 4 above) on your own install/version regardless, since this is
+verified from docs, not from an empirical test on a standing `allow` rule.
+Separately, unrelated to `permissions.allow`: a `PermissionRequest` hook can
+resolve a permission prompt "on behalf of the user" (confirmed in the docs)
+— a different, real bypass vector from the multi-`PreToolUse`-hook claim
+above, but no `PermissionRequest` hook is currently registered anywhere in
+this repo or in any of this machine's Claude Code profiles, so there is
+nothing to defend against yet; noted here rather than speculatively guarded
+against.
 
 ### Checkpoint & reload prerequisites
 
