@@ -18,7 +18,8 @@ for check in \
   transcript-turns \
   exit-plan-mode-guard \
   amend-shared-commit-guard \
-  stack-merge-guard
+  stack-merge-guard \
+  rtk-find-symlink-guard
 do
   sh "$HERE/$check.test.sh" || status=1
 done
