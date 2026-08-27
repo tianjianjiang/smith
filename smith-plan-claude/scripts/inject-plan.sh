@@ -120,10 +120,29 @@ PLAN_FILE=""  # Reset: plan-mode save (above) already persisted; normal flow re-
 CONTEXT_MSG=""
 LOAD_REASON=""
 
+RESTART_SOURCE=""
+RESTART_LABEL="CLEAR"
+RESTART_MARKER="${PLANS_DIR}/.session-restart-${CWD_KEY}"
+if [[ "$PERMISSION_MODE" != "plan" ]] && [[ -f "$RESTART_MARKER" ]]; then
+    RESTART_SOURCE=$(sed -n '1p' "$RESTART_MARKER" 2>/dev/null)
+    rm -f "$RESTART_MARKER" 2>/dev/null || true
+fi
+case "$RESTART_SOURCE" in
+    clear) RESTART_LABEL="CLEAR" ;;
+    compact) RESTART_LABEL="COMPACT" ;;
+    *) RESTART_SOURCE="" ;;
+esac
+RESTART_GATED=0
+[[ -n "$(find "$PLANS_DIR" -maxdepth 1 -name '.sr-hook-installed' -mtime -14 2>/dev/null)" ]] && RESTART_GATED=1
+
+find "$PLANS_DIR" -name ".session-restart-*" -mmin +60 -delete 2>/dev/null || true
+find "$PLANS_DIR" -name ".sr-tmp.*" -mmin +60 -delete 2>/dev/null || true
+
 # --- Auto-reload: check for CWD-specific pending-reload flag ---
 # Each parallel session (worktree) has its own flag file keyed by CWD hash.
 # CWD persists across /clear, so the new session finds the flag.
-if [[ -f "$FLAG_FILE" ]] && [[ "$PERMISSION_MODE" != "plan" ]]; then
+if [[ -f "$FLAG_FILE" ]] && [[ "$PERMISSION_MODE" != "plan" ]] \
+   && { [[ -n "$RESTART_SOURCE" ]] || [[ "$RESTART_GATED" -eq 0 ]]; }; then
     FLAGGED_PLAN=$(sed -n '1p' "$FLAG_FILE")
 
     # Check flag is less than 60 minutes old
@@ -297,7 +316,7 @@ if [[ "$ACTION" == "serena_only" ]]; then
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
 
-    SERENA_DIRECTIVE="**ACTION REQUIRED - POST-CLEAR RESUME:**"
+    SERENA_DIRECTIVE="**ACTION REQUIRED - POST-${RESTART_LABEL} RESUME:**"
     SERENA_DIRECTIVE+="\n\nYou MUST check for previous session state before responding."
     if [[ -n "$FLAGGED_PLAN" ]]; then
         SERENA_DIRECTIVE+="\n\n**Expected plan:** \`${FLAGGED_PLAN}\` (missing or expired)"
@@ -499,7 +518,7 @@ FULL_CONTENT=$(printf '## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Prog
 # Prepend action directive for auto-load scenarios (flag or /clear detection).
 # For trigger-word loads, the user's message IS the instruction — no directive needed.
 if [[ "$LOAD_REASON" == "flag" ]]; then
-    ACTION_DIRECTIVE="**ACTION REQUIRED - POST-CLEAR RESUME:**"
+    ACTION_DIRECTIVE="**ACTION REQUIRED - POST-${RESTART_LABEL} RESUME:**"
     ACTION_DIRECTIVE+="\n\n1. Reconstruct todos from plan checkboxes:"
     ACTION_DIRECTIVE+="\n   - For each \`- [ ]\` task: TaskCreate(subject=task_text, description=\"From plan\", activeForm=\"Working on ...\")"
     ACTION_DIRECTIVE+="\n   - Set first task: TaskUpdate(taskId, status=\"in_progress\")"

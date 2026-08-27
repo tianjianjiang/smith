@@ -139,6 +139,7 @@ _mr_match_n=0      # fresh flags matching this session
 # enumerates.
 _mr_mine_n=0
 _mr_same_n=0       # fresh flags in the same repository, offerable
+_mr_fsession_n=0   # of those, ones recorded in THIS very directory by another session
 _mr_unclaimed_n=0  # matching flags a filesystem error prevented this hook claiming
 _mr_unmeasured_n=0 # matching flags whose age could NOT be established: never consumed
 _mr_unconsumed_n=0 # flags this hook claimed but could NOT delete: they survive as .mr-claimed.*
@@ -420,7 +421,7 @@ _mr_append_row() {
     # gets a longer bound than a label — a deep worktree path silently cut to 200
     # characters would read as a real path that simply is not the one on disk.
     _mr_clean "$6" 400;  path="$_MR_CLEAN"
-    [[ "$key" =~ ^[0-9A-Za-z._-]+$ ]] || key=""
+    [[ "$key" =~ $_MR_KEY_ALLOWED ]] || key=""
     _mr_rows+="${prio}"$'\037'"${mtime}"$'\037'"${verdict}"$'\037'"${label}"$'\037'"${ts}"$'\037'"${path}"$'\037'"${key}"$'\n'
 }
 _mr_now=$(date +%s)
@@ -443,6 +444,39 @@ _mr_now=$(date +%s)
 # running ahead, an NFS clock, or `_mr_now` forced to 0 by a failed `date`)
 # establishes no age at all.
 _MR_CLOCK_AHEAD_S=60
+
+_mr_is_plain_file() {
+    [[ -L "$1" ]] && return 1
+    local nlink
+    nlink=$(stat -c %h "$1" 2>/dev/null)
+    [[ "$nlink" =~ ^[0-9]+$ ]] || nlink=$(stat -f %l "$1" 2>/dev/null)
+    [[ "$nlink" =~ ^[0-9]+$ ]] && [[ "$nlink" -ne 1 ]] && return 1
+    return 0
+}
+
+_MR_PHYS_KEY=""
+[[ -n "$_mr_cwd_phys" ]] && { _MR_PHYS_KEY=$(session_key "" "$_mr_cwd_phys") || _MR_PHYS_KEY=""; }
+
+_MR_KEY_ALLOWED='^[0-9A-Za-z._-]+$'
+_MR_OFFERED_FILE="${PLANS_DIR}/.mr-offered-${CWD_KEY}"
+_mr_offered_usable=1
+if [[ -e "$_MR_OFFERED_FILE" || -L "$_MR_OFFERED_FILE" ]]; then
+    if [[ ! -f "$_MR_OFFERED_FILE" ]] || ! _mr_is_plain_file "$_MR_OFFERED_FILE"; then
+        _mr_offered_usable=0
+    fi
+fi
+_mr_offered_set=""
+[[ "$_mr_offered_usable" -eq 1 && -r "$_MR_OFFERED_FILE" ]] && _mr_offered_set=$(cat "$_MR_OFFERED_FILE" 2>/dev/null)
+_mr_offered_new=""
+_mr_reoffered_n=0
+
+_mr_was_offered() {
+    [[ -n "$1" ]] || return 1
+    case $'\n'"${_mr_offered_set}"$'\n' in
+        *$'\n'"$1"$'\n'*) return 0 ;;
+    esac
+    return 1
+}
 for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
     if [[ ! -f "$_mr_f" ]]; then
         # The glob matched a name this hook cannot open as a file: a dangling
@@ -492,9 +526,7 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
     # not numeric; `%l` has no such tell. So the GNU form is asked FIRST, and BSD,
     # which has no `-c` at all and writes nothing to stdout when handed one, falls
     # through to its own `-f %l`. https://man7.org/linux/man-pages/man1/stat.1.html
-    _mr_nlink=$(stat -c %h "$_mr_f" 2>/dev/null)
-    [[ "$_mr_nlink" =~ ^[0-9]+$ ]] || _mr_nlink=$(stat -f %l "$_mr_f" 2>/dev/null)
-    if [[ -L "$_mr_f" ]] || { [[ "$_mr_nlink" =~ ^[0-9]+$ ]] && [[ "$_mr_nlink" -ne 1 ]]; }; then
+    if ! _mr_is_plain_file "$_mr_f"; then
         _mr_notplain_n=$((_mr_notplain_n + 1))
         continue
     fi
@@ -516,10 +548,12 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
     # whose name ends in a space would stop matching its own hook cwd, and the
     # trimmed path would then fail to `cd`, so the row would assert "recorded path
     # unreachable" about the directory the hook is standing in.
-    _mr_l1=""; _mr_l2=""; _mr_l3=""; _mr_l4=""
-    { IFS= read -r _mr_l1; IFS= read -r _mr_l2; IFS= read -r _mr_l3; IFS= read -r _mr_l4; } < "$_mr_f" 2>/dev/null
+    _mr_l1=""; _mr_l2=""; _mr_l3=""; _mr_l4=""; _mr_l5=""
+    { IFS= read -r _mr_l1; IFS= read -r _mr_l2; IFS= read -r _mr_l3; IFS= read -r _mr_l4; IFS= read -r _mr_l5; } < "$_mr_f" 2>/dev/null
     _mr_fcwd="$_mr_l3"
     _mr_key="${_mr_f##*/.pending-memory-restore-}"
+    _mr_okey="$_mr_key"
+    [[ "$_mr_okey" =~ $_MR_KEY_ALLOWED ]] || _mr_okey=""
 
     # ONE source of truth for age. Taking freshness from `find -mmin` and the age
     # shown in the row from `stat` is two shell-outs measuring the same mtime, free
@@ -571,6 +605,15 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
         _mr_fphys=$(cd -- "$_mr_fcwd" 2>/dev/null && pwd -P) || _mr_fphys=""
         [[ -n "$_mr_fphys" && "$_mr_fphys" == "$_mr_cwd_phys" ]] && _mr_is_match="yes"
     fi
+    _mr_foreign_session=""
+    _mr_owner_unchecked=""
+    if [[ -n "$_mr_is_match" && -n "$_mr_l5" ]] \
+       && [[ "$_mr_l5" != "$CWD_KEY" ]] \
+       && { [[ -z "$_MR_PHYS_KEY" ]] || [[ "$_mr_l5" != "$_MR_PHYS_KEY" ]]; }; then
+        _mr_foreign_session="yes"
+        [[ -z "$_MR_PHYS_KEY" ]] && _mr_owner_unchecked="yes"
+        _mr_is_match=""
+    fi
     [[ -n "$_mr_is_match" ]] && _mr_mine_n=$((_mr_mine_n + 1))
     if [[ -z "$_mr_is_match" ]]; then
         # Not ours to consume. Hygiene: past seven days it goes — but only when
@@ -592,6 +635,7 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
                 # honest move here is to stop claiming this one.
                 if rm -f "$_mr_claim" 2>/dev/null; then
                     _mr_swept_n=$((_mr_swept_n + 1))
+                    [[ -n "$_mr_foreign_session" ]] && _mr_append_row 2 "$_mr_mtime" "REMOVED as older than 7 days WITHOUT restoring: another session's flag recorded in THIS directory (its memory is still in the backends)" "$_mr_l4" "$_mr_l2" "$_mr_fcwd" "$_mr_key"
                 else
                     _mr_unconsumed_n=$((_mr_unconsumed_n + 1))
                 fi
@@ -612,6 +656,18 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
                 # is the same invented-cause mistake this contract exists to stop.
                 _mr_malformed_n=$((_mr_malformed_n + 1))
                 _mr_append_row 5 "$_mr_mtime" "malformed flag, no recorded path" "$_mr_l4" "$_mr_l2" "$_mr_fcwd" "$_mr_key"
+                continue
+            fi
+            if [[ -n "$_mr_foreign_session" ]]; then
+                if _mr_was_offered "$_mr_okey"; then
+                    _mr_reoffered_n=$((_mr_reoffered_n + 1))
+                    continue
+                fi
+                _mr_fs_verdict="same repository, selectable, recorded in THIS directory by a DIFFERENT session"
+                [[ -n "$_mr_owner_unchecked" ]] && _mr_fs_verdict="same repository, selectable, recorded in THIS directory; ownership could NOT be checked, not restored"
+                _mr_append_row 3 "$_mr_mtime" "$_mr_fs_verdict" "$_mr_l4" "$_mr_l2" "$_mr_fcwd" "$_mr_key"
+                _mr_same_n=$((_mr_same_n + 1))
+                _mr_fsession_n=$((_mr_fsession_n + 1))
                 continue
             fi
             _mr_scope_cached "$_mr_fcwd"; _mr_fscope="$_MR_SCOPE_OUT"
@@ -659,6 +715,10 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
                     # resolves both spellings with `pwd -P` — so that pair is
                     # reported as MATCHES and never arrives here. Verified in both
                     # spelling directions.
+                    if _mr_was_offered "$_mr_okey"; then
+                        _mr_reoffered_n=$((_mr_reoffered_n + 1))
+                        continue
+                    fi
                     _mr_verdict="same repository, selectable"
                     _mr_same_n=$((_mr_same_n + 1))
                     ;;
@@ -743,6 +803,8 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
     # on as `.mr-claimed.*`, which the litter sweep below then reports.
     rm -f "$_mr_claim" 2>/dev/null || _mr_unconsumed_n=$((_mr_unconsumed_n + 1))
 done
+
+find "$PLANS_DIR" -name '.mr-offered-*' -mtime +7 -delete 2>/dev/null || true
 # Litter sweep: a hook killed between claim and rm, or a crashed writer, can strand
 # .mr-claimed.* / .mr-tmp.* files. A claim file is the ORIGINAL flag, moved rather
 # than rewritten, so it still holds a label and a recorded path — but it sits outside
@@ -869,6 +931,8 @@ fi
 # nothing at all, which is the silence this whole path exists to remove.
 _mr_fallback_note=""
     [[ "$_mr_stale_kept_n" -gt 0 ]] && _mr_fallback_note+="; ${_mr_stale_kept_n} older than 24h, left in place"
+    [[ "$_mr_reoffered_n" -gt 0 ]] && _mr_fallback_note+="; ${_mr_reoffered_n} already offered to this session at an earlier /clear and NOT relisted, still in \`${_mr_plans_shown}\`"
+    [[ "$_mr_offered_usable" -eq 0 ]] && _mr_fallback_note+="; the already-offered record \`.mr-offered-*\` in \`${_mr_plans_shown}\` is a link or shares an inode, so it was NOT read or written and candidates will repeat until you remove it"
     [[ "$_mr_swept_n" -gt 0 ]] && _mr_fallback_note+="; ${_mr_swept_n} removed as older than 7 days"
     [[ "$_mr_unreadable_n" -gt 0 ]] && _mr_fallback_note+="; ${_mr_unreadable_n} could NOT be read (permissions)"
     [[ "$_mr_unopenable_n" -gt 0 ]] && _mr_fallback_note+="; ${_mr_unopenable_n} matched the flag name but could NOT be opened"
@@ -919,7 +983,7 @@ if [[ -n "$_mr_rows" ]]; then
         [[ -n "$_mr_pp" ]] || continue
         [[ "$_mr_pp" == "6" ]] && continue
         _mr_pos_n=$((_mr_pos_n + 1))
-        if [[ "$_mr_pv" == "same repository, selectable" ]]; then
+        if [[ "$_mr_pv" == "same repository, selectable"* ]]; then
             _mr_same_pos=$_mr_pos_n
             break
         fi
@@ -953,7 +1017,7 @@ if [[ -n "$_mr_rows" ]]; then
         # count. Four spellings of one contract string are four chances for one to
         # drift out of step with the scan that writes it.
         _mr_is_same=0
-        [[ "$_mr_v" == "same repository, selectable" ]] && _mr_is_same=1
+        [[ "$_mr_v" == "same repository, selectable"* ]] && _mr_is_same=1
         # The reserved slot, taken once, by the first selectable row only.
         _mr_take_reserved=0
         [[ "$_mr_reserve" -eq 1 && "$_mr_same_shown_n" -eq 0 && "$_mr_is_same" -eq 1 ]] && _mr_take_reserved=1
@@ -970,7 +1034,8 @@ if [[ -n "$_mr_rows" ]]; then
             # A destroyed pointer that the cap hid must be counted separately: the
             # directive tells the reader its label is listed above, and for these
             # rows the flag is already gone, so an unqualified claim would be false.
-            [[ "$_mr_v" == "MATCHED but expired"* ]] && _mr_gone_hidden_n=$((_mr_gone_hidden_n + 1))
+            { [[ "$_mr_v" == "MATCHED but expired"* ]] || [[ "$_mr_v" == "REMOVED as older than 7 days"* ]]; } \
+                && _mr_gone_hidden_n=$((_mr_gone_hidden_n + 1))
             # Same reason, other direction: the notes tell the agent to offer the
             # selectable rows, so any it cannot see must be counted, not implied.
             [[ "$_mr_is_same" -eq 1 ]] && _mr_same_hidden_n=$((_mr_same_hidden_n + 1))
@@ -1015,9 +1080,13 @@ if [[ -n "$_mr_rows" ]]; then
         if [[ "$_mr_is_same" -eq 1 ]]; then
             _mr_same_shown_n=$((_mr_same_shown_n + 1))
             [[ -n "$_mr_k" ]] && _mr_same_keyed_shown_n=$((_mr_same_keyed_shown_n + 1))
+            [[ -n "$_mr_k" ]] && _mr_offered_new+="${_mr_k}"$'\n'
         fi
         _mr_shown=$((_mr_shown + 1))
     done <<< "$_mr_rows"
+    if [[ -n "$_mr_offered_new" && "$_mr_offered_usable" -eq 1 ]]; then
+        printf '%s' "$_mr_offered_new" >> "$_MR_OFFERED_FILE" 2>/dev/null || true
+    fi
     _mr_tail=""
     # The hidden-kind counters are SUBSETS of the overflow -- all three are
     # incremented in the same `continue` branch -- so they are reported inside its
@@ -1035,6 +1104,8 @@ if [[ -n "$_mr_rows" ]]; then
     [[ "$_mr_selfunver_n" -gt 0 ]] && _mr_tail+=" ${_mr_selfunver_n} left unclassified because this session's own directory could not be resolved (path and label withheld);"
     [[ "$_mr_outside_n" -gt 0 ]] && _mr_tail+=" ${_mr_outside_n} recorded outside this scope, in a directory inside no repository (path and label withheld);"
     [[ "$_mr_stale_kept_n" -gt 0 ]] && _mr_tail+=" ${_mr_stale_kept_n} older than 24h, left in place;"
+    [[ "$_mr_reoffered_n" -gt 0 ]] && _mr_tail+=" ${_mr_reoffered_n} already offered to this session at an earlier /clear and NOT relisted;"
+    [[ "$_mr_offered_usable" -eq 0 ]] && _mr_tail+=" the already-offered record \`.mr-offered-*\` is a link or shares an inode, so it was NOT read or written and candidates will repeat until you remove it;"
     # _mr_stale_gone_n is deliberately absent here: those rows are LISTED above,
     # label and all, because that path destroys the pointer. A count as well would
     # report the same flag twice.
@@ -1057,7 +1128,7 @@ if [[ -n "$_mr_rows" ]]; then
     # nothing can be restored here until the permissions are fixed, which is the
     # definition of nothing restorable. Including it would contradict the rule
     # stated where MR_ACTIONABLE is declared.
-    [[ "$_mr_match_n" -gt 0 || "$_mr_same_n" -gt 0 ]] && MR_ACTIONABLE="yes"
+    [[ "$_mr_match_n" -gt 0 || "$_mr_same_n" -gt 0 || "$_mr_reoffered_n" -gt 0 ]] && MR_ACTIONABLE="yes"
     # A selectable row is only actually deletable if its key survived the allowlist,
     # AND the delete instruction can only name a row the reader was shown — counting
     # keys the cap hid is how the instruction came to reference an invisible flag.
@@ -1116,7 +1187,7 @@ if [[ -n "$_mr_rows" ]]; then
             # non-default config directory a hardcoded path makes the agent's `rm -f`
             # a silent no-op — after which this same flag is re-offered at every
             # /clear until the seven-day sweep.
-            _mr_notes+="\nIf one is chosen: restore it (Serena list_memories()/read_memory(), the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, Basic-Memory recent notes), then delete its flag with \`rm -f ${_mr_plans_shown}/.pending-memory-restore-«flag»\` — the hook did not consume it, so it will be offered again at every /clear for the next 24 hours until you do."
+            _mr_notes+="\nIf one is chosen: restore it (Serena list_memories()/read_memory(), the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, Basic-Memory recent notes), then delete its flag with \`rm -f ${_mr_plans_shown}/.pending-memory-restore-«flag»\` — the hook did not consume it, so it is still there — but THIS session will not list it again, so act on it now or note the flag name. A later session in this directory gets its own first offer."
         fi
     fi
     # Explain a verdict only when a row actually carries it: a legend for a
@@ -1158,11 +1229,12 @@ if [[ -n "$_mr_rows" ]]; then
         # scan cannot support.
         _mr_bearing_n=$(( _mr_seen_n + _mr_unopenable_n + _mr_lostrace_n + _mr_notplain_n \
                         - _mr_stale_kept_n - _mr_match_n \
-                        - _mr_same_n - _mr_foreign_n - _mr_outside_n ))
+                        - _mr_same_n - _mr_foreign_n - _mr_outside_n \
+                        + _mr_fsession_n ))
         if [[ "$_mr_bearing_n" -eq 0 ]]; then
             MR_DIRECTIVE+="\n\nNo checkpoint flag recorded this session's working directory, so NOTHING was restored and no flag was consumed."
         fi
-        [[ "$_mr_same_n" -eq 0 && "$_mr_mine_n" -eq 0 ]] && MR_DIRECTIVE+="\nNo row was verified as belonging to this repository, so there is nothing to offer automatically. Say so in one line and continue with the user's request."
+        [[ "$_mr_same_n" -eq 0 && "$_mr_mine_n" -eq 0 && "$_mr_reoffered_n" -eq 0 ]] && MR_DIRECTIVE+="\nNo row was verified as belonging to this repository, so there is nothing to offer automatically. Say so in one line and continue with the user's request."
         MR_DIRECTIVE+="$_mr_notes"
     elif [[ "$_mr_relists_every_match" -eq 0 ]]; then   # exactly one match
         MR_LABEL="$_mr_newest_label"
@@ -1211,7 +1283,7 @@ elif [[ -n "$_mr_fallback_note" ]]; then
     # Nothing fresh to list, but the scan was not empty. One line, not silence:
     # a scan whose result is discarded is exactly what let the matching defect
     # survive unnoticed. With no flags at all this stays quiet, as before.
-    MR_DIRECTIVE="Checkpoint flags at this /clear (scope: ${_mr_scope_shown}): nothing fresh enough to restore${_mr_fallback_note}. Nothing was restored."
+    MR_DIRECTIVE="Checkpoint flags at this /clear (scope: ${_mr_scope_shown}): nothing offered${_mr_fallback_note}. Nothing was restored."
 fi
 
 # Only auto-load plan if a flag file exists (explicit reload intent from
