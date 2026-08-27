@@ -21,6 +21,8 @@ for check in \
   amend-shared-commit-guard \
   stack-merge-guard \
   rtk-find-symlink-guard \
+  subagent-contract-guard \
+  spawn-ledger-report \
   post-merge-pull-reminder
 do
   sh "$HERE/$check.test.sh" || status=1

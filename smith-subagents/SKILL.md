@@ -71,7 +71,46 @@ that mutate shared state or return plans instead of findings):
 
 For a bounded EDITOR role the contract inverts: name the ONE artifact it may
 change and the single tool granted, and state that everything else stays
-read-only.
+read-only. Open a line of such a prompt with the words `EDITOR ROLE`, in
+capitals: that is how the guard below is told this spawn is the inverted case
+rather than a missing contract. Leading list, heading or emphasis markup is
+fine; the words must begin the line, the match is case-sensitive, and a
+`>`-quoted line does not count. It is a DECLARATION, not a content check — any
+line beginning with those words claims the exemption, including one that goes
+on to disclaim it — so never paste an example of the declaration into an
+ordinary investigative prompt. A mid-line mention is safe.
+
+**Enforced deterministically, because documenting it did not hold.**
+`smith-ctx-claude/scripts/subagent-contract-guard.mjs` (PreToolUse, matcher
+`Agent|Task`) blocks a spawn whose prompt does not carry the block above, and
+prints that block in the refusal so pasting it is the cheapest way forward. It
+extracts the text from THIS section at run time rather than keeping a copy of
+its own, so it always enforces whatever the installed copy of this file says.
+Exempt are subagents whose prompt the main thread never writes: plugin-namespaced
+types (`plugin:agent`), and the built-in helpers named in
+`smith-ctx-claude/subagent-contract-config.json`. Being read-only is NOT the
+criterion and never was — `Explore` and `Plan` hold Bash and write-capable
+`mcp__` tools, and are not exempt.
+
+**Editing this section is a code change.** The guard finds the block by the
+heading `## Contract template`, then takes the section's one and only
+blockquote, which must contain the `«placeholder»` line, and every line from
+the first placeholder to the end of the block must itself be a placeholder. Add
+a new clause BEFORE that line, never after: a clause added after it is printed
+in every refusal and enforced against nothing if it happens to contain
+guillemets of its own. Renaming the heading, indenting the block, fencing it as
+code, splitting it with a blank line, or adding a second blockquote anywhere in
+the section all stop the extraction —
+and the guard then allows every spawn unchecked, loudly, and fails this
+branch's `/smith-preflight`. `smith-ctx-claude/scripts/tests/subagent-contract-guard.test.sh`
+asserts the extracted text still contains both clauses, so run it after any
+edit here; that assertion is the deliberate second copy, and it exists to make
+a mis-edit fail loudly instead of silently narrowing what is enforced.
+
+Every spawn the guard sees is also appended to a per-checkout, per-branch
+ledger, so `/smith-preflight` reads what actually happened instead of attesting
+it from a session history that `/clear` erases. A spawn allowed WITHOUT being
+checked is recorded as such and fails that check rather than passing quietly.
 
 ## Returns: findings, not actions
 

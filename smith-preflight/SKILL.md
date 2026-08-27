@@ -1,7 +1,7 @@
 ---
 name: smith-preflight
 description: Pre-ship gate
-allowed-tools: Bash(git *), Bash(gh *), Bash(command -v *), Read, Grep
+allowed-tools: Bash(git *), Bash(gh *), Bash(command -v *), Bash(node *), Read, Grep
 ---
 
 # /smith-preflight — gate the current change against the invariants
@@ -27,6 +27,9 @@ owning skill, and the owner's wording wins over this file's.
   !`gh auth status --json hosts --active --jq '[.hosts[][].state] | unique | join(",")' 2>&1`
 - PR author: !`gh pr view --json author --jq .author.login 2>&1 | head -1`
 - Authenticated login: !`gh api user --jq .login 2>/dev/null | head -1`
+- Subagent spawn ledger (written by `subagent-contract-guard`; see
+  subagent-contract below):
+  !`node "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/spawn-ledger-report.mjs" 2>/dev/null || echo "subagent-contract PROBE-UNAVAILABLE — the guard is not installed at this profile's skills path"`
 
 ## Checks
 
@@ -57,8 +60,7 @@ and never a substitute for evidence you could still go and find.
 - **suggestions** — attested. Every mechanical review finding posted
   carried a committable `suggestion` block. Owner `@smith-gh-pr`
   Posting Review Findings.
-- **subagent-contract** — attested. Every spawn pasted the contract
-  inline. Owner `@smith-subagents` Contract template.
+- **subagent-contract** — machine when the ledger probe answers. See below.
 
 **branch-first.** Owner @smith-git CRITICAL, enforced by
 `smith-ctx-claude/scripts/branch-guard.mjs`. Protected: `main`,
@@ -140,6 +142,45 @@ The owner's gate runs again at merge time and still fails closed there.
 
 A `SKIP` authorizes nothing anywhere in this gate. It says the question
 could not be asked, not that the answer was yes.
+
+**subagent-contract.** Owner `@smith-subagents` Contract template, enforced
+by `smith-ctx-claude/scripts/subagent-contract-guard.mjs`, which appends
+every in-scope spawn to a per-checkout ledger tagged with the branch it ran
+on. The Live state probe above prints that ledger's verdict; take it
+verbatim rather than deciding again:
+
+- `PASS` — no spawn reached the tool unaccounted for. Report `PASS` and
+  state the counts the probe printed. Read it for exactly that: the counts
+  include spawns the guard EXCUSED (`exempt`, `editor-role`) and spawns it
+  REFUSED (`blocked`), not only spawns that carried the contract. It is not
+  a claim that every subagent honoured it, which no hook can verify.
+- `FAIL:unchecked-spawn(«reasons»)` — something on this branch cannot be
+  shown to have been checked. Report `FAIL` and quote the reasons the probe
+  printed; do not paraphrase them or list causes from memory, because the
+  set grows with the code.
+- `N/A:no-spawns` — the ledger exists and records no spawn on this branch.
+  Report `N/A` with that reason.
+- `SKIP:no-ledger`, or `PROBE-UNAVAILABLE` — the machine check could not
+  run: no ledger for this checkout, or no reporter installed at this
+  profile's skills path. Neither is a pass, and a hook that is merged is
+  not thereby registered. Fall back to the attested answer — every spawn
+  either pasted the contract inline, declared a bounded editor role, was a
+  type the contract does not reach, or was refused — and report `SKIP`
+  naming which of the two you saw, so a reader can tell the machine check
+  did not run.
+
+Two limits to state rather than paper over. The ledger sees the
+`Agent`/`Task` tool channel only, so a skill the harness runs in its own
+subagent, or a cloud review agent, never appears in it. And a `FAIL` here
+does not clear: the ledger is append-only and an unchecked spawn really did
+run, so no later correct spawn erases it. Where the cause was file damage
+rather than a real unchecked spawn, pruning that record is a legitimate
+repair — but deleting the ledger outright yields `SKIP:no-ledger`, a softer
+verdict than the truth, so do it deliberately and say what you did.
+
+`/clear` cannot erase this check the way it erases an attested one, because
+the ledger outlives the session that wrote it. Never answer it
+`SKIP:resumed-session` while the probe is giving an answer.
 
 ## Verdict
 
