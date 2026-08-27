@@ -49,19 +49,27 @@ records.
 
    The script exits non-zero (without printing "Wrote reload flag") if the flag could not be
    written. If it fails — or on any non-Claude-Code platform where you don't run it — emit the
-   block with the `Reload flag` line dropped and rely on the manual `/smith-recon` line. It drops
-   a uniquely-keyed `.pending-memory-restore-*` flag that `on-session-clear.sh` discovers by
-   matching the flag's recorded cwd against the hook's cwd (no shared key), then injects the
-   memory-restore directive as context on the next `/clear`. The restore itself executes only at
-   the user's FIRST PROMPT after `/clear` (any prompt): SessionStart hook output is context-only,
-   and no hook can start a model turn in an interactive session — a Claude Code limit, not
-   configurable (`initialUserMessage` applies only to `-p` non-interactive runs). Never describe
-   this as restoring "on /clear" or without user input. If several sessions checkpointed in the
-   same cwd, the directive asks which checkpoint to restore — see
-   `smith-plan-claude/references/HOOKS.md` ("Checkpoint memory-restore flag"). Needs
-   the smith-plan-claude SessionStart hook registered and the Serena / Basic-Memory MCP servers
-   available (see README "Hooks"). Exit 0 proves the flag was WRITTEN, not that the hook will
-   read it — word the block accordingly (below).
+   block with the `Reload flag` line dropped and rely on the manual `/smith-recon` line. On
+   success it writes a `.pending-memory-restore-*` flag that the next `/clear` scans.
+
+   What that `/clear` then does with the flag branches on several inputs, and the conditions
+   that select between those branches are stated in ONE place: the "Checkpoint memory-restore
+   flag" section of `smith-plan-claude/references/HOOKS.md`, whose verdict table names each
+   outcome that becomes a row. Send readers there. Do not restate those conditions, here or in
+   the block below; every attempt so far has been wrong in one direction or another, because
+   writing out one algorithm in two prose passages leaves them free to drift apart. The block
+   names outcomes, and when a restore happens — never which one you will get. It is emitted into
+   projects that have no copy of this repository, so it must carry that much on its own and must
+   not cite a path from here.
+
+   Three things you DO need in order to word the block correctly. Exit 0 proves the flag was
+   WRITTEN, not that anything will read it. A restore, where one happens, executes at the user's
+   FIRST PROMPT after `/clear` (any prompt): SessionStart hook output is context-only, and no
+   hook can start a model turn in an interactive session — a Claude Code limit, not configurable
+   (`initialUserMessage` applies only to `-p` non-interactive runs), so never describe this as
+   restoring "on /clear" or without user input. And the whole path needs the smith-plan-claude
+   SessionStart hook registered plus the Serena / Basic-Memory MCP servers available (see README
+   "Hooks").
 
 ## Reload after /clear
 
@@ -72,7 +80,7 @@ reported success:
 
 ```
 ## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
-Reload flag: armed for the next /clear on THIS machine (discovered by cwd match). The restore runs at your FIRST PROMPT after /clear — type anything; nothing visible happens at /clear itself (Claude Code limit: hooks cannot start a turn).
+Reload flag: written on THIS machine. A restore is NOT guaranteed — the next /clear may instead list this checkpoint for you to pick, or delete the flag without restoring anything. If it does restore, that happens at your FIRST PROMPT after /clear: type anything; nothing visible happens at /clear itself (Claude Code limit: hooks cannot start a turn). Do not rely on it: use the manual line below, wherever the stores listed under it are reachable.
 Manual resume: /smith-recon "resume my work thread on «label»"
 Where this checkpoint's state lives (reachable from):
 - auto-memory:  memory/«file».md          — this machine only (Claude Code home dir)

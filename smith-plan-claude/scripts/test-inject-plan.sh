@@ -2,7 +2,7 @@
 #
 # test-inject-plan.sh - Tests for inject-plan.sh, enforce-clear.sh, and on-session-clear.sh
 #
-# Runs 66 scenarios covering:
+# The scenario count lives in TOTAL below, never in this prose. Covers:
 #   1. Flag reload -> directive with "POST-CLEAR RESUME"
 #   2. Trigger words -> no directive, plan content present
 #   3. on-session-clear with state file -> POST-CLEAR RESUME directive
@@ -98,7 +98,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=172
+TOTAL=202
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -162,6 +162,9 @@ create_patched_scripts() {
 
     cp "$SESSION_CLEAR_SCRIPT" "$TEST_DIR/on-session-clear.sh"
     chmod +x "$TEST_DIR/on-session-clear.sh"
+
+    cp "$SCRIPT_DIR/scripts/mark-session-restart.sh" "$TEST_DIR/mark-session-restart.sh"
+    chmod +x "$TEST_DIR/mark-session-restart.sh"
 }
 
 # Create a test plan with pending tasks
@@ -2303,9 +2306,13 @@ WRITE_OUT=""
 if [[ "$T61_SUBST_OK" == "true" ]]; then
     WRITE_OUT=$(cd "$CWD_61" && bash "$TEST_DIR/write-reload-flag.sh" "checkpoint-61-e2e")
 fi
+T61_FLAG=$(find "$PLANS_DIR" -name '.pending-memory-restore-*' | head -1)
+T61_KEY=$([[ -n "$T61_FLAG" ]] && sed -n '5p' "$T61_FLAG" || echo "MISSING")
+T61_WANT=$(compute_session_key "$(cd "$CWD_61" && pwd -P)")
 OUTPUT=$(echo '{"cwd":"'"$CWD_61"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 MR_LEFT=$(find "$PLANS_DIR" -name '.pending-memory-restore-*' | wc -l | tr -d ' ')
 if [[ "$T61_SUBST_OK" == "true" ]] && \
+   [[ "$T61_KEY" == "$T61_WANT" ]] && \
    assert_contains "61" "$WRITE_OUT" "Wrote reload flag" && \
    assert_contains "61" "$OUTPUT" "MEMORY RESTORE" && \
    assert_contains "61" "$OUTPUT" "checkpoint-61-e2e" && \
@@ -2314,6 +2321,7 @@ if [[ "$T61_SUBST_OK" == "true" ]] && \
     PASS=$((PASS + 1))
 else
     echo "  FAIL"
+    [[ "$T61_KEY" != "$T61_WANT" ]] && echo "  ASSERT FAILED: line 5 was '$T61_KEY', expected '$T61_WANT'"
     [[ "$MR_LEFT" != "0" ]] && echo "  ASSERT FAILED: expected 0 leftover flags, found $MR_LEFT"
     FAIL=$((FAIL + 1))
 fi
@@ -2625,7 +2633,7 @@ printf '%s\n%s\n%s\n%s\n' "sess_74" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_74_FORE
 T74_STAMP=$(date -v-2d +%Y%m%d%H%M 2>/dev/null) || T74_STAMP=$(date -d '2 days ago' +%Y%m%d%H%M)
 touch -t "$T74_STAMP" "$MR_FLAG_74"
 OUTPUT=$(echo '{"cwd":"'"$CWD_74"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-if assert_contains "74" "$OUTPUT" "nothing fresh enough to restore" && \
+if assert_contains "74" "$OUTPUT" "nothing offered" && \
    assert_contains "74" "$OUTPUT" "older than 24h, left in place" && \
    assert_not_contains "74" "$OUTPUT" "checkpoint-74" && \
    assert_file_exists "74" "$MR_FLAG_74"; then
@@ -5448,6 +5456,593 @@ else
     echo "  ASSERT FAILED: scope_key \"-P\" returned '$OUT_171', expected nothing"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
+
+# --- Test 172: a flag whose session key matches is this session's own ---
+echo "Test 172: memory-restore: a flag whose session key matches is restored and consumed"
+CWD_172="$TEST_DIR/worktree-172"; mkdir -p "$CWD_172"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+FLAG_172="$PLANS_DIR/.pending-memory-restore-keyed172"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_172" "checkpoint-172" \
+    "$(compute_session_key "$(cd "$CWD_172" && pwd -P)")" > "$FLAG_172"
+OUTPUT=$(echo '{"cwd":"'"$CWD_172"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "172" "$OUTPUT" "MATCHES this session" && \
+   assert_contains "172" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE" && \
+   assert_contains "172" "$OUTPUT" "checkpoint-172" && \
+   [[ ! -e "$FLAG_172" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_172" ]] && echo "  ASSERT FAILED: matched flag was not consumed"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_172"
+
+# --- Test 173: same directory, different session -> offered, never consumed ---
+echo "Test 173: memory-restore: a flag from a DIFFERENT session in this directory is offered, not consumed"
+CWD_173="$TEST_DIR/worktree-173"; mkdir -p "$CWD_173"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+FLAG_173="$PLANS_DIR/.pending-memory-restore-foreign173"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_173" "checkpoint-173" \
+    "ffffffffffffffff" > "$FLAG_173"
+OUTPUT=$(echo '{"cwd":"'"$CWD_173"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "173" "$OUTPUT" "MATCHES this session" && \
+   assert_not_contains "173" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE" && \
+   assert_contains "173" "$OUTPUT" "recorded in THIS directory by a DIFFERENT session" && \
+   assert_contains "173" "$OUTPUT" "checkpoint-173" && \
+   assert_contains "173" "$OUTPUT" "ask whether to restore one of them" && \
+   assert_file_exists "173" "$FLAG_173"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_173"
+
+# --- Test 174: a keyless flag keeps the cwd-only rule it was written under ---
+echo "Test 174: memory-restore: a keyless (4-line) flag is still restored on a cwd match"
+CWD_174="$TEST_DIR/worktree-174"; mkdir -p "$CWD_174"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+FLAG_174="$PLANS_DIR/.pending-memory-restore-legacy174"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_174" "checkpoint-174" > "$FLAG_174"
+OUTPUT=$(echo '{"cwd":"'"$CWD_174"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "174" "$OUTPUT" "MATCHES this session" && \
+   assert_contains "174" "$OUTPUT" "checkpoint-174" && \
+   [[ ! -e "$FLAG_174" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_174" ]] && echo "  ASSERT FAILED: keyless flag was not consumed"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_174"
+
+# --- Test 175: no PPID source -> line 5 written EMPTY, not guessed ---
+echo "Test 175: write-reload-flag: no PPID source leaves the session key empty"
+CWD_175="$TEST_DIR/worktree-175"; mkdir -p "$CWD_175"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+T175_OK=false
+if patch_lib_common; then
+    cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
+    OUT_175=$(cd "$CWD_175" && env -u _SMITH_PPID -u CLAUDE_PID bash "$TEST_DIR/write-reload-flag.sh" "checkpoint-175")
+    F175=$(find "$PLANS_DIR" -name '.pending-memory-restore-*' | head -1)
+    [[ -n "$F175" ]] && [[ "$(wc -l < "$F175" | tr -d ' ')" == "5" ]] \
+        && [[ -z "$(sed -n '5p' "$F175")" ]] && T175_OK=true
+fi
+if [[ "$T175_OK" == "true" ]] && assert_contains "175" "$OUT_175" "no session key"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  ASSERT FAILED: expected an empty line 5 and a 'no session key' notice"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+
+# --- Test 176: a non-numeric PPID is not a PPID ---
+echo "Test 176: write-reload-flag: a non-numeric CLAUDE_PID leaves the session key empty"
+CWD_176="$TEST_DIR/worktree-176"; mkdir -p "$CWD_176"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+T176_OK=false
+if patch_lib_common; then
+    cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
+    OUT_176=$(cd "$CWD_176" && env -u _SMITH_PPID CLAUDE_PID="not-a-pid" bash "$TEST_DIR/write-reload-flag.sh" "checkpoint-176")
+    F176=$(find "$PLANS_DIR" -name '.pending-memory-restore-*' | head -1)
+    [[ -n "$F176" ]] && [[ "$(wc -l < "$F176" | tr -d ' ')" == "5" ]] \
+        && [[ -z "$(sed -n '5p' "$F176")" ]] && T176_OK=true
+fi
+if [[ "$T176_OK" == "true" ]] && assert_contains "176" "$OUT_176" "no session key"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  ASSERT FAILED: expected an empty line 5 and a 'no session key' notice"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+
+# --- Test 177: mark-session-restart records the route, and only the two that discard ---
+echo "Test 177: mark-session-restart marks clear and compact, ignores startup, arms the gate only on clear"
+/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+MARKER_177="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
+echo '{"source":"compact","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T177_COMPACT=$([[ -f "$MARKER_177" ]] && sed -n '1p' "$MARKER_177" || echo "MISSING")
+T177_SENTINEL_AFTER_COMPACT=$([[ -f "$PLANS_DIR/.sr-hook-installed" ]] && echo "yes" || echo "no")
+/bin/rm -f "$MARKER_177"
+echo '{"source":"startup","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T177_STARTUP=$([[ -f "$MARKER_177" ]] && echo "wrote" || echo "silent")
+echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T177_CLEAR=$([[ -f "$MARKER_177" ]] && sed -n '1p' "$MARKER_177" || echo "MISSING")
+T177_SENTINEL_AFTER_CLEAR=$([[ -f "$PLANS_DIR/.sr-hook-installed" ]] && echo "yes" || echo "no")
+if [[ "$T177_COMPACT" == "compact" ]] && [[ "$T177_SENTINEL_AFTER_COMPACT" == "no" ]] && \
+   [[ "$T177_STARTUP" == "silent" ]] && \
+   [[ "$T177_CLEAR" == "clear" ]] && [[ "$T177_SENTINEL_AFTER_CLEAR" == "yes" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  ASSERT FAILED: compact='$T177_COMPACT' sentinel_after_compact='$T177_SENTINEL_AFTER_COMPACT' startup='$T177_STARTUP' clear='$T177_CLEAR' sentinel_after_clear='$T177_SENTINEL_AFTER_CLEAR'"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 178: gated, nothing restarted -> no announcement, flag KEPT ---
+echo "Test 178: gated + no restart marker -> no POST-CLEAR directive and the flag survives"
+create_test_plan
+/bin/rm -f "$PLANS_DIR"/.session-restart-*
+touch "$PLANS_DIR/.sr-hook-installed"
+FLAG_178="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_178"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_new","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_not_contains "178" "$OUTPUT" "RESUME:" && \
+   assert_file_exists "178" "$FLAG_178"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_178" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 179: gated + a real /clear -> the announcement fires, both files consumed ---
+echo "Test 179: gated + clear marker -> POST-CLEAR RESUME, flag and marker both consumed"
+create_test_plan
+touch "$PLANS_DIR/.sr-hook-installed"
+FLAG_179="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+MARKER_179="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_179"
+printf '%s\n%s\n%s\n' "clear" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$MARKER_179"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_new","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "179" "$OUTPUT" "POST-CLEAR RESUME" && \
+   [[ ! -e "$FLAG_179" ]] && [[ ! -e "$MARKER_179" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_179" ]] && echo "  ASSERT FAILED: pending-reload flag was not consumed"
+    [[ -e "$MARKER_179" ]] && echo "  ASSERT FAILED: restart marker was not consumed"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_179" "$MARKER_179" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 180: a compact is named a compact ---
+echo "Test 180: gated + compact marker -> POST-COMPACT RESUME, never POST-CLEAR"
+create_test_plan
+touch "$PLANS_DIR/.sr-hook-installed"
+FLAG_180="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+MARKER_180="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_180"
+printf '%s\n%s\n%s\n' "compact" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$MARKER_180"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_new","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "180" "$OUTPUT" "POST-COMPACT RESUME" && \
+   assert_not_contains "180" "$OUTPUT" "POST-CLEAR RESUME"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_180" "$MARKER_180" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 181: an unregistered installation keeps working ---
+echo "Test 181: no sentinel -> ungated legacy behaviour is preserved"
+create_test_plan
+/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+FLAG_181="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_181"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_new","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "181" "$OUTPUT" "POST-CLEAR RESUME" && \
+   [[ ! -e "$FLAG_181" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_181" ]] && echo "  ASSERT FAILED: ungated path did not consume the flag"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_181"
+
+# --- Test 182: a route nobody recorded is not a route ---
+echo "Test 182: gated + marker with an unknown source -> treated as no restart"
+create_test_plan
+touch "$PLANS_DIR/.sr-hook-installed"
+FLAG_182="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+MARKER_182="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_182"
+printf '%s\n%s\n%s\n' "teleport" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$MARKER_182"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_new","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_not_contains "182" "$OUTPUT" "RESUME:" && \
+   assert_file_exists "182" "$FLAG_182"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_182" "$MARKER_182" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 183: a selectable flag is offered once per session, not once per /clear ---
+echo "Test 183: a selectable flag is offered once, then suppressed on the next /clear"
+REPO_183="$TEST_DIR/repo-183"; WT_183="$TEST_DIR/wt-183"
+mkdir -p "$REPO_183"
+git -C "$REPO_183" init -q 2>/dev/null
+git -C "$REPO_183" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
+git -C "$REPO_183" worktree add -q --detach "$WT_183" HEAD 2>/dev/null
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_183="$PLANS_DIR/.pending-memory-restore-sel183"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_183" "checkpoint-183" > "$FLAG_183"
+OUT_183A=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+OUT_183B=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_183" ]] && \
+   assert_contains "183" "$OUT_183A" "same repository, selectable" && \
+   assert_not_contains "183" "$OUT_183A" "by a DIFFERENT session" && \
+   assert_contains "183" "$OUT_183A" "checkpoint-183" && \
+   assert_not_contains "183" "$OUT_183B" "checkpoint-183" && \
+   assert_contains "183" "$OUT_183B" "already offered to this session" && \
+   assert_file_exists "183" "$FLAG_183"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_183" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 184: an unrecordable key is repeated, never silently withheld ---
+echo "Test 184: a flag whose key fails the allowlist keeps being offered"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_184="$PLANS_DIR/.pending-memory-restore-bad key 184"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_183" "checkpoint-184" > "$FLAG_184"
+OUT_184A=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+OUT_184B=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if [[ -d "$WT_183" ]] && \
+   assert_contains "184" "$OUT_184A" "same repository, selectable" && \
+   assert_not_contains "184" "$OUT_184A" "by a DIFFERENT session" && \
+   assert_contains "184" "$OUT_184A" "checkpoint-184" && \
+   assert_contains "184" "$OUT_184B" "checkpoint-184"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_184" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 185: a plan-mode prompt must not swallow the restart ---
+echo "Test 185: gated + plan-mode prompt -> marker survives for the next non-plan prompt"
+create_test_plan
+touch "$PLANS_DIR/.sr-hook-installed"
+FLAG_185="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+MARKER_185="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_185"
+printf '%s\n%s\n%s\n' "clear" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$MARKER_185"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUT_185A=$(echo '{"prompt":"hi","session_id":"s","permission_mode":"plan","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+T185_MARKER_KEPT=$([[ -f "$MARKER_185" ]] && echo "yes" || echo "no")
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_185"
+OUT_185B=$(echo '{"prompt":"hi","session_id":"s","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if [[ "$T185_MARKER_KEPT" == "yes" ]] && assert_not_contains "185" "$OUT_185A" "RESUME:" \
+   && assert_contains "185" "$OUT_185B" "POST-CLEAR RESUME"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ "$T185_MARKER_KEPT" != "yes" ]] && echo "  ASSERT FAILED: plan-mode prompt consumed the restart marker"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_185" "$MARKER_185" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 186: .mr-offered-* must not be written through a symlink ---
+echo "Test 186: a symlinked .mr-offered-* is refused, not appended through"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+VICTIM_186="$TEST_DIR/victim-186.txt"
+printf 'original\n' > "$VICTIM_186"
+OFFERED_186="$PLANS_DIR/.mr-offered-$(compute_session_key "$REPO_183")"
+ln -s "$VICTIM_186" "$OFFERED_186"
+FLAG_186="$PLANS_DIR/.pending-memory-restore-sel186"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_183" "checkpoint-186" > "$FLAG_186"
+OUT_186=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+T186_VICTIM=$(cat "$VICTIM_186")
+T186_LINK=$([[ -L "$OFFERED_186" ]] && echo "link" || echo "gone")
+if [[ -d "$WT_183" ]] && \
+   [[ "$T186_VICTIM" == "original" ]] && [[ "$T186_LINK" == "link" ]] && \
+   assert_contains "186" "$OUT_186" "same repository, selectable" && \
+   assert_not_contains "186" "$OUT_186" "by a DIFFERENT session" && \
+   assert_contains "186" "$OUT_186" "checkpoint-186" && \
+   assert_contains "186" "$OUT_186" "is a link or shares an inode"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ "$T186_VICTIM" != "original" ]] && echo "  ASSERT FAILED: wrote through the symlink; victim now: $T186_VICTIM"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_186" "$OFFERED_186" "$VICTIM_186"
+
+# --- Test 187: the sentinel must not be created through a symlink ---
+echo "Test 187: a symlinked .sr-hook-installed is replaced, not followed"
+/bin/rm -f "$PLANS_DIR/.sr-hook-installed"
+VICTIM_187="$TEST_DIR/victim-187-branch-guard.disabled"
+/bin/rm -f "$VICTIM_187"
+ln -s "$VICTIM_187" "$PLANS_DIR/.sr-hook-installed"
+echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T187_VICTIM=$([[ -e "$VICTIM_187" ]] && echo "created" || echo "absent")
+T187_SENTINEL=$([[ -f "$PLANS_DIR/.sr-hook-installed" && ! -L "$PLANS_DIR/.sr-hook-installed" ]] && echo "plain" || echo "not-plain")
+if [[ "$T187_VICTIM" == "absent" ]] && [[ "$T187_SENTINEL" == "plain" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ "$T187_VICTIM" != "absent" ]] && echo "  ASSERT FAILED: touch/create followed the symlink and created $VICTIM_187"
+    [[ "$T187_SENTINEL" != "plain" ]] && echo "  ASSERT FAILED: sentinel is still not a plain file"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR/.sr-hook-installed" "$VICTIM_187" "$PLANS_DIR"/.session-restart-*
+
+# --- Test 188: a cap-hidden selectable row is NOT recorded as offered ---
+echo "Test 188: a selectable row hidden by the display cap is still offered at the next /clear"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+NOW_188=$(date +%Y-%m-%dT%H:%M:%S%z)
+for i in 1 2 3 4 5 6 7 8; do
+    printf '%s\n%s\n%s\n%s\n' "s" "$NOW_188" "$WT_183" "checkpoint-188-$i" \
+        > "$PLANS_DIR/.pending-memory-restore-cap188_$i"
+done
+OUT_188A=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+OUT_188B=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+T188_SHOWN_A=0
+T188_SHOWN_B=0
+for i in 1 2 3 4 5 6 7 8; do
+    case "$OUT_188A" in *"checkpoint-188-$i"*) T188_SHOWN_A=$((T188_SHOWN_A + 1)) ;; esac
+    case "$OUT_188B" in *"checkpoint-188-$i"*) T188_SHOWN_B=$((T188_SHOWN_B + 1)) ;; esac
+done
+T188_OVERLAP=0
+for i in 1 2 3 4 5 6 7 8; do
+    case "$OUT_188A" in *"checkpoint-188-$i"*)
+        case "$OUT_188B" in *"checkpoint-188-$i"*) T188_OVERLAP=$((T188_OVERLAP + 1)) ;; esac
+    ;; esac
+done
+if [[ -d "$WT_183" ]] && \
+   [[ "$T188_SHOWN_A" -lt 8 ]] && [[ "$T188_SHOWN_B" -gt 0 ]] && [[ "$T188_OVERLAP" -eq 0 ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  ASSERT FAILED: shown_first=$T188_SHOWN_A shown_second=$T188_SHOWN_B repeated=$T188_OVERLAP (want first<8, second>0, repeated=0)"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-cap188_* "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 189: the reserved slot recognises the foreign-session verdict ---
+echo "Test 189: a foreign-session selectable row still gets the reserved slot"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+OLD_189=$(date -v-3d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '3 days ago' +%Y-%m-%dT%H:%M:%S%z)
+for i in 1 2 3 4 5 6; do
+    printf '%s\n%s\n%s\n%s\n' "s" "$OLD_189" "$REPO_183" "filler-189-$i" \
+        > "$PLANS_DIR/.pending-memory-restore-fill189_$i"
+done
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_183" "checkpoint-189" "ffffffffffffffff" \
+    > "$PLANS_DIR/.pending-memory-restore-fs189"
+OUT_189=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "189" "$OUT_189" "checkpoint-189" && \
+   assert_contains "189" "$OUT_189" "recorded in THIS directory by a DIFFERENT session"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 190: a symlink-spelled cwd must not make our own flag look foreign ---
+echo "Test 190: a physical-path cwd match is not reclassified as another session"
+REALDIR_190="$TEST_DIR/real-190"; mkdir -p "$REALDIR_190"
+ln -s "$REALDIR_190" "$TEST_DIR/link-190"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_190="$PLANS_DIR/.pending-memory-restore-phys190"
+PHYS_190=$(cd -- "$TEST_DIR/link-190" && pwd -P)
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-190" "checkpoint-190" \
+    "$(compute_session_key "$PHYS_190")" > "$FLAG_190"
+OUT_190=$(echo '{"cwd":"'"$REALDIR_190"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "190" "$OUT_190" "MATCHES this session" && \
+   assert_not_contains "190" "$OUT_190" "by a DIFFERENT session"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_190" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 191: destroying another session's flag names its label ---
+echo "Test 191: a foreign-session flag swept at 7 days is announced with its label"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_191="$PLANS_DIR/.pending-memory-restore-old191"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "old" "$PWD" "checkpoint-191" "ffffffffffffffff" > "$FLAG_191"
+touch -t 202501010000 "$FLAG_191"
+OUT_191=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "191" "$OUT_191" "checkpoint-191" && \
+   assert_contains "191" "$OUT_191" "REMOVED as older than 7 days" && \
+   [[ ! -e "$FLAG_191" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_191" ]] && echo "  ASSERT FAILED: expired foreign-session flag was not swept"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_191" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 192: a stale sentinel un-arms the gate instead of latching forever ---
+echo "Test 192: a sentinel older than 14 days falls back to ungated behaviour"
+create_test_plan
+/bin/rm -f "$PLANS_DIR"/.session-restart-*
+touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
+FLAG_192="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_192"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUT_192=$(echo '{"prompt":"hi","session_id":"s","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "192" "$OUT_192" "POST-CLEAR RESUME"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_192" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 193: a symlinked spelling must not let another session's flag be consumed ---
+echo "Test 193: a foreign key still refuses when the cwd matched only after resolution"
+REALDIR_193="$TEST_DIR/real-193"; mkdir -p "$REALDIR_193"
+ln -s "$REALDIR_193" "$TEST_DIR/link-193"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_193="$PLANS_DIR/.pending-memory-restore-fsphys193"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-193" "checkpoint-193" \
+    "ffffffffffffffff" > "$FLAG_193"
+OUT_193=$(echo '{"cwd":"'"$REALDIR_193"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_not_contains "193" "$OUT_193" "MATCHES this session" && \
+   assert_not_contains "193" "$OUT_193" "ACTION REQUIRED - MEMORY RESTORE" && \
+   assert_file_exists "193" "$FLAG_193"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ ! -e "$FLAG_193" ]] && echo "  ASSERT FAILED: another session's checkpoint pointer was CONSUMED"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_193" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 194: a flag recorded in THIS directory contradicts the nothing-here sentence ---
+echo "Test 194: a foreign-session row suppresses the no-flag-recorded-this-directory claim"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_194="$PLANS_DIR/.pending-memory-restore-bear194"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-194" \
+    "ffffffffffffffff" > "$FLAG_194"
+OUT_194=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "194" "$OUT_194" "checkpoint-194" && \
+   assert_not_contains "194" "$OUT_194" "No checkpoint flag recorded this session's working directory"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_194" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 195: once-per-session suppression on the foreign-session arm ---
+echo "Test 195: a foreign-session candidate is offered once, then suppressed"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_195="$PLANS_DIR/.pending-memory-restore-fs195"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-195" \
+    "ffffffffffffffff" > "$FLAG_195"
+OUT_195A=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+OUT_195B=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "195" "$OUT_195A" "checkpoint-195" && \
+   assert_not_contains "195" "$OUT_195B" "checkpoint-195" && \
+   assert_contains "195" "$OUT_195B" "already offered to this session" && \
+   assert_file_exists "195" "$FLAG_195"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_195" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 196: a live installation keeps its sentinel fresh ---
+echo "Test 196: every clear re-arms the sentinel, so a live install never ages out"
+/bin/rm -f "$PLANS_DIR"/.session-restart-*
+touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
+echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T196_FRESH=$(find "$PLANS_DIR" -name '.sr-hook-installed' -mtime -1 2>/dev/null)
+create_test_plan
+/bin/rm -f "$PLANS_DIR"/.session-restart-*
+FLAG_196="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_196"
+TRANSCRIPT=$(create_transcript_pct 5)
+OUT_196=$(echo '{"prompt":"hi","session_id":"s","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if [[ -n "$T196_FRESH" ]] && assert_not_contains "196" "$OUT_196" "RESUME:" && \
+   assert_file_exists "196" "$FLAG_196"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -z "$T196_FRESH" ]] && echo "  ASSERT FAILED: clear did not refresh the sentinel mtime"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_196" "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 197: the mixed state every install enters on the day this ships ---
+echo "Test 197: a legacy keyless flag and a foreign-keyed flag in one directory"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+LEGACY_197="$PLANS_DIR/.pending-memory-restore-legacy197"
+KEYED_197="$PLANS_DIR/.pending-memory-restore-keyed197"
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-197-legacy" > "$LEGACY_197"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-197-keyed" \
+    "ffffffffffffffff" > "$KEYED_197"
+OUT_197=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "197" "$OUT_197" "checkpoint-197-legacy" && \
+   assert_contains "197" "$OUT_197" "checkpoint-197-keyed" && \
+   assert_contains "197" "$OUT_197" "MATCHES this session" && \
+   assert_contains "197" "$OUT_197" "by a DIFFERENT session" && \
+   [[ ! -e "$LEGACY_197" ]] && assert_file_exists "197" "$KEYED_197"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$LEGACY_197" ]] && echo "  ASSERT FAILED: the legacy flag was not restored and consumed"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$LEGACY_197" "$KEYED_197" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 198: a suppressed candidate must not be reported as nothing to offer ---
+echo "Test 198: an already-offered candidate still counts as something to offer"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_198="$PLANS_DIR/.pending-memory-restore-sup198"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-198" \
+    "ffffffffffffffff" > "$FLAG_198"
+echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh" > /dev/null
+MALFORMED_198="$PLANS_DIR/.pending-memory-restore-mal198"
+printf '%s\n%s\n\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "checkpoint-198-malformed" > "$MALFORMED_198"
+OUT_198=$(echo '{"cwd":"'"$PWD"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "198" "$OUT_198" "already offered to this session" && \
+   assert_not_contains "198" "$OUT_198" "there is nothing to offer automatically" && \
+   assert_not_contains "198" "$OUT_198" "Signal: fresh-start"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_198" "$MALFORMED_198" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 199: a compact keeps an existing sentinel alive ---
+echo "Test 199: a compact refreshes an existing sentinel but never creates one"
+/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+echo '{"source":"compact","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T199_CREATED=$([[ -e "$PLANS_DIR/.sr-hook-installed" ]] && echo "created" || echo "absent")
+touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
+echo '{"source":"compact","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
+T199_FRESH=$(find "$PLANS_DIR" -name '.sr-hook-installed' -mtime -1 2>/dev/null)
+if [[ "$T199_CREATED" == "absent" ]] && [[ -n "$T199_FRESH" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ "$T199_CREATED" != "absent" ]] && echo "  ASSERT FAILED: a compact created the sentinel"
+    [[ -z "$T199_FRESH" ]] && echo "  ASSERT FAILED: a compact did not refresh an existing sentinel"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+
+# --- Test 200: an unresolvable cwd must not be reported as a different session ---
+echo "Test 200: ownership that could not be checked says so, instead of naming another session"
+REAL_200="$TEST_DIR/real-200"; mkdir -p "$REAL_200"
+ln -s "$REAL_200" "$TEST_DIR/link-200"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_200="$PLANS_DIR/.pending-memory-restore-unchk200"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-200" "checkpoint-200" \
+    "$(compute_session_key "$(cd -- "$TEST_DIR/link-200" && pwd -P)")" > "$FLAG_200"
+rmdir "$REAL_200"
+OUT_200=$(echo '{"cwd":"'"$TEST_DIR/link-200"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mkdir -p "$REAL_200"
+if assert_contains "200" "$OUT_200" "checkpoint-200" && \
+   assert_not_contains "200" "$OUT_200" "by a DIFFERENT session" && \
+   assert_file_exists "200" "$FLAG_200"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_200" "$PLANS_DIR"/.mr-offered-*
+
+# --- Test 201: a flag from the previous writer, which hashed the raw path ---
+echo "Test 201: a raw-path key from the previous writer still matches"
+REAL_201="$TEST_DIR/real-201"; mkdir -p "$REAL_201"
+ln -s "$REAL_201" "$TEST_DIR/link-201"
+/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+FLAG_201="$PLANS_DIR/.pending-memory-restore-raw201"
+printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-201" "checkpoint-201" \
+    "$(compute_session_key "$TEST_DIR/link-201")" > "$FLAG_201"
+OUT_201=$(echo '{"cwd":"'"$TEST_DIR/link-201"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "201" "$OUT_201" "MATCHES this session" && \
+   assert_contains "201" "$OUT_201" "checkpoint-201" && \
+   [[ ! -e "$FLAG_201" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    [[ -e "$FLAG_201" ]] && echo "  ASSERT FAILED: a previous-writer flag was not restored"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+/bin/rm -f "$FLAG_201" "$PLANS_DIR"/.mr-offered-*
 
 # --- Summary ---
 echo ""

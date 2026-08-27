@@ -17,12 +17,13 @@
 #
 # Discovery is BY CONTENT, not by filename: the flag's key is merely unique
 # (timestamp + PID). on-session-clear.sh scans all `.pending-memory-restore-*`
-# files and matches line 3 (cwd) against its own hook-input cwd. This is
-# deliberate — a writer executed by the Bash tool sees an ephemeral shell as
-# $PPID, so it can NEVER recompute the hook's session_key (PPID:CWD); the old
-# key-parity design meant the hook found nothing, ever (verified 2026-07-18
-# against the full local session history: 0 flags consumed across 252
-# SessionStart:clear firings).
+# files and matches line 3 (cwd) against its own hook-input cwd.
+#
+# Line 5 carries session_key(CLAUDE_PID:CWD) so the reader can tell WHOSE
+# checkpoint a cwd match found, hashed over the RESOLVED path so one directory has
+# one key under every spelling. Empty when no PPID source is available, which
+# selects the old cwd-only rule. See references/HOOKS.md, "Line 5 says WHOSE
+# checkpoint it is".
 #
 # Scope: local machine only. The flag lives under ~/.claude/plans and is unreachable
 # from a fresh-clone cloud run (/schedule, /code-review ultra, web). Those surfaces
@@ -63,6 +64,14 @@ if [[ "$CWD" == *$'\n'* ]]; then
     exit 1
 fi
 
+SESSION_PPID="${_SMITH_PPID:-${CLAUDE_PID:-}}"
+CWD_PHYS=$(cd -- "$CWD" 2>/dev/null && pwd -P) || CWD_PHYS=""
+[[ -n "$CWD_PHYS" ]] || CWD_PHYS="$CWD"
+SESSION_KEY=""
+if [[ "$SESSION_PPID" =~ ^[0-9]+$ ]]; then
+    SESSION_KEY=$(session_key "$SESSION_PPID" "$CWD_PHYS") || SESSION_KEY=""
+fi
+
 # Unique key: readable timestamp + this script's PID. Uniqueness is all that is
 # required — the reader never recomputes this (see header).
 FLAG_KEY="$(date +%Y%m%dT%H%M%S)-$$"
@@ -76,21 +85,26 @@ fi
 # Write to a temp file in the same dir, then atomically rename into place, so
 # on-session-clear.sh never reads a half-written flag. The temp name must NOT
 # match the `.pending-memory-restore-*` scan glob, or a crashed run's leftover
-# could be picked up as a candidate. 4-line schema: session id, ISO-8601
-# timestamp, cwd, label.
+# could be picked up as a candidate. 5-line schema: session id, ISO-8601
+# timestamp, cwd, label, session key.
 TMP=$(mktemp "${PLANS_DIR}/.mr-tmp.XXXXXX") || {
     echo "Error: cannot create temp file in $PLANS_DIR" >&2
     exit 1
 }
-if ! printf '%s\n%s\n%s\n%s\n' \
+if ! printf '%s\n%s\n%s\n%s\n%s\n' \
         "$SESSION_ID" \
         "$(date +%Y-%m-%dT%H:%M:%S%z)" \
         "$CWD" \
-        "$LABEL" > "$TMP" || ! mv -f "$TMP" "$FLAG_FILE"; then
+        "$LABEL" \
+        "$SESSION_KEY" > "$TMP" || ! mv -f "$TMP" "$FLAG_FILE"; then
     echo "Error: cannot write reload flag: $FLAG_FILE" >&2
     rm -f "$TMP" 2>/dev/null
     exit 1
 fi
 
 echo "Wrote reload flag: ${FLAG_FILE}"
-echo "Discovery: by cwd match (line 3 = ${CWD})${LABEL:+  (label: ${LABEL})}"
+if [[ -n "$SESSION_KEY" ]]; then
+    echo "Discovery: by session key (line 5) at ${CWD}${LABEL:+  (label: ${LABEL})}"
+else
+    echo "Discovery: by cwd match only, no session key (line 3 = ${CWD})${LABEL:+  (label: ${LABEL})}"
+fi
