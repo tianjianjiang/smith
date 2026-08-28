@@ -57,11 +57,13 @@ FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # Session-keyed state file (survives /clear; tracks plan, transcript state)
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
+STATE_BASENAME=".plan-state-${CWD_KEY}"
+OWN_SCOPE=$(scope_key "${HOOK_CWD:-${PWD:-}}")
 
 # Save injection state for post-/clear detection.
 # Thin wrapper around shared save_state_file() from lib-common.sh.
 save_injection_state() {
-    save_state_file "$STATE_FILE" "${CURRENT_SESSION:-unknown}" "${TRANSCRIPT_PATH:-unknown}" "${PLAN_FILE:-}"
+    save_state_file "$STATE_FILE" "${CURRENT_SESSION:-unknown}" "${TRANSCRIPT_PATH:-unknown}" "${PLAN_FILE:-}" "$OWN_SCOPE"
 }
 
 # Clean up expired flags (>1 hour old) and legacy single-flag format
@@ -81,18 +83,21 @@ find "$PLANS_DIR" -name ".model-*" -mmin +1440 -delete 2>/dev/null || true
 # and auto-accept edits" (upstream bug #20397).
 if [[ "$PERMISSION_MODE" == "plan" ]]; then
     CURRENT_PLAN=""
+    CURRENT_PLAN_SOURCE=""
+    NEWEST_WITHHELD=0
+    NEWEST_STALE=0
     # Prefer session's own plan from state file (prevents cross-session contamination)
     if [[ -f "$STATE_FILE" ]]; then
         prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
         if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
             CURRENT_PLAN="$prev_plan"
+            CURRENT_PLAN_SOURCE="state"
         fi
     fi
-    # Fallback: most recently modified, ONLY if no state file exists (first plan
-    # mode in this terminal). If state exists with empty plan, don't adopt a
-    # random plan — the previous work explicitly had no plan or it was cleared.
     if [[ -z "$CURRENT_PLAN" ]] && [[ ! -f "$STATE_FILE" ]]; then
-        CURRENT_PLAN=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1) || CURRENT_PLAN=""
+        newest_adoptable_plan "$STATE_BASENAME" "$OWN_SCOPE" 1
+        CURRENT_PLAN="$NEWEST_ADOPTABLE"
+        [[ -n "$CURRENT_PLAN" ]] && CURRENT_PLAN_SOURCE="guess"
     fi
     if [[ -n "$CURRENT_PLAN" ]] && [[ -f "$CURRENT_PLAN" ]]; then
         PLAN_FILE="$CURRENT_PLAN"
@@ -101,13 +106,17 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
         # Workaround for #20397: on-plan-exit.sh doesn't fire on "clear context
         # and auto-accept edits". Create flag preemptively so on-session-clear.sh
         # or inject-plan.sh (next prompt) can auto-resume.
-        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$CURRENT_PLAN" 2>/dev/null || true)
-        PENDING=${PENDING:-0}
-        FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
-        TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-        # Use empty plan path for completed plans (consistent with enforce-clear/on-plan-exit)
-        PLAN_PATH_FOR_FLAG=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$CURRENT_PLAN" || echo "")
-        printf '%s\n%s\n%s\n%s\n%s\n' "$PLAN_PATH_FOR_FLAG" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
+        if [[ "$CURRENT_PLAN_SOURCE" != "guess" ]]; then
+            PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$CURRENT_PLAN" 2>/dev/null || true)
+            PENDING=${PENDING:-0}
+            FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
+            TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
+            # Use empty plan path for completed plans (consistent with enforce-clear/on-plan-exit)
+            PLAN_PATH_FOR_FLAG=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$CURRENT_PLAN" || echo "")
+            printf '%s\n%s\n%s\n%s\n%s\n' "$PLAN_PATH_FOR_FLAG" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
+        fi
+    elif [[ "$NEWEST_WITHHELD" -gt 0 ]] || [[ "$NEWEST_STALE" -gt 0 ]]; then
+        REFUSE_MSG=$(printf 'PLAN ADOPTION REFUSED: none of the %d plan file(s) in `%s` was auto-adopted here — %d claimed by another or unverifiable scope, %d older than the 24h auto-adopt window. To load one deliberately, name it: `!load-plan «name»`.' "$((NEWEST_WITHHELD + NEWEST_STALE))" "$PLANS_DIR" "$NEWEST_WITHHELD" "$NEWEST_STALE")
     fi
 fi
 
@@ -302,6 +311,7 @@ fi
 
 # If context warning was generated but no trigger matched, output warning only
 if [[ -z "$ACTION" ]] && [[ -n "$CONTEXT_MSG" ]]; then
+    [[ -n "${REFUSE_MSG:-}" ]] && CONTEXT_MSG=$(printf '%s\n\n%s' "$REFUSE_MSG" "$CONTEXT_MSG")
     json_user_prompt_output "$CONTEXT_MSG"
     exit 0
 fi
@@ -312,6 +322,7 @@ if [[ "$ACTION" == "serena_only" ]]; then
     AVAILABLE_PLANS=""
     if [[ -d "$PLANS_DIR" ]]; then
         while IFS= read -r f; do
+            classify_plan_scope "$f" "$STATE_BASENAME" "$OWN_SCOPE" || continue
             AVAILABLE_PLANS+="\n  - \`$(basename "$f")\` (\`$f\`)"
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
@@ -341,6 +352,10 @@ fi
 # Before exiting, refresh the state file if a plan is active (keeps it fresh
 # for post-/clear detection even without explicit trigger words).
 if [[ -z "$ACTION" ]]; then
+    if [[ -n "${REFUSE_MSG:-}" ]]; then
+        json_user_prompt_output "$REFUSE_MSG"
+        exit 0
+    fi
     if [[ -f "$STATE_FILE" ]]; then
         STATE_FRESH=$(find "$STATE_FILE" -mmin -60 2>/dev/null)
         if [[ -n "$STATE_FRESH" ]]; then
@@ -386,8 +401,8 @@ find_plan_file() {
             find "$PLANS_DIR" -maxdepth 1 -name "*${name}*.md" -type f 2>/dev/null | head -1
         fi
     else
-        # No name specified -> return most recent plan (only used for explicit trigger words)
-        ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1 || true
+        newest_adoptable_plan "$STATE_BASENAME" "$OWN_SCOPE"
+        printf '%s' "$NEWEST_ADOPTABLE"
     fi
 }
 
@@ -426,6 +441,7 @@ list_plans() {
 
     local result=""
     while read -r file; do
+        classify_plan_scope "$file" "$STATE_BASENAME" "$OWN_SCOPE" || continue
         local name
         name=$(basename "$file" .md)
         local modified

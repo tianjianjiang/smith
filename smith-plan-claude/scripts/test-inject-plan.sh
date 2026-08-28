@@ -98,7 +98,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=202
+TOTAL=214
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -6044,9 +6044,239 @@ else
 fi
 /bin/rm -f "$FLAG_201" "$PLANS_DIR"/.mr-offered-*
 
+# --- Test 202: plan-mode first entry -> foreign-claimed newest is refused, not adopted ---
+echo "Test 202: plan-mode first entry -> newest plan claimed by another scope is refused"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_202="$TEST_DIR/worktree-202"; mkdir -p "$CWD_202"
+CWD_202_KEY=$(compute_session_key "$CWD_202")
+printf '%s\n' '# Foreign Plan 202' '' '- [ ] client task' > "$PLANS_DIR/foreign-plan-202.md"
+printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f202" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/foreign-plan-202.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-deadbeefdeadbeef"
+TRANSCRIPT_202=$(create_transcript_pct 10 "t202")
+OUT_202=$(echo '{"prompt":"do something","session_id":"sess_202","transcript_path":"'"$TRANSCRIPT_202"'","cwd":"'"$CWD_202"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "202" "$OUT_202" "PLAN ADOPTION REFUSED" && \
+   assert_file_not_exists "202" "$PLANS_DIR/.plan-state-${CWD_202_KEY}" && \
+   assert_file_not_exists "202" "$PLANS_DIR/.pending-reload-${CWD_202_KEY}"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 203: plan-mode first entry -> unclaimed newest adopted, scope recorded on line 6 ---
+echo "Test 203: plan-mode first entry -> unclaimed newest is adopted and records its scope"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_203="$TEST_DIR/worktree-203"; mkdir -p "$CWD_203"
+CWD_203_KEY=$(compute_session_key "$CWD_203")
+printf '%s\n' '# Own Plan 203' '' '- [ ] my task' > "$PLANS_DIR/own-plan-203.md"
+EXP_SCOPE_203=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_203")
+TRANSCRIPT_203=$(create_transcript_pct 10 "t203")
+echo '{"prompt":"do something","session_id":"sess_203","transcript_path":"'"$TRANSCRIPT_203"'","cwd":"'"$CWD_203"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
+STATE_203="$PLANS_DIR/.plan-state-${CWD_203_KEY}"
+T203_PLAN=$(sed -n '5p' "$STATE_203" 2>/dev/null || true)
+T203_SCOPE=$(sed -n '6p' "$STATE_203" 2>/dev/null || true)
+if assert_file_exists "203" "$STATE_203" && \
+   [[ "$T203_PLAN" == *"own-plan-203.md" ]] && \
+   [[ -n "$EXP_SCOPE_203" ]] && [[ "$T203_SCOPE" == "$EXP_SCOPE_203" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (plan=$T203_PLAN scope=$T203_SCOPE expected=$EXP_SCOPE_203)"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 204: a guessed first-entry adoption must NOT arm the auto-resume flag ---
+echo "Test 204: a guessed first-entry adoption does not create a pending-reload flag"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_204="$TEST_DIR/worktree-204"; mkdir -p "$CWD_204"
+CWD_204_KEY=$(compute_session_key "$CWD_204")
+printf '%s\n' '# Own Plan 204' '' '- [ ] my task' > "$PLANS_DIR/own-plan-204.md"
+TRANSCRIPT_204=$(create_transcript_pct 10 "t204")
+echo '{"prompt":"do something","session_id":"sess_204","transcript_path":"'"$TRANSCRIPT_204"'","cwd":"'"$CWD_204"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
+T204_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_204_KEY}" 2>/dev/null || true)
+if assert_file_exists "204" "$PLANS_DIR/.plan-state-${CWD_204_KEY}" && \
+   [[ "$T204_PLAN" == *"own-plan-204.md" ]] && \
+   assert_file_not_exists "204" "$PLANS_DIR/.pending-reload-${CWD_204_KEY}"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 205: newest claimed only by a same-scope sibling is adopted, not refused ---
+echo "Test 205: plan-mode first entry -> a same-scope sibling's plan is adopted"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_205="$TEST_DIR/worktree-205"; mkdir -p "$CWD_205"
+CWD_205_KEY=$(compute_session_key "$CWD_205")
+printf '%s\n' '# Shared Plan 205' '' '- [ ] shared task' > "$PLANS_DIR/shared-plan-205.md"
+OWN_SCOPE_205=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_205")
+printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_sib205" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/shared-plan-205.md" "$OWN_SCOPE_205" > "$PLANS_DIR/.plan-state-cafecafecafecafe"
+TRANSCRIPT_205=$(create_transcript_pct 10 "t205")
+OUT_205=$(echo '{"prompt":"do something","session_id":"sess_205","transcript_path":"'"$TRANSCRIPT_205"'","cwd":"'"$CWD_205"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+STATE_205="$PLANS_DIR/.plan-state-${CWD_205_KEY}"
+T205_PLAN=$(sed -n '5p' "$STATE_205" 2>/dev/null || true)
+if assert_file_exists "205" "$STATE_205" && \
+   [[ "$T205_PLAN" == *"shared-plan-205.md" ]] && \
+   assert_not_contains "205" "$OUT_205" "PLAN ADOPTION REFUSED"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (plan=$T205_PLAN)"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 206: foreign newest is skipped and an adoptable older plan is taken (no refusal) ---
+echo "Test 206: plan-mode first entry -> foreign newest skipped, older unclaimed plan adopted"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_206="$TEST_DIR/worktree-206"; mkdir -p "$CWD_206"
+CWD_206_KEY=$(compute_session_key "$CWD_206")
+printf '%s\n' '# Older Own 206' '' '- [ ] mine' > "$PLANS_DIR/older-206.md"
+touch -t "$(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/older-206.md"
+printf '%s\n' '# Newer Foreign 206' '' '- [ ] theirs' > "$PLANS_DIR/newer-foreign-206.md"
+touch -t "$(date -v-1H +%Y%m%d%H%M 2>/dev/null || date -d '1 hour ago' +%Y%m%d%H%M)" "$PLANS_DIR/newer-foreign-206.md"
+printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f206" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/newer-foreign-206.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-beefbeefbeefbeef"
+TRANSCRIPT_206=$(create_transcript_pct 10 "t206")
+OUT_206=$(echo '{"prompt":"do something","session_id":"sess_206","transcript_path":"'"$TRANSCRIPT_206"'","cwd":"'"$CWD_206"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+STATE_206="$PLANS_DIR/.plan-state-${CWD_206_KEY}"
+T206_PLAN=$(sed -n '5p' "$STATE_206" 2>/dev/null || true)
+T206_NEWEST=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1)
+if assert_file_exists "206" "$STATE_206" && \
+   [[ "$T206_NEWEST" == *"newer-foreign-206.md" ]] && \
+   [[ "$T206_PLAN" == *"older-206.md" ]] && \
+   assert_not_contains "206" "$OUT_206" "PLAN ADOPTION REFUSED"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (newest=$T206_NEWEST plan=$T206_PLAN)"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 207: a legacy 5-line claimant (no recorded scope) blocks adoption ---
+echo "Test 207: plan-mode first entry -> plan claimed by a legacy scope-less state file is refused"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_207="$TEST_DIR/worktree-207"; mkdir -p "$CWD_207"
+CWD_207_KEY=$(compute_session_key "$CWD_207")
+printf '%s\n' '# Legacy-claimed 207' '' '- [ ] task' > "$PLANS_DIR/legacy-207.md"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_l207" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/legacy-207.md" > "$PLANS_DIR/.plan-state-1207120712071207"
+TRANSCRIPT_207=$(create_transcript_pct 10 "t207")
+OUT_207=$(echo '{"prompt":"do something","session_id":"sess_207","transcript_path":"'"$TRANSCRIPT_207"'","cwd":"'"$CWD_207"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "207" "$OUT_207" "PLAN ADOPTION REFUSED" && \
+   assert_file_not_exists "207" "$PLANS_DIR/.plan-state-${CWD_207_KEY}"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 208: emitter listing withholds a foreign-claimed plan, keeps an in-scope one ---
+echo "Test 208: on-session-clear recent-plans listing omits a foreign-claimed plan"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_208="$TEST_DIR/worktree-208"; mkdir -p "$CWD_208"
+printf '%s\n' '# Visible 208' '' '- [ ] task' > "$PLANS_DIR/visible-emit-208.md"
+printf '%s\n' '# Foreign 208' '' '- [ ] task' > "$PLANS_DIR/foreign-emit-208.md"
+printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f208" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/foreign-emit-208.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-2082082082082082"
+OUT_208=$(echo '{"cwd":"'"$CWD_208"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+if assert_contains "208" "$OUT_208" "visible-emit-208" && \
+   assert_not_contains "208" "$OUT_208" "foreign-emit-208"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 210: explicit !load-plan in plan mode overrides the scope refusal ---
+echo "Test 210: plan-mode + explicit !load-plan of a foreign-claimed plan loads it, no refusal"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_210="$TEST_DIR/worktree-210"; mkdir -p "$CWD_210"
+printf '%s\n' '# Foreign 210' '' '- [ ] task' > "$PLANS_DIR/foreign-210.md"
+printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f210" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
+    "$PLANS_DIR/foreign-210.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-2102102102102102"
+TRANSCRIPT_210=$(create_transcript_pct 10 "t210")
+OUT_210=$(echo '{"prompt":"!load-plan foreign-210","session_id":"sess_210","transcript_path":"'"$TRANSCRIPT_210"'","cwd":"'"$CWD_210"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "210" "$OUT_210" "Foreign 210" && \
+   assert_not_contains "210" "$OUT_210" "PLAN ADOPTION REFUSED"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 211: a stale unclaimed plan (orphan window) is not guess-adopted ---
+echo "Test 211: plan-mode first entry -> a stale unclaimed plan is refused, not adopted"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_211="$TEST_DIR/worktree-211"; mkdir -p "$CWD_211"
+CWD_211_KEY=$(compute_session_key "$CWD_211")
+printf '%s\n' '# Stale Orphan 211' '' '- [ ] task' > "$PLANS_DIR/stale-211.md"
+touch -t 202501010000 "$PLANS_DIR/stale-211.md"
+TRANSCRIPT_211=$(create_transcript_pct 10 "t211")
+OUT_211=$(echo '{"prompt":"do something","session_id":"sess_211","transcript_path":"'"$TRANSCRIPT_211"'","cwd":"'"$CWD_211"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "211" "$OUT_211" "PLAN ADOPTION REFUSED" && \
+   assert_file_not_exists "211" "$PLANS_DIR/.plan-state-${CWD_211_KEY}"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 212: a just-fresh (23h) unclaimed plan is still guess-adopted ---
+echo "Test 212: plan-mode first entry -> a 23h-old unclaimed plan is adopted (inside the 24h window)"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_212="$TEST_DIR/worktree-212"; mkdir -p "$CWD_212"
+CWD_212_KEY=$(compute_session_key "$CWD_212")
+printf '%s\n' '# Fresh Edge 212' '' '- [ ] task' > "$PLANS_DIR/fresh-212.md"
+touch -t "$(date -v-23H +%Y%m%d%H%M 2>/dev/null || date -d '23 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/fresh-212.md"
+TRANSCRIPT_212=$(create_transcript_pct 10 "t212")
+echo '{"prompt":"do something","session_id":"sess_212","transcript_path":"'"$TRANSCRIPT_212"'","cwd":"'"$CWD_212"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
+T212_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_212_KEY}" 2>/dev/null || true)
+if assert_file_exists "212" "$PLANS_DIR/.plan-state-${CWD_212_KEY}" && \
+   [[ "$T212_PLAN" == *"fresh-212.md" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (plan=$T212_PLAN)"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 213: a just-stale (25h) unclaimed plan is not guess-adopted ---
+echo "Test 213: plan-mode first entry -> a 25h-old unclaimed plan is refused (past the 24h window)"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_213="$TEST_DIR/worktree-213"; mkdir -p "$CWD_213"
+CWD_213_KEY=$(compute_session_key "$CWD_213")
+printf '%s\n' '# Stale Edge 213' '' '- [ ] task' > "$PLANS_DIR/stale-213.md"
+touch -t "$(date -v-25H +%Y%m%d%H%M 2>/dev/null || date -d '25 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/stale-213.md"
+TRANSCRIPT_213=$(create_transcript_pct 10 "t213")
+OUT_213=$(echo '{"prompt":"do something","session_id":"sess_213","transcript_path":"'"$TRANSCRIPT_213"'","cwd":"'"$CWD_213"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "213" "$OUT_213" "PLAN ADOPTION REFUSED" && \
+   assert_file_not_exists "213" "$PLANS_DIR/.plan-state-${CWD_213_KEY}"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+# --- Test 214: an explicit trigger-word load is NOT age-gated ---
+echo "Test 214: non-plan 'execute plan' loads a stale unclaimed plan (explicit intent, no freshness gate)"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_214="$TEST_DIR/worktree-214"; mkdir -p "$CWD_214"
+printf '%s\n' '# Old Own 214' '' '- [ ] task' > "$PLANS_DIR/old-own-214.md"
+touch -t 202501010000 "$PLANS_DIR/old-own-214.md"
+TRANSCRIPT_214=$(create_transcript_pct 10 "t214")
+OUT_214=$(echo '{"prompt":"execute the plan","session_id":"sess_214","transcript_path":"'"$TRANSCRIPT_214"'","cwd":"'"$CWD_214"'"}' | bash "$TEST_DIR/inject-plan.sh")
+if assert_contains "214" "$OUT_214" "Old Own 214" && \
+   assert_not_contains "214" "$OUT_214" "Plan Not Found"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
 # --- Summary ---
 echo ""
 echo "Results: $PASS/$TOTAL passed, $FAIL failed"
+if [[ $((PASS + FAIL)) -ne $TOTAL ]]; then
+    echo "COUNT MISMATCH: ran $((PASS + FAIL)) test(s) but TOTAL=$TOTAL (a test increment was lost or TOTAL is stale)"
+    exit 1
+fi
 if [[ $FAIL -gt 0 ]]; then
     exit 1
 fi

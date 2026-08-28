@@ -8,6 +8,7 @@
 
 source "$(dirname "$0")/lib-common.sh"
 PLAN_NAME="$1"
+OWN_SCOPE=$(scope_key "${PWD:-}")
 
 if [[ ! -d "$PLANS_DIR" ]]; then
     echo "Error: No plans directory found at $PLANS_DIR" >&2
@@ -26,13 +27,20 @@ if [[ -n "$PLAN_NAME" ]]; then
         PLAN_FILE=$(find "$PLANS_DIR" -maxdepth 1 -name "*${PLAN_NAME}*.md" -type f 2>/dev/null | head -1)
     fi
 else
-    PLAN_FILE=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1)
+    newest_adoptable_plan "" "$OWN_SCOPE"
+    PLAN_FILE="$NEWEST_ADOPTABLE"
 fi
 
 if [[ -z "$PLAN_FILE" ]] || [[ ! -f "$PLAN_FILE" ]]; then
     echo "Error: Plan not found" >&2
+    if [[ "${NEWEST_WITHHELD:-0}" -gt 0 ]]; then
+        echo "($NEWEST_WITHHELD plan(s) withheld: claimed by another or unverifiable scope)" >&2
+    fi
     echo "Available plans:" >&2
-    find "$PLANS_DIR" -maxdepth 1 -name '*.md' -exec basename {} .md \; >&2
+    while IFS= read -r f; do
+        classify_plan_scope "$f" "" "$OWN_SCOPE" || continue
+        basename "$f" .md
+    done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null) >&2
     exit 1
 fi
 

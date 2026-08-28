@@ -47,7 +47,7 @@ FLAG_PLAN_PATH=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$ACTIVE_PLAN" || 
 printf '%s\n%s\n%s\n%s\n%s\n' "$FLAG_PLAN_PATH" "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
 
 # Write state file so future hooks find the active plan via session-keyed state
-save_state_file "$STATE_FILE" "${SESSION_ID:-unknown}" "unknown" "$ACTIVE_PLAN"
+save_state_file "$STATE_FILE" "${SESSION_ID:-unknown}" "unknown" "$ACTIVE_PLAN" "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 
 # Exit-marker: signals enforce-clear.sh to allow the stop (defense-in-depth)
 touch "${FLAG_FILE}.exit-marker"
