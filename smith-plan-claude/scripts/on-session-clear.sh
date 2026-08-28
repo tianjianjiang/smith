@@ -27,6 +27,8 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2; exit 1
 }
 STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
+STATE_BASENAME=".plan-state-${CWD_KEY}"
+OWN_SCOPE=$(scope_key "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
 # Capture model from SessionStart input (only hook event with model field)
@@ -1406,6 +1408,7 @@ if [[ -z "$PLAN_FILE" ]]; then
     PLAN_COUNT=0
     if [[ -d "$PLANS_DIR" ]]; then
         while IFS= read -r f; do
+            classify_plan_scope "$f" "$STATE_BASENAME" "$OWN_SCOPE" || continue
             AVAILABLE_PLANS+="\n  - \`$(basename "$f")\` (\`$f\`)"
             PLAN_COUNT=$((PLAN_COUNT + 1))
             [[ $PLAN_COUNT -ge 5 ]] && break

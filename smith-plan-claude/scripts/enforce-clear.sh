@@ -118,7 +118,7 @@ printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
 # Refresh state file NOW so on-session-clear.sh finds fresh state after /clear.
 # Critical: inject-plan.sh (UserPromptSubmit) stops firing mid-session (known bug),
 # so the state file may be stale. This Stop hook is the last reliable write point.
-save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN"
+save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN" "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 
 # Build message (plan-first, Serena optional)
 # Use FLAG_TYPE (canonical, unambiguous) instead of testing variable emptiness

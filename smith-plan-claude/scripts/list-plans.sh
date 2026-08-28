@@ -4,6 +4,7 @@
 #
 
 source "$(dirname "$0")/lib-common.sh"
+OWN_SCOPE=$(scope_key "${PWD:-}")
 
 if [[ ! -d "$PLANS_DIR" ]]; then
     echo "No plans directory found at $PLANS_DIR"
@@ -26,32 +27,41 @@ if [[ -z "$(ls -A "$PLANS_DIR"/*.md 2>/dev/null)" ]]; then
 fi
 
 # List plans with details
-ls -t "$PLANS_DIR"/*.md 2>/dev/null | while read -r file; do
+VISIBLE=0
+WITHHELD=0
+while IFS= read -r file; do
+    if ! classify_plan_scope "$file" "" "$OWN_SCOPE"; then
+        WITHHELD=$((WITHHELD + 1))
+        continue
+    fi
+    VISIBLE=$((VISIBLE + 1))
     name=$(basename "$file" .md)
-    
+
     mtime_human "$file"
     modified="${_MTIME_HUMAN:0:16}"
-    
+
     # Calculate progress
     total=$(grep -c '^[[:space:]]*- \[.\]' "$file" 2>/dev/null || echo "0")
     done=$(grep -c '^[[:space:]]*- \[x\]' "$file" 2>/dev/null || echo "0")
-    
+
     if [[ $total -gt 0 ]]; then
         percent=$((done * 100 / total))
         progress="${done}/${total} (${percent}%)"
     else
         progress="no tasks"
     fi
-    
+
     # Get title (first # line)
     title=$(grep -m1 "^#" "$file" | sed 's/^#* *//')
     title="${title:-(untitled)}"
-    
+
     printf "%-20s %s\n" "$name" "$title"
     printf "  Modified: %s | Progress: %s\n" "$modified" "$progress"
     echo ""
-done
+done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
 
-count=$(ls -1 "$PLANS_DIR"/*.md 2>/dev/null | wc -l)
 echo "----------------"
-echo "Total: $count plan(s)"
+echo "Total: $VISIBLE plan(s)"
+if [[ $WITHHELD -gt 0 ]]; then
+    echo "Withheld: $WITHHELD plan(s) claimed by another or unverifiable scope"
+fi

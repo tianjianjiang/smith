@@ -370,25 +370,61 @@ json_stop_block() {
     }'
 }
 
-# Save state file for post-/clear plan restoration.
-# Records session_id, transcript_path, transcript_size, timestamp, and plan_path.
-# Used by both inject-plan.sh (on every prompt) and enforce-clear.sh (on block).
-# Args: $1=state_file, $2=session_id, $3=transcript_path, $4=plan_path
 save_state_file() {
     local state_file="$1"
     local session_id="${2:-unknown}"
     local transcript_path="${3:-unknown}"
     local plan_path="${4:-}"
+    local scope="${5:-}"
     local current_size=0
     if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
         current_size=$(wc -c < "$transcript_path" 2>/dev/null | tr -d '[:space:]') || current_size=0
     fi
-    printf '%s\n%s\n%s\n%s\n%s\n' \
+    printf '%s\n%s\n%s\n%s\n%s\n%s\n' \
         "$session_id" \
         "$transcript_path" \
         "$current_size" \
         "$(date +%Y-%m-%dT%H:%M:%S%z)" \
-        "$plan_path" > "$state_file"
+        "$plan_path" \
+        "$scope" > "$state_file"
+}
+
+classify_plan_scope() {
+    local plan="$1" own_state="$2" own_scope="$3"
+    [[ -n "$plan" ]] || return 1
+    local sf base other_plan other_scope
+    for sf in "$PLANS_DIR"/.plan-state-*; do
+        [[ -e "$sf" ]] || continue
+        base="${sf##*/}"
+        [[ -n "$own_state" ]] && [[ "$base" == "$own_state" ]] && continue
+        other_plan=$(sed -n '5p' "$sf" 2>/dev/null)
+        [[ "$other_plan" == "$plan" ]] || continue
+        other_scope=$(sed -n '6p' "$sf" 2>/dev/null)
+        scope_compare "$own_scope" "$other_scope"
+        [[ "$SCOPE_CLASS" != "same" ]] && return 1
+    done
+    return 0
+}
+
+newest_adoptable_plan() {
+    local own_state="$1" own_scope="$2" require_fresh="${3:-0}" f
+    NEWEST_ADOPTABLE=""
+    NEWEST_WITHHELD=0
+    NEWEST_STALE=0
+    while IFS= read -r f; do
+        [[ -n "$f" ]] || continue
+        if ! classify_plan_scope "$f" "$own_state" "$own_scope"; then
+            NEWEST_WITHHELD=$((NEWEST_WITHHELD + 1))
+            continue
+        fi
+        if [[ "$require_fresh" == "1" ]] && [[ -z "$(find "$f" -mmin -1440 2>/dev/null)" ]]; then
+            NEWEST_STALE=$((NEWEST_STALE + 1))
+            continue
+        fi
+        NEWEST_ADOPTABLE="$f"
+        return 0
+    done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
+    return 0
 }
 
 # --- Ralph Loop helpers ---
