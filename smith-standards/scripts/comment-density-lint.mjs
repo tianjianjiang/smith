@@ -41,7 +41,7 @@ const COMMENT_PATTERN_BY_EXTENSION = {
   ".rb": HASH_COMMENT_EXCEPT_SHEBANG,
 };
 
-const MACHINE_DIRECTIVE = /\b(eslint-disable|eslint-enable|prettier-ignore|SPDX|pragma|noqa)\b|@ts-[a-z]|istanbul ignore|c8 ignore|\btype:\s*ignore\b/;
+const MACHINE_DIRECTIVE = /^(\/\/|#|\/\*)\s*(?:eslint-disable|eslint-enable|prettier-ignore|SPDX|pragma|(?:noqa|NOQA)|@ts-\S+|istanbul ignore|c8 ignore|type:\s*ignore)\b/;
 
 const CONTENT_FIELD_BY_TOOL = {
   Write: "content",
@@ -65,7 +65,8 @@ function loadConfig() {
         ? config.minCommentRatio
         : DEFAULT_CONFIG.minCommentRatio,
     };
-  } catch {
+  } catch (err) {
+    process.stderr.write(`comment-density-lint: config load failed (${err.message}), using defaults\n`);
     return DEFAULT_CONFIG;
   }
 }
