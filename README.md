@@ -269,13 +269,15 @@ through.
   **advisory** reminder of `smith-standards/SKILL.md:29-33` (NEVER add inline
   comments) when both thresholds in `smith-standards/comment-lint-config.json`
   are exceeded (default: at least 3 comment lines AND over 25% of non-blank
-  lines). Advisory only — it never blocks. ALL code comments trigger the
-  advisory (no suppressions) — the rule is absolute: code must be
-  self-documenting. By design it detects only full-line comments — trailing
-  comments and cross-line constructs (multi-line template literals, block
-  comments spanning lines) are intentionally NOT parsed, keeping the heuristic
-  simple until a real per-language linter replaces it. Only shebangs are exempt;
-  config, `.md`, and `.json` files are out of scope.
+  lines). Advisory only — it never blocks. Code comments trigger the advisory,
+  with machine directives exempt (eslint-disable, prettier-ignore, @ts-*, SPDX,
+  pragma, noqa, istanbul ignore, c8 ignore, type:ignore) — the rule targets
+  human-facing inline commentary; code must be self-documenting. By design it
+  detects only full-line comments — trailing comments and cross-line constructs
+  (multi-line template literals, block comments spanning lines) are intentionally
+  NOT parsed, keeping the heuristic simple until a real per-language linter
+  replaces it. Shebangs and machine directives are exempt; config, `.md`, and
+  `.json` files are out of scope.
 
 - **coined-shorthand-lint** (`smith-ctx-claude/scripts/coined-shorthand-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that emits an
@@ -677,9 +679,9 @@ through.
   switch can still read the prior model; and each distinct repo leaves a small
   persistent `.assisted-model-<hash>` cache file under `plans/`.
 
-Each ships a self-check under `smith-ctx-claude/scripts/tests/` (fixture JSON →
-stdin, assert exit code + stdout); run them all with
-`sh smith-ctx-claude/scripts/tests/run-all.sh`.
+Each ships a self-check (fixture JSON → stdin, assert exit code + stdout):
+`smith-ctx-claude` hooks under `smith-ctx-claude/scripts/tests/run-all.sh`,
+`smith-standards` hooks under `smith-standards/scripts/tests/run-all.sh`.
 
 **Where to save it**: these are user-level hooks, so they belong in
 `$HOME/.claude/settings.json` — not a project's `.claude/settings.json`.
@@ -844,8 +846,9 @@ then:
    suggestion offered — `wip` isn't a fixable typo of a known type). Then
    `git checkout -b feat/good-name`; confirm it proceeds.
 9. **comment-density-lint** — write a code file with 3+ full-line comments
-   comprising >25% of non-blank lines; confirm the advisory reminder appears
-   (no suppressions recognized). The write still proceeds (advisory only).
+   comprising >25% of non-blank lines (excluding machine directives); confirm
+   the advisory reminder appears. The write still proceeds (advisory only).
+   Test suite: `smith-standards/scripts/tests/run-all.sh`
 10. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
     labels (e.g. `T1`, `T2`); confirm the advisory appears.
 11. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;

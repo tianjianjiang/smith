@@ -30,7 +30,7 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 - NEVER add inline comments to code
 - If you find yourself wanting to add an inline comment, STOP and ask the user how to make the code self-explanatory instead
 - Code must be self-documenting through clear naming, structure, and extraction of well-named functions
-- Allowed exceptions (not inline comments): Config file value documentation (.env), standalone TODO markers on their own line
+- Allowed exceptions (not inline comments): Config file value documentation (.env)
 
 **File Format**:
 - ALWAYS have exactly one newline at the end of every file

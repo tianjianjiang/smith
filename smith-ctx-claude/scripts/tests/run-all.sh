@@ -7,7 +7,6 @@ for check in \
   askuserquestion-arity \
   volatile-artifact-guard \
   branch-rename-open-pr \
-  comment-density-lint \
   coined-shorthand-lint \
   review-orchestration-guard \
   skill-read-substitution-guard \
