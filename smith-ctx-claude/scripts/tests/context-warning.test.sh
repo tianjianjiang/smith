@@ -27,23 +27,24 @@ pass "40% silent"
 
 make_transcript 50
 OUT=$(run_hook)
-echo "$OUT" | grep -q "warning" || fail "50% should produce warning"
-pass "50% warning"
+echo "$OUT" | grep -q "context: 50%" || fail "50% should show context percentage"
+echo "$OUT" | grep -q "warn: 50%" || fail "50% should show warn threshold"
+pass "50% structured"
 
 make_transcript 55
 OUT=$(run_hook)
-echo "$OUT" | grep -q "warning" || fail "55% should produce warning"
-pass "55% warning"
+echo "$OUT" | grep -q "context: 55%" || fail "55% should show context percentage"
+pass "55% structured"
 
 make_transcript 60
 OUT=$(run_hook)
-echo "$OUT" | grep -q "critical" || fail "60% should produce critical"
-pass "60% critical"
+echo "$OUT" | grep -q "action: save" || fail "60% should show action"
+pass "60% critical action"
 
 make_transcript 70
 OUT=$(run_hook)
-echo "$OUT" | grep -q "critical" || fail "70% should produce critical"
-pass "70% critical"
+echo "$OUT" | grep -q "action: save" || fail "70% should show action"
+pass "70% critical action"
 
 printf '%s' '{"cwd":"/nonexistent","transcript_path":"/nonexistent"}' | bash "$HOOK" > "$TMP/out" 2>&1
 [ ! -s "$TMP/out" ] || fail "missing transcript should be silent"

@@ -77,19 +77,23 @@ cost.
 
 ### Warning Hook (50%)
 
-UserPromptSubmit hook `context-warning.sh` injects warnings at 50%+ context:
-- **50-59%**: "Warning — consider /compact or prepare for /clear"
-- **60%+**: "Critical — checkpoint work, then /clear"
+UserPromptSubmit hook `context-warning.sh` outputs structured context status at 50%+:
+```
+context: 52% | warn: 50% | crit: 60%
+context: 62% | warn: 50% | crit: 60% | action: save, /clear
+```
 
 Uses `lib-context.sh` for token-based percentage (DRY).
 
 ### Stop Hook (60%)
 
-Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from transcript JSONL (same data as Claude Code statusline). A single unified hook covers both plan-active and non-plan contexts:
+Stop hook `enforce-clear.sh` blocks at 60% context with structured output:
+```
+context: 62% | crit: 60% | plan: /path/to/plan.md | pending: 3 | action: save, /clear
+```
 
-- **Real percentage**: Blocks at 60% context (from transcript token usage, not byte count)
-- **Three branches**: Plan+pending, plan+completed, no-plan (plan filepath shown first, Serena optional)
-- **Loop prevention**: Uses `stop_hook_active` field (official best practice)
+- Creates pending-reload flag for SessionStart:clear to restore state
+- Uses `stop_hook_active` field for loop prevention (official best practice)
 
 **Config**: Both hooks in `smith-ctx-claude/scripts/`.
 

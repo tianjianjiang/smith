@@ -349,8 +349,7 @@ TRANSCRIPT=$(create_transcript_pct 55 "t4")
 # Update state so we're in an active session (CWD-keyed state)
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY}"
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if assert_contains "4" "$OUTPUT" "CONTEXT WARNING" && \
-   assert_not_contains "4" "$OUTPUT" "ACTION REQUIRED"; then
+if [ -z "$OUTPUT" ]; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
@@ -531,8 +530,8 @@ if [[ "$FLAG_A_EXISTS_1" == "yes" ]] && \
    [[ "$FLAG_A_EXISTS_2" == "yes" ]] && \
    [[ "$FLAG_B_EXISTS_2" == "yes" ]] && \
    [[ "$FLAG_B_EXISTS_3" == "yes" ]] && \
-   assert_contains "12-a1" "$OUTPUT_A1" "CONTEXT WARNING" && \
-   assert_contains "12-b1" "$OUTPUT_B1" "CONTEXT WARNING" && \
+   [ -z "$OUTPUT_A1" ] && \
+   [ -z "$OUTPUT_B1" ] && \
    assert_contains "12-a2" "$OUTPUT_A2" "POST-CLEAR RESUME" && \
    assert_contains "12-b2" "$OUTPUT_B2" "POST-CLEAR RESUME"; then
     echo "  PASS"
@@ -925,16 +924,7 @@ printf '%s\n%s\n%s\n%s\n%s\n' "sess_23" "$TRANSCRIPT_23" "1000" "$(date +%Y-%m-%
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_23","transcript_path":"'"$TRANSCRIPT_23"'","cwd":"'"$RALPH_CWD_23"'"}' | bash "$TEST_DIR/inject-plan.sh")
 
 T23_PASS=true
-# Should get CONTEXT WARNING (advisory)
-if ! assert_contains "23" "$OUTPUT" "CONTEXT WARNING"; then
-    T23_PASS=false
-fi
-# Should mention Ralph loop is active
-if ! assert_contains "23" "$OUTPUT" "Ralph loop active"; then
-    T23_PASS=false
-fi
-# Should mention saving to Serena
-if ! assert_contains "23" "$OUTPUT" "write_memory"; then
+if ! assert_contains "23" "$OUTPUT" "ralph: active"; then
     T23_PASS=false
 fi
 # Resume file should be created (preemptive save)
@@ -977,20 +967,7 @@ printf '%s\n%s\n%s\n%s\n%s\n' "sess_24" "$TRANSCRIPT_24" "1000" "$(date +%Y-%m-%
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_24","transcript_path":"'"$TRANSCRIPT_24"'","cwd":"'"$RALPH_CWD_24"'"}' | bash "$TEST_DIR/inject-plan.sh")
 
 T24_PASS=true
-# Should get CONTEXT CRITICAL
-if ! assert_contains "24" "$OUTPUT" "CONTEXT CRITICAL"; then
-    T24_PASS=false
-fi
-# Should mention Ralph auto-exiting
-if ! assert_contains "24" "$OUTPUT" "auto-exiting"; then
-    T24_PASS=false
-fi
-# Should instruct to save state to Serena
-if ! assert_contains "24" "$OUTPUT" "write_memory"; then
-    T24_PASS=false
-fi
-# Should mention auto-resume after /clear
-if ! assert_contains "24" "$OUTPUT" "auto-resume"; then
+if ! assert_contains "24" "$OUTPUT" "ralph: exiting"; then
     T24_PASS=false
 fi
 # Resume file should exist
@@ -1916,11 +1893,11 @@ printf '%s\n%s\n%s\n%s\n%s\n' "sess_48" "$TRANSCRIPT_48" "1000" "$(date +%Y-%m-%
 
 # Should trigger context warning (55% >= 50%) because legacy Sonnet uses 200K window
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48","transcript_path":"'"$TRANSCRIPT_48"'","cwd":"'"$CWD_48"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
-    echo "  PASS (warning triggered at 55% of 200K)"
+if [ -z "$OUTPUT" ]; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL (expected CONTEXT WARNING, got: $(echo "$OUTPUT" | head -3))"
+    echo "  FAIL (expected empty output, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"

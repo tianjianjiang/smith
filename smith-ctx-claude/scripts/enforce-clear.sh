@@ -128,27 +128,17 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
+# Structured output: deterministic values only, no placeholders
 case "$FLAG_TYPE" in
     plan-pending)
-        STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
-        ACTIONS="mark done tasks in plan, commit, write_memory() if Serena"
-        RELOAD="plan=\`${ACTIVE_PLAN}\` mem=«name» task=«description»"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: ${ACTIVE_PLAN} | pending: ${PENDING} | action: save, /clear"
         ;;
     plan-completed)
-        STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
-        ACTIONS="commit, write_memory() if Serena"
-        RELOAD="plan=\`${COMPLETED_PLAN}\` (done) mem=«name» task=«summary»"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: ${COMPLETED_PLAN} (done) | action: save, /clear"
         ;;
     *)
-        STATUS="Context at ${CONTEXT_PCT}%"
-        ACTIONS="commit, write_memory() if Serena"
-        RELOAD="mem=«name» task=«description»"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | action: save, /clear"
         ;;
 esac
 
-json_stop_block "${STATUS}
-
-DO: ${ACTIONS}
-
-OUTPUT (fill «placeholders»):
-Reload: ${RELOAD}"
+json_stop_block "$MSG"

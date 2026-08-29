@@ -141,31 +141,23 @@ ExitPlanMode rejection has three scenarios -- handle each differently:
 
 ### Workflow: Context Threshold Auto-Detection
 
-Uses real token counts from transcript JSONL (same data as Claude Code statusline). The last assistant message's `usage` object provides `input_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens`. Context percentage = total input tokens / context window size.
+Uses real token counts from transcript JSONL (same data as Claude Code statusline). Context percentage = total input tokens / context window size.
 
 ```text
 Every prompt submission
     |
     v
-inject-plan.sh calculates context % from transcript token usage
+context-warning.sh (ctx-claude): outputs "context: N% | warn: 50% | crit: 60%"
     |
     v
-Context >= PLAN_CONTEXT_WARNING_PCT (default: 50%)?
-    |--- No: normal operation
-    |--- Yes + active plan + pending tasks:
-         |
-         v
-    Creates CWD-specific .pending-reload flag
-    Outputs "CONTEXT WARNING: XX% used" advisory
-         |
-         v
-    Agent saves state, then AFTER all tool calls outputs self-contained "Reload with:" block (with plan path), user runs /clear
-         |
-         v
-    SessionStart:clear hook injects plan (primary)
-    OR inject-plan.sh detects flag file (fallback)
-
-Stop hook (enforce-clear.sh) blocks at 60% (critical threshold).
+inject-plan.sh: at 50%+ with active plan, creates .pending-reload flag
+    |         if Ralph/Orchestrator active, saves resume state + outputs "ralph: active | iter: N"
+    |
+    v
+enforce-clear.sh (Stop): at 60%, blocks + outputs "context: N% | action: save, /clear"
+    |
+    v
+SessionStart:clear: reads flag, restores plan deterministically
 ```
 
 ### Flag File Format
