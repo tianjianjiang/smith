@@ -36,7 +36,6 @@ CRITICAL_PCT=${CTX_CONTEXT_CRITICAL_PCT:-60}
 
 INPUT=$(cat)
 
-# Parse all fields in one jq invocation (saves ~3 subprocess spawns)
 read -r STOP_HOOK_ACTIVE SESSION_ID HOOK_CWD TRANSCRIPT_PATH < <(
     echo "$INPUT" | jq -r '[
         (.stop_hook_active // false | tostring),
@@ -136,8 +135,6 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
-# Build message (DRY: common structure, parameterized differences)
-# MECE: DO = actions to execute, OUTPUT = text to produce
 case "$FLAG_TYPE" in
     plan-pending)
         STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"

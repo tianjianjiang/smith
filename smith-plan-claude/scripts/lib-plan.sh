@@ -123,38 +123,19 @@ scope_compare() {
     fi
 }
 
-# Helper: output JSON for UserPromptSubmit hooks
-json_user_prompt_output() {
-    local content="$1"
-    jq -n --arg c "$content" '{
+json_hook_output() {
+    local event="$1" content="$2"
+    jq -n --arg e "$event" --arg c "$content" '{
         hookSpecificOutput: {
-            hookEventName: "UserPromptSubmit",
+            hookEventName: $e,
             additionalContext: $c
         }
     }'
 }
 
-# Helper: output JSON for PostToolUse hooks
-json_post_tool_output() {
-    local content="$1"
-    jq -n --arg c "$content" '{
-        hookSpecificOutput: {
-            hookEventName: "PostToolUse",
-            additionalContext: $c
-        }
-    }'
-}
-
-# Helper: output JSON for SessionStart hooks
-json_session_start_output() {
-    local content="$1"
-    jq -n --arg c "$content" '{
-        hookSpecificOutput: {
-            hookEventName: "SessionStart",
-            additionalContext: $c
-        }
-    }'
-}
+json_user_prompt_output() { json_hook_output "UserPromptSubmit" "$1"; }
+json_post_tool_output() { json_hook_output "PostToolUse" "$1"; }
+json_session_start_output() { json_hook_output "SessionStart" "$1"; }
 
 save_state_file() {
     local state_file="$1"

@@ -18,8 +18,9 @@ CRITICAL_PCT=${CTX_CONTEXT_CRITICAL_PCT:-60}
 
 INPUT=$(cat)
 
-HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
+read -r HOOK_CWD TRANSCRIPT_PATH < <(
+    echo "$INPUT" | jq -r '[(.cwd // ""), (.transcript_path // "")] | @tsv' 2>/dev/null
+) || { HOOK_CWD=""; TRANSCRIPT_PATH=""; }
 
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
     exit 0
