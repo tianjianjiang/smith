@@ -41,7 +41,7 @@ const COMMENT_PATTERN_BY_EXTENSION = {
   ".rb": HASH_COMMENT_EXCEPT_SHEBANG,
 };
 
-const MACHINE_DIRECTIVE = /\b(eslint-disable|eslint-enable|prettier-ignore|SPDX|pragma|noqa)\b|@ts-[a-z]|istanbul ignore|c8 ignore|\btype:\s*ignore\b/;
+const MACHINE_DIRECTIVE = /^(\/\/|#|\/\*|\*(?:[\s/]|$))\s*(?:eslint-disable|eslint-enable|prettier-ignore|SPDX|pragma|noqa|@ts-[a-z]+|istanbul ignore|c8 ignore|type:\s*ignore)\b/i;
 
 const CONTENT_FIELD_BY_TOOL = {
   Write: "content",

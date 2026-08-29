@@ -40,6 +40,8 @@ silent "machine directives not counted" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-disable-next-line\n// @ts-ignore\n// prettier-ignore\nconst a = 1;"}}'
 fires  "TODO/FIXME are comments (no exception)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// TODO: x\n// FIXME: y\n// HACK: z\nconst a = 1;"}}'
+fires  "prose mentioning type ignore not a directive" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\nconst a = 1;"}}'
 silent "url in string not a comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const u = \"https://example.com/x\";\nconst v = \"a\";\nconst w = \"b\";"}}'
 silent "non-code extension" \
