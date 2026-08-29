@@ -13,7 +13,7 @@ set -o pipefail
 
 # Source context functions from canonical location
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CTX_LIB="${SCRIPT_DIR}/../../smith-ctx-claude/scripts/lib-context.sh"
+CTX_LIB="${SMITH_CTX_LIB:-${SCRIPT_DIR}/../../smith-ctx-claude/scripts/lib-context.sh}"
 if [[ -f "$CTX_LIB" ]]; then
     source "$CTX_LIB"
 else

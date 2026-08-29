@@ -53,7 +53,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 INJECT_SCRIPT="$SCRIPT_DIR/scripts/inject-plan.sh"
-ENFORCE_SCRIPT="$SCRIPT_DIR/scripts/enforce-clear.sh"
+ENFORCE_SCRIPT="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
 PLAN_EXIT_SCRIPT="$SCRIPT_DIR/scripts/on-plan-exit.sh"
 SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
 
@@ -156,6 +156,12 @@ create_patched_scripts() {
 
     cp "$ENFORCE_SCRIPT" "$TEST_DIR/enforce-clear.sh"
     chmod +x "$TEST_DIR/enforce-clear.sh"
+
+    cp "$SCRIPT_DIR/../smith-ctx-claude/scripts/lib-context.sh" "$TEST_DIR/lib-context.sh"
+
+    export SMITH_CTX_LIB="$TEST_DIR/lib-context.sh"
+    export SMITH_PLAN_LIB="$TEST_DIR/lib-plan.sh"
+    export CLAUDE_CONFIG_DIR="$TEST_DIR"
 
     cp "$PLAN_EXIT_SCRIPT" "$TEST_DIR/on-plan-exit.sh"
     chmod +x "$TEST_DIR/on-plan-exit.sh"
