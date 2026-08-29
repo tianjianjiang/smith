@@ -74,6 +74,21 @@ scope_key() {
     printf 'dir:%s' "$phys"
 }
 
+# Parse a single field from YAML frontmatter text.
+# Usage: value=$(parse_yaml_field "$frontmatter" "field_name")
+parse_yaml_field() {
+    local frontmatter="$1" field="$2"
+    echo "$frontmatter" | grep "^${field}:" | sed "s/^${field}:[[:space:]]*//" \
+        | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//"
+}
+
+# Read multiple lines from a file into an array.
+# Usage: mapfile -t lines < <(read_file_lines "$file" 1 5)
+read_file_lines() {
+    local file="$1" start="$2" end="$3"
+    sed -n "${start},${end}p" "$file" 2>/dev/null
+}
+
 # File mtime in epoch seconds, into _MTIME_OUT; empty when none could be read.
 _MTIME_OUT=""
 mtime_of() {
@@ -220,17 +235,15 @@ get_ralph_state() {
     frontmatter=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$state_file" 2>/dev/null) || return 1
 
     local active
-    active=$(echo "$frontmatter" | grep '^active:' | sed 's/^active:[[:space:]]*//' | tr -d '[:space:]')
+    active=$(parse_yaml_field "$frontmatter" "active" | tr -d '[:space:]')
     if [[ "$active" != "true" ]]; then
         return 1
     fi
 
-    RALPH_ITERATION=$(echo "$frontmatter" | grep '^iteration:' | sed 's/^iteration:[[:space:]]*//' | tr -d '[:space:]')
-    RALPH_MAX_ITERATIONS=$(echo "$frontmatter" | grep '^max_iterations:' | sed 's/^max_iterations:[[:space:]]*//' | tr -d '[:space:]')
-    RALPH_COMPLETION_PROMISE=$(echo "$frontmatter" | grep '^completion_promise:' | sed 's/^completion_promise:[[:space:]]*//' | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//")
-    if [[ "$RALPH_COMPLETION_PROMISE" == "null" ]]; then
-        RALPH_COMPLETION_PROMISE=""
-    fi
+    RALPH_ITERATION=$(parse_yaml_field "$frontmatter" "iteration" | tr -d '[:space:]')
+    RALPH_MAX_ITERATIONS=$(parse_yaml_field "$frontmatter" "max_iterations" | tr -d '[:space:]')
+    RALPH_COMPLETION_PROMISE=$(parse_yaml_field "$frontmatter" "completion_promise")
+    [[ "$RALPH_COMPLETION_PROMISE" == "null" ]] && RALPH_COMPLETION_PROMISE=""
 
     RALPH_PROMPT=$(awk '/^---$/{i++; next} i>=2' "$state_file" 2>/dev/null)
 
@@ -281,11 +294,13 @@ read_ralph_resume() {
         return 1
     fi
 
-    RALPH_RESUME_MAX_ITER=$(sed -n '1p' "$resume_file" 2>/dev/null)
-    RALPH_RESUME_ITERATION=$(sed -n '2p' "$resume_file" 2>/dev/null)
-    RALPH_RESUME_PROMISE=$(sed -n '3p' "$resume_file" 2>/dev/null)
-    RALPH_RESUME_PLAN_PATH=$(sed -n '4p' "$resume_file" 2>/dev/null)
-    RALPH_RESUME_TIMESTAMP=$(sed -n '5p' "$resume_file" 2>/dev/null)
+    local lines
+    mapfile -t lines < <(read_file_lines "$resume_file" 1 5)
+    RALPH_RESUME_MAX_ITER="${lines[0]:-}"
+    RALPH_RESUME_ITERATION="${lines[1]:-}"
+    RALPH_RESUME_PROMISE="${lines[2]:-}"
+    RALPH_RESUME_PLAN_PATH="${lines[3]:-}"
+    RALPH_RESUME_TIMESTAMP="${lines[4]:-}"
 
     if [[ -f "$prompt_file" ]]; then
         RALPH_RESUME_PROMPT=$(cat "$prompt_file" 2>/dev/null)
@@ -372,19 +387,19 @@ get_orchestrator_state() {
     frontmatter=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$state_file" 2>/dev/null) || return 1
 
     local active
-    active=$(echo "$frontmatter" | grep '^active:' | sed 's/^active:[[:space:]]*//' | tr -d '[:space:]')
+    active=$(parse_yaml_field "$frontmatter" "active" | tr -d '[:space:]')
     if [[ "$active" != "true" ]]; then
         return 1
     fi
 
     ORCH_ACTIVE="true"
-    ORCH_MODE=$(echo "$frontmatter" | grep '^mode:' | sed 's/^mode:[[:space:]]*//' | tr -d '[:space:]')
-    ORCH_ITERATION=$(echo "$frontmatter" | grep '^iteration:' | sed 's/^iteration:[[:space:]]*//' | tr -d '[:space:]')
-    ORCH_MAX_ITERATIONS=$(echo "$frontmatter" | grep '^max_iterations:' | sed 's/^max_iterations:[[:space:]]*//' | tr -d '[:space:]')
-    ORCH_PLAN_PATH=$(echo "$frontmatter" | grep '^plan_path:' | sed 's/^plan_path:[[:space:]]*//' | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//")
-    ORCH_COMPLETION_PROMISE=$(echo "$frontmatter" | grep '^completion_promise:' | sed 's/^completion_promise:[[:space:]]*//' | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//")
-    ORCH_CURRENT_TASK=$(echo "$frontmatter" | grep '^current_task:' | sed 's/^current_task:[[:space:]]*//' | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//")
-    ORCH_STARTED_AT=$(echo "$frontmatter" | grep '^started_at:' | sed 's/^started_at:[[:space:]]*//' | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//")
+    ORCH_MODE=$(parse_yaml_field "$frontmatter" "mode" | tr -d '[:space:]')
+    ORCH_ITERATION=$(parse_yaml_field "$frontmatter" "iteration" | tr -d '[:space:]')
+    ORCH_MAX_ITERATIONS=$(parse_yaml_field "$frontmatter" "max_iterations" | tr -d '[:space:]')
+    ORCH_PLAN_PATH=$(parse_yaml_field "$frontmatter" "plan_path")
+    ORCH_COMPLETION_PROMISE=$(parse_yaml_field "$frontmatter" "completion_promise")
+    ORCH_CURRENT_TASK=$(parse_yaml_field "$frontmatter" "current_task")
+    ORCH_STARTED_AT=$(parse_yaml_field "$frontmatter" "started_at")
 
     return 0
 }
@@ -430,12 +445,14 @@ read_orchestrator_resume() {
         return 1
     fi
 
-    ORCH_RESUME_ITERATION=$(sed -n '1p' "$resume_file" 2>/dev/null)
-    ORCH_RESUME_MAX_ITER=$(sed -n '2p' "$resume_file" 2>/dev/null)
-    ORCH_RESUME_PLAN_PATH=$(sed -n '3p' "$resume_file" 2>/dev/null)
-    ORCH_RESUME_PROMISE=$(sed -n '4p' "$resume_file" 2>/dev/null)
-    ORCH_RESUME_CURRENT_TASK=$(sed -n '5p' "$resume_file" 2>/dev/null)
-    ORCH_RESUME_TIMESTAMP=$(sed -n '6p' "$resume_file" 2>/dev/null)
+    local lines
+    mapfile -t lines < <(read_file_lines "$resume_file" 1 6)
+    ORCH_RESUME_ITERATION="${lines[0]:-}"
+    ORCH_RESUME_MAX_ITER="${lines[1]:-}"
+    ORCH_RESUME_PLAN_PATH="${lines[2]:-}"
+    ORCH_RESUME_PROMISE="${lines[3]:-}"
+    ORCH_RESUME_CURRENT_TASK="${lines[4]:-}"
+    ORCH_RESUME_TIMESTAMP="${lines[5]:-}"
 
     return 0
 }

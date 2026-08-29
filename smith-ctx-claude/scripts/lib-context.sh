@@ -65,14 +65,14 @@ model_to_context_window() {
 
 # Save model ID to session-keyed file for cross-hook sharing.
 save_session_model() {
-    local cwd_key="$1" model="$2"
-    [[ -n "$model" ]] && printf '%s\n' "$model" > "${CTX_FLAGS_DIR}/.model-${cwd_key}"
+    local session_key="$1" model="$2"
+    [[ -n "$model" ]] && printf '%s\n' "$model" > "${CTX_FLAGS_DIR}/.model-${session_key}"
 }
 
 # Read model ID from session-keyed file.
 read_session_model() {
-    local cwd_key="$1"
-    local f="${CTX_FLAGS_DIR}/.model-${cwd_key}"
+    local session_key="$1"
+    local f="${CTX_FLAGS_DIR}/.model-${session_key}"
     [[ -f "$f" ]] && cat "$f" 2>/dev/null
 }
 

@@ -36,16 +36,20 @@ CRITICAL_PCT=${CTX_CONTEXT_CRITICAL_PCT:-60}
 
 INPUT=$(cat)
 
+# Parse all fields in one jq invocation (saves ~3 subprocess spawns)
+read -r STOP_HOOK_ACTIVE SESSION_ID HOOK_CWD TRANSCRIPT_PATH < <(
+    echo "$INPUT" | jq -r '[
+        (.stop_hook_active // false | tostring),
+        (.session_id // ""),
+        (.cwd // ""),
+        (.transcript_path // "")
+    ] | @tsv' 2>/dev/null
+) || { STOP_HOOK_ACTIVE="false"; SESSION_ID=""; HOOK_CWD=""; TRANSCRIPT_PATH=""; }
+
 # Official best practice: if already continuing from a stop hook, allow stop
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
 if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
     exit 0
 fi
-
-# Extract fields
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
-HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2
     exit 1
