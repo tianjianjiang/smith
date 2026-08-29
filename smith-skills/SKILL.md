@@ -52,7 +52,7 @@ prompt-engineering docs never mention primacy/recency, and state that
 Skills, subagents, and hooks committed into a repo's `.claude/` MUST work in
 any operator's session — never depend on the author's machine:
 
-- No references to local Serena/auto-memory slugs (e.g. `read_memory(...)`)
+- No references to local Serena memory slugs (e.g. `read_memory(...)`)
   or dangling memory refs from a committed SKILL.md or `.claude/agents/*.md`
 - No hardcoded home paths (e.g. `/Users/«name»/...`) — inline the rule instead
 - No hooks reading `$CLAUDE_TOOL_INPUT` / `$CLAUDE_TOOL_INPUT_FILE_PATH`

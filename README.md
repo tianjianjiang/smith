@@ -940,8 +940,7 @@ and reload degrades:
   (`write_memory`/`read_memory`), **Basic-Memory** (`write_note` / note search).
   Both are **local-only** in a default setup (Serena memories live under
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
-  unless Basic-Memory Cloud is enabled). auto-memory lives under
-  `~/.claude/projects/«project»/memory/` (Claude Code, local).
+  unless Basic-Memory Cloud is enabled).
 - **Reload-flag hook** — the memory-restore directive is injected as context on
   the next `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
