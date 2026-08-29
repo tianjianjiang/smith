@@ -73,15 +73,25 @@ cost.
 - If 15+ tool calls pass without a commit and there are uncommitted changes, commit with `#WIP` prefix to preserve progress
 - Before destructive operations (rebase, `/clear`), commit or stash current work
 
-## Stop Hook (Unified)
+## Context Hooks
 
-Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`. Uses real token counts from transcript JSONL (same data as Claude Code statusline) to calculate context percentage. A single unified hook covers both plan-active and non-plan contexts:
+### Warning Hook (50%)
+
+UserPromptSubmit hook `context-warning.sh` injects warnings at 50%+ context:
+- **50-59%**: "Warning — consider /compact or prepare for /clear"
+- **60%+**: "Critical — checkpoint work, then /clear"
+
+Uses `lib-context.sh` for token-based percentage (DRY).
+
+### Stop Hook (60%)
+
+Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from transcript JSONL (same data as Claude Code statusline). A single unified hook covers both plan-active and non-plan contexts:
 
 - **Real percentage**: Blocks at 60% context (from transcript token usage, not byte count)
 - **Three branches**: Plan+pending, plan+completed, no-plan (plan filepath shown first, Serena optional)
 - **Loop prevention**: Uses `stop_hook_active` field (official best practice)
 
-**Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
+**Config**: Both hooks in `smith-ctx-claude/scripts/`.
 
 ## System Reminders (Auto-Injected Context)
 

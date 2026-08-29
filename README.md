@@ -706,7 +706,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-router.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-router.mjs\"" },
+          { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/context-warning.sh\"" }
         ]
       }
     ],
