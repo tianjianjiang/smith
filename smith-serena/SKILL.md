@@ -115,16 +115,9 @@ safe; the hazard is any path that is itself a file symlink.
 - `{feature}_notes` - Feature-specific context
 - `{task}_context` - Task-specific discoveries and decisions
 
-**Relationship with auto memory:**
-Auto memory handles long-term project knowledge (patterns,
-conventions). Serena memory handles session state and cross-context
-continuity. See `@smith-ctx-claude/SKILL.md` for delineation.
-
 **Stores are not a uniform layout — do not assume one path scheme:**
 
 - Serena: `.serena/memories/*.md` (flat dir; naming = memory key).
-- Claude Code auto memory: `~/.claude/projects/«project-slug»/memory/` — flat
-  `*.md` files plus a `MEMORY.md` index that wiki-links the rest.
 - Basic-Memory: own store (markdown files) backed by a SQLite index;
   reach it via its MCP tools, not by path.
 

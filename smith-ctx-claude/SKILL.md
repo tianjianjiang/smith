@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /clear, /compact mechanics, stop hook enforcement at 60%, JSONL state recall, tool-output hygiene, auto memory, and system reminders. Reference dumps (hooks, permission modes, agent features, model routing) live in companion REFERENCE.md. Use when operating in Claude Code IDE or when context exceeds 50%.
+description: Claude Code context management with /clear, /compact mechanics, stop hook enforcement at 60%, JSONL state recall, tool-output hygiene, and system reminders. Reference dumps (hooks, permission modes, agent features, model routing) live in companion REFERENCE.md. Use when operating in Claude Code IDE or when context exceeds 50%.
 ---
 
 # Claude Code Context Management
@@ -82,28 +82,6 @@ Stop hook enforcement is handled by `smith-plan-claude/scripts/enforce-clear.sh`
 - **Loop prevention**: Uses `stop_hook_active` field (official best practice)
 
 **Config**: Only one Stop hook entry in `settings.json` (in `smith-plan-claude`).
-
-## Auto Memory (Claude Code Native)
-
-**Claude Code auto memory** stores agent-generated notes at:
-`~/.claude/projects/«project-slug»/memory/`
-
-- `MEMORY.md` - First 200 lines auto-loaded every session
-- Topic files (e.g. `debugging.md`) - Read on demand
-- Browse: `/memory` command
-- Disable: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
-
-**Auto memory vs Serena memory - complementary, not competing:**
-
-**Auto memory** (long-lived project knowledge): architecture, conventions,
-recurring debugging patterns, discovered user preferences, build/test quirks.
-
-**Serena memory** (task-scoped continuity): session state, current task +
-next steps, Ralph loop state, phase-boundary checkpoints, cross-reset
-continuity.
-
-**No sync needed** - different lifecycles. Auto memory accumulates knowledge;
-Serena handles continuity.
 
 ## System Reminders (Auto-Injected Context)
 

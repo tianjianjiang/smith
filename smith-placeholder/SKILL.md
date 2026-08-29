@@ -22,7 +22,7 @@ inline-backtick paths, command examples, CLI usage synopses, code identifiers,
 injected-prompt strings.
 
 - Prose / inline: use the «project-slug»; `claude mcp remove «name»`
-- Path / value: `` `~/.claude/projects/«project-slug»/memory/` ``
+- Path / value: `` `~/.claude/projects/«project-slug»/settings.json` ``
 - Compound (join sub-tokens with literal separators): `«plugin»@«marketplace»`,
   `«type»/«description»`
 - Code identifier: `ralph_«task»_state`, `def test_«action»_when_«condition»()`
