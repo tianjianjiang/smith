@@ -146,7 +146,7 @@ Helpful: see @smith-principles/SKILL.md HHH summary.
 
 **Before acting on external artifacts (PRs, Notion, Slack, Jira, roadmaps) or
 starting a multi-step operation:**
-1. Check Serena memories and auto-memory for prior context on the topic
+1. Check Serena memories and Basic-Memory for prior context on the topic
 2. Check recent `git log` and PR history for related work
 3. Apply existing smith conventions before asking — if a skill already
    answers the question, use that answer

@@ -36,11 +36,11 @@ See `@smith-serena/SKILL.md` for tool-preference and memory-sync rules.
 
 ## Checkpoint & Reload Prerequisites
 
-`/smith-checkpoint` (`@smith-checkpoint/SKILL.md`) captures durable state to three
+`/smith-checkpoint` (`@smith-checkpoint/SKILL.md`) captures durable state to two
 backends and ends with a Reload block. Its dependencies:
 - **MCP servers**: Serena (`write_memory`/`read_memory`) and Basic-Memory
-  (`write_note`) — all **local-only** by default (Serena memories gitignored;
-  Basic-Memory local SQLite unless cloud enabled; auto-memory under `~/.claude`).
+  (`write_note`) — both **local-only** by default (Serena memories gitignored;
+  Basic-Memory local SQLite unless cloud enabled).
 - **Reload flag**: the memory-restore directive is injected as context on the next
   `/clear` only if the `smith-plan-claude` SessionStart:clear hook is registered.
   A restore is NOT guaranteed; the full conditions and outcomes are in

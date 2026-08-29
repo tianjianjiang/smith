@@ -1189,7 +1189,7 @@ if [[ -n "$_mr_rows" ]]; then
             # non-default config directory a hardcoded path makes the agent's `rm -f`
             # a silent no-op — after which this same flag is re-offered at every
             # /clear until the seven-day sweep.
-            _mr_notes+="\nIf one is chosen: restore it (Serena list_memories()/read_memory(), the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, Basic-Memory recent notes), then delete its flag with \`rm -f ${_mr_plans_shown}/.pending-memory-restore-«flag»\` — the hook did not consume it, so it is still there — but THIS session will not list it again, so act on it now or note the flag name. A later session in this directory gets its own first offer."
+            _mr_notes+="\nIf one is chosen: restore it (Serena list_memories()/read_memory(), Basic-Memory recent notes), then delete its flag with \`rm -f ${_mr_plans_shown}/.pending-memory-restore-«flag»\` — the hook did not consume it, so it is still there — but THIS session will not list it again, so act on it now or note the flag name. A later session in this directory gets its own first offer."
         fi
     fi
     # Explain a verdict only when a row actually carries it: a legend for a
@@ -1247,9 +1247,8 @@ if [[ -n "$_mr_rows" ]]; then
         MR_DIRECTIVE+="\n1. If Serena MCP available: list_memories() then read_memory() for the checkpoint"
         [[ -n "$MR_LABEL" ]] && MR_DIRECTIVE+=" (\`${MR_LABEL}\`)"
         MR_DIRECTIVE+=" or the most recent session memory"
-        MR_DIRECTIVE+="\n2. Read the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, then the referenced checkpoint file"
-        MR_DIRECTIVE+="\n3. If Basic-Memory MCP available: search recent notes for the checkpoint"
-        MR_DIRECTIVE+="\n4. Report the restored context and continue the work thread"
+        MR_DIRECTIVE+="\n2. If Basic-Memory MCP available: search recent notes for the checkpoint"
+        MR_DIRECTIVE+="\n3. Report the restored context and continue the work thread"
         MR_DIRECTIVE+="\n\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
         MR_DIRECTIVE+="\nIf the user's message contains a different request, address it first but still restore context."
         MR_DIRECTIVE+="$_mr_notes"
@@ -1267,7 +1266,7 @@ if [[ -n "$_mr_rows" ]]; then
         done <<< "$_mr_match_rows"
         MR_DIRECTIVE+="\n\nBEFORE doing anything else, use AskUserQuestion to ask which checkpoint to restore."
         MR_DIRECTIVE+="\nIf unable to ask (headless/non-interactive), restore the newest (\`${_mr_newest_label:-(no label)}\`) and say so explicitly."
-        MR_DIRECTIVE+="\nThen restore it: Serena list_memories()/read_memory(), the auto-memory index at \`~/.claude/projects/«project»/memory/MEMORY.md\`, and Basic-Memory recent notes."
+        MR_DIRECTIVE+="\nThen restore it: Serena list_memories()/read_memory() and Basic-Memory recent notes."
         MR_DIRECTIVE+="\nDo NOT skip this. Do NOT respond with \"Ready for your next task.\""
         MR_DIRECTIVE+="$_mr_notes"
     fi
