@@ -19,7 +19,8 @@ for check in \
   exit-plan-mode-guard \
   amend-shared-commit-guard \
   stack-merge-guard \
-  rtk-find-symlink-guard
+  rtk-find-symlink-guard \
+  post-merge-pull-reminder
 do
   sh "$HERE/$check.test.sh" || status=1
 done
