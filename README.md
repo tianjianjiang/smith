@@ -263,23 +263,19 @@ through.
   all, so no validation happens on those paths; tracked as a follow-up,
   not attempted here.
 
-- **comment-density-lint** (`smith-ctx-claude/scripts/comment-density-lint.mjs`)
+- **comment-density-lint** (`smith-standards/scripts/comment-density-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that, for code files
   only, counts the **full-line** comments a single edit adds and emits an
-  **advisory** reminder of `smith-standards/SKILL.md:29-32` (prefer
-  self-documenting code) when both thresholds in
-  `smith-ctx-claude/comment-lint-config.json` are exceeded (default: at least 3
-  comment lines AND over 25% of non-blank lines). Advisory only — it never
-  blocks. It is deliberately advisory, not a block: a script can count comments
-  deterministically but cannot judge whether a given comment is one of the cases
-  `smith-standards` allows (config, TODO marker, complex algorithm, non-obvious
-  business logic), so a hard block would false-fire on legitimate comments. By
-  design it detects only full-line comments — trailing comments and cross-line
-  constructs (multi-line template literals, block comments spanning lines) are
-  intentionally NOT parsed, keeping the heuristic simple until a real
-  per-language linter replaces it. Shebangs and marker comments
-  (`TODO`/`FIXME`/`NOQA`/`eslint-disable`/`SPDX`/…) are exempt; config, `.md`,
-  and `.json` files are out of scope.
+  **advisory** reminder of `smith-standards/SKILL.md:29-33` (NEVER add inline
+  comments) when both thresholds in `smith-standards/comment-lint-config.json`
+  are exceeded (default: at least 3 comment lines AND over 25% of non-blank
+  lines). Advisory only — it never blocks. ALL code comments trigger the
+  advisory (no suppressions) — the rule is absolute: code must be
+  self-documenting. By design it detects only full-line comments — trailing
+  comments and cross-line constructs (multi-line template literals, block
+  comments spanning lines) are intentionally NOT parsed, keeping the heuristic
+  simple until a real per-language linter replaces it. Only shebangs are exempt;
+  config, `.md`, and `.json` files are out of scope.
 
 - **coined-shorthand-lint** (`smith-ctx-claude/scripts/coined-shorthand-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that emits an
@@ -758,7 +754,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/comment-density-lint.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-standards/scripts/comment-density-lint.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/coined-shorthand-lint.mjs\"" }
         ]
       },
@@ -847,9 +843,9 @@ then:
    `git checkout -b wip/no-type-prefix`; confirm it is blocked (no
    suggestion offered — `wip` isn't a fixable typo of a known type). Then
    `git checkout -b feat/good-name`; confirm it proceeds.
-9. **comment-density-lint** — write a code file whose new content is heavy on
-   inline comments; confirm the advisory reminder appears (the write still
-   proceeds).
+9. **comment-density-lint** — write a code file with 3+ full-line comments
+   comprising >25% of non-blank lines; confirm the advisory reminder appears
+   (no suppressions recognized). The write still proceeds (advisory only).
 10. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`
     labels (e.g. `T1`, `T2`); confirm the advisory appears.
 11. **review-orchestration-guard** — spawn a `pr-review-toolkit:*` subagent;

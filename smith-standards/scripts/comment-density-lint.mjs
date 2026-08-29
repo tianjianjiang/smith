@@ -38,9 +38,6 @@ const LINE_COMMENT_TOKEN_BY_EXTENSION = {
   ".rb": "#",
 };
 
-const ALLOWLISTED_MARKER =
-  /\b(TODO|FIXME|XXX|HACK|NOQA|noqa|SPDX|pragma)\b|eslint-disable|eslint-enable|prettier-ignore|@ts-[a-z]|type:\s|istanbul ignore|c8 ignore/;
-
 const STANDARDS_REMINDER =
   "@smith-standards (SKILL.md:29-33): NEVER add inline comments to code. " +
   "Code must be self-documenting through clear naming, structure, and extraction " +
@@ -97,7 +94,6 @@ function isCommentBearing(line, lineToken) {
   const trimmed = line.trim();
   if (!trimmed) return false;
   if (trimmed.startsWith("#!")) return false;
-  if (ALLOWLISTED_MARKER.test(trimmed)) return false;
   return isFullLineComment(trimmed, lineToken);
 }
 
