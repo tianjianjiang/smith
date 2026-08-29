@@ -22,7 +22,8 @@ for check in \
   rtk-find-symlink-guard \
   subagent-contract-guard \
   spawn-ledger-report \
-  post-merge-pull-reminder
+  post-merge-pull-reminder \
+  coderabbit-status-check
 do
   sh "$HERE/$check.test.sh" || status=1
 done
