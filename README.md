@@ -414,6 +414,52 @@ through.
   flags is a natural follow-up, not attempted here. Advisory only, never
   blocks.
 
+- **post-merge-pull-reminder** (`smith-ctx-claude/scripts/post-merge-pull-reminder.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+  — PostToolUse guard (matcher `Bash`) that emits an **advisory** after a
+  `gh pr merge` runs, reminding the session to fast-forward-only pull the
+  repository's default branch in the primary checkout — the decide-and-do rule
+  restated in `@smith-gh-pr` and `@smith-worktree` and skipped often enough to
+  warrant a mechanical prompt. It fires on the
+  command text alone and does NOT gate on success: Claude Code's Bash
+  `tool_response` carries no numeric exit code (census of 3467 real
+  `toolUseResult` objects under `~/.claude/projects/*smith*`, fetched
+  2026-08-28: keys are `stdout`/`stderr`/`interrupted`/`isImage`/
+  `noOutputExpected`, `exitCode` in 0 of them; the docs' PostToolUse Output
+  object likewise names no exit code), and a non-zero-exit Bash command still
+  reaches PostToolUse rather than `PostToolUseFailure`, so a failed
+  `gh pr merge` (conflict, unmergeable) would trigger it too. `stderr` is
+  populated on success as well, so there is no reliable structured failure
+  signal to gate on — hence the reminder is worded "if it merged" and stays
+  advisory: a spurious reminder after a failed merge costs only one line, and
+  the fast-forward-only pull it suggests is a safe no-op. Does NOT fire for `gh
+  pr merge --auto`/`--disable-auto`, which only enable or disable auto-merge
+  rather than merging now (per `gh pr merge --help`: "--auto Automatically merge
+  only after necessary requirements are met"), so a "pull now" reminder there
+  would be premature; the deferred-flag check matches both the bare form and the
+  attached `--auto=true`/`--disable-auto=true` boolean form (a `--flag=value`
+  token is matched on its name, so `--subject=--auto` — a commit subject that is
+  literally `--auto` — is correctly treated as a real merge, not a deferral).
+  `gh pr merge --help`/`-h` is likewise not a merge and stays silent. Accepted
+  advisory limitations: `--auto=false` (technically an immediate merge) is
+  treated as a deferral and stays silent — a fail-open miss of a form
+  essentially never typed; a cross-repo `gh -R owner/other pr merge` still names
+  "the primary checkout", which then belongs to a different repository; a
+  space-separated flag value that is literally a deferral/help flag (`gh pr merge
+  --subject --auto`, `-t -h`) is read as the flag and stays silent, unlike the
+  attached `--subject=--auto` form which is handled correctly — the tokenizer
+  does not track which flags consume a value, and a commit subject of literally
+  `--auto` never occurs; a stacked-PR child merge (`gh pr merge <child>`) merges
+  into its parent branch, yet the reminder still names the default branch; and a
+  command wrapped in an unrecognized launcher (`timeout`, `xargs`) leaves the gh
+  invocation unparsed, so the reminder is skipped. All are advisory fail-open
+  misses or generic-wording edges, not blocking failures. The reminder text also
+  names the two adjacent behaviours worth expecting: from
+  a worktree, `gh pr merge --delete-branch` can print `fatal: '<default-branch>'
+  is already used by worktree ...` even though the merge itself succeeded, and a
+  squash merge can leave an orphan local branch to delete. Advisory only, never
+  blocks (a PostToolUse hook cannot block a command that already ran).
+
 - **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
   using shared helpers from `smith-ctx-claude/scripts/lib/transcript-turns.mjs`)
   — PreToolUse guard (matcher `ExitPlanMode`) enforcing
@@ -650,9 +696,9 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
 - **No `settings.json` yet**: save the block below as-is — it's already a
   complete, valid file.
 - **Already have one**: merge the `hooks` key in. If you already have
-  entries under `hooks.UserPromptSubmit` or `hooks.PreToolUse`, append these
-  hook objects to those arrays instead of replacing them — overwriting the
-  array silently drops your existing hooks.
+  entries under `hooks.UserPromptSubmit`, `hooks.PreToolUse`, or
+  `hooks.PostToolUse`, append these hook objects to those arrays instead of
+  replacing them — overwriting the array silently drops your existing hooks.
 
 ```json
 {
@@ -725,6 +771,14 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "Read",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-read-substitution-guard.mjs\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/post-merge-pull-reminder.mjs\"" }
         ]
       }
     ],
@@ -833,6 +887,11 @@ then:
     (or `rtk find -L . -type f`); confirm the advisory appears pointing to
     `test -f` / `rtk proxy find`. Confirm `rtk proxy find -L . -type f` and a
     plain `find . -type f` (no `-L`) stay silent.
+20. **post-merge-pull-reminder** — merge a real pull request with
+    `gh pr merge <PR> --squash`; confirm the advisory appears reminding you to
+    fast-forward-only pull the default branch. Confirm `gh pr merge <PR> --auto`,
+    `gh pr merge <PR> --help`, and a non-merge command (`gh pr view <PR>`) stay
+    silent.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not
