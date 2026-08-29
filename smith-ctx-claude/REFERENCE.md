@@ -395,7 +395,6 @@ SKILL.md keeps only the compact list of event names plus the core rule
 - **File modification notice** — a touched file changed outside the agent's tool calls
 - **Skills available list** — periodic re-enumeration of Skill entries (informational)
 - **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
-- **Auto-memory staleness** — reading a memory flagged old (verify against current code before asserting)
 - **Background task completion** — a `Bash(run_in_background)` task ended
 - **Date change** — local date rolled over
 - **Auto mode active** — session is in auto mode (see `@smith-auto_mode/SKILL.md`)
