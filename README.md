@@ -944,11 +944,9 @@ and reload degrades:
   `~/.claude/projects/«project»/memory/` (Claude Code, local).
 - **Reload-flag hook** — the memory-restore directive is injected as context on
   the next `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
-  (`on-session-clear.sh`) is registered; the restore itself executes at the
-  user's first prompt after `/clear` (any prompt) — hooks cannot start a model
-  turn in an interactive session. That hook set (SessionStart / Stop /
-  UserPromptSubmit / PostToolUse) is documented in
-  `smith-plan-claude/references/HOOKS.md`; without it, use the manual
+  (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
+  conditions and outcomes are in `smith-plan-claude/references/HOOKS.md`
+  "Checkpoint memory-restore flag". Without that hook, use the manual
   `/smith-recon "resume …"` path printed in the checkpoint's Reload block.
 - **Session-restart marker hook** — register `mark-session-restart.sh` on
   **SessionStart** for BOTH `clear` and `compact`. Without it, `inject-plan.sh`
