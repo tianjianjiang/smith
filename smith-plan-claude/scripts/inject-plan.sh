@@ -1,33 +1,11 @@
 #!/bin/bash
-#
-# inject-plan.sh - UserPromptSubmit hook for plan-sync skill
-#
-# Ralph Loop Compatible: Reads fresh from disk on EVERY invocation.
-# This ensures each iteration gets the latest plan with updated progress.
-#
-# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
-# sessions (even in the same CWD) don't interfere with each other.
-# PPID persists across /clear (Claude Code doesn't restart); session_id does not.
-#
-# Triggers:
-#   - "execute-plan", "!load-plan", "!plan"
-#   - "execute the plan", "load the plan", "run the plan", "start the plan"
-#   - "reload" (exact), "reload plan", "reload the plan"
-#   - "!plan-status" (shows progress summary)
-#
-# Auto-load:
-#   - Pending-reload flag (<1hr old, CWD-matched): loads flagged plan after /clear
-#   - on-session-clear.sh: fires after manual /clear (primary injection point)
-#
-# Clear-and-Reload:
-#   - Auto-reloads plan after /clear when CWD-specific flag file exists
-#   - Detects high context (transcript size) and creates flag + warning
-#
-# For Ralph loop: This hook fires at the start of each iteration,
-# loading the updated plan file that Claude wrote in the previous iteration.
-#
 
 source "$(dirname "$0")/lib-plan.sh"
+
+CTX_INSTRUCTIONS_LIB="$(dirname "$0")/../../smith-ctx-claude/scripts/lib-context-instructions.sh"
+if [[ -f "$CTX_INSTRUCTIONS_LIB" ]]; then
+    source "$CTX_INSTRUCTIONS_LIB"
+fi
 require_jq
 
 # Read input JSON from stdin
@@ -244,29 +222,39 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             printf '%s\n%s\n%s\n%s\n%s\n' "" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
         fi
 
-        # Block 2: Ralph/Orchestrator state management (deterministic actions only)
-        # Context % output is handled by ctx-claude's context-warning.sh (DRY)
         if [[ "$RALPH_ACTIVE" == "true" ]]; then
-            # Save Ralph resume state (preemptive at warning, required at critical)
             save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
                 "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
             if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]]; then
-                # Force-exit Ralph at critical threshold
                 if force_ralph_exit "$RALPH_CWD"; then
                     CONTEXT_MSG="ralph: exiting | iter: ${RALPH_ITERATION:-?}"
                 else
                     CONTEXT_MSG="ralph: exit-failed | iter: ${RALPH_ITERATION:-?}"
                 fi
+                if type render_critical_ralph &>/dev/null; then
+                    CONTEXT_MSG+=$(printf '\n\n%s' "$(render_critical_ralph)")
+                fi
             else
                 CONTEXT_MSG="ralph: active | iter: ${RALPH_ITERATION:-?}"
+                if type render_warning_ralph &>/dev/null; then
+                    CONTEXT_MSG+=$(printf '\n\n%s' "$(render_warning_ralph "${RALPH_ITERATION:-?}" "$ACTIVE_PLAN" "$PENDING" "$CRITICAL_PCT")")
+                fi
             fi
         elif [[ "$ORCH_ACTIVE_MODE" == "true" ]]; then
-            # Save Orchestrator resume state
             save_orchestrator_resume "$CWD_KEY" "${ORCH_ITERATION:-0}" "${ORCH_MAX_ITERATIONS:-20}" \
                 "${ORCH_PLAN_PATH:-${ACTIVE_PLAN:-}}" "${ORCH_COMPLETION_PROMISE:-}" "${ORCH_CURRENT_TASK:-}"
-            CONTEXT_MSG="orchestrator: active | iter: ${ORCH_ITERATION:-?}"
+            if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]]; then
+                CONTEXT_MSG="orchestrator: critical | iter: ${ORCH_ITERATION:-?}"
+                if type render_critical_orchestrator &>/dev/null; then
+                    CONTEXT_MSG+=$(printf '\n\n%s' "$(render_critical_orchestrator "${ORCH_ITERATION:-?}")")
+                fi
+            else
+                CONTEXT_MSG="orchestrator: active | iter: ${ORCH_ITERATION:-?}"
+                if type render_warning_orchestrator &>/dev/null; then
+                    CONTEXT_MSG+=$(printf '\n\n%s' "$(render_warning_orchestrator "${ORCH_ITERATION:-?}" "$ACTIVE_PLAN" "$PENDING")")
+                fi
+            fi
         fi
-        # Non-Ralph/Orchestrator: no output (context-warning.sh handles generic context)
     fi
 fi
 

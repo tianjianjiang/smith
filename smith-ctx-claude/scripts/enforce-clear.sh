@@ -1,27 +1,10 @@
 #!/bin/bash
-#
-# enforce-clear.sh - Unified Stop hook for context management
-#
-# Canonical location: smith-ctx-claude (context management foundation).
-# Handles both plan and non-plan contexts (single hook design).
-#
-# Blocks at 60% context using real token counts from transcript JSONL.
-# Uses stop_hook_active (official best practice) for loop prevention.
-#
-# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
-# sessions (even in the same CWD) don't interfere with each other.
-#
-# Env vars:
-#   CTX_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
-#   CONTEXT_WINDOW_TOKENS - Fallback context window size (default: 200000)
-#
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Source context functions (canonical location)
 source "${SCRIPT_DIR}/lib-context.sh"
+source "${SCRIPT_DIR}/lib-context-instructions.sh"
 
-# Source plan-claude's lib for plan/Ralph/Orchestrator functions (optional)
 PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/../../smith-plan-claude/scripts/lib-plan.sh}"
 if [[ -f "$PLAN_LIB" ]]; then
     source "$PLAN_LIB"
@@ -128,17 +111,19 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
-# Structured output: deterministic values only, no placeholders
 case "$FLAG_TYPE" in
     plan-pending)
-        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: ${ACTIVE_PLAN} | pending: ${PENDING} | action: save, /clear"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: \"${ACTIVE_PLAN}\" | pending: ${PENDING}"
         ;;
     plan-completed)
-        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: ${COMPLETED_PLAN} (done) | action: save, /clear"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | plan: \"${COMPLETED_PLAN}\" (done)"
         ;;
     *)
-        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}% | action: save, /clear"
+        MSG="context: ${CONTEXT_PCT}% | crit: ${CRITICAL_PCT}%"
         ;;
 esac
+
+INSTRUCTIONS=$(render_critical_generic)
+MSG+=$(printf '\n\n%s' "$INSTRUCTIONS")
 
 json_stop_block "$MSG"
