@@ -6,7 +6,7 @@
 #        If no name given, loads most recent plan
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 PLAN_NAME="$1"
 OWN_SCOPE=$(scope_key "${PWD:-}")
 

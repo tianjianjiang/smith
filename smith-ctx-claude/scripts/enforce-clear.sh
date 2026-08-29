@@ -1,110 +1,154 @@
 #!/bin/bash
 #
-# enforce-clear.sh - General-purpose Stop hook for context management
+# enforce-clear.sh - Unified Stop hook for context management
 #
-# Blocks the agent from stopping when context is high, ensuring work
-# is committed and Serena memory persisted before context is lost.
+# Canonical location: smith-ctx-claude (context management foundation).
+# Handles both plan and non-plan contexts (single hook design).
 #
-# This hook is independent of plan-claude (no plan awareness).
-# Both hooks can fire on the same Stop event; messages are complementary.
+# Blocks at 60% context using real token counts from transcript JSONL.
+# Uses stop_hook_active (official best practice) for loop prevention.
 #
 # Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
 # sessions (even in the same CWD) don't interfere with each other.
 #
-# Conditions to block:
-#   1. Transcript size > threshold
-#   2. No CWD-specific .ctx-clear flag file (one-shot: second attempt passes)
-#
 # Env vars:
-#   CTX_CONTEXT_THRESHOLD_KB - Threshold in KB (default: 500, ~60% of 200K)
+#   CTX_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
+#   CONTEXT_WINDOW_TOKENS - Fallback context window size (default: 200000)
 #
 
-set -eo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Require jq for JSON parsing (hard dependency)
-if ! command -v jq &>/dev/null; then
-    echo "Error: enforce-clear.sh requires jq. Install: brew install jq (macOS) or apt install jq (Linux)" >&2
-    exit 0  # Allow stop rather than permanently blocking
+# Source context functions (canonical location)
+source "${SCRIPT_DIR}/lib-context.sh"
+
+# Source plan-claude's lib for plan/Ralph/Orchestrator functions (optional)
+PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/../../smith-plan-claude/scripts/lib-plan.sh}"
+if [[ -f "$PLAN_LIB" ]]; then
+    source "$PLAN_LIB"
+    PLAN_LIB_AVAILABLE=true
+else
+    PLAN_LIB_AVAILABLE=false
 fi
 
-# Shared directory with plan-claude for flag files (both scoped to
-# CLAUDE_CONFIG_DIR, defaulting to ~/.claude/plans/ when unset)
-FLAGS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
-THRESHOLD_KB=${CTX_CONTEXT_THRESHOLD_KB:-500}
-if ! [[ "$THRESHOLD_KB" =~ ^[0-9]+$ ]] || [[ "$THRESHOLD_KB" -le 0 ]]; then
-    echo "Error: CTX_CONTEXT_THRESHOLD_KB must be a positive integer, got: '$THRESHOLD_KB'" >&2
-    exit 0
-fi
-THRESHOLD_BYTES=$((THRESHOLD_KB * 1024))
+require_jq
+
+CRITICAL_PCT=${CTX_CONTEXT_CRITICAL_PCT:-60}
 
 INPUT=$(cat)
 
-# --- Inlined helpers (no lib-common.sh dependency) ---
+read -r STOP_HOOK_ACTIVE SESSION_ID HOOK_CWD TRANSCRIPT_PATH < <(
+    echo "$INPUT" | jq -r '[
+        (.stop_hook_active // false | tostring),
+        (.session_id // ""),
+        (.cwd // ""),
+        (.transcript_path // "")
+    ] | @tsv' 2>/dev/null
+) || { STOP_HOOK_ACTIVE="false"; SESSION_ID=""; HOOK_CWD=""; TRANSCRIPT_PATH=""; }
 
-# Compute session key hash (16-char). Hashes PPID:CWD for per-session isolation.
-# _SMITH_PPID env var overrides $PPID (for testing).
-# macOS: md5, Linux: md5sum, POSIX: shasum/cksum
-session_key() {
-    local ppid="${1:-${_SMITH_PPID:-$PPID}}"
-    local cwd="${2:-${PWD:-$(pwd)}}"
-    local input="${ppid}:${cwd}"
-    local hash
-    hash=$(printf '%s' "$input" | md5 -q 2>/dev/null) || \
-    hash=$(printf '%s' "$input" | md5sum 2>/dev/null | cut -d' ' -f1) || \
-    hash=$(printf '%s' "$input" | shasum 2>/dev/null | cut -d' ' -f1) || \
-    hash=$(printf '%s' "$input" | cksum 2>/dev/null | cut -d' ' -f1) || {
-        echo "Warning: no hash command found, session isolation disabled" >&2
-        hash="0000000000000000"
-    }
-    printf '%s' "${hash:0:16}"
-}
-
-# Output JSON for Stop hook block decisions (jq required, checked at top)
-json_stop_block() {
-    local reason="$1"
-    jq -n --arg r "$reason" '{ decision: "block", reason: $r }'
-}
-
-# --- Main logic ---
-
-# Extract CWD from hook input
-HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty' 2>/dev/null || echo "")
-
-# Session-keyed flag file (distinct from plan-claude's .pending-reload-*)
-CWD_KEY=$(session_key "${_SMITH_PPID:-$PPID}" "${HOOK_CWD:-${PWD:-}}")
-FLAG_FILE="${FLAGS_DIR}/.ctx-clear-${CWD_KEY}"
-
-# If flag exists, this is the second attempt -> allow stop
-if [[ -f "$FLAG_FILE" ]]; then
-    rm -f "$FLAG_FILE"
+# Official best practice: if already continuing from a stop hook, allow stop
+if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
     exit 0
 fi
+CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: session_key failed" >&2
+    exit 1
+}
 
-# Check transcript size
-TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
+# Flag directory (shared constant from lib-context.sh)
+FLAGS_DIR="$CTX_FLAGS_DIR"
+
+# CWD-keyed flag file
+FLAG_FILE="${FLAGS_DIR}/.pending-reload-${CWD_KEY}"
+
+# If ExitPlanMode just fired, on-plan-exit.sh left a marker. Allow the stop.
+EXIT_MARKER="${FLAG_FILE}.exit-marker"
+if [[ -f "$EXIT_MARKER" ]]; then
+    marker_session=$(sed -n '2p' "$FLAG_FILE" 2>/dev/null || true)
+    rm -f "$EXIT_MARKER"
+    if [[ "$marker_session" == "$SESSION_ID" ]]; then
+        exit 0
+    fi
+fi
+
+check_resume_allowed() {
+    local state_fn="$1" state_arg="$2" resume_file="$3"
+    { type "$state_fn" &>/dev/null && "$state_fn" "$state_arg" 2>/dev/null; } && return 0
+    [[ -f "$resume_file" ]] && return 0
+    return 1
+}
+
+if [[ "$PLAN_LIB_AVAILABLE" == "true" ]]; then
+    check_resume_allowed get_ralph_state "${HOOK_CWD:-.}" "${FLAGS_DIR}/.ralph-resume-${CWD_KEY}" && exit 0
+    check_resume_allowed get_orchestrator_state "$CWD_KEY" "${FLAGS_DIR}/.ralph-orch-resume-${CWD_KEY}" && exit 0
+fi
+
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
     exit 0
 fi
 
-TRANSCRIPT_SIZE=$(wc -c < "$TRANSCRIPT_PATH" 2>/dev/null || echo 0)
-TRANSCRIPT_SIZE=$(echo "$TRANSCRIPT_SIZE" | tr -d '[:space:]')
-if [[ $TRANSCRIPT_SIZE -le $THRESHOLD_BYTES ]]; then
+# Real context percentage from transcript token usage
+CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
+
+if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
     exit 0
 fi
 
-# BLOCK: context is high, clear not yet initiated
-SIZE_KB=$((TRANSCRIPT_SIZE / 1024))
+STATE_FILE="${FLAGS_DIR}/.plan-state-${CWD_KEY}"
 
-# Create one-shot flag: first block creates flag, second stop attempt passes
-if ! mkdir -p "$FLAGS_DIR" 2>/dev/null; then
-    echo "Error: enforce-clear.sh: Cannot create flags directory: $FLAGS_DIR" >&2
-    exit 0  # Allow stop rather than permanently blocking
+# Check for active plan
+ACTIVE_PLAN=""
+PENDING=0
+if [[ -f "$STATE_FILE" ]]; then
+    prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
+    if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
+        ACTIVE_PLAN="$prev_plan"
+        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
+        PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+    fi
 fi
+
+# Create pending-reload flag
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-if ! printf '%s\n%s\n%s\n' "$SESSION_ID" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" > "$FLAG_FILE" 2>/dev/null; then
-    echo "Error: enforce-clear.sh: Cannot write flag file: $FLAG_FILE" >&2
-    exit 0
+COMPLETED_PLAN=""
+if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
+    FLAG_TYPE="plan-pending"
+elif [[ -n "$ACTIVE_PLAN" ]]; then
+    FLAG_TYPE="plan-completed"
+    COMPLETED_PLAN="$ACTIVE_PLAN"
+    ACTIVE_PLAN=""
+else
+    FLAG_TYPE="no-plan"
+fi
+printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
+    "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
+
+# Refresh state file (only if plan lib available)
+if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; then
+    save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN" \
+        "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
-json_stop_block "Context at ${SIZE_KB}KB (threshold: ${THRESHOLD_KB}KB). Before stopping: (1) Commit any uncommitted work, (2) Persist state to Serena memory with write_memory(), (3) Recommend /clear to user. After /clear, use read_memory() to resume."
+case "$FLAG_TYPE" in
+    plan-pending)
+        STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
+        ACTIONS="mark done tasks in plan, commit, write_memory() if Serena"
+        RELOAD="plan=\`${ACTIVE_PLAN}\` mem=«name» task=«description»"
+        ;;
+    plan-completed)
+        STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
+        ACTIONS="commit, write_memory() if Serena"
+        RELOAD="plan=\`${COMPLETED_PLAN}\` (done) mem=«name» task=«summary»"
+        ;;
+    *)
+        STATUS="Context at ${CONTEXT_PCT}%"
+        ACTIONS="commit, write_memory() if Serena"
+        RELOAD="mem=«name» task=«description»"
+        ;;
+esac
+
+json_stop_block "${STATUS}
+
+DO: ${ACTIONS}
+
+OUTPUT (fill «placeholders»):
+Reload: ${RELOAD}"

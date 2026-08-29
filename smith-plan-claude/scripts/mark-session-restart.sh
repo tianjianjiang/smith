@@ -7,13 +7,14 @@
 # Rationale and the gate it feeds: references/HOOKS.md, "Session-restart marker".
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 require_jq
 
 INPUT=$(cat)
 
 HOOK_SOURCE=$(echo "$INPUT" | jq -r '.source // empty' 2>/dev/null || echo "")
 HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+HOOK_MODEL=$(echo "$INPUT" | jq -r '.model // empty' 2>/dev/null || echo "")
 
 case "$HOOK_SOURCE" in
     clear|compact) ;;
@@ -40,6 +41,10 @@ if ! printf '%s\n%s\n%s\n' \
     echo "Error: cannot write session-restart marker: $MARKER_FILE" >&2
     rm -f "$TMP" 2>/dev/null
     exit 1
+fi
+
+if [[ -n "$HOOK_MODEL" ]]; then
+    save_session_model "$CWD_KEY" "$HOOK_MODEL"
 fi
 
 SENTINEL_FILE="${PLANS_DIR}/.sr-hook-installed"

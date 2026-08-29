@@ -44,7 +44,7 @@
 # a live /clear that shows the restore directive proves the read side.
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 
 # Strip newlines so a multi-line arg cannot shift the line schema readers depend on.
 # Tabs go too. The reader's row separator is 0x1F rather than a tab — bash treats tab

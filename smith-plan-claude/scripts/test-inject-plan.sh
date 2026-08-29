@@ -53,7 +53,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 INJECT_SCRIPT="$SCRIPT_DIR/scripts/inject-plan.sh"
-ENFORCE_SCRIPT="$SCRIPT_DIR/scripts/enforce-clear.sh"
+ENFORCE_SCRIPT="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
 PLAN_EXIT_SCRIPT="$SCRIPT_DIR/scripts/on-plan-exit.sh"
 SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
 
@@ -118,26 +118,26 @@ compute_session_key() {
     printf '%s' "${hash:0:16}"
 }
 
-# Patch a fresh copy of lib-common.sh into $TEST_DIR with PLANS_DIR pointed
+# Patch a fresh copy of lib-plan.sh into $TEST_DIR with PLANS_DIR pointed
 # at the test sandbox, and confirm the substitution actually took effect.
 # Returns 1 (copy still written) on a mismatch so callers can fail closed --
-# without this check, a PLANS_DIR line-format drift in lib-common.sh would
+# without this check, a PLANS_DIR line-format drift in lib-plan.sh would
 # silently leave the copy pointed at the REAL ~/.claude/plans. Two call
 # sites (create_patched_scripts, Test 61) need different responses to that
 # failure (abort everything vs. fail just one test), so this only shares the
 # patch+check mechanism, not the response.
 patch_lib_common() {
     sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_DIR"'"|' \
-        "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/lib-common.sh"
-    grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-common.sh"
+        "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/lib-plan.sh"
+    grep -q "PLANS_DIR=\"$PLANS_DIR\"" "$TEST_DIR/lib-plan.sh"
 }
 
 # Create patched copies of scripts that use our test PLANS_DIR
 # Only patches PLANS_DIR; flag/state files are computed dynamically from CWD/session key
-# Also patches lib-common.sh (shared library sourced by all hook scripts)
+# Also patches lib-plan.sh (shared library sourced by all hook scripts)
 create_patched_scripts() {
-    # Patch lib-common.sh first (scripts source it from their own directory)
-    LIB_COMMON="$SCRIPT_DIR/scripts/lib-common.sh"
+    # Patch lib-plan.sh first (scripts source it from their own directory)
+    LIB_COMMON="$SCRIPT_DIR/scripts/lib-plan.sh"
     # Fail-closed: nearly every test below sources this patched copy, so a
     # silent substitution miss here would run the whole suite against the
     # REAL ~/.claude/plans instead of $TEST_DIR -- a hard exit, because this
@@ -145,17 +145,23 @@ create_patched_scripts() {
     # be trusted if it's broken (unlike Test 61's guard, which only scopes a
     # FAIL to its own assertion).
     if ! patch_lib_common; then
-        echo "FATAL: PLANS_DIR substitution did not take effect in test lib-common.sh" >&2
+        echo "FATAL: PLANS_DIR substitution did not take effect in test lib-plan.sh" >&2
         exit 1
     fi
-    chmod +x "$TEST_DIR/lib-common.sh"
+    chmod +x "$TEST_DIR/lib-plan.sh"
 
-    # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-common.sh)
+    # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-plan.sh)
     cp "$INJECT_SCRIPT" "$TEST_DIR/inject-plan.sh"
     chmod +x "$TEST_DIR/inject-plan.sh"
 
     cp "$ENFORCE_SCRIPT" "$TEST_DIR/enforce-clear.sh"
     chmod +x "$TEST_DIR/enforce-clear.sh"
+
+    cp "$SCRIPT_DIR/../smith-ctx-claude/scripts/lib-context.sh" "$TEST_DIR/lib-context.sh"
+
+    export SMITH_CTX_LIB="$TEST_DIR/lib-context.sh"
+    export SMITH_PLAN_LIB="$TEST_DIR/lib-plan.sh"
+    export CLAUDE_CONFIG_DIR="$TEST_DIR"
 
     cp "$PLAN_EXIT_SCRIPT" "$TEST_DIR/on-plan-exit.sh"
     chmod +x "$TEST_DIR/on-plan-exit.sh"
@@ -180,9 +186,9 @@ create_transcript_pct() {
     local name="${2:-default}"
     local model="${3:-claude-opus-4-6}"
     local path="$TEST_DIR/transcript-${name}.jsonl"
-    # Source lib-common.sh to get model_to_context_window (use patched version)
+    # Source lib-plan.sh to get model_to_context_window (use patched version)
     local context_window
-    context_window=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "$model")
+    context_window=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "$model")
     local tokens=$(( pct * context_window / 100 ))
     printf '{"type":"assistant","message":{"model":"%s","usage":{"input_tokens":%d,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' "$model" "$tokens" > "$path"
     echo "$path"
@@ -1724,8 +1730,8 @@ echo ""
 # --- Test 41: Legacy Sonnet transcript at 55% -> 200K auto-detected -> returns ~55 ---
 echo "Test 41: Legacy Sonnet (4.5) transcript at 55% -> 200K auto-detected -> returns ~55"
 TRANSCRIPT_41=$(create_transcript_pct 55 "t41" "claude-sonnet-4-5")
-# Source patched lib-common.sh to call get_context_percentage directly
-PCT_41=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_41")
+# Source patched lib-plan.sh to call get_context_percentage directly
+PCT_41=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_41")
 if [[ $PCT_41 -ge 54 ]] && [[ $PCT_41 -le 56 ]]; then
     echo "  PASS (got ${PCT_41}%)"
     PASS=$((PASS + 1))
@@ -1737,7 +1743,7 @@ fi
 # --- Test 41b: Current-gen Sonnet (4.6) transcript at 55% -> 1M auto-detected -> returns ~55 ---
 echo "Test 41b: Current-gen Sonnet (4.6) transcript at 55% -> 1M auto-detected -> returns ~55"
 TRANSCRIPT_41B=$(create_transcript_pct 55 "t41b" "claude-sonnet-4-6")
-PCT_41B=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_41B")
+PCT_41B=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_41B")
 if [[ $PCT_41B -ge 54 ]] && [[ $PCT_41B -le 56 ]]; then
     echo "  PASS (got ${PCT_41B}%)"
     PASS=$((PASS + 1))
@@ -1749,7 +1755,7 @@ fi
 # --- Test 42: Haiku transcript at 55% -> 200K auto-detected -> returns ~55 ---
 echo "Test 42: Haiku transcript at 55% -> 200K auto-detected -> returns ~55"
 TRANSCRIPT_42=$(create_transcript_pct 55 "t42" "claude-haiku-4-5-20251001")
-PCT_42=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_42")
+PCT_42=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_42")
 if [[ $PCT_42 -ge 54 ]] && [[ $PCT_42 -le 56 ]]; then
     echo "  PASS (got ${PCT_42}%)"
     PASS=$((PASS + 1))
@@ -1761,7 +1767,7 @@ fi
 # --- Test 43: Opus (no [1m] suffix) transcript at 55% -> maps to 1M -> returns ~55 ---
 echo 'Test 43: Opus (no [1m] suffix) transcript at 55% -> 1M window -> returns ~55'
 TRANSCRIPT_43=$(create_transcript_pct 55 "t43" "claude-opus-4-6")
-PCT_43=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_43")
+PCT_43=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_43")
 if [[ $PCT_43 -ge 54 ]] && [[ $PCT_43 -le 56 ]]; then
     echo "  PASS (got ${PCT_43}%)"
     PASS=$((PASS + 1))
@@ -1774,7 +1780,7 @@ fi
 echo "Test 44: Explicit context_window arg bypasses model auto-detection"
 # Create a legacy Sonnet (4.5, 200K window) transcript but pass 1M explicitly -> should return ~11%
 TRANSCRIPT_44=$(create_transcript_pct 55 "t44" "claude-sonnet-4-5")
-PCT_44=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_44" "1000000")
+PCT_44=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_44" "1000000")
 # 55% of 200K = 110K tokens. 110K / 1M = 11%
 if [[ $PCT_44 -ge 10 ]] && [[ $PCT_44 -le 12 ]]; then
     echo "  PASS (got ${PCT_44}%)"
@@ -1789,7 +1795,7 @@ echo "Test 45: No model field in transcript -> falls back to CONTEXT_WINDOW_TOKE
 # Create transcript without model field (old format)
 TRANSCRIPT_45="$TEST_DIR/transcript-t45.jsonl"
 printf '{"type":"assistant","message":{"usage":{"input_tokens":110000,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' > "$TRANSCRIPT_45"
-PCT_45=$(source "$TEST_DIR/lib-common.sh" && get_context_percentage "$TRANSCRIPT_45")
+PCT_45=$(source "$TEST_DIR/lib-plan.sh" && get_context_percentage "$TRANSCRIPT_45")
 # 110K / 200K = 55%
 if [[ $PCT_45 -ge 54 ]] && [[ $PCT_45 -le 56 ]]; then
     echo "  PASS (got ${PCT_45}%)"
@@ -1832,16 +1838,16 @@ rm -f "$PLANS_DIR/.model-${CWD_46_KEY}"
 # --- Test 47: model_to_context_window maps [1m] suffix and current-gen Sonnet correctly ---
 echo "Test 47: model_to_context_window maps [1m] suffix, current-gen Sonnet, and legacy models correctly"
 T47_PASS=true
-CTX_1M=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1m]")
-CTX_1M_UPPER=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6[1M]")
-CTX_SONNET_LEGACY=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-5")
-CTX_SONNET_4_6=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-6")
-CTX_SONNET_4_7=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-7")
-CTX_SONNET_4_DATED=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-4-20250514")
-CTX_SONNET_5=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-sonnet-5")
-CTX_HAIKU=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-haiku-4-5-20251001")
-CTX_OPUS=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-opus-4-6")
-CTX_MYTHOS=$(source "$TEST_DIR/lib-common.sh" && model_to_context_window "claude-mythos-1")
+CTX_1M=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-opus-4-6[1m]")
+CTX_1M_UPPER=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-opus-4-6[1M]")
+CTX_SONNET_LEGACY=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-sonnet-4-5")
+CTX_SONNET_4_6=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-sonnet-4-6")
+CTX_SONNET_4_7=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-sonnet-4-7")
+CTX_SONNET_4_DATED=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-sonnet-4-20250514")
+CTX_SONNET_5=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-sonnet-5")
+CTX_HAIKU=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-haiku-4-5-20251001")
+CTX_OPUS=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-opus-4-6")
+CTX_MYTHOS=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "claude-mythos-1")
 if [[ "$CTX_1M" != "1000000" ]]; then
     echo "  [1m] -> expected 1000000, got $CTX_1M"
     T47_PASS=false
@@ -2297,7 +2303,7 @@ rm -f "$PLANS_DIR"/.pending-memory-restore-*
 if patch_lib_common; then
     T61_SUBST_OK=true
 else
-    echo "  ASSERT FAILED: PLANS_DIR substitution did not take effect in test lib-common.sh"
+    echo "  ASSERT FAILED: PLANS_DIR substitution did not take effect in test lib-plan.sh"
     T61_SUBST_OK=false
 fi
 cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
@@ -2449,9 +2455,9 @@ else
 fi
 
 # --- Test 67: PLANS_DIR resolves via CLAUDE_CONFIG_DIR, falls back to $HOME/.claude when unset ---
-# Every other test sources a sed-patched lib-common.sh whose PLANS_DIR line is
+# Every other test sources a sed-patched lib-plan.sh whose PLANS_DIR line is
 # overwritten wholesale, so none of them exercise this expression itself.
-# Source the REAL lib-common.sh directly, with a throwaway HOME so a broken
+# Source the REAL lib-plan.sh directly, with a throwaway HOME so a broken
 # fallback can't touch anything real.
 echo "Test 67: PLANS_DIR respects CLAUDE_CONFIG_DIR, falls back to \$HOME/.claude when unset or empty"
 FAKE_HOME="$TEST_DIR/fake-home-67"
@@ -2470,7 +2476,7 @@ else
 fi
 
 # --- Test 68: the 3 manually-invoked scripts (list/load/plan-status) pick up
-# CLAUDE_CONFIG_DIR via their new `source lib-common.sh` -- these are never
+# CLAUDE_CONFIG_DIR via their new `source lib-plan.sh` -- these are never
 # copied into $TEST_DIR by create_patched_scripts(), so this runs the REAL
 # scripts directly against a throwaway profile directory containing one
 # real plan file, and checks each picks the override up rather than the
@@ -2495,19 +2501,19 @@ else
 fi
 
 # --- Test 69: smith-ctx-claude/scripts/enforce-clear.sh FLAGS_DIR stays in
-# sync with lib-common.sh PLANS_DIR. That sibling hook hand-duplicates the
-# directory expression (different skill directory, can't source lib-common.sh),
+# sync with lib-plan.sh PLANS_DIR. That sibling hook hand-duplicates the
+# directory expression (different skill directory, can't source lib-plan.sh),
 # so nothing else in this suite exercises it -- compare the two expressions
 # textually so an independent drift fails loudly here.
-echo "Test 69: smith-ctx-claude enforce-clear.sh FLAGS_DIR expression matches lib-common.sh PLANS_DIR"
+echo "Test 69: smith-ctx-claude enforce-clear.sh FLAGS_DIR expression matches lib-plan.sh PLANS_DIR"
 CTX_ENFORCE="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
-LIB_EXPR=$(grep -m1 '^PLANS_DIR=' "$SCRIPT_DIR/scripts/lib-common.sh" | sed 's/^PLANS_DIR=//')
+LIB_EXPR=$(grep -m1 '^PLANS_DIR=' "$SCRIPT_DIR/scripts/lib-plan.sh" | sed 's/^PLANS_DIR=//')
 CTX_EXPR=$(grep -m1 '^FLAGS_DIR=' "$CTX_ENFORCE" | sed 's/^FLAGS_DIR=//')
 if [[ -n "$LIB_EXPR" ]] && [[ "$CTX_EXPR" == "$LIB_EXPR" ]]; then
     echo "  PASS"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL (lib-common.sh -> '$LIB_EXPR', enforce-clear.sh -> '$CTX_EXPR')"
+    echo "  FAIL (lib-plan.sh -> '$LIB_EXPR', enforce-clear.sh -> '$CTX_EXPR')"
     FAIL=$((FAIL + 1))
 fi
 
@@ -2860,12 +2866,12 @@ git -C "$REPO_82" init -q 2>/dev/null
 git -C "$REPO_82" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_82" worktree add -q --detach "$WT_82" HEAD 2>/dev/null
 ln -sfn "$TEST_DIR/plain-82" "$TEST_DIR/link-82"
-T82_MAIN=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82")
-T82_WT=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$WT_82")
-T82_SUB=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82/sub/dir")
-T82_GONE=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/never-created-82")
-T82_LINK=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/link-82")
-T82_PLAIN=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/plain-82")
+T82_MAIN=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82")
+T82_WT=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$WT_82")
+T82_SUB=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$REPO_82/sub/dir")
+T82_GONE=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/never-created-82")
+T82_LINK=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/link-82")
+T82_PLAIN=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$TEST_DIR/plain-82")
 # An unreachable path MUST return empty, not the raw input: a raw input compares
 # unequal to everything and so poses as a confident "belongs somewhere else".
 if [[ -d "$WT_82" ]] && \
@@ -3307,7 +3313,7 @@ else
     PLANS_97="$CFG_97/plans"
     CWD_97="$TEST_DIR/worktree-97"
     mkdir -p "$PLANS_97" "$CWD_97" "$TEST_DIR/t97"
-    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_97"'"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t97/lib-common.sh"
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_97"'"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t97/lib-plan.sh"
     cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t97/on-session-clear.sh"
     printf '%s\n%s\n%s\n%s\n' "sess_97" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_97" "checkpoint-97" \
         > "$PLANS_97/.pending-memory-restore-20260816T000097-97097"
@@ -3816,7 +3822,7 @@ fi
 # can see — a worse silence than the one the guard was added to remove.
 echo "Test 114: memory-restore: a relative missing PLANS_DIR terminates instead of spinning"
 mkdir -p "$TEST_DIR/t114" "$TEST_DIR/cwd-114"
-sed -e 's|^PLANS_DIR=.*|PLANS_DIR="cfg-114-missing/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t114/lib-common.sh"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="cfg-114-missing/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t114/lib-plan.sh"
 cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t114/on-session-clear.sh"
 OUT_114="$TEST_DIR/out-114.txt"
 : > "$OUT_114"
@@ -4094,7 +4100,7 @@ else
     CFG_122="$TEST_DIR/cfg-122"
     CWD_122="$TEST_DIR/worktree-122"
     mkdir -p "$CFG_122" "$CWD_122" "$TEST_DIR/t122"
-    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t122/lib-common.sh"
+    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t122/lib-plan.sh"
     cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t122/on-session-clear.sh"
     trap 'chmod 700 "$CFG_122" 2>/dev/null; cleanup' EXIT
     chmod 300 "$CFG_122"
@@ -4226,7 +4232,7 @@ echo "Test 127: memory-restore: an ancestor directory named .mr-claimed.* does n
 CFG_127="$TEST_DIR/.mr-claimed.decoy/cfg-127"
 CWD_127="$TEST_DIR/worktree-127"
 mkdir -p "$CFG_127/plans" "$CWD_127" "$TEST_DIR/t127"
-sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_127"'/plans"|' "$SCRIPT_DIR/scripts/lib-common.sh" > "$TEST_DIR/t127/lib-common.sh"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_127"'/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t127/lib-plan.sh"
 cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t127/on-session-clear.sh"
 MID_127=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 TMP_127="$CFG_127/plans/.mr-tmp.99999.decoy-12701"
@@ -6069,7 +6075,7 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-
 CWD_203="$TEST_DIR/worktree-203"; mkdir -p "$CWD_203"
 CWD_203_KEY=$(compute_session_key "$CWD_203")
 printf '%s\n' '# Own Plan 203' '' '- [ ] my task' > "$PLANS_DIR/own-plan-203.md"
-EXP_SCOPE_203=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_203")
+EXP_SCOPE_203=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_203")
 TRANSCRIPT_203=$(create_transcript_pct 10 "t203")
 echo '{"prompt":"do something","session_id":"sess_203","transcript_path":"'"$TRANSCRIPT_203"'","cwd":"'"$CWD_203"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
 STATE_203="$PLANS_DIR/.plan-state-${CWD_203_KEY}"
@@ -6108,7 +6114,7 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-
 CWD_205="$TEST_DIR/worktree-205"; mkdir -p "$CWD_205"
 CWD_205_KEY=$(compute_session_key "$CWD_205")
 printf '%s\n' '# Shared Plan 205' '' '- [ ] shared task' > "$PLANS_DIR/shared-plan-205.md"
-OWN_SCOPE_205=$(bash -c 'source "$1/lib-common.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_205")
+OWN_SCOPE_205=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_205")
 printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_sib205" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
     "$PLANS_DIR/shared-plan-205.md" "$OWN_SCOPE_205" > "$PLANS_DIR/.plan-state-cafecafecafecafe"
 TRANSCRIPT_205=$(create_transcript_pct 10 "t205")

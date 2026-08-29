@@ -9,7 +9,7 @@
 # sessions (even in the same CWD) don't interfere with each other.
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 require_jq
 
 INPUT=$(cat)
