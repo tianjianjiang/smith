@@ -70,23 +70,16 @@ if [[ -f "$EXIT_MARKER" ]]; then
     fi
 fi
 
-# Ralph/Orchestrator coordination (only if plan lib available)
-if [[ "$PLAN_LIB_AVAILABLE" == "true" ]]; then
-    RALPH_RESUME="${FLAGS_DIR}/.ralph-resume-${CWD_KEY}"
-    if type get_ralph_state &>/dev/null && get_ralph_state "${HOOK_CWD:-.}" 2>/dev/null; then
-        exit 0
-    fi
-    if [[ -f "$RALPH_RESUME" ]]; then
-        exit 0
-    fi
+check_resume_allowed() {
+    local state_fn="$1" state_arg="$2" resume_file="$3"
+    { type "$state_fn" &>/dev/null && "$state_fn" "$state_arg" 2>/dev/null; } && return 0
+    [[ -f "$resume_file" ]] && return 0
+    return 1
+}
 
-    ORCH_RESUME="${FLAGS_DIR}/.ralph-orch-resume-${CWD_KEY}"
-    if type get_orchestrator_state &>/dev/null && get_orchestrator_state "$CWD_KEY" 2>/dev/null; then
-        exit 0
-    fi
-    if [[ -f "$ORCH_RESUME" ]]; then
-        exit 0
-    fi
+if [[ "$PLAN_LIB_AVAILABLE" == "true" ]]; then
+    check_resume_allowed get_ralph_state "${HOOK_CWD:-.}" "${FLAGS_DIR}/.ralph-resume-${CWD_KEY}" && exit 0
+    check_resume_allowed get_orchestrator_state "$CWD_KEY" "${FLAGS_DIR}/.ralph-orch-resume-${CWD_KEY}" && exit 0
 fi
 
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then

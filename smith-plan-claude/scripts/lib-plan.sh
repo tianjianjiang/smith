@@ -78,7 +78,7 @@ scope_key() {
 # Usage: value=$(parse_yaml_field "$frontmatter" "field_name")
 parse_yaml_field() {
     local frontmatter="$1" field="$2"
-    echo "$frontmatter" | grep "^${field}:" | sed "s/^${field}:[[:space:]]*//" \
+    printf '%s\n' "$frontmatter" | grep "^${field}:" | sed "s/^${field}:[[:space:]]*//" \
         | sed 's/^"//; s/"$//' | sed "s/^'//; s/'$//"
 }
 
@@ -121,16 +121,6 @@ scope_compare() {
     else
         SCOPE_CLASS="outside"; SCOPE_PRIO=6
     fi
-}
-
-json_hook_output() {
-    local event="$1" content="$2"
-    jq -n --arg e "$event" --arg c "$content" '{
-        hookSpecificOutput: {
-            hookEventName: $e,
-            additionalContext: $c
-        }
-    }'
 }
 
 json_user_prompt_output() { json_hook_output "UserPromptSubmit" "$1"; }

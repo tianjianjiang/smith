@@ -40,9 +40,4 @@ else
     MSG="Context at ${CONTEXT_PCT}% (warning). Consider /compact or prepare for /clear."
 fi
 
-jq -n --arg msg "$MSG" '{
-    hookSpecificOutput: {
-        hookEventName: "UserPromptSubmit",
-        additionalContext: $msg
-    }
-}'
+json_hook_output "UserPromptSubmit" "$MSG"

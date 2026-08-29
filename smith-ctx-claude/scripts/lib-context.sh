@@ -156,3 +156,13 @@ json_stop_block() {
         reason: $r
     }'
 }
+
+json_hook_output() {
+    local event="$1" content="$2"
+    jq -n --arg e "$event" --arg c "$content" '{
+        hookSpecificOutput: {
+            hookEventName: $e,
+            additionalContext: $c
+        }
+    }'
+}
