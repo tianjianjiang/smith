@@ -42,10 +42,10 @@ const ALLOWLISTED_MARKER =
   /\b(TODO|FIXME|XXX|HACK|NOQA|noqa|SPDX|pragma)\b|eslint-disable|eslint-enable|prettier-ignore|@ts-[a-z]|type:\s|istanbul ignore|c8 ignore/;
 
 const STANDARDS_REMINDER =
-  "@smith-standards (SKILL.md:29-32): prefer self-documenting code over inline " +
-  "comments. Only keep a comment for a genuinely non-obvious why (config, TODO " +
-  "marker, complex algorithm, non-obvious business logic). Replace the rest with " +
-  "intention-revealing names.";
+  "@smith-standards (SKILL.md:29-33): NEVER add inline comments to code. " +
+  "Code must be self-documenting through clear naming, structure, and extraction " +
+  "of well-named functions. Allowed exceptions: config file value documentation " +
+  "(.env), standalone TODO markers on their own line.";
 
 function loadConfig() {
   try {
