@@ -8,13 +8,7 @@ Canonical instruction templates for context thresholds.
 1. Update plan file with current progress (mark completed as [x])
 2. Commit uncommitted work
 3. If Serena MCP available: write_memory() with descriptive name (task, decisions, file:line refs)
-4. AFTER all tool calls complete, output this block:
-
-**Reload with:**
-- Plan: `{{PLAN_PATH}}` ({{PENDING_COUNT}} pending)
-- Memory: `«name from step 3»` (read via read_memory() after /clear)
-- Resume: «describe current task»
-
+4. AFTER all tool calls complete, output Reload block with plan path and memory name
 5. Tell user to run /clear
 
 Plan auto-reloads after /clear.
@@ -38,10 +32,10 @@ Plan file: `{{PLAN_PATH}}` ({{PENDING_COUNT}} pending tasks)
 ## 60% Critical (Generic)
 
 **YOU MUST do these steps NOW:**
-1. Save state to Serena: write_memory() with descriptive name
-2. Update plan file with current progress
+1. Save state to Serena: write_memory() with descriptive name (task, decisions, file:line refs)
+2. Update plan file with current progress (mark completed as [x])
 3. Commit uncommitted work
-4. AFTER all tool calls, output Reload block (see 50% Warning template)
+4. AFTER all tool calls, output Reload block with plan path and memory name
 5. Tell user to run /clear
 
 ## 60% Critical (Ralph Active)
