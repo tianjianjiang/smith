@@ -27,14 +27,7 @@ if [[ -f "$PLAN_LIB" ]]; then
     source "$PLAN_LIB"
     PLAN_LIB_AVAILABLE=true
 else
-    # Fallback to old name during transition
-    PLAN_LIB="${SCRIPT_DIR}/../../smith-plan-claude/scripts/lib-common.sh"
-    if [[ -f "$PLAN_LIB" ]]; then
-        source "$PLAN_LIB"
-        PLAN_LIB_AVAILABLE=true
-    else
-        PLAN_LIB_AVAILABLE=false
-    fi
+    PLAN_LIB_AVAILABLE=false
 fi
 
 require_jq
@@ -139,41 +132,29 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
-# Build message based on context type
-if [[ "$FLAG_TYPE" == "plan-pending" ]]; then
-    json_stop_block "Context at ${CONTEXT_PCT}% with ${PENDING} pending tasks.
+# Build message (DRY: common structure, parameterized differences)
+# MECE: DO = actions to execute, OUTPUT = text to produce
+case "$FLAG_TYPE" in
+    plan-pending)
+        STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
+        ACTIONS="mark done tasks in plan, commit, write_memory() if Serena"
+        RELOAD="plan=\`${ACTIVE_PLAN}\` mem=«name» task=«description»"
+        ;;
+    plan-completed)
+        STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
+        ACTIONS="commit, write_memory() if Serena"
+        RELOAD="plan=\`${COMPLETED_PLAN}\` (done) mem=«name» task=«summary»"
+        ;;
+    *)
+        STATUS="Context at ${CONTEXT_PCT}%"
+        ACTIONS="commit, write_memory() if Serena"
+        RELOAD="mem=«name» task=«description»"
+        ;;
+esac
 
-**YOU MUST do these steps NOW (before user runs /clear):**
-1. Update plan: mark completed tasks (- [ ] -> - [x]) in plan file
-2. Commit uncommitted work
-3. If Serena MCP available: write_memory() with descriptive name (task, decisions, next steps, file:line refs)
-4. AFTER all tool calls complete, output this block:
+json_stop_block "${STATUS}
 
-**Reload with:**
-- Plan: \`${ACTIVE_PLAN}\`
-- Memory: \`«name from step 3»\` (read via read_memory() after /clear)
-- Resume: «describe current task»"
-elif [[ "$FLAG_TYPE" == "plan-completed" ]]; then
-    json_stop_block "Context at ${CONTEXT_PCT}%. Plan completed.
+DO: ${ACTIONS}
 
-**YOU MUST do these steps NOW:**
-1. Commit uncommitted work
-2. If Serena MCP available: write_memory() with descriptive name (summary of completed work)
-3. AFTER all tool calls complete, output this block:
-
-**Reload with:**
-- Plan: \`${COMPLETED_PLAN}\` (completed)
-- Memory: \`«name from step 3»\` (read via read_memory() after /clear)
-- Resume: «describe completed work»"
-else
-    json_stop_block "Context at ${CONTEXT_PCT}%.
-
-**YOU MUST do these steps NOW:**
-1. Commit uncommitted work
-2. If Serena MCP available: write_memory() with descriptive name (task, decisions, next steps, file:line refs)
-3. AFTER all tool calls complete, output this block:
-
-**Reload with:**
-- Memory: \`«name from step 3»\` (read via read_memory() after /clear)
-- Resume: «describe current task»"
-fi
+OUTPUT (fill «placeholders»):
+Reload: ${RELOAD}"

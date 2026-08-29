@@ -3,7 +3,7 @@
 # list-plans.sh - List available plan files with progress
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 OWN_SCOPE=$(scope_key "${PWD:-}")
 
 if [[ ! -d "$PLANS_DIR" ]]; then

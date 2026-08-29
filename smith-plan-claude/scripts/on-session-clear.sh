@@ -16,7 +16,7 @@
 # sessions (even in the same CWD) don't interfere with each other.
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 require_jq
 
 INPUT=$(cat)
@@ -673,7 +673,7 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
                 continue
             fi
             _mr_scope_cached "$_mr_fcwd"; _mr_fscope="$_MR_SCOPE_OUT"
-            # WHICH class this is, is decided by scope_compare() in lib-common.sh,
+            # WHICH class this is, is decided by scope_compare() in lib-plan.sh,
             # so the plan-file path can consume the same answer rather than grow a
             # second one. That path does NOT call it yet: this is the only caller,
             # into two different answers to the same question. HOW it is worded
@@ -1185,7 +1185,7 @@ if [[ -n "$_mr_rows" ]]; then
             _mr_notes+="\nNone of those rows carries a usable flag key, so do not attempt to delete one; report that and continue."
         else
             # PLANS_DIR, never a hardcoded ~/.claude/plans: it is
-            # "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans" (lib-common.sh), and under a
+            # "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans" (lib-plan.sh), and under a
             # non-default config directory a hardcoded path makes the agent's `rm -f`
             # a silent no-op — after which this same flag is re-offered at every
             # /clear until the seven-day sweep.

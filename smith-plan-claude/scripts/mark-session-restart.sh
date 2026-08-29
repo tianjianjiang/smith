@@ -7,7 +7,7 @@
 # Rationale and the gate it feeds: references/HOOKS.md, "Session-restart marker".
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 require_jq
 
 INPUT=$(cat)

@@ -27,7 +27,7 @@
 # loading the updated plan file that Claude wrote in the previous iteration.
 #
 
-source "$(dirname "$0")/lib-common.sh"
+source "$(dirname "$0")/lib-plan.sh"
 require_jq
 
 # Read input JSON from stdin
@@ -61,7 +61,7 @@ STATE_BASENAME=".plan-state-${CWD_KEY}"
 OWN_SCOPE=$(scope_key "${HOOK_CWD:-${PWD:-}}")
 
 # Save injection state for post-/clear detection.
-# Thin wrapper around shared save_state_file() from lib-common.sh.
+# Thin wrapper around shared save_state_file() from lib-plan.sh.
 save_injection_state() {
     save_state_file "$STATE_FILE" "${CURRENT_SESSION:-unknown}" "${TRANSCRIPT_PATH:-unknown}" "${PLAN_FILE:-}" "$OWN_SCOPE"
 }
