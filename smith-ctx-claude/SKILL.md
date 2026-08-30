@@ -97,11 +97,11 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 
 Flag-based auto-reload mechanism for plan and state restoration after `/clear`:
 
-**Injection points:**
-- `on-session-clear.sh` (SessionStart:clear) — Reliable plan injection post-`/clear` (`smith-plan-claude/scripts/`)
-- `inject-plan.sh` (UserPromptSubmit) — Flag-based reload or trigger word (`smith-plan-claude/scripts/`)
-- `enforce-clear.sh` (Stop) — Creates flag at 60%, outputs reload directive (`smith-ctx-claude/scripts/`)
-- `on-plan-exit.sh` (PostToolUse:ExitPlanMode) — Creates flag for later `/clear` (`smith-plan-claude/scripts/`)
+**Injection points (all in `smith-ctx-claude/scripts/`):**
+- `on-session-clear.sh` (SessionStart:clear) — Reliable plan injection post-`/clear`
+- `inject-plan.sh` (UserPromptSubmit) — Flag-based reload or trigger word
+- `enforce-clear.sh` (Stop) — Creates flag at 60%, outputs reload directive
+- `on-plan-exit.sh` (PostToolUse:ExitPlanMode) — Creates flag for later `/clear`
 
 **Flag file location:** `~/.claude/plans/.pending-reload-«session-hash»`
 
