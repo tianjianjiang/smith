@@ -2,7 +2,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
-  comment-density-lint
+  inline-comment-lint
 do
   sh "$HERE/$check.test.sh" || status=1
 done

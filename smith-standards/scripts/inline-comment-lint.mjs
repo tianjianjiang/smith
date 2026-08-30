@@ -1,15 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve, extname } from "node:path";
-
-const CONFIG_PATH = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "comment-lint-config.json",
-);
-
-const DEFAULT_CONFIG = { minCommentLines: 3, minCommentRatio: 0.25 };
+import { extname } from "node:path";
 
 const SLASH_COMMENT_OR_BLOCK_CONTINUATION = /^(\/\/|\/\*|\*([\s/]|$))/;
 const HASH_COMMENT_EXCEPT_SHEBANG = /^#(?!!)/;
@@ -54,22 +45,6 @@ const STANDARDS_REMINDER =
   "Code must be self-documenting through clear naming, structure, and extraction " +
   "of well-named functions. Allowed exceptions: config file value documentation (.env).";
 
-function loadConfig() {
-  try {
-    const config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    return {
-      minCommentLines: Number.isFinite(config.minCommentLines)
-        ? config.minCommentLines
-        : DEFAULT_CONFIG.minCommentLines,
-      minCommentRatio: Number.isFinite(config.minCommentRatio)
-        ? config.minCommentRatio
-        : DEFAULT_CONFIG.minCommentRatio,
-    };
-  } catch {
-    return DEFAULT_CONFIG;
-  }
-}
-
 function addedContent(input) {
   const field = CONTENT_FIELD_BY_TOOL[input.tool_name];
   return field ? input.tool_input?.[field] : undefined;
@@ -96,25 +71,20 @@ function main() {
   const content = addedContent(input);
   if (typeof content !== "string" || !content) return;
 
-  let nonEmpty = 0;
   let commentLines = 0;
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     if (MACHINE_DIRECTIVE.test(trimmed)) continue;
-    nonEmpty += 1;
     if (commentPattern.test(trimmed)) {
       commentLines += 1;
     }
   }
 
-  const { minCommentLines, minCommentRatio } = loadConfig();
-  const ratio = nonEmpty > 0 ? commentLines / nonEmpty : 0;
-  if (commentLines < minCommentLines || ratio <= minCommentRatio) return;
+  if (commentLines === 0) return;
 
   const message =
-    `comment-density-lint: this edit adds ${commentLines} comment line(s) ` +
-    `across ${nonEmpty} non-blank line(s) (${Math.round(ratio * 100)}%). ` +
+    `inline-comment-lint: this edit adds ${commentLines} comment line(s). ` +
     STANDARDS_REMINDER;
 
   process.stdout.write(

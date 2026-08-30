@@ -1,10 +1,10 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-HOOK="$HERE/../comment-density-lint.mjs"
+HOOK="$HERE/../inline-comment-lint.mjs"
 
 fail() { echo "FAIL: $1"; exit 1; }
 run() { printf '%s' "$1" | node "$HOOK"; }
-fires() { run "$2" | grep -q 'comment-density-lint' || fail "$1: expected advisory"; }
+fires() { run "$2" | grep -q 'inline-comment-lint' || fail "$1: expected advisory"; }
 silent() {
   out=$(run "$2") || fail "$1: hook crashed"
   [ -z "$out" ] || fail "$1: expected silent, got: $out"
@@ -32,10 +32,6 @@ fires  "notebook python comments" \
 
 silent "js self-documenting" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const total = a + b;\nreturn total;\nfunction add(x, y) { return x + y; }"}}'
-silent "below line threshold" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const a = 1;\nconst b = 2;\nconst c = 3;\nconst d = 4;\n// one\n// two"}}'
-silent "ratio exactly at 25 percent" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// a\n// b\n// c\nconst a=1;\nconst b=2;\nconst c=3;\nconst d=4;\nconst e=5;\nconst f=6;\nconst g=7;\nconst h=8;\nconst i=9;"}}'
 silent "eslint-disable directive exempt" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-disable\n// eslint-disable\n// eslint-disable\nconst a = 1;"}}'
 silent "eslint-enable directive exempt" \
@@ -71,7 +67,7 @@ fires  "TODO/FIXME are comments (no exception)" \
 fires  "prose mentioning type ignore not a directive" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\n// fourth comment\nconst a = 1;"}}'
 fires  "mid-line directive prose not exempt (anchor test)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\n# more info at ref.com\nfoo = 1"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\nfoo = 1"}}'
 silent "url in string not a comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const u = \"https://example.com/x\";\nconst v = \"a\";\nconst w = \"b\";"}}'
 silent "non-code extension" \
@@ -83,19 +79,17 @@ silent "shell dollar-hash not comments" \
 silent "escaped quote inside string" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/s.mjs","content":"const a = \"x \\\" // p\";\nconst b = \"y \\\" // q\";\nconst c = \"z \\\" // r\";"}}'
 
-silent "3 comment lines pass (below new threshold of 4)" \
+fires  "1 comment line triggers" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\nconst x=1;"}}'
+fires  "2 comment lines trigger" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\nconst x=1;"}}'
+fires  "3 comment lines trigger" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\nconst x=1;\nconst y=2;\nconst z=3;"}}'
-silent "25 percent ratio passes (below new threshold of 30)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;\ncode9;\ncode10;\ncode11;\ncode12;"}}'
-fires  "4 lines, 33% ratio triggers (above both thresholds)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;"}}'
-silent "4 lines, 29% ratio passes (below ratio threshold)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;\ncode9;\ncode10;"}}'
 silent "empty content" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":""}}'
 silent "whitespace only content" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"\n\n\n"}}'
-silent "pure comments no code" \
+fires  "pure comments no code" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c"}}'
 silent "missing file_path" \
   '{"tool_name":"Write","tool_input":{"content":"// a\n// b\n// c\ncode;"}}'
@@ -109,4 +103,4 @@ exits_zero "json null fails open" 'null'
 exits_zero "json number fails open" '5'
 exits_zero "json array fails open" '[]'
 
-echo "PASS: comment-density-lint"
+echo "PASS: inline-comment-lint"
