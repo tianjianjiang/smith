@@ -1,21 +1,13 @@
 ---
 name: smith-design
-description: SOLID principles and architecture design patterns
+description: Architecture design patterns and OOP practices
 ---
 
 # Design Principles
 
-**Scope:** SOLID principles for OOP/architecture design
+**Scope:** Architecture design patterns applying SOLID (defined in @smith-principles/SKILL.md)
 **Load if:** Starting new feature, refactoring, architecture review
-**Prerequisites:** @smith-principles/SKILL.md (fundamental principles: DRY, KISS, YAGNI, MECE)
-
-## SOLID Principles
-
-- **S**ingle Responsibility: One reason to change per class/module
-- **O**pen/Closed: Open for extension, closed for modification
-- **L**iskov Substitution: Subtypes must be substitutable for base types
-- **I**nterface Segregation: Many specific interfaces over one general
-- **D**ependency Inversion: Depend on abstractions, not concretions
+**Prerequisites:** @smith-principles/SKILL.md (SOLID, DRY, KISS, YAGNI, MECE)
 
 ## Before You Finish
 
