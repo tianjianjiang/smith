@@ -18,7 +18,7 @@ description: Git workflow gotchas and non-obvious practices. Use when performing
   `@smith-worktree/SKILL.md`) BEFORE the first edit of any repo-file-modifying
   task — even when no commit is requested. Never start edits on the default
   branch or on an unrelated dirty branch. Mechanical backstop: the
-  `branch-guard` PreToolUse hook (`smith-ctx-claude/scripts/branch-guard.mjs`,
+  `branch-guard` PreToolUse hook (`smith-git/scripts/hooks/branch-guard.mjs`,
   registered user-globally) blocks Edit/Write/NotebookEdit and Serena write
   tools on non-gitignored files while the repo is on `main`/`master`/`develop`
   (or its `origin/HEAD` default); per-repo opt-out is
@@ -125,6 +125,31 @@ never adds `Signed-off-by:` (only humans certify the DCO) — see
 
 See `@smith-ralph/SKILL.md` for full commit patterns.
 
+
+## Git Enforcement Hooks
+
+**smith-git owns all git operation enforcement hooks** (as of 2026-08-30). These PreToolUse hooks enforce git-level rules deterministically via Claude Code's hook system.
+
+**Available hooks** (`smith-git/scripts/hooks/`):
+
+1. **branch-guard.mjs** — enforces branch-first rule (@smith-git CRITICAL)
+   - Matchers: Edit, Write, NotebookEdit, Serena write tools
+   - Blocks edits on default branch (main/master/develop)
+   - Per-repo opt-out: `.claude/branch-guard.disabled`
+
+2. **branch-name-guard.mjs** — enforces Conventional Branch naming (@smith-style)
+   - Matchers: Bash (git commands + git push), EnterWorktree
+   - Blocks: git branch/checkout/switch/push with non-conforming names
+   - Warns: EnterWorktree (cannot block, instructs immediate rename)
+   - Pattern: `type/description` where type ∈ {feat, fix, docs, refactor, style, test, chore, perf, build, ci}
+
+3. **worktree-dirty-guard.mjs** — enforces uncommitted-changes rule (@smith-worktree)
+   - Matcher: EnterWorktree
+   - Blocks EnterWorktree on dirty checkout (uncommitted changes would be stranded)
+
+**Why smith-git**: Hooks enforce git-level rules; branch is a git concept that comes before worktree. Pragmatic: hooks share lib dependencies (`lib/git-command-tokenizer.mjs`, `lib/transcript-turns.mjs`) and are Claude Code-specific mechanisms.
+
+**Hook registration**: User-global (`~/.claude/settings.json`, `~/.claude-elu/settings.json`). Each hook cites its authoritative rule skill in its header comment.
 ## Related
 
 - `@smith-gh-pr/SKILL.md` - PR creation, review cycles, merge strategies, stacked PRs (linear history, force-with-lease)

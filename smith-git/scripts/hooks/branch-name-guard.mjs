@@ -1,6 +1,16 @@
 #!/usr/bin/env node
+// branch-name-guard.mjs - PreToolUse hook (Conventional Branch naming enforcement)
+//
+// Enforces: @smith-style/SKILL.md Conventional Branch pattern
+// Authoritative rule: @smith-style/SKILL.md lines 117-167
+// Hooks: Bash (git commands + git push), EnterWorktree (warns, cannot block)
+//
+// Why both:
+// - Bash git commands: blocks at creation time (git branch, checkout -b, switch -c)
+// - Bash git push: blocks at push time (catches EnterWorktree-created branches)
+// - EnterWorktree: warns to rename (cannot block - tool doesn't accept formatted names)
 import { readFileSync, writeSync } from "node:fs";
-import { commandSegments, gitSubcommandArguments } from "./lib/git-command-tokenizer.mjs";
+import { commandSegments, gitSubcommandArguments } from "../lib/git-command-tokenizer.mjs";
 
 const CONVENTIONAL_COMMIT_TYPES = [
   "feat",
@@ -181,6 +191,25 @@ function violation(name) {
   return null;
 }
 
+function branchBeingPushed(tokens) {
+  const parsed = gitSubcommandArguments(tokens);
+  if (!parsed || parsed.subcommand !== "push") return null;
+  const { args } = parsed;
+
+  const branchFromHeadColon = args.find((arg) => arg.startsWith("HEAD:"));
+  if (branchFromHeadColon) return branchFromHeadColon.slice(5);
+
+  const upstreamFlags = ["-u", "--set-upstream"];
+  for (let i = 0; i < args.length; i += 1) {
+    if (upstreamFlags.includes(args[i])) {
+      const remoteBranch = args[i + 2];
+      if (remoteBranch && !remoteBranch.startsWith("-")) return remoteBranch;
+    }
+  }
+
+  return null;
+}
+
 function emitBlock(name, reason) {
   const suggestion = suggestedFix(name);
   const suggestionIsValid = suggestion !== name && !violation(suggestion);
@@ -198,6 +227,26 @@ function emitBlock(name, reason) {
   process.exit(2);
 }
 
+function emitWarning(branchName, reason) {
+  const typeMatch = branchName.match(/^worktree-(.+)$/);
+  const baseName = typeMatch ? typeMatch[1] : branchName;
+
+  const suggestion = `refactor/${baseName}`;
+  const suggestionIsValid = !violation(suggestion);
+
+  writeSync(
+    2,
+    [
+      `Warning: EnterWorktree will create branch '${branchName}' which ${reason}.`,
+      suggestionIsValid
+        ? `Rename immediately after: git branch -m ${suggestion}`
+        : `Rename immediately after: git branch -m <type>/${baseName}`,
+      "Per @smith-style/SKILL.md Branch Names",
+      "(https://conventionalbranch.org/).",
+    ].join(" ") + "\n",
+  );
+}
+
 function main() {
   let input;
   try {
@@ -206,21 +255,39 @@ function main() {
     return;
   }
   if (!input || typeof input !== "object") return;
-  if (input.tool_name !== "Bash") return;
-  const command = input.tool_input && input.tool_input.command;
-  if (typeof command !== "string") return;
 
-  for (const tokens of commandSegments(command)) {
-    const name = branchBeingCreatedOrRenamed(tokens);
-    if (!name || name === "HEAD") continue;
-    if (containsUnresolvedShellSubstitution(name)) {
-      const worstCaseName = withShellSubstitutionsRemoved(name);
-      const reason = forbiddenSubstringReason(worstCaseName);
-      if (reason) emitBlock(worstCaseName, reason);
-      continue;
+  if (input.tool_name === "Bash") {
+    const command = input.tool_input && input.tool_input.command;
+    if (typeof command !== "string") return;
+
+    for (const tokens of commandSegments(command)) {
+      const branchName = branchBeingCreatedOrRenamed(tokens);
+      if (branchName && branchName !== "HEAD") {
+        if (containsUnresolvedShellSubstitution(branchName)) {
+          const worstCaseName = withShellSubstitutionsRemoved(branchName);
+          const reason = forbiddenSubstringReason(worstCaseName);
+          if (reason) emitBlock(worstCaseName, reason);
+          continue;
+        }
+        const reason = violation(branchName);
+        if (reason) emitBlock(branchName, reason);
+      }
+
+      const pushTarget = branchBeingPushed(tokens);
+      if (pushTarget && pushTarget !== "HEAD") {
+        const reason = violation(pushTarget);
+        if (reason) emitBlock(pushTarget, reason);
+      }
     }
-    const reason = violation(name);
-    if (reason) emitBlock(name, reason);
+  }
+
+  if (input.tool_name === "EnterWorktree") {
+    const name = input.tool_input && input.tool_input.name;
+    if (!name) return;
+
+    const branchName = `worktree-${name}`;
+    const reason = violation(branchName);
+    if (reason) emitWarning(branchName, reason);
   }
 }
 

@@ -140,18 +140,17 @@ header, where release-please-class tooling actually looks; the branch name
 only needs to be unambiguous and human-readable, which a single separator
 already guarantees.
 
-**Enforced deterministically for Bash-driven git.**
-`smith-ctx-claude/scripts/branch-name-guard.mjs` (PreToolUse, matcher `Bash`)
-blocks the branch-creating/renaming `git` invocations run via Bash when the
-target name doesn't match the pattern above, or contains
-`post-review`/`after-review` — no manual pre-push checklist or blacklist
-needed, the character-set rule and the type list are the only things a name
-has to satisfy. It does not see a branch created outside Bash
-(`EnterWorktree`, an IDE git panel, an external terminal) or pushed under a
-different name (`git push -u origin HEAD:name`) — see the hook's README
-entry for the full known-limitation note. If the name was not explicitly
-given by the user, still confirm it with them before the first push — the
-hook checks *format*, not *what the user actually wanted named*.
+**Enforced deterministically by `smith-git/scripts/hooks/branch-name-guard.mjs`**
+(PreToolUse, matchers: `Bash` + `EnterWorktree`) — blocks git commands and
+pushes with non-conforming names, warns on `EnterWorktree` (cannot block,
+rename immediately after). Bash matcher blocks branch-creating/renaming git
+invocations (`git branch`, `git checkout -b`, `git switch -c`) and git push
+with non-conforming target names. EnterWorktree matcher warns when creating
+worktrees (tool always creates `worktree-{name}`, which violates the pattern)
+and instructs immediate rename via `git branch -m <type>/description`. If the
+name was not explicitly given by the user, still confirm it with them before
+the first push — the hook checks *format*, not *what the user actually wanted
+named*.
 
 Pre-2026-08-24 branch names used the retired two-separator convention
 (visible in old PR history) — this section governs branches created from

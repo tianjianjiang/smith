@@ -107,6 +107,16 @@ git pull --ff-only
   inside the worktree, or branch in place instead. Uncommitted changes never
   carry into a new worktree (the `worktree-dirty-guard` hook blocks this).
 
+**After EnterWorktree (branch naming):**
+- `EnterWorktree({name: "..."})` creates branch `worktree-{name}` which violates Conventional Branch naming (@smith-style).
+- The `branch-name-guard` hook (@smith-git) will warn you to rename immediately:
+  ```bash
+  git branch -m <type>/description
+  git branch --show-current  # verify before push
+  ```
+- Rename before first push — `git push` will block non-conforming branch names.
+
+
 **On bg-isolation guard refusal:**
 1. `EnterWorktree({name: "«short-slug»"})` — any short name works
 2. Rename branch per the CRITICAL-section rule above:
