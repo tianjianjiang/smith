@@ -44,12 +44,28 @@ silent "typescript directives exempt" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// @ts-ignore\n// @ts-expect-error\n// @ts-nocheck\nconst a = 1;"}}'
 silent "prettier directives exempt" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// prettier-ignore\n// prettier-ignore\n// prettier-ignore\nconst a = 1;"}}'
-silent "uppercase directives exempt (case-insensitive)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# NOQA: E501\n# Eslint-disable\n# @TS-IGNORE\nfoo = 1"}}'
+silent "uppercase noqa exempt (case-insensitive)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# NOQA: E501\n# NOQA\n# noqa\nfoo = 1"}}'
+silent "uppercase eslint exempt (case-insensitive)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# ESLINT-DISABLE\n# Eslint-disable\n# eslint-disable\nfoo = 1"}}'
+silent "uppercase typescript exempt (case-insensitive)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// @TS-IGNORE\n// @Ts-Ignore\n// @ts-ignore\nconst a = 1;"}}'
+silent "SPDX directive exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// SPDX-License-Identifier: MIT\n// SPDX-FileCopyrightText: 2024\n// SPDX: tag\nconst a = 1;"}}'
+silent "pragma directive exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// pragma: no-cache\n// pragma once\n// pragma mark\nconst a = 1;"}}'
+silent "istanbul ignore exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// istanbul ignore next\n// istanbul ignore if\n// istanbul ignore else\nconst a = 1;"}}'
+silent "c8 ignore exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// c8 ignore next\n// c8 ignore start\n// c8 ignore stop\nconst a = 1;"}}'
+silent "type colon ignore exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# type: ignore\n# type: ignore[arg-type]\n# type:ignore\nfoo = 1"}}'
 fires  "TODO/FIXME are comments (no exception)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// TODO: x\n// FIXME: y\n// HACK: z\nconst a = 1;"}}'
 fires  "prose mentioning type ignore not a directive" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\nconst a = 1;"}}'
+fires  "mid-line directive prose not exempt (anchor test)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\nfoo = 1"}}'
 silent "url in string not a comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const u = \"https://example.com/x\";\nconst v = \"a\";\nconst w = \"b\";"}}'
 silent "non-code extension" \
