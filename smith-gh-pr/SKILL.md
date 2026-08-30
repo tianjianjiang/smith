@@ -30,6 +30,15 @@ waste), less complete than the CLI, and require a personal token.
 
 Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
+## PR Body Format
+
+**Structure:**
+- Summary of changes (What/Why)
+- Dependencies (if any, link to related PRs/issues)
+- End with `Assisted-by:` line (see `@smith-style`)
+
+**NO Test plan section** — testing is verified in the pre-PR checklist (linter, formatter, tests). The PR body documents the change, not the verification process.
+
 ## PR Creation Workflow
 
 **Pre-PR checklist:**
@@ -44,7 +53,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    not user-specified, confirm it with the user before pushing
 5. Push to remote
 
-**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Testing/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a description is content addressed to a human — show it and open on an explicit yes (`@smith-guidance` Harmless).
+**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a description is content addressed to a human — show it and open on an explicit yes (`@smith-guidance` Harmless).
 
 ## Working on Existing PRs
 
