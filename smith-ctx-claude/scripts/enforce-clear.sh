@@ -150,5 +150,4 @@ json_stop_block "${STATUS}
 
 DO: ${ACTIONS}
 
-OUTPUT (fill «placeholders»):
 Reload: ${RELOAD}"
