@@ -9,14 +9,6 @@ description: Universal coding standards for emoji usage, comments, acronym expan
 **Load if:** Always active (universal rules for all development)
 **Prerequisites:** @smith-principles/SKILL.md
 
-## Universal Rules
-
-No decorative emoji; exactly one trailing newline; self-documenting code over
-comments; shorthand you introduced expanded on first use; ISO 8601
-timestamps with timezone. Full rules in the sections below.
-
-Universal standards that apply to all code, logs, documentation, and outputs across all languages and contexts.
-
 ## Universal Code Standards
 
 - Keep code, logs, print statements, error messages, and documentation free
@@ -85,10 +77,6 @@ internal-file exemption.
 - JavaScript: `new Date().toISOString()` (UTC) or `new Date().toLocaleString('en-CA', {timeZoneName: 'short'})` (local with timezone)
 
 ## Quality Standards
-
-**Documentation**: Use precise, technical language; maintain consistent terminology; follow these standards in ALL text outputs
-
-**Testing**: ALWAYS update reports when standards change; maintain test documentation accuracy
 
 **Code Reuse**: ALWAYS check existing scripts before creating new ones; check `debug_scripts/` and language-specific tool directories
 
