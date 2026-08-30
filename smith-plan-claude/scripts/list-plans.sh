@@ -40,7 +40,7 @@ while IFS= read -r file; do
     mtime_human "$file"
     modified="${_MTIME_HUMAN:0:16}"
 
-    # Calculate progress
+  
     total=$(grep -c '^[[:space:]]*- \[.\]' "$file" 2>/dev/null || echo "0")
     done=$(grep -c '^[[:space:]]*- \[x\]' "$file" 2>/dev/null || echo "0")
 
@@ -51,7 +51,7 @@ while IFS= read -r file; do
         progress="no tasks"
     fi
 
-    # Get title (first # line)
+  
     title=$(grep -m1 "^#" "$file" | sed 's/^#* *//')
     title="${title:-(untitled)}"
 

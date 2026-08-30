@@ -27,8 +27,8 @@ function main() {
 
   let status;
   try {
-    // -uall: status.showUntrackedFiles=no would otherwise hide untracked
-    // files, which are stranded by a new worktree just like modified ones
+  
+  
     status = execFileSync(
       "git",
       ["-C", cwd, "status", "--porcelain", "--untracked-files=all"],
@@ -46,7 +46,7 @@ function main() {
       ? `\n… and ${lines.length - MAX_LINES_SHOWN} more`
       : "";
 
-  // writeSync: stderr can be async on pipes; process.exit would truncate it
+
   writeSync(
     2,
     [

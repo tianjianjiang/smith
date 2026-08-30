@@ -84,7 +84,7 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
     CURRENT_PLAN_SOURCE=""
     NEWEST_WITHHELD=0
     NEWEST_STALE=0
-    # Prefer session's own plan from state file (prevents cross-session contamination)
+  
     if [[ -f "$STATE_FILE" ]]; then
         prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
         if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
@@ -101,15 +101,15 @@ if [[ "$PERMISSION_MODE" == "plan" ]]; then
         PLAN_FILE="$CURRENT_PLAN"
         save_injection_state
 
-        # Workaround for #20397: on-plan-exit.sh doesn't fire on "clear context
-        # and auto-accept edits". Create flag preemptively so on-session-clear.sh
-        # or inject-plan.sh (next prompt) can auto-resume.
+      
+      
+      
         if [[ "$CURRENT_PLAN_SOURCE" != "guess" ]]; then
             PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$CURRENT_PLAN" 2>/dev/null || true)
             PENDING=${PENDING:-0}
             FLAG_TYPE=$([[ "$PENDING" -gt 0 ]] && echo "plan-pending" || echo "plan-completed")
             TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-            # Use empty plan path for completed plans (consistent with enforce-clear/on-plan-exit)
+          
             PLAN_PATH_FOR_FLAG=$([[ "$FLAG_TYPE" == "plan-pending" ]] && echo "$CURRENT_PLAN" || echo "")
             printf '%s\n%s\n%s\n%s\n%s\n' "$PLAN_PATH_FOR_FLAG" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "$FLAG_TYPE" > "$FLAG_FILE"
         fi
@@ -123,7 +123,7 @@ PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
 
 # Determine action type
 ACTION=""
-PLAN_FILE=""  # Reset: plan-mode save (above) already persisted; normal flow re-discovers via flag/trigger
+PLAN_FILE=""
 LOAD_REASON=""
 
 RESTART_SOURCE=""
@@ -151,7 +151,7 @@ if [[ -f "$FLAG_FILE" ]] && [[ "$PERMISSION_MODE" != "plan" ]] \
    && { [[ -n "$RESTART_SOURCE" ]] || [[ "$RESTART_GATED" -eq 0 ]]; }; then
     FLAGGED_PLAN=$(sed -n '1p' "$FLAG_FILE")
 
-    # Check flag is less than 60 minutes old
+  
     FLAG_FRESH=$(find "$FLAG_FILE" -mmin -60 2>/dev/null)
 
     if [[ -n "$FLAG_FRESH" ]] && [[ -n "$FLAGGED_PLAN" ]] && [[ -f "$FLAGGED_PLAN" ]]; then
@@ -160,7 +160,7 @@ if [[ -f "$FLAG_FILE" ]] && [[ "$PERMISSION_MODE" != "plan" ]] \
         PLAN_FILE="$FLAGGED_PLAN"
         LOAD_REASON="flag"
     else
-        # Expired flag (>1 hour old) or missing plan file -- still offer Serena memory
+      
         rm -f "$FLAG_FILE"
         ACTION="serena_only"
     fi
@@ -172,7 +172,7 @@ if [[ -z "$ACTION" ]]; then
        [[ "$PROMPT_LOWER" == *"plan status"* ]] || \
        [[ "$PROMPT_LOWER" == *"show progress"* ]]; then
         ACTION="status"
-    # Check for load request
+  
     elif [[ "$PROMPT_LOWER" == *"execute-plan"* ]] || \
          [[ "$PROMPT_LOWER" == *"!load-plan"* ]] || \
          [[ "$PROMPT_LOWER" == *"!plan"* ]] || \
@@ -199,7 +199,7 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
     CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
 
     if [[ $CONTEXT_PCT -ge $WARNING_PCT ]]; then
-        # Prefer the plan recorded in the state file (session-specific)
+      
         ACTIVE_PLAN=""
         if [[ -f "$STATE_FILE" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
@@ -214,16 +214,16 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             PENDING=${PENDING:-0}
         fi
 
-        # Block 1: Flag management (create or update)
+      
         if [[ ! -f "$FLAG_FILE" ]]; then
-            # Create flag if plan active with pending tasks
+          
             if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
                 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
                 printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-pending" > "$FLAG_FILE"
             fi
         elif [[ -f "$FLAG_FILE" ]] && [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -eq 0 ]]; then
-            # Update stale plan-pending flag to plan-completed when no tasks remain
-            # Write empty plan path so completed plan isn't re-loaded after /clear
+          
+          
             TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
             printf '%s\n%s\n%s\n%s\n%s\n' "" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
         fi
@@ -232,7 +232,7 @@ fi
 
 # Serena-only fallback: flag existed but plan file was missing/expired
 if [[ "$ACTION" == "serena_only" ]]; then
-    # List available plans so the agent knows what exists
+  
     AVAILABLE_PLANS=""
     if [[ -d "$PLANS_DIR" ]]; then
         while IFS= read -r f; do
@@ -275,7 +275,7 @@ if [[ -z "$ACTION" ]]; then
         if [[ -n "$STATE_FRESH" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
             if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
-                # Only refresh if plan has pending tasks (prevents perpetuating stale plans)
+              
                 pending=$(grep -c '^[[:space:]]*- \[ \]' "$prev_plan" 2>/dev/null || true)
                 pending=${pending:-0}
                 if [[ "$pending" -gt 0 ]]; then
@@ -369,7 +369,7 @@ list_plans() {
 # Handle status action
 if [[ "$ACTION" == "status" ]]; then
     if [[ -z "$PLAN_FILE" ]]; then
-        # Check session state first, then fall back to find_plan_file
+      
         if [[ -z "$PLAN_NAME" ]] && [[ -f "$STATE_FILE" ]]; then
             prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
             if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
@@ -399,7 +399,7 @@ fi
 
 # Handle load action
 if [[ -z "$PLAN_FILE" ]]; then
-    # Check session state first, then fall back to find_plan_file
+  
     if [[ -z "$PLAN_NAME" ]] && [[ -f "$STATE_FILE" ]]; then
         prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
         if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
