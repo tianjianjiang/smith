@@ -19,6 +19,48 @@ PR/commit SHAs, open follow-ups, and any correction the user gave on how to
 work. Convert relative dates to absolute. Omit what the repo/git already
 records.
 
+## Compression Requirements
+
+**Target**: <400 tokens per checkpoint (current baseline: 800-1200 tokens)
+
+**Format rules**:
+1. **Use references, not content duplication**:
+   - File locations: `file:line` only (e.g., `plan.md:244-296`)
+   - Memory anchors: permalink/name only (e.g., `Serena: memory_name`)
+   - NO full content quotes or verbose explanations
+2. **Minimal prose**:
+   - Decisions: one-line statement + consequence (if non-obvious)
+   - Status: checklist format (markdown checkboxes)
+   - Next steps: action verb + brief context
+3. **Single-source content**:
+   - Draft facts ONCE in canonical form
+   - Transform to Serena (snake_case) and Basic-Memory (frontmatter + body)
+   - Content body IDENTICAL except format-specific metadata
+
+**Example** (compressed format):
+```markdown
+# Feature Auth Implementation
+
+**Date**: 2026-08-31T14:45+09:00
+**Plan**: `~/.claude/plans/auth-plan.md:50-120`
+**Session**: bg-job abc123
+
+## Completed
+- [x] OAuth flow impl (`auth.ts:234-567`)
+- [x] Token refresh logic (`refresh.ts:89-156`)
+
+## Decisions
+- Use JWT with 1h TTL (security requirement from `SECURITY.md:45`)
+- Store refresh tokens in httpOnly cookies (prevents XSS)
+
+## Next
+Implement rate limiting (`auth-plan.md:121-145`)
+
+## Related
+- PR #789 (awaiting review)
+- Serena: `oauth_implementation_status`
+```
+
 ## Targets and formats
 
 1. **Serena** (`mcp__serena__write_memory`): a snake_case memory capturing the
@@ -42,18 +84,17 @@ records.
 
 ## Procedure
 
-1. **Draft checkpoint content once** (the shared canonical facts).
-2. **Transform to both formats** from the same content:
-   - Serena: `write_memory(name=label, content=facts)`
-   - Basic-Memory: `write_note(title=readable_label, type=..., content=facts)`
-3. Reconcile against existing entries in each system (update, don't duplicate).
-4. Write to both backends; confirm each write succeeded.
-5. If any backend write fails, do NOT report success: name which succeeded
-   and which failed, retry the failed one, and flag the systems left out of
-   sync (no silent partial checkpoint).
-6. On full success, report in-band what was saved and where
-   (paths/permalinks/slugs).
-7. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
+1. **Call the write-checkpoint.sh script** with label and optional plan path:
+   ```bash
+   ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»"
+   ```
+   The script:
+   - Generates compressed checkpoint content once (template-based, <400 tokens)
+   - Writes to both backends via CLI (zero Claude tokens consumed)
+   - Reports success/failure for each backend
+2. If the script exits non-zero, report which backend failed and DO NOT proceed.
+3. On success (exit 0), the script outputs confirmation with Serena name and Basic-Memory permalink.
+4. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
    run the bridge and check its exit status BEFORE emitting the block, so the block only
    claims a flag when one was actually written:
 
@@ -96,10 +137,10 @@ reported success:
 ## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
 Reload flag: written on THIS machine. A restore is NOT guaranteed — the next /clear may instead list this checkpoint for you to pick, or delete the flag without restoring anything. If it does restore, that happens at your FIRST PROMPT after /clear: type anything; nothing visible happens at /clear itself (Claude Code limit: hooks cannot start a turn). Do not rely on it: use the manual line below, wherever the stores listed under it are reachable.
 Manual resume: /smith-recon "resume my work thread on «label»"
-Where this checkpoint's state lives (reachable from):
-- Serena:       «snake_case_name»          — this machine only, unless .serena/memories is committed
-- Basic-Memory: «permalink»                — this machine only, unless Basic-Memory Cloud is enabled
-- plan (if any): ~/.claude/plans/«file».md — this machine only
+Where this checkpoint's state lives:
+- Serena: «snake_case_name»
+- Basic-Memory: «permalink»
+- plan (if any): ~/.claude/plans/«file».md
 A cloud/fresh-clone run (/schedule, /code-review ultra, web) sees only committed git/PR state — none of the above unless noted portable.
 ```
 
