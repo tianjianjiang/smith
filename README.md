@@ -268,15 +268,15 @@ through.
   only, counts the **full-line** comments a single edit adds and emits an
   **advisory** reminder of `smith-standards/SKILL.md:29-33` (NEVER add inline
   comments) when ANY inline comment is detected. Advisory only — it never blocks.
-  Code comments trigger the advisory, with machine directives exempt
-  (eslint-disable, prettier-ignore, @ts-*, SPDX, pragma, noqa, istanbul ignore,
-  c8 ignore, type:ignore) — the rule targets human-facing inline commentary; code
-  must be self-documenting. By design it detects only full-line comments —
-  trailing comments and cross-line constructs (multi-line template literals, block
-  comments spanning lines) are intentionally NOT parsed, keeping the heuristic
-  simple until a real per-language linter replaces it. Shebangs and machine
-  directives are exempt; config, `.md`, and
-  `.json` files are out of scope.
+  Code comments trigger the advisory — the rule targets human-facing inline
+  commentary; code must be self-documenting. Supported languages: Python, Bash,
+  JavaScript/TypeScript, C/C++ (17 file extensions: .js, .mjs, .cjs, .ts, .mts,
+  .cts, .tsx, .jsx, .c, .h, .cc, .cpp, .hpp, .py, .sh, .bash, .zsh). By design
+  it detects only full-line comments — trailing comments and cross-line constructs
+  (multi-line template literals, block comments spanning lines) are intentionally
+  NOT parsed, keeping the heuristic simple until a real per-language linter
+  replaces it. Shebangs are exempt (scripts only); config, `.md`, and `.json`
+  files are out of scope.
 
 - **coined-shorthand-lint** (`smith-ctx-claude/scripts/coined-shorthand-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that emits an
@@ -845,7 +845,7 @@ then:
    suggestion offered — `wip` isn't a fixable typo of a known type). Then
    `git checkout -b feat/good-name`; confirm it proceeds.
 9. **inline-comment-lint** — write a code file with 1+ full-line comments
-   (excluding machine directives); confirm the advisory reminder appears. The
+   (any full-line comment triggers); confirm the advisory reminder appears. The
    write still proceeds (advisory only).
    Test suite: `smith-standards/scripts/tests/run-all.sh`
 10. **coined-shorthand-lint** — write a file introducing two or more `[A-Z][0-9]`

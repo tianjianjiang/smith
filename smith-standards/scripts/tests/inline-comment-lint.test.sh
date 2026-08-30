@@ -42,6 +42,8 @@ silent "shell dollar-hash not comments" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/n.sh","content":"n=$#\nx=${#arr}\ny=foo$#bar"}}'
 silent "escaped quote inside string" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/s.mjs","content":"const a = \"x \\\" // p\";\nconst b = \"y \\\" // q\";\nconst c = \"z \\\" // r\";"}}'
+silent "lone shebang not a comment" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/a.sh","content":"#!/bin/sh\necho hi"}}'
 
 fires  "1 block (single line)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\nconst x=1;"}}'
