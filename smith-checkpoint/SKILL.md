@@ -84,14 +84,20 @@ Implement rate limiting (`auth-plan.md:121-145`)
 
 ## Procedure
 
-1. **Call the write-checkpoint.sh script** with label and optional plan path:
+When invoked via `/smith-checkpoint` (no arguments required):
+
+1. **Infer label automatically**:
+   - If plan file exists: use plan basename (snake_case)
+   - Otherwise: infer from current session's primary work
+   - Follow Naming strategy above (semantic, descriptive)
+2. **Call write-checkpoint.sh** with inferred label:
    ```bash
    ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»"
    ```
-2. The script (exit 0 on success):
-   - Generates checkpoint content once (<400 tokens)
+3. The script (exit 0 on success):
+   - Generates checkpoint content (<400 tokens)
    - Writes to both backends via CLI (zero Claude tokens)
    - Outputs success confirmation to stderr
-   - Outputs complete Reload block to stdout
-3. If script exits non-zero, report which backend failed.
-4. On success, the Reload block is ready — copy it directly to the user.
+   - Outputs Reload block to stdout
+4. If script exits non-zero, report which backend failed.
+5. On success, output Reload block directly to user.
