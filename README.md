@@ -410,8 +410,8 @@ through.
   flags is a natural follow-up, not attempted here. Advisory only, never
   blocks.
 
-- **post-merge-pull-reminder** (`smith-ctx-claude/scripts/post-merge-pull-reminder.mjs`,
-  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+- **post-merge-pull-reminder** (`smith-git/scripts/hooks/post-merge-pull-reminder.mjs`,
+  using shared helpers from `smith-git/scripts/lib/git-command-tokenizer.mjs`)
   — PostToolUse guard (matcher `Bash`) that emits an **advisory** after a
   `gh pr merge` runs, reminding the session to fast-forward-only pull the
   repository's default branch in the primary checkout — the decide-and-do rule
@@ -775,7 +775,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/post-merge-pull-reminder.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-git/scripts/hooks/post-merge-pull-reminder.mjs\"" }
         ]
       }
     ],
