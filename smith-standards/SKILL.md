@@ -27,9 +27,10 @@ Universal standards that apply to all code, logs, documentation, and outputs acr
 - Keep blank lines between code blocks minimal
 
 **Inline Comments**:
-- ONLY add inline comments when code intent is not self-evident from naming and structure
-- Prefer self-documenting code (clear variable/function names) over inline comments
-- Allowed cases: Config files (.env), TODO markers, complex algorithms, non-obvious business logic
+- NEVER add inline comments to code
+- If you find yourself wanting to add an inline comment, STOP and ask the user how to make the code self-explanatory instead
+- Code must be self-documenting through clear naming, structure, and extraction of well-named functions
+- Allowed exceptions (not inline comments): Config file value documentation (.env)
 
 **File Format**:
 - ALWAYS have exactly one newline at the end of every file
@@ -107,6 +108,6 @@ internal-file exemption.
 **Before committing or sending:**
 1. No decorative emoji in code/logs
 2. Exactly one trailing newline
-3. Self-documenting names over comments
+3. Zero inline comments - code is self-explanatory
 4. Shorthand you introduced expanded on first use
 5. ISO 8601 timestamps with timezone
