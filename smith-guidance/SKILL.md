@@ -39,7 +39,8 @@ retrieved 2026-07-11).
 
 ## HHH Framework (Helpful, Honest, Harmless)
 
-Helpful: see @smith-principles/SKILL.md HHH summary.
+### Helpful
+- Provide useful, actionable assistance
 
 ### Honest
 - Admit uncertainty instead of hallucinating
