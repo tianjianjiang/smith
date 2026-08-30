@@ -148,6 +148,5 @@ esac
 
 json_stop_block "${STATUS}
 
-DO: ${ACTIONS}
 
 Reload: ${RELOAD}"

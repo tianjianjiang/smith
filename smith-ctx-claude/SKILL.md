@@ -93,6 +93,12 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 
 **Config**: Both hooks in `smith-ctx-claude/scripts/`.
 
+**When stop hook triggers:**
+1. Mark completed tasks in plan (if plan active)
+2. Commit uncommitted work
+3. write_memory() with descriptive name (task, decisions, file:line refs)
+4. Output Reload directive (hook provides template)
+
 ### Flag File and Injection Points
 
 Flag-based auto-reload mechanism for plan and state restoration after `/clear`:
