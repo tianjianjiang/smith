@@ -126,7 +126,6 @@ PROMPT_LOWER=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]')
 # Determine action type
 ACTION=""
 PLAN_FILE=""  # Reset: plan-mode save (above) already persisted; normal flow re-discovers via flag/trigger
-CONTEXT_MSG=""
 LOAD_REASON=""
 
 RESTART_SOURCE=""
@@ -201,14 +200,12 @@ CRITICAL_PCT=${PLAN_CONTEXT_CRITICAL_PCT:-60}
 if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION" ]]; then
     CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
 
-    # Ralph detection (before threshold check -- needed for both warning and critical)
     RALPH_ACTIVE=false
     RALPH_CWD="${HOOK_CWD:-${PWD:-}}"
     if get_ralph_state "$RALPH_CWD"; then
         RALPH_ACTIVE=true
     fi
 
-    # Orchestrator detection (Pattern B)
     ORCH_ACTIVE_MODE=false
     if get_orchestrator_state "$CWD_KEY"; then
         ORCH_ACTIVE_MODE=true
@@ -244,76 +241,18 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             printf '%s\n%s\n%s\n%s\n%s\n' "" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
         fi
 
-        # Block 2: Context messages (independent of flag state)
         if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]] && [[ "$RALPH_ACTIVE" == "true" ]]; then
-            # CRITICAL + Ralph: force-exit Ralph and save resume state
             save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
                 "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
-            if ! force_ralph_exit "$RALPH_CWD"; then
-                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exit FAILED. Manual /clear may be needed.' "$CONTEXT_PCT")
-            else
-                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Ralph loop auto-exiting (max_iterations set to current).' "$CONTEXT_PCT")
-            fi
-            CONTEXT_MSG+="\n\n**YOU MUST do these steps NOW:**"
-            CONTEXT_MSG+="\n1. Save ALL Ralph state to Serena: write_memory() with full iteration context"
-            CONTEXT_MSG+="\n2. Update plan file with current progress (if plan active)"
-            CONTEXT_MSG+="\n3. Commit uncommitted work"
-            CONTEXT_MSG+="\n4. AFTER all tool calls, tell user to run /clear"
-            CONTEXT_MSG+="\n\nRalph loop will auto-resume after /clear."
+            force_ralph_exit "$RALPH_CWD" || true
         elif [[ "$RALPH_ACTIVE" == "true" ]]; then
-            # WARNING + Ralph: preemptive resume save + advisory
             save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
                 "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
-
-            CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
-            CONTEXT_MSG+=$(printf '\nRalph loop active (iteration %s). Will auto-exit at critical threshold (%d%%).' "${RALPH_ITERATION:-?}" "$CRITICAL_PCT")
-            CONTEXT_MSG+="\nSave iteration state to Serena NOW: write_memory() with ralph_«task»_state."
-            if [[ -n "$ACTIVE_PLAN" ]]; then
-                CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
-            fi
         elif [[ "$ORCH_ACTIVE_MODE" == "true" ]]; then
-            # Orchestrator mode: save resume state for post-/clear restoration
             save_orchestrator_resume "$CWD_KEY" "${ORCH_ITERATION:-0}" "${ORCH_MAX_ITERATIONS:-20}" \
                 "${ORCH_PLAN_PATH:-${ACTIVE_PLAN:-}}" "${ORCH_COMPLETION_PROMISE:-}" "${ORCH_CURRENT_TASK:-}"
-
-            if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]]; then
-                CONTEXT_MSG=$(printf 'CONTEXT CRITICAL: %d%%. Orchestrator mode active (iteration %s).' "$CONTEXT_PCT" "${ORCH_ITERATION:-?}")
-                CONTEXT_MSG+="\n\n**YOU MUST do these steps NOW:**"
-                CONTEXT_MSG+="\n1. Save orchestrator state to Serena: write_memory() with iteration context"
-                CONTEXT_MSG+="\n2. Update plan file with current progress"
-                CONTEXT_MSG+="\n3. Commit uncommitted work"
-                CONTEXT_MSG+="\n4. AFTER all tool calls, tell user to run /clear"
-                CONTEXT_MSG+="\n\nOrchestrator will auto-resume after /clear."
-            else
-                CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
-                CONTEXT_MSG+=$(printf '\nOrchestrator mode active (iteration %s).' "${ORCH_ITERATION:-?}")
-                CONTEXT_MSG+="\nSave orchestrator state to Serena NOW: write_memory() with orchestrator context."
-                if [[ -n "$ACTIVE_PLAN" ]]; then
-                    CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
-                fi
-            fi
-        else
-            # Non-Ralph: existing warning behavior
-            CONTEXT_MSG=$(printf 'CONTEXT WARNING: %d%% used (warning: %d%%, critical: %d%%).' "$CONTEXT_PCT" "$WARNING_PCT" "$CRITICAL_PCT")
-            if [[ -n "$ACTIVE_PLAN" ]]; then
-                CONTEXT_MSG+=$(printf '\n\nPlan file: `%s` (%d pending tasks)' "$ACTIVE_PLAN" "$PENDING")
-            fi
-            CONTEXT_MSG+=$(printf '\n\n**Recommended:**\n1. Update plan file with current progress (mark completed as [x])\n2. Commit uncommitted work\n3. If Serena MCP available: write_memory() with descriptive name (task, decisions, file:line refs)\n4. AFTER all tool calls complete, output this block:')
-            if [[ -n "$ACTIVE_PLAN" ]]; then
-                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Plan: `%s`\n- Memory: \`«name from step 3»\` (read via read_memory() after /clear)\n- Resume: «describe current task»' "$ACTIVE_PLAN")
-            else
-                CONTEXT_MSG+=$(printf '\n\n**Reload with:**\n- Memory: \`«name from step 3»\` (read via read_memory() after /clear)\n- Resume: «describe current task»')
-            fi
-            CONTEXT_MSG+=$(printf '\n\n5. Tell user to run /clear\n\nPlan auto-reloads after /clear.')
         fi
     fi
-fi
-
-# If context warning was generated but no trigger matched, output warning only
-if [[ -z "$ACTION" ]] && [[ -n "$CONTEXT_MSG" ]]; then
-    [[ -n "${REFUSE_MSG:-}" ]] && CONTEXT_MSG=$(printf '%s\n\n%s' "$REFUSE_MSG" "$CONTEXT_MSG")
-    json_user_prompt_output "$CONTEXT_MSG"
-    exit 0
 fi
 
 # Serena-only fallback: flag existed but plan file was missing/expired
@@ -554,11 +493,6 @@ if [[ "$LOAD_REASON" == "flag" ]]; then
 
     ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."
     FULL_CONTENT=$(printf '%b\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
-fi
-
-# Append context warning if present
-if [[ -n "$CONTEXT_MSG" ]]; then
-    FULL_CONTENT=$(printf '%s\n\n---\n\n%s' "$FULL_CONTENT" "$CONTEXT_MSG")
 fi
 
 # Output JSON using jq for proper escaping (macOS-compatible)
