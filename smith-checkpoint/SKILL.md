@@ -141,7 +141,6 @@ Where this checkpoint's state lives:
 - Serena: «snake_case_name»
 - Basic-Memory: «permalink»
 - plan (if any): ~/.claude/plans/«file».md
-A cloud/fresh-clone run (/schedule, /code-review ultra, web) sees only committed git/PR state — none of the above unless noted portable.
 ```
 
 This skill is platform-neutral: any agent can write the backends and emit the block; the
