@@ -6,7 +6,7 @@
 #        If no name given, shows most recent plan
 #
 
-source "$(dirname "$0")/lib-plan.sh"
+source "$(dirname "$0")/../ctx-claude/scripts/lib-plan.sh"
 PLAN_NAME="$1"
 OWN_SCOPE=$(scope_key "${PWD:-}")
 
