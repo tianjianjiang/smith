@@ -16,19 +16,19 @@ exits_zero() {
 }
 
 fires  "js full-line comments" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const a = 1;\n// one\n// two\n// three"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const a = 1;\n// one\n// two\n// three\n// four"}}'
 silent "js trailing comments are not counted (full-line only)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const a = 1; // set a\nconst b = 2; // set b\nconst c = 3; // set c"}}'
 fires  "edit new_string comments" \
-  '{"tool_name":"Edit","tool_input":{"file_path":"/x/foo.ts","new_string":"// one\n// two\n// three\nconst a = 1;"}}'
+  '{"tool_name":"Edit","tool_input":{"file_path":"/x/foo.ts","new_string":"// one\n// two\n// three\n// four\nconst a = 1;"}}'
 fires  "shell hash comments" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.sh","content":"#!/bin/sh\n# one\n# two\n# three\necho a"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.sh","content":"#!/bin/sh\n# one\n# two\n# three\n# four\necho a"}}'
 silent "python trailing comments are not counted (full-line only)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"x = 1  # init x\ny = 2  # init y\nz = 3  # init z"}}'
 fires  "jsdoc block comment" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"/**\n * a\n * b\n */\nconst x = 1;"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"/**\n * a\n * b\n * c\n */\nconst x = 1;"}}'
 fires  "notebook python comments" \
-  '{"tool_name":"NotebookEdit","tool_input":{"new_source":"# a\n# b\n# c\nx = 1"}}'
+  '{"tool_name":"NotebookEdit","tool_input":{"new_source":"# a\n# b\n# c\n# d\nx = 1"}}'
 
 silent "js self-documenting" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const total = a + b;\nreturn total;\nfunction add(x, y) { return x + y; }"}}'
@@ -65,13 +65,13 @@ silent "directive without space after marker exempt" \
 silent "block continuation directive exempt" \
   '{"tool_name":"Edit","tool_input":{"file_path":"/x/foo.mjs","new_string":" * eslint-disable\n * eslint-disable\n * eslint-disable\nconst a = 1;"}}'
 fires  "directive name inside a longer word is not a directive" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// pragmatic approach\n// pragmatic solution\n// pragmatic idea\nconst a = 1;"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// pragmatic approach\n// pragmatic solution\n// pragmatic idea\n// pragmatic design\nconst a = 1;"}}'
 fires  "TODO/FIXME are comments (no exception)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// TODO: x\n// FIXME: y\n// HACK: z\nconst a = 1;"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// TODO: x\n// FIXME: y\n// HACK: z\n// NOTE: w\nconst a = 1;"}}'
 fires  "prose mentioning type ignore not a directive" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\nconst a = 1;"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\n// fourth comment\nconst a = 1;"}}'
 fires  "mid-line directive prose not exempt (anchor test)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\nfoo = 1"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\n# more info at ref.com\nfoo = 1"}}'
 silent "url in string not a comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const u = \"https://example.com/x\";\nconst v = \"a\";\nconst w = \"b\";"}}'
 silent "non-code extension" \
@@ -82,6 +82,27 @@ silent "shell dollar-hash not comments" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/n.sh","content":"n=$#\nx=${#arr}\ny=foo$#bar"}}'
 silent "escaped quote inside string" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/s.mjs","content":"const a = \"x \\\" // p\";\nconst b = \"y \\\" // q\";\nconst c = \"z \\\" // r\";"}}'
+
+silent "3 comment lines pass (below new threshold of 4)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\nconst x=1;\nconst y=2;\nconst z=3;"}}'
+silent "25 percent ratio passes (below new threshold of 30)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;\ncode9;\ncode10;\ncode11;\ncode12;"}}'
+fires  "4 lines, 33% ratio triggers (above both thresholds)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;"}}'
+silent "4 lines, 29% ratio passes (below ratio threshold)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\n// d\ncode1;\ncode2;\ncode3;\ncode4;\ncode5;\ncode6;\ncode7;\ncode8;\ncode9;\ncode10;"}}'
+silent "empty content" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":""}}'
+silent "whitespace only content" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"\n\n\n"}}'
+silent "pure comments no code" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c"}}'
+silent "missing file_path" \
+  '{"tool_name":"Write","tool_input":{"content":"// a\n// b\n// c\ncode;"}}'
+silent "missing tool_input" \
+  '{"tool_name":"Write"}'
+exits_zero "advisory path exits 0" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"const a = 1;\n// one\n// two\n// three\n// four"}}'
 silent "malformed stdin" 'not json'
 
 exits_zero "json null fails open" 'null'

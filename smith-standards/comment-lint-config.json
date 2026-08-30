@@ -1,5 +1,5 @@
 {
   "_comment": "Thresholds for comment-density-lint.mjs (advisory PreToolUse hook). See README hooks section.",
-  "minCommentLines": 3,
-  "minCommentRatio": 0.25
+  "minCommentLines": 4,
+  "minCommentRatio": 0.3
 }

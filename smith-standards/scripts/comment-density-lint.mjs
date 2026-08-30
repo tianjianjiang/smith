@@ -101,8 +101,9 @@ function main() {
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+    if (MACHINE_DIRECTIVE.test(trimmed)) continue;
     nonEmpty += 1;
-    if (commentPattern.test(trimmed) && !MACHINE_DIRECTIVE.test(trimmed)) {
+    if (commentPattern.test(trimmed)) {
       commentLines += 1;
     }
   }
