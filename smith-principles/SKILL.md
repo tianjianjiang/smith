@@ -1,6 +1,6 @@
 ---
 name: smith-principles
-description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID, HHH). Use when starting any development task, evaluating implementation approaches, or reviewing code quality. Always active as foundation for all development decisions.
+description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Use when starting any development task, evaluating implementation approaches, or reviewing code quality. Always active as foundation for all development decisions.
 ---
 
 # Fundamental Coding Principles
@@ -33,12 +33,6 @@ description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID, HHH). Use w
 - **L (Liskov Substitution)**: Subtypes substitutable for base types
 - **I (Interface Segregation)**: Many specific interfaces over one general
 - **D (Dependency Inversion)**: Depend on abstractions, not concretions
-
-## HHH (AI Behavior)
-
-- **H (Helpful)**: Provide useful, actionable assistance
-- **H (Honest)**: Be truthful, acknowledge uncertainty
-- **H (Harmless)**: Avoid destructive operations without confirmation
 
 ## Related
 
