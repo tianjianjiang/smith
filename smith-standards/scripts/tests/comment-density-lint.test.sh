@@ -36,8 +36,10 @@ silent "below line threshold" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const a = 1;\nconst b = 2;\nconst c = 3;\nconst d = 4;\n// one\n// two"}}'
 silent "ratio exactly at 25 percent" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// a\n// b\n// c\nconst a=1;\nconst b=2;\nconst c=3;\nconst d=4;\nconst e=5;\nconst f=6;\nconst g=7;\nconst h=8;\nconst i=9;"}}'
-silent "eslint directives exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-disable\n// eslint-enable\n// eslint-disable-next-line\nconst a = 1;"}}'
+silent "eslint-disable directive exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-disable\n// eslint-disable\n// eslint-disable\nconst a = 1;"}}'
+silent "eslint-enable directive exempt" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-enable\n// eslint-enable\n// eslint-enable\nconst a = 1;"}}'
 silent "typescript directives exempt" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// @ts-ignore\n// @ts-expect-error\n// @ts-nocheck\nconst a = 1;"}}'
 silent "prettier directives exempt" \
