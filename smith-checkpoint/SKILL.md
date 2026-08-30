@@ -1,14 +1,16 @@
 ---
 name: smith-checkpoint
 description: Memory checkpoint — save the current session's durable state into both memory systems (Serena memory, Basic-Memory note) in their required formats. Invoke with /smith-checkpoint.
-argument-hint: [short label]
+argument-hint: [label] [plan=path]
 ---
 
 # /smith-checkpoint — persist session state to both memories
 
-Capture what would otherwise be lost across sessions. Argument = a short label
-for the checkpoint. Save the SAME facts to both backends, each in its own format;
-do not skip one.
+Capture what would otherwise be lost across sessions. Arguments:
+- `label`: short checkpoint label (required)
+- `plan=path`: plan file path (optional, provided by ctx-claude stop hook)
+
+Save the SAME facts to both backends, each in its own format; do not skip one.
 
 ## What to capture
 

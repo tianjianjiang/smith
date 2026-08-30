@@ -131,22 +131,18 @@ fi
 case "$FLAG_TYPE" in
     plan-pending)
         STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
-        ACTIONS="mark done tasks in plan, commit, write_memory() if Serena"
-        RELOAD="plan=\`${ACTIVE_PLAN}\` mem=«name» task=«description»"
+        INVOKE="/smith-checkpoint \"context-limit\" plan=\`${ACTIVE_PLAN}\`"
         ;;
     plan-completed)
         STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
-        ACTIONS="commit, write_memory() if Serena"
-        RELOAD="plan=\`${COMPLETED_PLAN}\` (done) mem=«name» task=«summary»"
+        INVOKE="/smith-checkpoint \"context-limit\" plan=\`${COMPLETED_PLAN}\`"
         ;;
     *)
         STATUS="Context at ${CONTEXT_PCT}%"
-        ACTIONS="commit, write_memory() if Serena"
-        RELOAD="mem=«name» task=«description»"
+        INVOKE="/smith-checkpoint \"context-limit\""
         ;;
 esac
 
 json_stop_block "${STATUS}
 
-
-Reload: ${RELOAD}"
+Invoke: ${INVOKE}"
