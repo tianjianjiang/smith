@@ -26,17 +26,34 @@ records.
 2. **Basic-Memory** (`mcp__basic-memory__write_note`): a note under the project
    folder; type `decision` for material decisions, else `guide`/`note`.
 
+## Naming strategy
+
+**Use semantic names based on checkpoint context, not generic labels:**
+
+- **With plan file**: Use plan basename
+  - Serena: `plan_basename` (snake_case, e.g., `priority_2_context_dry`)
+  - Basic-Memory: Title Case (e.g., "Priority 2: Context DRY")
+- **Without plan**: Use descriptive label from current work context
+  - Never use bare "context-limit" or standalone timestamps
+  - Example: `feature_auth_implementation`, `bugfix_memory_leak`
+- **Label argument**: Passed from enforce-clear.sh, derived from plan basename or session timestamp
+
+**Consistency**: Same semantic name across label, Serena memory, Basic-Memory note (modulo format).
+
 ## Procedure
 
-1. Draft the checkpoint content once (the shared facts).
-2. Reconcile against existing entries in each system (update, don't duplicate).
-3. Write to both backends; confirm each write succeeded.
-4. If any backend write fails, do NOT report success: name which succeeded
+1. **Draft checkpoint content once** (the shared canonical facts).
+2. **Transform to both formats** from the same content:
+   - Serena: `write_memory(name=label, content=facts)`
+   - Basic-Memory: `write_note(title=readable_label, type=..., content=facts)`
+3. Reconcile against existing entries in each system (update, don't duplicate).
+4. Write to both backends; confirm each write succeeded.
+5. If any backend write fails, do NOT report success: name which succeeded
    and which failed, retry the failed one, and flag the systems left out of
    sync (no silent partial checkpoint).
-5. On full success, report in-band what was saved and where
+6. On full success, report in-band what was saved and where
    (paths/permalinks/slugs).
-6. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
+7. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
    run the bridge and check its exit status BEFORE emitting the block, so the block only
    claims a flag when one was actually written:
 

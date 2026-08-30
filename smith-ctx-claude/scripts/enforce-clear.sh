@@ -77,10 +77,6 @@ check_resume_allowed() {
     return 1
 }
 
-if [[ "$PLAN_LIB_AVAILABLE" == "true" ]]; then
-    check_resume_allowed get_ralph_state "${HOOK_CWD:-.}" "${FLAGS_DIR}/.ralph-resume-${CWD_KEY}" && exit 0
-    check_resume_allowed get_orchestrator_state "$CWD_KEY" "${FLAGS_DIR}/.ralph-orch-resume-${CWD_KEY}" && exit 0
-fi
 
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
     exit 0
@@ -128,18 +124,27 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
+CHECKPOINT_LABEL=""
+if [[ -n "$ACTIVE_PLAN" ]]; then
+    CHECKPOINT_LABEL=$(basename "$ACTIVE_PLAN" .md | tr '[:upper:]' '[:lower:]' | tr '-' '_')
+elif [[ -n "$COMPLETED_PLAN" ]]; then
+    CHECKPOINT_LABEL=$(basename "$COMPLETED_PLAN" .md | tr '[:upper:]' '[:lower:]' | tr '-' '_')
+else
+    CHECKPOINT_LABEL="session_$(date +%Y%m%d_%H%M%S)"
+fi
+
 case "$FLAG_TYPE" in
     plan-pending)
         STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
-        INVOKE="/smith-checkpoint \"context-limit\" plan=\`${ACTIVE_PLAN}\`"
+        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\" plan=\`${ACTIVE_PLAN}\`"
         ;;
     plan-completed)
         STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
-        INVOKE="/smith-checkpoint \"context-limit\" plan=\`${COMPLETED_PLAN}\`"
+        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\" plan=\`${COMPLETED_PLAN}\`"
         ;;
     *)
         STATUS="Context at ${CONTEXT_PCT}%"
-        INVOKE="/smith-checkpoint \"context-limit\""
+        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\""
         ;;
 esac
 
