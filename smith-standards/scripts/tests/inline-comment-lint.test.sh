@@ -32,42 +32,6 @@ fires  "notebook python comments" \
 
 silent "js self-documenting" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const total = a + b;\nreturn total;\nfunction add(x, y) { return x + y; }"}}'
-silent "eslint-disable directive exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-disable\n// eslint-disable\n// eslint-disable\nconst a = 1;"}}'
-silent "eslint-enable directive exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// eslint-enable\n// eslint-enable\n// eslint-enable\nconst a = 1;"}}'
-silent "typescript directives exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// @ts-ignore\n// @ts-expect-error\n// @ts-nocheck\nconst a = 1;"}}'
-silent "prettier directives exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// prettier-ignore\n// prettier-ignore\n// prettier-ignore\nconst a = 1;"}}'
-silent "uppercase noqa exempt (case-insensitive)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# NOQA: E501\n# NOQA\n# NoQa\n# noqa\nfoo = 1"}}'
-silent "uppercase eslint exempt (case-insensitive)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# ESLINT-DISABLE\n# Eslint-disable\n# ESLint-Disable\n# eslint-disable\nfoo = 1"}}'
-silent "uppercase typescript exempt (case-insensitive)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// @TS-IGNORE\n// @Ts-Ignore\n// @TS-NOCHECK\n// @ts-ignore\nconst a = 1;"}}'
-silent "SPDX directive exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// SPDX-License-Identifier: MIT\n// SPDX-FileCopyrightText: 2024\n// SPDX: tag\nconst a = 1;"}}'
-silent "pragma directive exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// pragma: no-cache\n// pragma once\n// pragma mark\nconst a = 1;"}}'
-silent "istanbul ignore exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// istanbul ignore next\n// istanbul ignore if\n// istanbul ignore else\nconst a = 1;"}}'
-silent "c8 ignore exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// c8 ignore next\n// c8 ignore start\n// c8 ignore stop\nconst a = 1;"}}'
-silent "type colon ignore exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# type: ignore\n# type: ignore[arg-type]\n# type:  ignore\n# type:ignore\nfoo = 1"}}'
-silent "directive without space after marker exempt" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"#noqa\n#noqa\n#noqa\nfoo = 1"}}'
-silent "block continuation directive exempt" \
-  '{"tool_name":"Edit","tool_input":{"file_path":"/x/foo.mjs","new_string":" * eslint-disable\n * eslint-disable\n * eslint-disable\nconst a = 1;"}}'
-fires  "directive name inside a longer word is not a directive" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// pragmatic approach\n// pragmatic solution\n// pragmatic idea\n// pragmatic design\nconst a = 1;"}}'
-fires  "TODO/FIXME are comments (no exception)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"// TODO: x\n// FIXME: y\n// HACK: z\n// NOTE: w\nconst a = 1;"}}'
-fires  "prose mentioning type ignore not a directive" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.ts","content":"// check the type: ignore this\n// another comment\n// third comment\n// fourth comment\nconst a = 1;"}}'
-fires  "mid-line directive prose not exempt (anchor test)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"# see https://ex.com/#noqa\n# link: example.com/#pragma\n# docs at site.com/#type:ignore\nfoo = 1"}}'
 silent "url in string not a comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"const u = \"https://example.com/x\";\nconst v = \"a\";\nconst w = \"b\";"}}'
 silent "non-code extension" \
@@ -79,12 +43,14 @@ silent "shell dollar-hash not comments" \
 silent "escaped quote inside string" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/s.mjs","content":"const a = \"x \\\" // p\";\nconst b = \"y \\\" // q\";\nconst c = \"z \\\" // r\";"}}'
 
-fires  "1 comment line triggers" \
+fires  "1 block (single line)" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\nconst x=1;"}}'
-fires  "2 comment lines trigger" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\nconst x=1;"}}'
-fires  "3 comment lines trigger" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\nconst x=1;\nconst y=2;\nconst z=3;"}}'
+fires  "1 block (consecutive lines)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n// c\nconst x=1;"}}'
+fires  "2 blocks (separated by blank)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\n\n// c\n// d\nconst x=1;"}}'
+fires  "2 blocks (separated by code)" \
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":"// a\n// b\nconst x=1;\n// c\n// d\nconst y=2;"}}'
 silent "empty content" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.js","content":""}}'
 silent "whitespace only content" \

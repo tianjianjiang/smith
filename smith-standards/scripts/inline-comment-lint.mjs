@@ -14,25 +14,16 @@ const COMMENT_PATTERN_BY_EXTENSION = {
   ".cts": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".tsx": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".jsx": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".go": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".rs": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".c": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".h": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".cc": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".cpp": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".hpp": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".java": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".kt": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".swift": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
-  ".scala": SLASH_COMMENT_OR_BLOCK_CONTINUATION,
   ".py": HASH_COMMENT_EXCEPT_SHEBANG,
   ".sh": HASH_COMMENT_EXCEPT_SHEBANG,
   ".bash": HASH_COMMENT_EXCEPT_SHEBANG,
   ".zsh": HASH_COMMENT_EXCEPT_SHEBANG,
-  ".rb": HASH_COMMENT_EXCEPT_SHEBANG,
 };
-
-const MACHINE_DIRECTIVE = /^(\/\/|#|\/\*|\*(?:[\s/]|$))\s*(?:eslint-disable|eslint-enable|prettier-ignore|SPDX|pragma|noqa|@ts-[a-z]+|istanbul ignore|c8 ignore|type:\s*ignore)\b/i;
 
 const CONTENT_FIELD_BY_TOOL = {
   Write: "content",
@@ -71,20 +62,29 @@ function main() {
   const content = addedContent(input);
   if (typeof content !== "string" || !content) return;
 
-  let commentLines = 0;
+  let commentBlocks = 0;
+  let inBlock = false;
+
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (MACHINE_DIRECTIVE.test(trimmed)) continue;
-    if (commentPattern.test(trimmed)) {
-      commentLines += 1;
+    if (!trimmed) {
+      inBlock = false;
+      continue;
+    }
+
+    const isComment = commentPattern.test(trimmed);
+    if (isComment && !inBlock) {
+      commentBlocks += 1;
+      inBlock = true;
+    } else if (!isComment) {
+      inBlock = false;
     }
   }
 
-  if (commentLines === 0) return;
+  if (commentBlocks === 0) return;
 
   const message =
-    `inline-comment-lint: this edit adds ${commentLines} comment line(s). ` +
+    `inline-comment-lint: this edit adds ${commentBlocks} comment block(s). ` +
     STANDARDS_REMINDER;
 
   process.stdout.write(
