@@ -73,9 +73,9 @@ function main() {
     /^mcp__(plugin_serena_)?serena__/.test(input.tool_name || "") &&
     input.cwd
   ) {
-    // Serena write with no per-file path (replace_in_files whole-project
-    // mode): the edit targets the active project, best approximated by the
-    // session cwd's repo. Do not fail open here.
+  
+  
+  
     dir = input.cwd;
   }
   if (!dir) return;
@@ -84,7 +84,7 @@ function main() {
   try {
     repoRoot = git(dir, ["rev-parse", "--show-toplevel"]);
   } catch {
-    return; // not inside a git repo (plans, scratchpad, memory) -> allow
+    return;
   }
 
   if (existsSync(join(repoRoot, OPT_OUT_MARKER))) return;
@@ -92,9 +92,9 @@ function main() {
   if (file) {
     try {
       git(dir, ["check-ignore", "-q", "--", file]);
-      return; // gitignored (local-only config, *.local/ dirs) -> allow
+      return;
     } catch {
-      // not ignored -> keep checking
+    
     }
   }
 
@@ -115,13 +115,13 @@ function main() {
     const defaultBranch = originHead.split("/").pop();
     if (defaultBranch) protectedBranches.add(defaultBranch);
   } catch {
-    // no origin/HEAD (git-init repo, or remote added without set-head)
-    // -> fall back to the static set
+  
+  
   }
 
   if (!protectedBranches.has(branch)) return;
 
-  // writeSync: stderr can be async on pipes; process.exit would truncate it
+
   writeSync(
     2,
     [

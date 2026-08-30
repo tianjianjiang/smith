@@ -86,8 +86,8 @@ if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
     echo "Error: sandbox $TEST_DIR is inside a git repository (TMPDIR=${TMPDIR:-unset})." >&2
     echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
     echo "       Re-run with TMPDIR pointing outside any repository." >&2
-    # The cleanup trap is installed further down, so this early exit would otherwise
-    # leave the sandbox behind on every run that trips the guard.
+  
+  
     rm -rf "$TEST_DIR"
     exit 1
 fi
@@ -136,21 +136,21 @@ patch_lib_common() {
 # Only patches PLANS_DIR; flag/state files are computed dynamically from CWD/session key
 # Also patches lib-plan.sh (shared library sourced by all hook scripts)
 create_patched_scripts() {
-    # Patch lib-plan.sh first (scripts source it from their own directory)
+  
     LIB_COMMON="$SCRIPT_DIR/scripts/lib-plan.sh"
-    # Fail-closed: nearly every test below sources this patched copy, so a
-    # silent substitution miss here would run the whole suite against the
-    # REAL ~/.claude/plans instead of $TEST_DIR -- a hard exit, because this
-    # setup is shared foundation for all tests and none of their results can
-    # be trusted if it's broken (unlike Test 61's guard, which only scopes a
-    # FAIL to its own assertion).
+  
+  
+  
+  
+  
+  
     if ! patch_lib_common; then
         echo "FATAL: PLANS_DIR substitution did not take effect in test lib-plan.sh" >&2
         exit 1
     fi
     chmod +x "$TEST_DIR/lib-plan.sh"
 
-    # Patch hook scripts (they no longer set PLANS_DIR directly; it comes from lib-plan.sh)
+  
     cp "$INJECT_SCRIPT" "$TEST_DIR/inject-plan.sh"
     chmod +x "$TEST_DIR/inject-plan.sh"
 
@@ -186,7 +186,7 @@ create_transcript_pct() {
     local name="${2:-default}"
     local model="${3:-claude-opus-4-6}"
     local path="$TEST_DIR/transcript-${name}.jsonl"
-    # Source lib-plan.sh to get model_to_context_window (use patched version)
+  
     local context_window
     context_window=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "$model")
     local tokens=$(( pct * context_window / 100 ))
@@ -230,7 +230,7 @@ RALPH
 }
 
 assert_contains() {
-    local _label="$1"  # used at call sites for readability
+    local _label="$1"
     local haystack="$2"
     local needle="$3"
     if echo "$haystack" | grep -q "$needle"; then
@@ -243,7 +243,7 @@ assert_contains() {
 }
 
 assert_not_contains() {
-    local _label="$1"  # used at call sites for readability
+    local _label="$1"
     local haystack="$2"
     local needle="$3"
     if echo "$haystack" | grep -q "$needle"; then
@@ -444,7 +444,7 @@ OUTPUT=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DI
 if [[ -f "$PLANS_DIR/.pending-reload-${CWD_A_KEY}" ]] && \
    [[ ! -f "$PLANS_DIR/.pending-reload-${CWD_B_KEY}" ]] && \
    assert_contains "9" "$OUTPUT" "PLAN EXIT"; then
-    # Verify the flag content has the correct plan
+  
     FLAG_PLAN=$(sed -n '1p' "$PLANS_DIR/.pending-reload-${CWD_A_KEY}")
     if [[ "$FLAG_PLAN" == *"test-plan.md" ]]; then
         echo "  PASS"
@@ -560,9 +560,9 @@ printf '%s\n' '# Plan A - Worktree A'\''s work' '' '## Tasks' '- [x] Task A1: Do
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
 
 # Worktree A triggers ExitPlanMode -> on-plan-exit flags plan-a (from state)
-_OUTPUT_EXIT_A=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/on-plan-exit.sh")  # side effect: creates flag
+_OUTPUT_EXIT_A=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
 
-sleep 1  # ensure different mtime
+sleep 1
 
 # Now create plan-b (worktree B's plan) making it newer than plan-a
 printf '%s\n' '# Plan B - Worktree B'\''s work' '' '## Tasks' '- [x] Task B1: Done' '- [ ] Task B2: Worktree B pending work' > "$PLANS_DIR/plan-b.md"
@@ -571,7 +571,7 @@ printf '%s\n' '# Plan B - Worktree B'\''s work' '' '## Tasks' '- [x] Task B1: Do
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY}"
 
 # Worktree B triggers ExitPlanMode -> on-plan-exit flags plan-b (from state)
-_OUTPUT_EXIT_B=$(echo '{"session_id":"sess_b","cwd":"'"$WORKTREE_B"'"}' | bash "$TEST_DIR/on-plan-exit.sh")  # side effect: creates flag
+_OUTPUT_EXIT_B=$(echo '{"session_id":"sess_b","cwd":"'"$WORKTREE_B"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
 
 # Verify both flags exist and point to different plans
 FLAG_A_PLAN=$(sed -n '1p' "$PLANS_DIR/.pending-reload-${CWD_A_KEY}" 2>/dev/null || echo "MISSING")
@@ -641,7 +641,7 @@ CWD_14_KEY="$CWD_DEFAULT_KEY"
 OUTPUT=$(echo '{"prompt":"execute the plan","session_id":"sess_14","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if [[ -f "$PLANS_DIR/.plan-state-${CWD_14_KEY}" ]] && \
    assert_contains "14" "$OUTPUT" "Task 2"; then
-    # Verify state file content
+  
     STATE_SESSION=$(sed -n '1p' "$PLANS_DIR/.plan-state-${CWD_14_KEY}")
     STATE_PATH=$(sed -n '2p' "$PLANS_DIR/.plan-state-${CWD_14_KEY}")
     if [[ "$STATE_SESSION" == "sess_14" ]] && [[ "$STATE_PATH" == "$TRANSCRIPT" ]]; then
@@ -2937,15 +2937,15 @@ if [[ "$(id -u)" == "0" ]]; then
     echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
     PASS=$((PASS + 1))
 else
-    # Restore the mode even if the hook aborts: leaving PLANS_DIR read-only would
-    # fail every later test for a reason unrelated to the code under test.
+  
+  
     trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
     chmod 500 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_85"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
     trap cleanup EXIT
-    # Nothing can be restored until the permissions are fixed, so this must not be
-    # signalled as a work thread waiting to resume.
+  
+  
     if assert_contains "85" "$OUTPUT" "could NOT be claimed" && \
        assert_contains "85" "$OUTPUT" "Signal: fresh-start" && \
        assert_file_exists "85" "$MR_FLAG_85"; then
@@ -3048,8 +3048,8 @@ else
     chmod 000 "$MR_FLAG_89"
     OUTPUT=$(echo '{"cwd":"'"$CWD_89"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 600 "$MR_FLAG_89"
-    # Advising the user to delete a "corrupt" file whose only problem is a
-    # permission bit would destroy a perfectly good pointer.
+  
+  
     if assert_contains "89" "$OUTPUT" "could NOT be read (permissions)" && \
        assert_not_contains "89" "$OUTPUT" "malformed flag" && \
        assert_file_exists "89" "$MR_FLAG_89"; then
@@ -3103,9 +3103,9 @@ if [[ "$(id -u)" == "0" ]]; then
     echo "  SKIP (root searches a directory regardless of the execute bit)"
     PASS=$((PASS + 1))
 else
-    # Mode 600 is the quieter failure: the glob still expands because the directory
-    # is readable, but every `[[ -f ]]` fails for want of the search bit, so each
-    # flag is dropped one at a time and the scan looks empty.
+  
+  
+  
     trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
     chmod 600 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_91"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
@@ -3322,10 +3322,10 @@ else
     OUTPUT=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$CFG_97"
     trap cleanup EXIT
-    # Two more runs, both with the permissions restored. The first proves the report
-    # was caused by the denial and not by the flag being there; the second proves a
-    # genuinely absent plans directory, with an inspectable parent, is still silent —
-    # otherwise the fix would trade one false report for another.
+  
+  
+  
+  
     OUT_RECOVERED_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
     rm -rf "$PLANS_97"
     OUT_GONE_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
@@ -3890,7 +3890,7 @@ if [[ "$SORT_OK_116" -eq 1 ]]; then
     ORDER_116=$(bash -c '
         . "'"$SORTFN_116"'"
         _mr_rows=""
-        # Same priority, same mtime, same timestamp: only input order can decide.
+      
         for i in A B C D E F; do
             _mr_rows+="3"$'"'"'\037'"'"'"1700000000"$'"'"'\037'"'"'"v"$'"'"'\037'"'"'"tie-$i"$'"'"'\037'"'"'"2026-08-16T00:00:00+0900"$'"'"'\037'"'"'"/p"$'"'"'\037'"'"'"k$i"$'"'"'\n'"'"'
         done
@@ -3900,8 +3900,8 @@ if [[ "$SORT_OK_116" -eq 1 ]]; then
     AGREE_116=$(bash -c '
         . "'"$SORTFN_116"'"
         _mr_rows=""
-        # Distinct keys, deliberately fed in the order the glob produces: priority
-        # interleaved and mtime ASCENDING, which is the order flag filenames impose.
+      
+      
         for i in 1 2 3 4 5 6; do
             p=$(( (i % 3) + 1 ))
             _mr_rows+="${p}"$'"'"'\037'"'"'"$((1700000000 + i))"$'"'"'\037'"'"'"v"$'"'"'\037'"'"'"l$i"$'"'"'\037'"'"'"2026-08-16T00:00:0${i}+0900"$'"'"'\037'"'"'"/p"$'"'"'\037'"'"'"k$i"$'"'"'\n'"'"'
@@ -3910,9 +3910,9 @@ if [[ "$SORT_OK_116" -eq 1 ]]; then
         _mr_sort_rows
         [[ "$(printf "%s" "$_mr_rows")" == "$expected" ]] && echo same || echo differs
     ')
-    # The third key decides only when priority AND mtime tie, which no end-to-end
-    # fixture can arrange on demand: reversing it, or deleting the branch entirely,
-    # changes nothing anywhere else in the suite.
+  
+  
+  
     THIRDKEY_116=$(bash -c '
         . "'"$SORTFN_116"'"
         _mr_rows=""
@@ -4067,7 +4067,7 @@ for n in 1 2 3; do
     [[ -d "$W_121" ]] || WT_OK_121=0
     printf '%s\n%s\n%s\n%s\n' "sess_121_s$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$W_121" "checkpoint-121-sel-$n" \
         > "$PLANS_DIR/.pending-memory-restore-20260816T12012$n-1211$n"
-    # Stagger by hours so "first" is well defined: newest sorts ahead within a band.
+  
     touch -t "$(date -v-${n}H +%Y%m%d%H%M 2>/dev/null || date -d "$n hours ago" +%Y%m%d%H%M)" \
         "$PLANS_DIR/.pending-memory-restore-20260816T12012$n-1211$n"
 done
@@ -4874,7 +4874,7 @@ fi
 # one displayed row existing — in isolation these states take the fallback path
 # and the sentence never appears, which is why they went unnoticed.
 # Each test asserts the row IS present as well, so an empty report cannot pass.
-mr_bearing_repo() {   # $1 = test number -> sets REPO_N, WT_N, plants the row-maker
+mr_bearing_repo() {
     MR_R="$TEST_DIR/repo-$1"; MR_W="$TEST_DIR/wt-$1"
     mkdir -p "$MR_R"
     git -C "$MR_R" init -q 2>/dev/null
@@ -4885,7 +4885,7 @@ mr_bearing_repo() {   # $1 = test number -> sets REPO_N, WT_N, plants the row-ma
     printf '%s\n%s\n%s\n%s\n' "sess_$1" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_W" "row-maker-$1" \
         > "$PLANS_DIR/.pending-memory-restore-2026081800$1-$1"
 }
-mr_bearing_check() {  # $1 = test number
+mr_bearing_check() {
     if assert_contains "$1" "$OUTPUT" "same repository, selectable" && \
        assert_not_contains "$1" "$OUTPUT" "No checkpoint flag recorded this session's working directory"; then
         echo "  PASS"; PASS=$((PASS + 1))
@@ -4955,12 +4955,12 @@ fi
 # since a non-matching flag is never consumed. A hard link reaches the same
 # disclosure while being neither -L nor irregular, so the link count closes it.
 # Both fixtures put a marker in the target that must never appear in the output.
-mr_link_target() {   # $1 = test number -> sets MR_T to a file with markers on lines 3 and 4
+mr_link_target() {
     MR_T="$TEST_DIR/link-target-$1"
     printf '%s\n%s\n%s\n%s\n' "x" "2026-08-18T00:00:00+0900" "LEAKPATH-$1" "LEAKLABEL-$1" > "$MR_T"
     /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 }
-mr_link_check() {    # $1 = test number
+mr_link_check() {
     if assert_not_contains "$1" "$OUTPUT" "LEAKLABEL-$1" && \
        assert_not_contains "$1" "$OUTPUT" "LEAKPATH-$1" && \
        assert_contains "$1" "$OUTPUT" "are a link or share an inode and were NOT read"; then
@@ -5030,7 +5030,7 @@ echo "Test 156: scope_compare: class and priority for every documented input"
 # chain states the invariant; it does not close a hole.
 sc() { bash -c 'source "$1" && scope_compare "$2" "$3" && printf "%s/%s" "$SCOPE_CLASS" "$SCOPE_PRIO"' _ "$LIB_COMMON" "$1" "$2"; }
 SC_OK=1
-check_sc() {  # $1 own, $2 other, $3 expected
+check_sc() {
     local got; got=$(sc "$1" "$2")
     if [[ "$got" != "$3" ]]; then
         echo "  scope_compare('$1','$2') = $got, expected $3"; SC_OK=0
@@ -5064,7 +5064,7 @@ fi
 # number satisfies the same guard the real link count does. The probe order is
 # therefore load-bearing: the GNU form has to be asked first, and the BSD form
 # kept as its fallback. See https://man7.org/linux/man-pages/man1/stat.1.html
-mr_gnu_stat() {   # $1 = test number -> MR_SHIM holds a PATH dir whose `stat` is GNU-like
+mr_gnu_stat() {
     MR_SHIM="$TEST_DIR/gnustat-$1"; mkdir -p "$MR_SHIM"
     cat > "$MR_SHIM/stat" <<'GNUSTAT'
 #!/bin/sh

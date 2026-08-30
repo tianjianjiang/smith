@@ -24,7 +24,7 @@ fires  "edit new_string comments" \
 fires  "shell hash comments" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.sh","content":"#!/bin/sh\n# one\n# two\n# three\n# four\necho a"}}'
 silent "python trailing comments are not counted (full-line only)" \
-  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"x = 1  # init x\ny = 2  # init y\nz = 3  # init z"}}'
+  '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.py","content":"x = 1
 fires  "jsdoc block comment" \
   '{"tool_name":"Write","tool_input":{"file_path":"/x/foo.mjs","content":"/**\n * a\n * b\n * c\n */\nconst x = 1;"}}'
 fires  "notebook python comments" \

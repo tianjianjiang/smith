@@ -44,7 +44,7 @@ function loadRules() {
 
 function main() {
   const raw = readStdin();
-  if (!raw.trim()) return; // no input -> stay silent
+  if (!raw.trim()) return;
 
   let prompt = "";
   try {
@@ -64,8 +64,8 @@ function main() {
   for (const rule of rules) {
     if (!rule || typeof rule.pattern !== "string" || !Array.isArray(rule.skills))
       continue;
-    // Drop non-string/blank skill entries so a bad table can't throw below
-    // (the router must always exit 0).
+  
+  
     const skills = rule.skills.filter(
       (s) => typeof s === "string" && s.trim().length > 0,
     );
@@ -74,22 +74,22 @@ function main() {
     try {
       re = new RegExp(rule.pattern, "i");
     } catch {
-      continue; // a malformed pattern must not crash the router
+      continue;
     }
     if (!re.test(prompt)) continue;
 
-    // A `note` is rule-level guidance, not an echo of a skill name — so it is
-    // collected above the filters below: gating it would drop the reminder
-    // exactly when the user names the skill (evidence they want it).
+  
+  
+  
     const note = typeof rule.note === "string" ? rule.note.trim() : "";
     if (note) notes.add(note);
 
-    // Skip skills the user already named explicitly (no point echoing them).
+  
     const fresh = skills.filter((s) => {
       if (seenSkills.has(s)) return false;
-      // Skip only when the user named the skill as a whole token (optionally
-      // @-prefixed) — substring matching would suppress e.g. smith-plan when
-      // the prompt says smith-plan-claude.
+    
+    
+    
       const escaped = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       if (new RegExp(`(^|[^\\w-])@?${escaped}([^\\w-]|$)`, "i").test(prompt)) {
         return false;
@@ -103,16 +103,16 @@ function main() {
 
   if (matched.length === 0 && notes.size === 0) return;
 
-  // The cap trims the DISPLAY, not the scan — every rule is still evaluated so
-  // its note can be collected above.
+
+
   const lines = matched
     .slice(0, MAX_RULES_SHOWN)
     .map((m) => `- ${m.why} -> ${m.skills.map((s) => "@" + s).join(", ")}`);
-  // A rule may carry a deterministic reminder (its `note`) beyond the skill
-  // list — e.g. dev-initiation prompts get the branch-first rule verbatim.
+
+
   const noteLines = [...notes].map((n) => `- note: ${n}`);
-  // Notes outlive the skill list when the user already named every matching
-  // skill, so header/footer must not promise skills that are not listed.
+
+
   const hasSkillLines = lines.length > 0;
   const header = hasSkillLines
     ? "Skill router (deterministic hook): your input matches these smith skills —"

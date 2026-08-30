@@ -55,11 +55,11 @@ session_key() {
 model_to_context_window() {
     local model="${1:-}"
     case "$model" in
-        *\[1[mM]\])                    echo 1000000 ;;  # explicit terminal suffix
-        *sonnet-5*|*sonnet-4-[6-9]*)   echo 1000000 ;;  # current-gen Sonnet (4.6-4.9, 5+): 1M standard
-        *haiku*|*sonnet*)              echo 200000  ;;  # Haiku, legacy Sonnet (<=4.5): no automatic 1M
-        *claude-opus-*|*claude-fable-*|*claude-mythos-*) echo 1000000 ;;  # flagships -> 1M
-        *)                             echo "${CONTEXT_WINDOW_TOKENS}" ;;  # safe fallback
+        *\[1[mM]\])                    echo 1000000 ;;
+        *sonnet-5*|*sonnet-4-[6-9]*)   echo 1000000 ;;
+        *haiku*|*sonnet*)              echo 200000  ;;
+        *claude-opus-*|*claude-fable-*|*claude-mythos-*) echo 1000000 ;;
+        *)                             echo "${CONTEXT_WINDOW_TOKENS}" ;;
     esac
 }
 
@@ -90,8 +90,8 @@ get_context_percentage() {
         return
     fi
 
-    # Read last 200KB, filter for complete JSON lines only (grep '^{' skips
-    # the truncated first line from tail -c byte-boundary cut).
+  
+  
     local last_line
     last_line=$(tail -c 204800 "$transcript" 2>/dev/null \
         | grep '^{' \
@@ -114,7 +114,7 @@ get_context_percentage() {
         return
     fi
 
-    # Auto-detect context window from model if not explicitly provided
+  
     if [[ -z "$context_window" ]]; then
         local model
         model=$(echo "$last_line" | jq -r '.message.model // empty' 2>/dev/null) || model=""
