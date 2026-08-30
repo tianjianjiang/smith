@@ -1,6 +1,6 @@
 ---
 name: smith-guidance
-description: Core agent steering with HHH framework (Helpful, Honest, Harmless), exploration-before-implementation workflow, scoped-edit discipline, and anti-sycophancy rules. Use when guiding AI agent behavior, handling disagreements, or establishing interaction patterns. Always active for all agent interactions.
+description: Core agent steering
 ---
 
 # Core Agent Steering

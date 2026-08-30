@@ -1,6 +1,6 @@
 ---
 name: smith-typescript
-description: TypeScript development standards for frontend and backend projects. Use when working with TypeScript, configuring path aliases, setting up test runners (Vitest/Jest), or organizing test files. Covers Vite alias configuration and type checking.
+description: TypeScript development standards
 ---
 
 # TypeScript Development Standards

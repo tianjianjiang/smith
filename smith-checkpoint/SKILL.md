@@ -1,6 +1,6 @@
 ---
 name: smith-checkpoint
-description: Memory checkpoint — save the current session's durable state into both memory systems (Serena memory, Basic-Memory note) in their required formats. Invoke with /smith-checkpoint.
+description: Memory checkpoint
 argument-hint: [label] [plan=path]
 ---
 

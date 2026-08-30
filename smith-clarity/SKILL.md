@@ -1,6 +1,6 @@
 ---
 name: smith-clarity
-description: Cognitive trap detection and logic fallacy identification. Use when making decisions, evaluating approaches, risk assessment, or detecting faulty reasoning in arguments.
+description: Cognitive trap detection and logic fallacy
 ---
 
 # Thinking Clarity

@@ -1,6 +1,6 @@
 ---
 name: smith-skills
-description: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use when creating or editing agent instructions, rules, or documentation. Covers progressive disclosure, rule loading, Markdown structure, and token budget guidelines.
+description: Agent skills authoring guide
 ---
 
 # Agent Skills Authoring Guide

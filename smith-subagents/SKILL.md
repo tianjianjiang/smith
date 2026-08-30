@@ -1,6 +1,6 @@
 ---
 name: smith-subagents
-description: Subagent spawning and return discipline — read-only by default, return findings not actions, treat every return as a claim to verify, reconcile against live state before mutating shared artifacts. Use when spawning Task/Agent subagents, delegating investigation, orchestrating parallel agents, or when a subagent will read or modify shared state (PRs, issues, files, remotes).
+description: Subagent spawning and return discipline
 ---
 
 # Subagent Discipline

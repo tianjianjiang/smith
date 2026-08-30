@@ -1,6 +1,6 @@
 ---
 name: smith-validation
-description: Hypothesis testing, adversarial verification of findings, root cause analysis, and debugging techniques. Use when debugging, investigating any question whose answer you will report as fact, verifying whether a claim or finding is true, red-teaming a conclusion, testing hypotheses, validating solutions, proving correctness, or performing root cause analysis on failures.
+description: Hypothesis testing
 ---
 
 # Verification Techniques

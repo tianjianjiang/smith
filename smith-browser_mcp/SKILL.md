@@ -1,6 +1,6 @@
 ---
 name: smith-browser_mcp
-description: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Take each server's own default browser — both resolve to Chrome's stable channel — and set no browser override at all; launching Vivaldi/Brave/Arc/Opera/Edge is forbidden, though attaching to an already-running one over the Chrome DevTools Protocol (CDP) is the documented escape hatch. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, triaging browser MCP launch failures, or when a site needs an interactive login the user must complete.
+description: Browser MCP plugin reliability
 ---
 
 # Browser MCP Plugin Reliability

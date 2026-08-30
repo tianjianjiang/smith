@@ -1,6 +1,6 @@
 ---
 name: smith-playwright
-description: Playwright testing patterns including proactive failure monitoring, artifact inspection, and root cause classification. Use when running Playwright tests or analyzing Playwright test results.
+description: Playwright testing patterns
 ---
 
 # Playwright Testing Standards

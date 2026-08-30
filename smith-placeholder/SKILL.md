@@ -1,6 +1,6 @@
 ---
 name: smith-placeholder
-description: Placeholder syntax standard — guillemets «token» in every context. Use when writing prompts, documentation, usage strings, or any content with user-substitutable values.
+description: Placeholder syntax standard
 ---
 
 # Placeholder Syntax Standards

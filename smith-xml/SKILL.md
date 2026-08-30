@@ -1,6 +1,6 @@
 ---
 name: smith-xml
-description: XML tag standards for runtime prompts that mix instructions with embedded data (subagent prompts, assembled system messages). Use when constructing such a prompt, NOT when authoring a SKILL.md body — see smith-skills for that. Covers tag conventions for Claude, GPT-5.x, Gemini, and Harmony, with source-credibility notes verified 2026-07-11.
+description: XML tag standards
 ---
 
 # XML Tag Standards

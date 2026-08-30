@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management with /clear, /compact mechanics, stop hook enforcement at 60%, JSONL state recall, tool-output hygiene, and system reminders. Reference dumps (hooks, permission modes, agent features, model routing) live in companion REFERENCE.md. Use when operating in Claude Code IDE or when context exceeds 50%.
+description: Claude Code context management
 ---
 
 # Claude Code Context Management

@@ -1,6 +1,6 @@
 ---
 name: smith-analysis
-description: Reasoning frameworks and problem decomposition techniques. Use when planning implementation, evaluating arguments, estimating scope, decomposing complex tasks, or applying first principles thinking.
+description: Reasoning frameworks and problem decomposition
 ---
 
 # Reasoning Frameworks

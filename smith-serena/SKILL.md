@@ -1,6 +1,6 @@
 ---
 name: smith-serena
-description: Serena MCP integration for file I/O, semantic code editing, and persistent memory. ALWAYS use Serena for file operations and language server features when available. Proactively sync memories at phase/todo/session boundaries.
+description: Serena MCP integration
 ---
 
 # Serena MCP Integration

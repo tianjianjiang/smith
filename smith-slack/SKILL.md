@@ -1,6 +1,6 @@
 ---
 name: smith-slack
-description: Slack message/reply drafting discipline — a hard pre-send checklist (draft-not-send, attribution footnote, evidence URLs, no formatting, confirm-before-send). Use when drafting or replying in Slack, invoking any slack_send_message* / slack_* MCP tool, or running a /slack:* command.
+description: Slack message/reply drafting discipline
 ---
 
 # Slack Drafting Discipline

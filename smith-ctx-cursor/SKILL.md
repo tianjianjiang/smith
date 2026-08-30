@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-cursor
-description: Cursor context management with /summarize command, @ mentions for file inclusion, and @codebase discovery. Use when operating in Cursor IDE or when context exceeds 60%. Activate for context optimization in Cursor sessions.
+description: Cursor context management
 ---
 
 # Cursor Context Management

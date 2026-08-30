@@ -1,6 +1,6 @@
 ---
 name: smith-dialectic
-description: Socratic interview that stress-tests a plan against project docs and code, one question at a time. Use when user says "grill my plan", "challenge this", "stress-test", or wants to reach shared understanding before implementing.
+description: Socratic interview that stress-tests a plan
 ---
 
 # Socratic Plan Interview

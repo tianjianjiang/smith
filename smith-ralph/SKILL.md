@@ -1,6 +1,6 @@
 ---
 name: smith-ralph
-description: Ralph Loop integration patterns for iterative AI development. Use when starting Ralph loops, managing iterations, or recovering from context resets. Covers TDD, debugging, context management, and memory persistence.
+description: Ralph Loop integration patterns
 ---
 
 # Ralph Loop Integration
