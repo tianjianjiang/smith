@@ -42,6 +42,32 @@ management; read the section you need and unload it.
 
 **Why not just instructions?** Research shows agents treat "always run lint" as suggestions. PostToolUse hooks are invisible and automatic — the strongest enforcement layer. See [Anthropic best practices](https://www.anthropic.com/engineering/claude-code-best-practices) and [claude-format-hook](https://github.com/ryanlewis/claude-format-hook).
 
+### Tool Output Hygiene Hook
+
+**PostToolUse context reminder** — injects reminder when tool output >5K tokens:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "~/.smith/smith-ctx-claude/scripts/tool-output-hygiene.mjs",
+          "timeout": 5
+        }]
+      }
+    ]
+  }
+}
+```
+
+**Triggers**: Read, Bash, or any tool returning large output (>5K tokens estimated)
+
+**Action**: Injects reminder as additionalContext suggesting to summarize findings and use file:line references instead of keeping full output
+
+**Registration**: Add to `~/.claude/settings.json` (user-global) or `.claude/settings.json` (project-specific)
+
 ## Hooks Reference
 
 **Hook events** (4 handler types: command, http, prompt, agent):
