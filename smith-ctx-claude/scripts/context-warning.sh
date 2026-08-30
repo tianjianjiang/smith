@@ -36,8 +36,10 @@ fi
 
 if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]]; then
     MSG="Context at ${CONTEXT_PCT}% (critical). Checkpoint work, then /clear."
+elif [[ $CONTEXT_PCT -ge 55 ]]; then
+    MSG="Context at ${CONTEXT_PCT}% (warning). Recommend: /compact (summarize) or /clear (full reset)."
 else
-    MSG="Context at ${CONTEXT_PCT}% (warning). Consider /compact or prepare for /clear."
+    MSG="Context at ${CONTEXT_PCT}% (warning). Recommend: /compact to summarize context."
 fi
 
 json_hook_output "UserPromptSubmit" "$MSG"
