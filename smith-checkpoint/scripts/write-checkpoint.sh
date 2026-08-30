@@ -54,8 +54,8 @@ transform_label_to_basic_memory_title() {
 
 write_to_serena() {
     local content="$1"
-    echo "Writing to Serena: ${LABEL}"
-    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" --content "${content}" 2>&1
+    echo "Writing to Serena: ${LABEL}" >&2
+    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" --content "${content}" >&2
 }
 
 write_to_basic_memory() {
@@ -64,24 +64,43 @@ write_to_basic_memory() {
     local project="$3"
     local folder="projects/${project}"
 
-    echo "Writing to Basic-Memory: ${title}"
+    echo "Writing to Basic-Memory: ${title}" >&2
     uvx basic-memory tool write-note \
         --title "${title}" \
         --folder "${folder}" \
         --type guide \
         --tags checkpoint \
-        --content "${content}" 2>&1
+        --content "${content}"
 }
 
-report_success() {
-    local bm_title="$1"
-    local project="$2"
+generate_reload_block() {
+    local permalink="$1"
+    local plan_path="$2"
     local timestamp="$3"
 
     cat <<EOF
+
+Checkpoint: ${LABEL} (${timestamp})
+Manual resume: /smith-recon "resume my work thread on ${LABEL}"
+State locations:
+- Serena: ${LABEL} (smith project)
+- Basic-Memory: ${permalink}
+EOF
+
+    if [[ -n "$plan_path" ]]; then
+        echo "- plan: ${plan_path}"
+    fi
+}
+
+report_success() {
+    local permalink="$1"
+    local project="$2"
+    local timestamp="$3"
+
+    cat >&2 <<EOF
 ✓ Checkpoint written to both backends
   Serena: ${LABEL}
-  Basic-Memory: ${bm_title} (project: ${project})
+  Basic-Memory: ${permalink}
   Timestamp: ${timestamp}
 EOF
 }
@@ -98,12 +117,16 @@ main() {
         exit 1
     fi
 
-    if ! write_to_basic_memory "$content" "$bm_title" "$project"; then
+    local bm_result
+    if ! bm_result=$(write_to_basic_memory "$content" "$bm_title" "$project"); then
         echo "Error: Basic-Memory write failed" >&2
         exit 1
     fi
 
-    report_success "$bm_title" "$project" "$timestamp"
+    local permalink=$(echo "$bm_result" | grep -o '"permalink": "[^"]*"' | cut -d'"' -f4)
+
+    report_success "$permalink" "$project" "$timestamp"
+    generate_reload_block "$permalink" "$plan_path" "$timestamp"
 }
 
 main
