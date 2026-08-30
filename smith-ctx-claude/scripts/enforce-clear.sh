@@ -77,10 +77,6 @@ check_resume_allowed() {
     return 1
 }
 
-if [[ "$PLAN_LIB_AVAILABLE" == "true" ]]; then
-    check_resume_allowed get_ralph_state "${HOOK_CWD:-.}" "${FLAGS_DIR}/.ralph-resume-${CWD_KEY}" && exit 0
-    check_resume_allowed get_orchestrator_state "$CWD_KEY" "${FLAGS_DIR}/.ralph-orch-resume-${CWD_KEY}" && exit 0
-fi
 
 if [[ -z "$TRANSCRIPT_PATH" ]] || [[ ! -f "$TRANSCRIPT_PATH" ]]; then
     exit 0

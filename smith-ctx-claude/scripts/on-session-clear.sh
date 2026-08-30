@@ -1340,65 +1340,6 @@ else
 fi
 STATE_META_FLAG="- Flag file: $([ -f "$FLAG_FILE" ] && echo "found" || echo "not found")"
 
-# --- Ralph resume detection (shared by both plan and no-plan paths) ---
-RALPH_RESUME_DIRECTIVE=""
-if read_ralph_resume "$CWD_KEY"; then
-    # Calculate remaining iterations (min 10 if exhausted)
-    RALPH_REMAINING=10
-    if [[ -n "$RALPH_RESUME_MAX_ITER" ]] && [[ "$RALPH_RESUME_MAX_ITER" =~ ^[0-9]+$ ]] && \
-       [[ -n "$RALPH_RESUME_ITERATION" ]] && [[ "$RALPH_RESUME_ITERATION" =~ ^[0-9]+$ ]]; then
-        RALPH_REMAINING=$(( RALPH_RESUME_MAX_ITER - RALPH_RESUME_ITERATION ))
-        if [[ $RALPH_REMAINING -lt 10 ]]; then
-            RALPH_REMAINING=10
-        fi
-    fi
-
-    # Build Skill tool args: prompt --completion-promise 'promise' --max-iterations N
-    RALPH_SKILL_ARGS="${RALPH_RESUME_PROMPT:-continue}"
-    if [[ -n "$RALPH_RESUME_PROMISE" ]]; then
-        RALPH_SKILL_ARGS+=" --completion-promise '${RALPH_RESUME_PROMISE}'"
-    fi
-    RALPH_SKILL_ARGS+=" --max-iterations ${RALPH_REMAINING}"
-
-    RALPH_RESUME_DIRECTIVE="\n\n**RALPH LOOP AUTO-RESUME:**"
-    RALPH_RESUME_DIRECTIVE+="\n1. If Serena MCP available: read_memory() for ralph_*_state"
-    RALPH_RESUME_DIRECTIVE+="\n2. Restore iteration context from memory"
-    RALPH_RESUME_DIRECTIVE+="\n3. Auto-start Ralph loop NOW using Skill tool:"
-    RALPH_RESUME_DIRECTIVE+="\n   Skill(skill: \"ralph-loop:ralph-loop\", args: \"${RALPH_SKILL_ARGS}\")"
-    RALPH_RESUME_DIRECTIVE+="\n4. Do NOT ask user for permission - auto-invoke immediately after memory restore"
-
-    # Clean up resume files (consumed)
-    rm -f "${PLANS_DIR}/.ralph-resume-${CWD_KEY}" "${PLANS_DIR}/.ralph-resume-${CWD_KEY}.prompt" 2>/dev/null
-fi
-
-# Proactive phase resume: Ralph state file exists but no resume files.
-# This covers the phase-boundary exit path where the agent exited Ralph
-# normally (via promise) and no context threshold was hit.
-if [[ -z "$RALPH_RESUME_DIRECTIVE" ]]; then
-    if check_ralph_recently_active "${HOOK_CWD:-${PWD:-.}}"; then
-        RALPH_RESUME_DIRECTIVE="\n\n**RALPH LOOP PHASE RESUME:**"
-        RALPH_RESUME_DIRECTIVE+="\nPrevious session used ralph-loop (state file found in CWD)."
-        RALPH_RESUME_DIRECTIVE+="\n1. read_memory() for ralph_* state (phase progress, iteration context)"
-        RALPH_RESUME_DIRECTIVE+="\n2. If phase work remains: auto-invoke Skill(skill: \"ralph-loop:ralph-loop\")"
-        RALPH_RESUME_DIRECTIVE+="\n   Pass the original prompt and remaining iterations from memory"
-        RALPH_RESUME_DIRECTIVE+="\n3. Do NOT ask user for permission - auto-invoke if ralph state found in memory"
-    fi
-fi
-
-# --- Orchestrator resume detection (Pattern B) ---
-ORCH_RESUME_DIRECTIVE=""
-if read_orchestrator_resume "$CWD_KEY"; then
-    ORCH_RESUME_DIRECTIVE="\n\n**RALPH ORCHESTRATOR AUTO-RESUME (Pattern B):**"
-    ORCH_RESUME_DIRECTIVE+="\nPrevious session was running orchestration mode."
-    ORCH_RESUME_DIRECTIVE+="\n1. If Serena MCP available: read_memory() for orchestrator state"
-    ORCH_RESUME_DIRECTIVE+="\n2. Read plan file: \`${ORCH_RESUME_PLAN_PATH:-unknown}\`"
-    ORCH_RESUME_DIRECTIVE+=$(printf '\n3. Resume from iteration %s, task: %s' "${ORCH_RESUME_ITERATION:-?}" "${ORCH_RESUME_CURRENT_TASK:-unknown}")
-    ORCH_RESUME_DIRECTIVE+="\n4. Continue orchestration: parse remaining \`- [ ]\` tasks, spawn workers via Task tool"
-    ORCH_RESUME_DIRECTIVE+="\n5. Do NOT ask user for permission - auto-resume orchestration"
-
-    # Clean up resume file (consumed)
-    rm -f "${PLANS_DIR}/.ralph-orch-resume-${CWD_KEY}" 2>/dev/null
-fi
 
 # No plan found — output state data for SKILL.md to interpret
 if [[ -z "$PLAN_FILE" ]]; then
@@ -1414,8 +1355,8 @@ if [[ -z "$PLAN_FILE" ]]; then
         done < <(ls -t "$PLANS_DIR"/*.md 2>/dev/null)
     fi
 
-    # Determine signal: flag or Ralph/orchestrator resume means reload intent
-    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$RALPH_RESUME_DIRECTIVE" ]] || [[ -n "$ORCH_RESUME_DIRECTIVE" ]] || [[ -n "$MR_ACTIONABLE" ]]; then
+    # Determine signal: flag means reload intent
+    if [[ -n "$FLAG_TYPE" ]] || [[ -n "$MR_ACTIONABLE" ]]; then
         SIGNAL="resume"
     else
         SIGNAL="fresh-start"
@@ -1429,12 +1370,6 @@ if [[ -z "$PLAN_FILE" ]]; then
     if [[ -n "$AVAILABLE_PLANS" ]]; then
         STATE_OUTPUT+="\n\nRecent plans (for reference if user asks):"
         STATE_OUTPUT+="${AVAILABLE_PLANS}"
-    fi
-    if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
-        STATE_OUTPUT+="$RALPH_RESUME_DIRECTIVE"
-    fi
-    if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
-        STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
     fi
 
     # Prepend the checkpoint memory-restore directive so the action leads. It is set
@@ -1457,12 +1392,6 @@ if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
     STATE_OUTPUT+="\n- Signal: resume"
     STATE_OUTPUT+="\n- Plan file: \`${PLAN_FILE}\` (unreadable)"
     STATE_OUTPUT+="\n- Plans directory: \`${PLANS_DIR}\`"
-    if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
-        STATE_OUTPUT+="$RALPH_RESUME_DIRECTIVE"
-    fi
-    if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
-        STATE_OUTPUT+="$ORCH_RESUME_DIRECTIVE"
-    fi
     [[ -n "$MR_DIRECTIVE" ]] && STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
     rm -f "$FLAG_FILE" 2>/dev/null
     json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
@@ -1511,15 +1440,6 @@ if [[ "$FLAG_TYPE" == "plan-pending" ]] && [[ $PENDING -gt 0 ]]; then
     FULL_CONTENT=$(printf '%b\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
 fi
 
-# Append Ralph resume directive if present
-if [[ -n "$RALPH_RESUME_DIRECTIVE" ]]; then
-    FULL_CONTENT+=$(printf '%b' "$RALPH_RESUME_DIRECTIVE")
-fi
-
-# Append orchestrator resume directive if present
-if [[ -n "$ORCH_RESUME_DIRECTIVE" ]]; then
-    FULL_CONTENT+=$(printf '%b' "$ORCH_RESUME_DIRECTIVE")
-fi
 
 # Prepend the checkpoint memory-restore directive so it leads even when a plan also
 # reloaded. Set whether or not anything was consumed — a report is a directive too.

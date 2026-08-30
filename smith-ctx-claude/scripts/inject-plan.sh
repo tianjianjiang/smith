@@ -71,8 +71,6 @@ find "$PLANS_DIR" -name ".pending-reload-*" -mmin +60 -delete 2>/dev/null || tru
 rm -f "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
 # 24h: state files live longer than flags (matches freshness window in on-session-clear.sh)
 find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
-find "$PLANS_DIR" -name ".ralph-resume-*" -mmin +60 -delete 2>/dev/null || true
-find "$PLANS_DIR" -name ".ralph-orch-resume-*" -mmin +60 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".pending-reload-*.exit-marker" -mmin +5 -delete 2>/dev/null || true
 find "$PLANS_DIR" -name ".model-*" -mmin +1440 -delete 2>/dev/null || true
 
@@ -200,17 +198,6 @@ CRITICAL_PCT=${PLAN_CONTEXT_CRITICAL_PCT:-60}
 if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION" ]]; then
     CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
 
-    RALPH_ACTIVE=false
-    RALPH_CWD="${HOOK_CWD:-${PWD:-}}"
-    if get_ralph_state "$RALPH_CWD"; then
-        RALPH_ACTIVE=true
-    fi
-
-    ORCH_ACTIVE_MODE=false
-    if get_orchestrator_state "$CWD_KEY"; then
-        ORCH_ACTIVE_MODE=true
-    fi
-
     if [[ $CONTEXT_PCT -ge $WARNING_PCT ]]; then
         # Prefer the plan recorded in the state file (session-specific)
         ACTIVE_PLAN=""
@@ -239,18 +226,6 @@ if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]] && [[ -z "$ACTION"
             # Write empty plan path so completed plan isn't re-loaded after /clear
             TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
             printf '%s\n%s\n%s\n%s\n%s\n' "" "$CURRENT_SESSION" "$TIMESTAMP" "${HOOK_CWD:-${PWD:-}}" "plan-completed" > "$FLAG_FILE"
-        fi
-
-        if [[ $CONTEXT_PCT -ge $CRITICAL_PCT ]] && [[ "$RALPH_ACTIVE" == "true" ]]; then
-            save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
-                "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
-            force_ralph_exit "$RALPH_CWD" || true
-        elif [[ "$RALPH_ACTIVE" == "true" ]]; then
-            save_ralph_resume "$CWD_KEY" "${RALPH_MAX_ITERATIONS:-0}" "${RALPH_ITERATION:-1}" \
-                "${RALPH_COMPLETION_PROMISE:-}" "${RALPH_PROMPT:-}" "${ACTIVE_PLAN:-}"
-        elif [[ "$ORCH_ACTIVE_MODE" == "true" ]]; then
-            save_orchestrator_resume "$CWD_KEY" "${ORCH_ITERATION:-0}" "${ORCH_MAX_ITERATIONS:-20}" \
-                "${ORCH_PLAN_PATH:-${ACTIVE_PLAN:-}}" "${ORCH_COMPLETION_PROMISE:-}" "${ORCH_CURRENT_TASK:-}"
         fi
     fi
 fi
@@ -480,17 +455,6 @@ if [[ "$LOAD_REASON" == "flag" ]]; then
     ACTION_DIRECTIVE+="\n2. Load skills: @smith-plan, @smith-plan-claude, @smith-ctx-claude"
     ACTION_DIRECTIVE+="\n3. If Serena MCP available: list_memories() then read_memory() for session state"
     ACTION_DIRECTIVE+="\n4. Resume current task: ${CURRENT_TASK}"
-
-    # Proactive phase resume: Ralph state file in CWD but no resume files
-    if check_ralph_recently_active "${HOOK_CWD:-.}"; then
-        ACTION_DIRECTIVE+="\n\n**RALPH LOOP PHASE RESUME:**"
-        ACTION_DIRECTIVE+="\nPrevious session used ralph-loop (state file found in CWD)."
-        ACTION_DIRECTIVE+="\n5. read_memory() for ralph_* state (phase progress, iteration context)"
-        ACTION_DIRECTIVE+="\n6. If phase work remains: auto-invoke Skill(skill: \"ralph-loop:ralph-loop\")"
-        ACTION_DIRECTIVE+="\n   Pass the original prompt and remaining iterations from memory"
-        ACTION_DIRECTIVE+="\n7. Do NOT ask user for permission - auto-invoke if ralph state found in memory"
-    fi
-
     ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."
     FULL_CONTENT=$(printf '%b\n\n%s' "$ACTION_DIRECTIVE" "$FULL_CONTENT")
 fi
