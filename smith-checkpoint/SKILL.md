@@ -88,60 +88,10 @@ Implement rate limiting (`auth-plan.md:121-145`)
    ```bash
    ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»"
    ```
-   The script:
-   - Generates compressed checkpoint content once (template-based, <400 tokens)
-   - Writes to both backends via CLI (zero Claude tokens consumed)
-   - Reports success/failure for each backend
-2. If the script exits non-zero, report which backend failed and DO NOT proceed.
-3. On success (exit 0), the script outputs confirmation with Serena name and Basic-Memory permalink.
-4. **Arm the reload flag (Claude Code only), then emit the Reload block.** On Claude Code,
-   run the bridge and check its exit status BEFORE emitting the block, so the block only
-   claims a flag when one was actually written:
-
-   ```
-   ~/.claude/skills/smith-plan-claude/scripts/write-reload-flag.sh "«label»"
-   ```
-
-   The script exits non-zero (without printing "Wrote reload flag") if the flag could not be
-   written. If it fails — or on any non-Claude-Code platform where you don't run it — emit the
-   block with the `Reload flag` line dropped and rely on the manual `/smith-recon` line. On
-   success it writes a `.pending-memory-restore-*` flag that the next `/clear` scans.
-
-   What that `/clear` then does with the flag branches on several inputs, and the conditions
-   that select between those branches are stated in ONE place: the "Checkpoint memory-restore
-   flag" section of `smith-plan-claude/references/HOOKS.md`, whose verdict table names each
-   outcome that becomes a row. Send readers there. Do not restate those conditions, here or in
-   the block below; every attempt so far has been wrong in one direction or another, because
-   writing out one algorithm in two prose passages leaves them free to drift apart. The block
-   names outcomes, and when a restore happens — never which one you will get. It is emitted into
-   projects that have no copy of this repository, so it must carry that much on its own and must
-   not cite a path from here.
-
-   Three things you DO need in order to word the block correctly. Exit 0 proves the flag was
-   WRITTEN, not that anything will read it. A restore, where one happens, executes at the user's
-   FIRST PROMPT after `/clear` (any prompt): SessionStart hook output is context-only, and no
-   hook can start a model turn in an interactive session — a Claude Code limit, not configurable
-   (`initialUserMessage` applies only to `-p` non-interactive runs), so never describe this as
-   restoring "on /clear" or without user input. And the whole path needs the smith-plan-claude
-   SessionStart hook registered plus the Serena / Basic-Memory MCP servers available (see README
-   "Hooks").
-
-## Reload after /clear
-
-End every checkpoint with this block — the canonical reload recipe. Fill real
-values; annotate each anchor with where it is reachable from, in plain language
-(no shorthand codes). Include the `Reload flag` line only if the bridge (step 6)
-reported success:
-
-```
-## Reload after /clear   (checkpoint: «label», «ISO-8601 local timestamp»)
-Reload flag: written on THIS machine. A restore is NOT guaranteed — the next /clear may instead list this checkpoint for you to pick, or delete the flag without restoring anything. If it does restore, that happens at your FIRST PROMPT after /clear: type anything; nothing visible happens at /clear itself (Claude Code limit: hooks cannot start a turn). Do not rely on it: use the manual line below, wherever the stores listed under it are reachable.
-Manual resume: /smith-recon "resume my work thread on «label»"
-Where this checkpoint's state lives:
-- Serena: «snake_case_name»
-- Basic-Memory: «permalink»
-- plan (if any): ~/.claude/plans/«file».md
-```
-
-This skill is platform-neutral: any agent can write the backends and emit the block; the
-step-6 bridge is the Claude Code layer.
+2. The script (exit 0 on success):
+   - Generates checkpoint content once (<400 tokens)
+   - Writes to both backends via CLI (zero Claude tokens)
+   - Outputs success confirmation to stderr
+   - Outputs complete Reload block to stdout
+3. If script exits non-zero, report which backend failed.
+4. On success, the Reload block is ready — copy it directly to the user.
