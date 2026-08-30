@@ -265,13 +265,12 @@ through.
 
 - **inline-comment-lint** (`smith-standards/scripts/inline-comment-lint.mjs`)
   — PreToolUse guard (matcher `Edit|Write|NotebookEdit`) that, for code files
-  only, counts the **full-line** comments a single edit adds and emits an
+  only, counts the **comment blocks** a single edit adds and emits an
   **advisory** reminder of `smith-standards/SKILL.md:29-33` (NEVER add inline
   comments) when ANY inline comment is detected. Advisory only — it never blocks.
-  Code comments trigger the advisory — the rule targets human-facing inline
-  commentary; code must be self-documenting. Supported languages: Python, Bash,
-  JavaScript/TypeScript, C/C++ (17 file extensions: .js, .mjs, .cjs, .ts, .mts,
-  .cts, .tsx, .jsx, .c, .h, .cc, .cpp, .hpp, .py, .sh, .bash, .zsh). By design
+  Supported languages: Python, Bash, JavaScript/TypeScript, C/C++ (17 file
+  extensions: .js, .mjs, .cjs, .ts, .mts, .cts, .tsx, .jsx, .c, .h, .cc, .cpp,
+  .hpp, .py, .sh, .bash, .zsh). By design
   it detects only full-line comments — trailing comments and cross-line constructs
   (multi-line template literals, block comments spanning lines) are intentionally
   NOT parsed, keeping the heuristic simple until a real per-language linter
