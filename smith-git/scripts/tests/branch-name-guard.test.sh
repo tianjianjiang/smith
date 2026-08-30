@@ -1,6 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-HOOK="$HERE/../branch-name-guard.mjs"
+HOOK="$HERE/../hooks/branch-name-guard.mjs"
 
 fail() { echo "FAIL: $1"; exit 1; }
 
