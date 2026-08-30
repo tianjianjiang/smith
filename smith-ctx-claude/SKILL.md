@@ -43,6 +43,12 @@ is itself re-summarized on compaction. Large spills (full file reads,
 verbose command output, subagent transcripts) are the main avoidable context
 cost.
 
+**Automated reminder** (PostToolUse hook):
+- `tool-output-hygiene.mjs` fires when output >5K tokens
+- Reminds to summarize findings and use file:line refs
+- Register in `~/.claude/settings.json` (see REFERENCE.md)
+
+**Manual discipline**:
 - Process, don't dump: filter/aggregate noisy output in a sandbox
   (context-mode `ctx_execute`/`ctx_batch_execute`) so only the derived answer
   enters context.
