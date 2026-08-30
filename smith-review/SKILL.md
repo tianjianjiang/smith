@@ -1,6 +1,6 @@
 ---
 name: smith-review
-description: Multi-round local review loop — review the current worktree change with all relevant smith review skills plus Claude Code review tools (/code-review, /review-pr, CodeRabbit, code-simplifier), iterating until convergence, without shipping. Invoke with /smith-review.
+description: Multi-round local review loop
 argument-hint: [optional focus area]
 allowed-tools: Bash(git *), Bash(gh *)
 ---

@@ -1,6 +1,6 @@
 ---
 name: smith-style
-description: File naming, path standards, and conventional commits. Use when naming files, creating branches, writing commit messages, or setting up new projects. Covers underscore vs hyphen conventions, commit format, and branch naming patterns.
+description: File naming
 ---
 
 # File Naming & Path Standards

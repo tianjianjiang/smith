@@ -1,6 +1,6 @@
 ---
 name: smith-postmortem
-description: Incident postmortem methodology and templates. Use when conducting incident postmortems, writing postmortem reports, establishing postmortem processes, or performing post-incident analysis.
+description: Incident postmortem methodology and templates
 ---
 
 # Postmortem Standards

@@ -1,6 +1,6 @@
 ---
 name: smith-automation
-description: Claude Code scheduling primitives — /loop (interval, dynamic, bare), CronCreate/List/Delete, ScheduleWakeup, Monitor, and /schedule (Routines), with a decision matrix and provider/session-scope caveats. Use when setting up a recurring or scheduled task, polling for external state, self-pacing iterations, or the user mentions /loop, /schedule, cron, ScheduleWakeup, or Monitor.
+description: Claude Code scheduling primitives
 ---
 
 # Claude Code Scheduling & Automation

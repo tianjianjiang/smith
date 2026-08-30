@@ -1,6 +1,6 @@
 ---
 name: smith-ide
-description: IDE path variable mappings for VS Code, Cursor, Kiro, and JetBrains. Use when writing or editing IDE config files or using path variables. Covers variable translation between conceptual and IDE-specific syntax.
+description: IDE path variable mappings
 ---
 
 # IDE Path Variable Mappings

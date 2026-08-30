@@ -1,6 +1,6 @@
 ---
 name: smith-dev
-description: Development workflow standards and code quality requirements. Use when starting ANY task that will modify repo files (implement, fix, add, refactor, harden), initializing projects, running quality checks, or managing agent tasks. Covers branch-first setup, pre-commit checks, task decomposition, and script organization patterns.
+description: Development workflow standards and code quality
 ---
 
 # Development Workflow Standards

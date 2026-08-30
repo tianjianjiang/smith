@@ -1,6 +1,6 @@
 ---
 name: smith-tests
-description: Testing standards and TDD workflow. Use when writing tests, running test suites, implementing TDD, or organizing test files. Covers unit vs integration test separation, pytest patterns, and test-driven development methodology.
+description: Testing standards and TDD workflow
 ---
 
 # Testing Standards

@@ -1,6 +1,6 @@
 ---
 name: smith-ship
-description: Ship pipeline — review a worktree change to convergence, then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup. Invoke with /smith-ship for a single change, or /smith-ship stack to split multi-part work into atomic stacked branches and ship them as stacked PRs.
+description: Ship pipeline
 argument-hint: [scope or PR title | stack]
 allowed-tools: Bash(git *), Bash(gh *)
 ---

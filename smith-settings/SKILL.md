@@ -1,6 +1,6 @@
 ---
 name: smith-settings
-description: Claude Code settings files — which config lives where (user / project / project-local / managed, and their precedence) plus a runnable convention-validator hook recipe that blocks actions violating repo rules. Use when editing settings.json or .claude config, deciding which scope a key belongs in, or building a hook that enforces a convention (commit/branch/file rules). For hooks internals see smith-ctx-claude; for permissions/auto-mode see smith-auto_mode.
+description: Claude Code settings files
 ---
 
 # Claude Code Settings

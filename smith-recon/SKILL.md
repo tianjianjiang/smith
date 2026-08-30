@@ -1,6 +1,6 @@
 ---
 name: smith-recon
-description: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
+description: Guided multi-source investigation
 argument-hint: [topic or question]
 ---
 

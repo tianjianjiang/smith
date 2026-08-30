@@ -1,6 +1,6 @@
 ---
 name: smith-prompts
-description: Prompt engineering standards for AI interactions with cache optimization. Use when writing AI prompts, optimizing context usage, or structuring AGENTS.md files. Covers prompt caching, token efficiency, and progressive disclosure patterns.
+description: Prompt engineering standards
 ---
 
 # Prompt Engineering Standards

@@ -1,6 +1,6 @@
 ---
 name: smith-ctx-kiro
-description: Kiro-specific context management with terminal limitations, Serena MCP as mandatory tool, and file operation workarounds. Use when operating in Kiro IDE. LOAD FIRST in all Kiro sessions - critical platform constraints that prevent hangs and failures.
+description: Kiro-specific context management
 ---
 
 # Kiro Context Management

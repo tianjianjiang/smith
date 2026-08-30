@@ -1,6 +1,6 @@
 ---
 name: smith-gh-cli
-description: GitHub CLI gotchas and best practices. Use when executing gh commands. Covers token efficiency, pagination limits, and common pitfalls.
+description: GitHub CLI gotchas and best practices
 ---
 
 # GitHub CLI Best Practices

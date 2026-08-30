@@ -1,6 +1,6 @@
 ---
 name: smith-nuxt
-description: Nuxt 3 development patterns including auto-import stubbing for tests, environment variable conventions, and middleware testing. Use when working with Nuxt projects, testing Nuxt components/middleware, or configuring Nuxt environment variables.
+description: Nuxt 3 development patterns
 ---
 
 # Nuxt Development Standards

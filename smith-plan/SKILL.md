@@ -1,6 +1,6 @@
 ---
 name: smith-plan
-description: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
+description: Plan tracking protocol . Progress tracking
 license: MIT
 metadata:
   version: "1.0.0"

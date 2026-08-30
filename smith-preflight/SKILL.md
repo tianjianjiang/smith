@@ -1,6 +1,6 @@
 ---
 name: smith-preflight
-description: Pre-ship gate — check the current change against the smith invariants (branch-first, secret-scan, pr-ownership, external-write, verify-before-assert, suggestions, subagent-contract) and report PASS, FAIL, SKIP or N/A (not applicable) per check with a GO or NO-GO verdict. Invoke with /smith-preflight; /smith-ship runs it as step 0 and will not push on NO-GO.
+description: Pre-ship gate
 allowed-tools: Bash(git *), Bash(gh *), Bash(command -v *), Read, Grep
 ---
 

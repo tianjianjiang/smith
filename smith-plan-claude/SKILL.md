@@ -1,6 +1,6 @@
 ---
 name: smith-plan-claude
-description: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+description: ExitPlanMode UI pattern
 license: MIT
 metadata:
   author: claude-code-user

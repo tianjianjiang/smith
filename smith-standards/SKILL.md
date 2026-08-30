@@ -1,6 +1,6 @@
 ---
 name: smith-standards
-description: Universal coding standards for emoji usage, comments, acronym expansion, datetime formatting, and file conventions. Use when writing code, logs, documentation, or any text output. Always active as universal rules for all development.
+description: Universal coding standards
 ---
 
 # Universal Coding Standards

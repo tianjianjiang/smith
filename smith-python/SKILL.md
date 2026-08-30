@@ -1,6 +1,6 @@
 ---
 name: smith-python
-description: Python development with uv, pytest, ruff, and type hints. Use when writing Python code, running tests, managing Python packages, or working with virtual environments. Covers import organization, type hints, pytest patterns, and environment variables.
+description: Python development
 ---
 
 # Python Development Standards

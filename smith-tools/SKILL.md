@@ -1,6 +1,6 @@
 ---
 name: smith-tools
-description: Tool configurations for IDEs, MCP integrations, and development tools. Use when configuring IDE settings, MCP tools, or pytest. Covers conditional tool activation, configuration hierarchy, and synchronization patterns.
+description: Tool configurations
 ---
 
 # Tool Configurations

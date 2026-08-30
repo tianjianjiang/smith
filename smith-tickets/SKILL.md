@@ -1,6 +1,6 @@
 ---
 name: smith-tickets
-description: Ticket creation by convention — create Jira issues/sub-tasks in Job Story form, Japanese description, under the correct parent Epic, after reading the relevant context. Invoke with /smith-tickets.
+description: Ticket creation by convention
 argument-hint: [work to ticket]
 ---
 

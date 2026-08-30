@@ -1,6 +1,6 @@
 ---
 name: smith-research
-description: Proactive research protocol for version queries, APIs, and best practices. Use when answering questions about library versions, API documentation, or technology assessments. Covers research triggers, source citation, and confidence indicators.
+description: Proactive research protocol
 ---
 
 # Proactive Research Protocol

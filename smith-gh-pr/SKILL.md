@@ -1,6 +1,6 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows including creation, review cycles, merge strategies, stacked PRs (creation, merge order, rebase after parent merges, squash handling), posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, stacked PRs, or dependent PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For the stacked shipping pipeline see smith-ship (stacked mode).
+description: GitHub PR workflows
 ---
 
 # GitHub PR Workflows

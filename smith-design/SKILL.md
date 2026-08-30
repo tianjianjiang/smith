@@ -1,6 +1,6 @@
 ---
 name: smith-design
-description: SOLID principles and architecture design patterns. Use when starting new features, refactoring code, conducting architecture reviews, or applying object-oriented design principles.
+description: SOLID principles and architecture design patterns
 ---
 
 # Design Principles

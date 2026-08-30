@@ -1,6 +1,6 @@
 ---
 name: smith-principles
-description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Use when starting any development task, evaluating implementation approaches, or reviewing code quality. Always active as foundation for all development decisions.
+description: Fundamental coding principles
 ---
 
 # Fundamental Coding Principles

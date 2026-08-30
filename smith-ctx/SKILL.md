@@ -1,6 +1,6 @@
 ---
 name: smith-ctx
-description: Universal context-management foundation — proactive context-level checks and reset recommendations. Use when context usage grows high, when deciding whether to /clear or /compact, or when choosing what to retain across a context reset.
+description: Universal context-management foundation
 ---
 
 # Context Management
