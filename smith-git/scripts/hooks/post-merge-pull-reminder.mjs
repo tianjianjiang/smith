@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readHookInput } from "../lib/hook-utils.mjs";
 import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from "../lib/git-command-tokenizer.mjs";
 
 const DEFERRED_MERGE_FLAGS = new Set(["--auto", "--disable-auto"]);
@@ -65,12 +65,7 @@ function reminder() {
 }
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
   if (!input || typeof input !== "object") return;
   if (input.tool_name !== "Bash") return;
 

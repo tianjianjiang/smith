@@ -9,7 +9,8 @@
 // - Bash git commands: blocks at creation time (git branch, checkout -b, switch -c)
 // - Bash git push: blocks at push time (catches EnterWorktree-created branches)
 // - EnterWorktree: warns to rename (cannot block - tool doesn't accept formatted names)
-import { readFileSync, writeSync } from "node:fs";
+import { writeSync } from "node:fs";
+import { readHookInput, blockWithError } from "../lib/hook-utils.mjs";
 import { commandSegments, gitSubcommandArguments } from "../lib/git-command-tokenizer.mjs";
 
 const CONVENTIONAL_COMMIT_TYPES = [
@@ -213,8 +214,7 @@ function branchBeingPushed(tokens) {
 function emitBlock(name, reason) {
   const suggestion = suggestedFix(name);
   const suggestionIsValid = suggestion !== name && !violation(suggestion);
-  writeSync(
-    2,
+  blockWithError(
     [
       `Blocked: branch name '${name}' ${reason}.`,
       suggestionIsValid
@@ -222,9 +222,8 @@ function emitBlock(name, reason) {
         : "Choose a name matching the pattern.",
       "Per @smith-style/SKILL.md Branch Names",
       "(https://conventionalbranch.org/).",
-    ].join(" ") + "\n",
+    ].join(" "),
   );
-  process.exit(2);
 }
 
 function emitWarning(branchName, reason) {
@@ -248,12 +247,7 @@ function emitWarning(branchName, reason) {
 }
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
   if (!input || typeof input !== "object") return;
 
   if (input.tool_name === "Bash") {

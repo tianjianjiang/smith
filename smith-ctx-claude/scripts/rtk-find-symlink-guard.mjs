@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { unwrappedCommandSegments } from "./lib/git-command-tokenizer.mjs";
+import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
+import { unwrappedCommandSegments } from "../../smith-git/scripts/lib/git-command-tokenizer.mjs";
 
 const SUBPROCESS_OPTIONS = {
   stdio: ["ignore", "pipe", "ignore"],
@@ -116,12 +116,7 @@ function reminder(invocation) {
 }
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
   if (!input || typeof input !== "object") return;
   if (input.tool_name !== "Bash") return;
 

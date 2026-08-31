@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync, writeSync } from "node:fs";
+import { writeSync } from "node:fs";
+import { readHookInput, blockWithError } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import {
   hasBlockType,
   isGenuineNewUserTurn,
@@ -53,8 +54,7 @@ async function priorElaborationFound(transcriptPath) {
 }
 
 function blockAndExit() {
-  writeSync(
-    2,
+  blockWithError(
     [
       "Blocked: ExitPlanMode was called with no prior turn of plain-text " +
         "elaboration since the last real user message or ExitPlanMode " +
@@ -63,18 +63,13 @@ function blockAndExit() {
       "Per smith-plan-claude/SKILL.md §Explain Before ExitPlanMode: " +
         "deliver the explanation as plain text in its own turn first, " +
         "then call ExitPlanMode in a separate, later turn.",
-    ].join(" ") + "\n",
+    ].join(" "),
   );
-  process.exit(2);
 }
 
 async function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
+  if (!input) return;
   if (!input || typeof input !== "object") return;
 
   const transcriptPath = input.transcript_path;

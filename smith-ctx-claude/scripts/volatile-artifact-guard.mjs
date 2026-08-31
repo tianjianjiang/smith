@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { readFileSync, createReadStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { homedir } from "node:os";
+import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
 
 const WRITE_VERB = /(^|\s|\|)(>>?|cp|mv|tee|dd|install|rsync)\b|>>?\s*['"]?\S/;
 const COMMAND_TOKEN_SEPARATORS = /[\s'";|&()<>]+/;
@@ -77,12 +78,8 @@ function advisoryOutput(found) {
 }
 
 async function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
+  if (!input) return;
   const transcriptPath = input.transcript_path;
   if (typeof transcriptPath !== "string") return;
 

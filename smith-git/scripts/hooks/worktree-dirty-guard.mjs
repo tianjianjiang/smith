@@ -11,32 +11,19 @@
 // Contract: reads the PreToolUse hook JSON on stdin; exit 2 blocks the call
 // (stderr shown to Claude), anything else allows it. Not a repo or git error
 // -> exit 0 (fail open; EnterWorktree does its own validation).
-import { execFileSync } from "node:child_process";
-import { readFileSync, writeSync } from "node:fs";
+import { readHookInput, blockWithError, git } from "../lib/hook-utils.mjs";
 
 const MAX_LINES_SHOWN = 10;
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
+  if (!input) return;
   const cwd = input.cwd || process.cwd();
 
-  let status;
-  try {
-  
-  
-    status = execFileSync(
-      "git",
-      ["-C", cwd, "status", "--porcelain", "--untracked-files=all"],
-      { stdio: ["ignore", "pipe", "ignore"], encoding: "utf-8" },
-    ).trim();
-  } catch {
-    return;
-  }
+  const status = git(cwd, ["status", "--porcelain", "--untracked-files=all"], {
+    failOpen: true,
+  });
+  if (!status) return;
   if (!status) return;
 
   const lines = status.split("\n");
@@ -46,16 +33,13 @@ function main() {
       ? `\n… and ${lines.length - MAX_LINES_SHOWN} more`
       : "";
 
-
-  writeSync(
-    2,
+  blockWithError(
     [
       `Blocked: the checkout at ${cwd} has ${lines.length} uncommitted change(s) that would NOT carry into a new worktree (stranded):`,
       `${shown}${more}`,
       "Resolve deliberately first: (a) commit them (and set worktree.baseRef: head if they must seed the worktree), (b) stash now and apply inside the worktree, or (c) branch in place (`git switch -c …`) instead of a worktree. See @smith-worktree.",
-    ].join("\n") + "\n",
+    ].join("\n"),
   );
-  process.exit(2);
 }
 
 main();
