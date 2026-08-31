@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
 
 const CONFIG_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -130,12 +131,7 @@ function reminder() {
 }
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
   if (!input || typeof input !== "object") return;
   if (input.tool_name !== "Bash") return;
 

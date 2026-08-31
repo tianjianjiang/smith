@@ -23,19 +23,12 @@
 // false-block in the inverse mismatch. Serena calls without a usable path
 // (e.g. replace_in_files whole-project mode, where relative_path defaults to
 // "") are checked against the session cwd's repo, not allowed through.
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
+import { readHookInput, blockWithError, git } from "../lib/hook-utils.mjs";
 
 const PROTECTED_BRANCHES = ["main", "master", "develop"];
 const OPT_OUT_MARKER = join(".claude", "branch-guard.disabled");
-
-function git(dir, args) {
-  return execFileSync("git", ["-C", dir, ...args], {
-    stdio: ["ignore", "pipe", "ignore"],
-    encoding: "utf-8",
-  }).trim();
-}
 
 function targetPath(input) {
   const ti = input.tool_input || {};
@@ -58,12 +51,8 @@ function nearestExistingDir(file) {
 }
 
 function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
+  if (!input) return;
 
   const file = targetPath(input);
   let dir = "";
@@ -121,18 +110,15 @@ function main() {
 
   if (!protectedBranches.has(branch)) return;
 
-
-  writeSync(
-    2,
+  blockWithError(
     [
       `Blocked: edit on protected branch '${branch}' of ${repoRoot}.`,
       "Create a dedicated branch+worktree BEFORE the first edit:",
       "EnterWorktree (then rename the branch), or `git switch -c",
       "«type»/«description»`. Per the @smith-git branch-first rule.",
       `Per-repo opt-out: touch ${OPT_OUT_MARKER} in the repo root.`,
-    ].join(" ") + "\n",
+    ].join(" "),
   );
-  process.exit(2);
 }
 
 main();

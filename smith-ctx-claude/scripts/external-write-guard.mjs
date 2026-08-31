@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
 
 const PUBLIC_EXTERNAL_WRITE_PATTERNS = [
   /mcp__plugin_atlassian_atlassian__(createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue|addWorklogToJiraIssue|createIssueLink|createConfluencePage|updateConfluencePage|createConfluenceFooterComment|createConfluenceInlineComment)$/,
@@ -42,14 +42,6 @@ const GH_REVIEW_SUBMIT_LONG_FLAGS = new Set(["--approve", "--comment", "--reques
 const GH_REVIEW_SUBMIT_CHARS = new Set(["a", "c", "r"]);
 const GH_REVIEW_BODY_CHARS = new Set(["b", "F"]);
 const DRAFT_VARIANT_HINT = "Prefer a *_draft variant where one exists.";
-
-function readHookInput() {
-  try {
-    return JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return null;
-  }
-}
 
 function isExternalWrite(toolName) {
   return PUBLIC_EXTERNAL_WRITE_PATTERNS.some((pattern) => pattern.test(toolName));
