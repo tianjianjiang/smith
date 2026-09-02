@@ -2,12 +2,18 @@
 set -euo pipefail
 
 readonly LABEL="${1:?Error: label required}"
-readonly PLAN_ARG="${2:-}"
+shift
+readonly -a EXTRA_ARGS=("$@")
 
-extract_plan_path() {
-    if [[ "$PLAN_ARG" =~ ^plan=(.+)$ ]]; then
-        echo "${BASH_REMATCH[1]}"
-    fi
+extract_arg() {
+    local key="$1" arg
+    for arg in ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}; do
+        if [[ "$arg" =~ ^${key}=(.*)$ ]]; then
+            echo "${BASH_REMATCH[1]}"
+            return 0
+        fi
+    done
+    return 1
 }
 
 resolve_primary_checkout() {
@@ -26,30 +32,100 @@ generate_timestamp() {
     date +"%Y-%m-%dT%H:%M:%S%z" | sed 's/\([+-][0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/'
 }
 
+plan_title() {
+    local plan_path="$1"
+    [[ -f "$plan_path" ]] || return 0
+    { grep -m1 '^# ' "$plan_path" || true; } | sed 's/^# *//'
+}
+
+plan_pending_items() {
+    local plan_path="$1"
+    [[ -f "$plan_path" ]] || return 0
+    { grep '^[[:space:]]*- \[ \]' "$plan_path" || true; } | head -10
+}
+
+warn_if_plan_missing() {
+    local plan_path="$1"
+    [[ -z "$plan_path" || -f "$plan_path" ]] && return 0
+    echo "Warning: plan file not found: ${plan_path}" >&2
+}
+
+git_state_line() {
+    git rev-parse --is-inside-work-tree &>/dev/null || return 0
+    local branch dirty
+    branch=$(git branch --show-current 2>/dev/null)
+    dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    echo "**Git**: ${branch:-detached} @ $(git rev-parse --short HEAD 2>/dev/null), ${dirty} uncommitted file(s)"
+}
+
+generate_fallback_body() {
+    local plan_path="$1"
+    local title pending
+    title=$(plan_title "$plan_path")
+    pending=$(plan_pending_items "$plan_path")
+
+    echo "## Status"
+    echo
+    echo "No session body was supplied; only the facts below were recorded."
+    [[ -n "$title" ]] && echo "**Plan title**: ${title}"
+    git_state_line
+    if [[ -n "$pending" ]]; then
+        echo
+        echo "## Pending"
+        echo
+        echo "$pending"
+    fi
+}
+
+warn_if_body_exceeds_budget() {
+    local body_path="$1"
+    local bytes
+    bytes=$(wc -c < "$body_path" | tr -d ' ')
+    if (( bytes > 1600 )); then
+        echo "Warning: body is ${bytes} bytes; target is <400 tokens (about 1600 bytes)" >&2
+    fi
+}
+
 generate_checkpoint_content() {
     local plan_path="$1"
     local timestamp="$2"
+    local body_path="$3"
     local session_id=$(basename "${CLAUDE_JOB_DIR:-bg-job-unknown}")
+    local body
 
-    cat <<EOF
-# ${LABEL}
+    if [[ -n "$body_path" ]]; then
+        warn_if_body_exceeds_budget "$body_path"
+        body=$(cat "$body_path") || return 1
+    else
+        body=$(generate_fallback_body "$plan_path") || return 1
+    fi
 
-**Date**: ${timestamp}
-**Plan**: \`${plan_path}\`
-**Session**: ${session_id}
+    echo "# ${LABEL}"
+    echo
+    echo "**Date**: ${timestamp}"
+    [[ -n "$plan_path" ]] && echo "**Plan**: \`${plan_path}\`"
+    echo "**Session**: ${session_id}"
+    echo
+    append_plan_to_related "$body" "$plan_path"
+}
 
-## Status
-
-Checkpoint created via shell script (zero tokens).
-
-## Next Steps
-
-Load context from plan file.
-
-## Related
-
-- Plan: ${plan_path}
-EOF
+append_plan_to_related() {
+    local body="$1"
+    local plan_path="$2"
+    local plan_line="- Plan: ${plan_path}"
+    if [[ -z "$plan_path" ]]; then
+        printf '%s\n' "$body"
+    elif grep -q '^## Related[[:space:]]*$' <<<"$body"; then
+        awk -v plan="$plan_line" '
+            pending && /^$/ { print; print plan; pending = 0; next }
+            pending { print plan; pending = 0 }
+            { print }
+            /^## Related[[:space:]]*$/ { pending = 1 }
+            END { if (pending) print plan }
+        ' <<<"$body"
+    else
+        printf '%s\n\n## Related\n\n%s\n' "$body" "$plan_line"
+    fi
 }
 
 transform_label_to_basic_memory_title() {
@@ -105,19 +181,40 @@ report_success() {
     local timestamp="$3"
 
     cat >&2 <<EOF
-✓ Checkpoint written to both backends
+Checkpoint written to both backends
   Serena: ${LABEL}
   Basic-Memory: ${permalink}
   Timestamp: ${timestamp}
 EOF
 }
 
+require_readable_body() {
+    local body_path="$1"
+    if [[ -z "$body_path" || ! -f "$body_path" || ! -r "$body_path" ]]; then
+        echo "Error: body file not found or unreadable: '${body_path}'" >&2
+        exit 1
+    fi
+    if ! grep -q '[^[:space:]]' "$body_path"; then
+        echo "Error: body file is empty: '${body_path}'" >&2
+        exit 1
+    fi
+}
+
 main() {
-    local plan_path=$(extract_plan_path)
+    local plan_path=$(extract_arg plan)
+    local body_path=""
+    if body_path=$(extract_arg body); then
+        require_readable_body "$body_path"
+    fi
+    warn_if_plan_missing "$plan_path"
     local primary_checkout=$(resolve_primary_checkout)
     local project=$(detect_project_name "$primary_checkout")
     local timestamp=$(generate_timestamp)
-    local content=$(generate_checkpoint_content "$plan_path" "$timestamp")
+    local content
+    content=$(generate_checkpoint_content "$plan_path" "$timestamp" "$body_path") || {
+        echo "Error: could not generate checkpoint content" >&2
+        exit 1
+    }
     local bm_title=$(transform_label_to_basic_memory_title)
 
     if ! write_to_serena "$content" "$primary_checkout"; then
