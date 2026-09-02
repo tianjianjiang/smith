@@ -10,12 +10,16 @@ extract_plan_path() {
     fi
 }
 
+resolve_primary_checkout() {
+    command -v git &>/dev/null || return 0
+    git rev-parse --is-inside-work-tree &>/dev/null || return 0
+    local common_dir
+    common_dir=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P) || return 0
+    [[ -n "$common_dir" ]] && dirname "$common_dir"
+}
+
 detect_project_name() {
-    if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-        basename "$(git rev-parse --show-toplevel)"
-    else
-        echo "smith"
-    fi
+    basename "${1:-smith}"
 }
 
 generate_timestamp() {
@@ -54,8 +58,9 @@ transform_label_to_basic_memory_title() {
 
 write_to_serena() {
     local content="$1"
+    local primary_checkout="$2"
     echo "Writing to Serena: ${LABEL}" >&2
-    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" --content "${content}" >&2
+    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${content}" >&2
 }
 
 write_to_basic_memory() {
@@ -78,13 +83,14 @@ generate_reload_block() {
     local permalink="$1"
     local plan_path="$2"
     local timestamp="$3"
+    local project="$4"
 
     cat <<EOF
 
 Checkpoint: ${LABEL} (${timestamp})
 Manual resume: /smith-recon "resume my work thread on ${LABEL}"
 State locations:
-- Serena: ${LABEL} (smith project)
+- Serena: ${LABEL} (${project} project)
 - Basic-Memory: ${permalink}
 EOF
 
@@ -108,12 +114,13 @@ EOF
 
 main() {
     local plan_path=$(extract_plan_path)
-    local project=$(detect_project_name)
+    local primary_checkout=$(resolve_primary_checkout)
+    local project=$(detect_project_name "$primary_checkout")
     local timestamp=$(generate_timestamp)
     local content=$(generate_checkpoint_content "$plan_path" "$timestamp")
     local bm_title=$(transform_label_to_basic_memory_title)
 
-    if ! write_to_serena "$content"; then
+    if ! write_to_serena "$content" "$primary_checkout"; then
         echo "Error: Serena write failed" >&2
         exit 1
     fi
@@ -127,7 +134,7 @@ main() {
     local permalink=$(echo "$bm_result" | grep -o '"permalink": "[^"]*"' | cut -d'"' -f4)
 
     report_success "$permalink" "$project" "$timestamp"
-    generate_reload_block "$permalink" "$plan_path" "$timestamp"
+    generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project"
 }
 
 main
