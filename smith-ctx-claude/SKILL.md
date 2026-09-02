@@ -102,8 +102,10 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 **When stop hook triggers:**
 1. Mark completed tasks in plan (if plan active)
 2. Commit uncommitted work
-3. Invoke /smith-checkpoint (hook outputs invoke directive with plan path)
-4. smith-checkpoint outputs Reload block with actual memory names
+3. Write the session's durable facts to a body file (format: `@smith-checkpoint`)
+4. Invoke /smith-checkpoint with the label, plan path and `body=«path»` from
+   the hook's invoke directive
+5. smith-checkpoint outputs Reload block with actual memory names
 
 ### Flag File and Injection Points
 

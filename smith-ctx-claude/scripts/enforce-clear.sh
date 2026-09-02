@@ -166,4 +166,5 @@ esac
 
 json_stop_block "${STATUS}
 
-Invoke: ${INVOKE}"
+Invoke: ${INVOKE}
+Before invoking, write this session's durable facts to a body file and append body=«path» (format: smith-checkpoint SKILL.md)."
