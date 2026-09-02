@@ -131,24 +131,13 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
 fi
 
-generate_checkpoint_label_from_plan() {
-    local plan_path="$1"
-    basename "$plan_path" .md | tr '[:upper:]' '[:lower:]' | tr '-' '_'
-}
-
-generate_checkpoint_label_from_cwd() {
-    local cwd="$1"
-    local cwd_basename=$(basename "$cwd" | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]' '_' | sed 's/__*/_/g;s/^_//;s/_$//')
-    echo "${cwd_basename}_checkpoint"
-}
-
 CHECKPOINT_LABEL=""
 if [[ -n "$ACTIVE_PLAN" ]]; then
-    CHECKPOINT_LABEL=$(generate_checkpoint_label_from_plan "$ACTIVE_PLAN")
+    CHECKPOINT_LABEL=$(checkpoint_label_from_plan "$ACTIVE_PLAN")
 elif [[ -n "$COMPLETED_PLAN" ]]; then
-    CHECKPOINT_LABEL=$(generate_checkpoint_label_from_plan "$COMPLETED_PLAN")
+    CHECKPOINT_LABEL=$(checkpoint_label_from_plan "$COMPLETED_PLAN")
 else
-    CONSOLIDATED_PLAN="$HOME/.claude/plans/smith-consolidated-plan.md"
+    CONSOLIDATED_PLAN="${CTX_FLAGS_DIR}/smith-consolidated-plan.md"
     if [[ -f "$CONSOLIDATED_PLAN" ]]; then
         CHECKPOINT_LABEL="consolidated_plan_checkpoint"
         ACTIVE_PLAN="$CONSOLIDATED_PLAN"
@@ -156,7 +145,7 @@ else
         PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
         PENDING=$(echo "$PENDING" | tr -d '[:space:]')
     else
-        CHECKPOINT_LABEL=$(generate_checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
+        CHECKPOINT_LABEL=$(checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
     fi
 fi
 

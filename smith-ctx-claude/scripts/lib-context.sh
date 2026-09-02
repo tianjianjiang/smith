@@ -63,6 +63,31 @@ model_to_context_window() {
     esac
 }
 
+# Checkpoint labels: ASCII snake_case slugs, never empty.
+# Plan labels come from the plan's first H1 (a trailing "Plan" after a dash is
+# dropped), then the filename, then the literal plan_checkpoint.
+slugify_label() {
+    LC_ALL=C tr '[:upper:]' '[:lower:]' <<<"$1" | LC_ALL=C tr -c '[:alnum:]\n' '_' | sed 's/__*/_/g;s/^_//;s/_$//'
+}
+
+checkpoint_label_from_plan() {
+    local plan_path="$1"
+    local title label
+    title=$(grep -m1 '^# ' "$plan_path" 2>/dev/null | sed -E 's/^# *//; s/[[:space:]]*(—|–|-)[[:space:]]*[Pp]lan[[:space:]]*$//')
+    label=$(slugify_label "$title")
+    [[ -z "$label" ]] && label=$(slugify_label "$(basename "$plan_path" .md)")
+    [[ -z "$label" ]] && label="plan_checkpoint"
+    label="${label:0:60}"
+    printf '%s\n' "${label%_}"
+}
+
+checkpoint_label_from_cwd() {
+    local cwd="$1"
+    local slug
+    slug=$(slugify_label "$(basename "$cwd")")
+    echo "${slug:-session}_checkpoint"
+}
+
 # Save model ID to session-keyed file for cross-hook sharing.
 save_session_model() {
     local session_key="$1" model="$2"
