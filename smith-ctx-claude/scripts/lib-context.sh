@@ -47,17 +47,16 @@ session_key() {
 
 # Map model ID to context window size in tokens.
 # Handles both SessionStart format (with [1m] suffix) and transcript format (without).
-# Flagships (Opus/Fable/Mythos) are 1M and the [1m] suffix is authoritative;
-# current-gen Sonnet (4.6-4.9, incl. Sonnet 5+) is 1M standard as of the
-# Claude 5 model family (no opt-in needed); Haiku and legacy Sonnet (4.5 and
-# older, incl. undated-minor-version IDs like "claude-sonnet-4-20250514")
-# remain 200K; unknown IDs fall back to CONTEXT_WINDOW_TOKENS.
+# A [1m] suffix (SessionStart IDs only) means 1M. Fable/Mythos, Opus 4.6+ and Sonnet 4.6+
+# (incl. Opus 5 / Sonnet 5) are 1M; Opus 4.5 and earlier, Sonnet 4.5 and
+# earlier, and Haiku are 200K. Source: platform.claude.com/docs/en/models
+# (Opus 4.5 page, retrieved 2026-09-02).
 model_to_context_window() {
     local model="${1:-}"
     case "$model" in
         *\[1[mM]\])                    echo 1000000 ;;
         *sonnet-5*|*sonnet-4-[6-9]*)   echo 1000000 ;;
-        *haiku*|*sonnet*)              echo 200000  ;;
+        *haiku*|*sonnet*|*opus-4-[0-5]*) echo 200000 ;;
         *claude-opus-*|*claude-fable-*|*claude-mythos-*) echo 1000000 ;;
         *)                             echo "${CONTEXT_WINDOW_TOKENS}" ;;
     esac
@@ -158,16 +157,34 @@ get_context_percentage() {
     echo "$((total * 100 / context_window))"
 }
 
-# Resolve context percentage with session-model priority.
-# Uses saved session model when available (more reliable than transcript auto-detect
-# after /compact which may have empty/truncated transcript).
+# Model id of the main agent's last assistant record in the transcript tail.
+# Skips subagent (isSidechain) records and the "<synthetic>" model that API
+# error records carry; tolerates a truncated leading line from tail -c.
+# Empty output when no usable record exists.
+transcript_model() {
+    local transcript="$1"
+    [[ -f "$transcript" ]] || return 0
+    tail -c 204800 "$transcript" 2>/dev/null \
+        | grep '^{' \
+        | jq -R -r 'fromjson?
+            | select(.type == "assistant" and (.isSidechain | not))
+            | .message.model // empty
+            | select(. != "<synthetic>")' 2>/dev/null \
+        | tail -1 || true
+}
+
+# Resolve context percentage from the model actually in use.
+# The live transcript model wins over the SessionStart cache, which a
+# mid-session /model switch never refreshes. The cache is the fallback for a
+# transcript without a model (e.g. right after /compact).
 # Args: $1 = transcript path, $2 = CWD key
 resolve_context_percentage() {
     local transcript="$1" cwd_key="$2"
-    local session_model
-    session_model=$(read_session_model "$cwd_key")
-    if [[ -n "$session_model" ]]; then
-        get_context_percentage "$transcript" "$(model_to_context_window "$session_model")"
+    local model
+    model=$(transcript_model "$transcript")
+    [[ -n "$model" ]] || model=$(read_session_model "$cwd_key")
+    if [[ -n "$model" ]]; then
+        get_context_percentage "$transcript" "$(model_to_context_window "$model")"
     else
         get_context_percentage "$transcript"
     fi
