@@ -91,16 +91,23 @@ fi
 
 STATE_FILE="${FLAGS_DIR}/.plan-state-${CWD_KEY}"
 
-# Check for active plan
 ACTIVE_PLAN=""
 PENDING=0
 if [[ -f "$STATE_FILE" ]]; then
     prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)
     if [[ -n "$prev_plan" ]] && [[ -f "$prev_plan" ]]; then
         ACTIVE_PLAN="$prev_plan"
-        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-        PENDING=$(echo "$PENDING" | tr -d '[:space:]')
     fi
+fi
+
+if [[ -z "$ACTIVE_PLAN" ]] && [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type newest_adoptable_plan &>/dev/null; then
+    newest_adoptable_plan "" "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
+    ACTIVE_PLAN="$NEWEST_ADOPTABLE"
+fi
+
+if [[ -n "$ACTIVE_PLAN" ]]; then
+    PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
+    PENDING=$(echo "$PENDING" | tr -d '[:space:]')
 fi
 
 # Create pending-reload flag
