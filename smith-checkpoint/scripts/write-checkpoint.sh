@@ -70,6 +70,7 @@ write_to_basic_memory() {
         --folder "${folder}" \
         --type guide \
         --tags checkpoint \
+        --overwrite \
         --content "${content}"
 }
 
