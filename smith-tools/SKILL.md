@@ -63,12 +63,12 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
   - Cross-host redirects are **not** auto-followed — WebFetch returns the redirect URL; re-call with it if the new host is trusted
   - Results are cached ~15 min per URL — a stale page can be returned within that window; expect it when re-fetching after a change
   - A server-side domain blocklist + (for the API tool) `allowed_domains`/`blocked_domains` can return nothing for blocked hosts
-  - JS-heavy / SPA pages can return empty or partial content (plain HTTP fetch, no headless browser) — fall back to a browser MCP (`@smith-browser_mcp/SKILL.md`) for those
+  - JS-heavy / SPA pages can return empty or partial content (plain HTTP fetch, no headless browser) — fall back to a browser MCP (`@smith-mcp-browser/SKILL.md`) for those
 
 **Browser MCP plugins (chrome-devtools-mcp, @playwright/mcp)**:
 - Purpose: Drive a real browser via Chrome DevTools Protocol
 - Configuration: set no browser override — both resolve to Chrome's stable channel (chrome-devtools-mcp by omitting `--channel`, Playwright MCP because `chrome` is its documented `--browser` default)
-- Avoid: any browser-selecting flag — `--executablePath`, `--executable-path`, `--channel`, or Playwright's `--browser` (it accepts `msedge`) — see `@smith-browser_mcp/SKILL.md`
+- Avoid: any browser-selecting flag — `--executablePath`, `--executable-path`, `--channel`, or Playwright's `--browser` (it accepts `msedge`) — see `@smith-mcp-browser/SKILL.md`
 
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
@@ -216,7 +216,7 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
 - `@smith-prompts/SKILL.md` - Structured output patterns
 - `@smith-python/SKILL.md` - Virtual environment, pytest patterns
 - `@smith-ide/SKILL.md` - IDE-specific path syntax
-- `@smith-browser_mcp/SKILL.md` - Browser MCP plugin reliability
+- `@smith-mcp-browser/SKILL.md` - Browser MCP plugin reliability
 
 ## Before You Finish
 

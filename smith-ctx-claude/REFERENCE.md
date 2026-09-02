@@ -136,7 +136,7 @@ Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
 - `default` — approve each tool call individually
 - `acceptEdits` — auto-approves file edits/writes + common filesystem Bash (mkdir, touch, rm, mv, cp, sed) inside the working directory; other Bash still prompts
 - `plan` — read-only; agent plans but cannot execute
-- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-auto_mode/SKILL.md` for the denial-recovery protocol.
+- `auto` — classifier auto-handles prompts; safe runs uninterrupted, destructive routes to classifier deny. Requires v2.1.83+, Max/Team/Enterprise/API plan. `defaultMode: "auto"` is honored only in `~/.claude/settings.json` (ignored in `.claude/settings.json`). See `@smith-ctx-claude-mode-auto/SKILL.md` for the denial-recovery protocol.
 - `dontAsk` — auto-denies prompts; only pre-approved `allow` rules + read-only Bash execute
 - `bypassPermissions` — `--dangerously-skip-permissions` flag; skips all checks including protected paths
 
@@ -308,7 +308,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-ctx-kiro" description="Kiro-specific rules">`@smith-ctx-kiro/SKILL.md`</skill>
 <skill name="smith-ctx-claude" description="Claude Code context, hooks, permissions, agents, model routing">`@smith-ctx-claude/SKILL.md`</skill>
 <skill name="smith-ctx-cursor" description="Cursor rules">`@smith-ctx-cursor/SKILL.md`</skill>
-<skill name="smith-auto_mode" description="Auto-mode classifier denial recovery">`@smith-auto_mode/SKILL.md`</skill>
+<skill name="smith-ctx-claude-mode-auto" description="Auto-mode classifier denial recovery">`@smith-ctx-claude-mode-auto/SKILL.md`</skill>
 <skill name="smith-settings" description="settings.json scope/precedence + convention-validator hook recipe">`@smith-settings/SKILL.md`</skill>
 <skill name="smith-serena" description="Serena MCP integration">`@smith-serena/SKILL.md`</skill>
 
@@ -323,7 +323,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
 <skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
-<skill name="smith-browser_mcp" description="Browser MCP reliability: take each server's default browser, set no override at all">`@smith-browser_mcp/SKILL.md`</skill>
+<skill name="smith-mcp-browser" description="Browser MCP reliability: take each server's default browser, set no override at all">`@smith-mcp-browser/SKILL.md`</skill>
 
 <!-- Languages -->
 <skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
@@ -376,7 +376,7 @@ skill via the Skill tool:
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
   Playwright → `@smith-playwright/SKILL.md`
-**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-browser_mcp/SKILL.md`
+**Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
 **Plan**: Plan execution → `@smith-plan/SKILL.md`,
@@ -392,8 +392,8 @@ skill via the Skill tool:
   Running or interpreting a CodeRabbit review, GitHub App or `coderabbit` command line → `@smith-gh-pr/SKILL.md` + `@smith-review/SKILL.md` (router also emits: a review that did not run looks identical to a clean one — check status, not the finding count)
 **Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
-  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-auto_mode/SKILL.md`,
-  Permission denial wording ("denied", "denial", "blocked by auto-mode/classifier") → `@smith-auto_mode/SKILL.md` (router also emits: do not silently retry a denied action)
+  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-ctx-claude-mode-auto/SKILL.md`,
+  Permission denial wording ("denied", "denial", "blocked by auto-mode/classifier") → `@smith-ctx-claude-mode-auto/SKILL.md` (router also emits: do not silently retry a denied action)
 **Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md`
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
@@ -423,7 +423,7 @@ SKILL.md keeps only the compact list of event names plus the core rule
 - **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
 - **Background task completion** — a `Bash(run_in_background)` task ended
 - **Date change** — local date rolled over
-- **Auto mode active** — session is in auto mode (see `@smith-auto_mode/SKILL.md`)
+- **Auto mode active** — session is in auto mode (see `@smith-ctx-claude-mode-auto/SKILL.md`)
 - **bg-isolation guard refusal** — first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
 ## Skill Descriptions (Full Reference)
 
@@ -523,7 +523,7 @@ documentation and router-trigger design.
 
 **smith-serena**: Serena MCP integration for file I/O, semantic code editing, and persistent memory. ALWAYS use Serena for file operations and language server features when available. Proactively sync memories at phase/todo/session boundaries.
 
-**smith-browser_mcp**: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Take each server's own default browser — both resolve to Chrome's stable channel — and set no browser override at all; launching Vivaldi/Brave/Arc/Opera/Edge is forbidden, though attaching to an already-running one over the Chrome DevTools Protocol (CDP) is the documented escape hatch. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, triaging browser MCP launch failures, or when a site needs an interactive login the user must complete.
+**smith-mcp-browser**: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Take each server's own default browser — both resolve to Chrome's stable channel — and set no browser override at all; launching Vivaldi/Brave/Arc/Opera/Edge is forbidden, though attaching to an already-running one over the Chrome DevTools Protocol (CDP) is the documented escape hatch. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, triaging browser MCP launch failures, or when a site needs an interactive login the user must complete.
 
 **smith-slack**: Slack message/reply drafting discipline — a hard pre-send checklist (draft-not-send, attribution footnote, evidence URLs, no formatting, confirm-before-send). Use when drafting or replying in Slack, invoking any slack_send_message* / slack_* MCP tool, or running a /slack:* command.
 
@@ -537,9 +537,9 @@ documentation and router-trigger design.
 
 ### System & Configuration
 
-**smith-settings**: Claude Code settings files — which config lives where (user / project / project-local / managed, and their precedence) plus a runnable convention-validator hook recipe that blocks actions violating repo rules. Use when editing settings.json or .claude config, deciding which scope a key belongs in, or building a hook that enforces a convention (commit/branch/file rules). For hooks internals see smith-ctx-claude; for permissions/auto-mode see smith-auto_mode.
+**smith-settings**: Claude Code settings files — which config lives where (user / project / project-local / managed, and their precedence) plus a runnable convention-validator hook recipe that blocks actions violating repo rules. Use when editing settings.json or .claude config, deciding which scope a key belongs in, or building a hook that enforces a convention (commit/branch/file rules). For hooks internals see smith-ctx-claude; for permissions/auto-mode see smith-ctx-claude-mode-auto.
 
-**smith-auto_mode**: Claude Code auto mode classifier — what gets blocked, how to recover from a denial without silently retrying, and where to configure trusted infrastructure. Use when the agent invokes a classifier-sensitive action (push, deploy, external-content duplication), when a prior turn ended in "auto mode classifier" denial, or when the user mentions auto mode / `defaultMode` / `hard_deny`.
+**smith-ctx-claude-mode-auto**: Claude Code auto mode classifier — what gets blocked, how to recover from a denial without silently retrying, and where to configure trusted infrastructure. Use when the agent invokes a classifier-sensitive action (push, deploy, external-content duplication), when a prior turn ended in "auto mode classifier" denial, or when the user mentions auto mode / `defaultMode` / `hard_deny`.
 
 **smith-checkpoint**: Memory checkpoint — save the current session's durable state into both memory systems (Serena memory, Basic-Memory note) in their required formats. Invoke with /smith-checkpoint.
 

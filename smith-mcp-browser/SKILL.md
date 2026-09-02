@@ -1,5 +1,5 @@
 ---
-name: smith-browser_mcp
+name: smith-mcp-browser
 description: Browser MCP plugin reliability
 ---
 

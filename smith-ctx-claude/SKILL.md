@@ -188,7 +188,7 @@ platform-specific patterns.
 
 - `smith-ctx-claude/REFERENCE.md` - Hooks, permission modes, agent features, model routing, moved trigger table + skill catalog (Layer-3 dumps)
 - @smith-ctx/SKILL.md - Universal context strategies
-- `@smith-auto_mode/SKILL.md` - Auto-mode classifier denial recovery
+- `@smith-ctx-claude-mode-auto/SKILL.md` - Auto-mode classifier denial recovery
 - `@smith-worktree/SKILL.md` - EnterWorktree/ExitWorktree, bgIsolation guard
 
 ## Before You Finish
