@@ -1,7 +1,8 @@
 ---
 name: smith-checkpoint
 description: Memory checkpoint
-argument-hint: [label] [plan=path]
+metadata:
+  argument-hint: "[label] [plan=path]"
 ---
 
 # /smith-checkpoint — persist session state to both memories
