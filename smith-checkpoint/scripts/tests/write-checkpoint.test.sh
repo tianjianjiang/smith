@@ -18,6 +18,7 @@ while [ $# -gt 0 ]; do
 done
 case "$argv" in
   *"serena memories write"*)
+    printf '%s\n' "$argv" > "$UVX_LOG_DIR/serena.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/serena.content" ;;
   *"basic-memory tool write-note"*)
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
@@ -43,5 +44,17 @@ echo "$out" | grep -q 'Basic-Memory: smith/projects/smith/test-label' || fail "r
 
 BM_FAIL=1 run_script >/dev/null 2>"$SHIM/stderr" && fail "failure path: script exited zero when write-note failed"
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
+
+grep -q -- 'serena memories write test_label --content' "$SHIM/serena.argv" || fail "outside git: serena argv should carry no project: $(cat "$SHIM/serena.argv")"
+grep -q -- '--folder projects/smith' "$SHIM/bm.argv" || fail "outside git: folder should default to projects/smith: $(cat "$SHIM/bm.argv")"
+
+REPO="$SHIM/primary-repo"
+git init -q "$REPO" && (cd "$REPO" && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init)
+git -C "$REPO" worktree add -q "$REPO/.claude/worktrees/wt" -b wt
+PRIMARY="$(cd "$REPO" && pwd -P)"
+wt_out=$(cd "$REPO/.claude/worktrees/wt" && BM_FAIL=0 bash "$SCRIPT" test_label "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "worktree path: script exited non-zero: $(cat "$SHIM/stderr")"
+echo "$wt_out" | grep -q 'Serena: test_label (primary-repo project)' || fail "reload block must name the resolved Serena project: $wt_out"
+grep -qF -- "serena memories write test_label $PRIMARY --content" "$SHIM/serena.argv" || fail "worktree: serena argv should name the primary checkout: $(cat "$SHIM/serena.argv")"
+grep -q -- '--folder projects/primary-repo' "$SHIM/bm.argv" || fail "worktree: folder should use the primary checkout name: $(cat "$SHIM/bm.argv")"
 
 echo "PASS: write-checkpoint"
