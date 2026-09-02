@@ -1,7 +1,8 @@
 ---
 name: smith-ship
 description: Ship pipeline
-argument-hint: [scope or PR title | stack]
+metadata:
+  argument-hint: "[scope or PR title | stack]"
 allowed-tools: Bash(git *), Bash(gh *)
 ---
 

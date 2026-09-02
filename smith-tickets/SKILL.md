@@ -1,7 +1,8 @@
 ---
 name: smith-tickets
 description: Ticket creation by convention
-argument-hint: [work to ticket]
+metadata:
+  argument-hint: "[work to ticket]"
 ---
 
 # /smith-tickets — create tickets that follow the conventions
