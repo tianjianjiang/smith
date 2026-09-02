@@ -10,7 +10,7 @@ hook recipe. NOT a hooks or permissions deep-dive — those live elsewhere.
 **Load if:** Editing `settings.json` / `.claude` config, choosing which scope a
 key belongs in, OR building a hook that enforces a repo convention.
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (hooks + permission-mode
-deep-dive), `@smith-auto_mode/SKILL.md` (permissions, `$defaults`, classifier)
+deep-dive), `@smith-ctx-claude-mode-auto/SKILL.md` (permissions, `$defaults`, classifier)
 **Authoritative source:** [Claude Code settings](https://code.claude.com/docs/en/settings), [hooks](https://code.claude.com/docs/en/hooks) (verified 2026-06-25)
 
 ## CRITICAL: One Key, One Scope
@@ -22,7 +22,7 @@ deep-dive), `@smith-auto_mode/SKILL.md` (permissions, `$defaults`, classifier)
   omitting it leaves the lower value in place (keys merge, they don't wipe).
 - `permissions.defaultMode: "auto"` is honored ONLY in `~/.claude/settings.json`
   — it is ignored in project/local settings, so a repo can't grant itself auto.
-- Cross-reference `@smith-ctx-claude/SKILL.md` and `@smith-auto_mode/SKILL.md`
+- Cross-reference `@smith-ctx-claude/SKILL.md` and `@smith-ctx-claude-mode-auto/SKILL.md`
   for hook events/handlers or permission rules instead of re-documenting them
   here (DRY).
 - Keep secrets and personal `defaultMode` overrides in `.local.json` —
@@ -100,7 +100,7 @@ format. For richer control than `exit 2`, a PreToolUse hook can return
 ## Related
 
 - `@smith-ctx-claude/SKILL.md` - Hook events/handlers, permission modes (deep-dive)
-- `@smith-auto_mode/SKILL.md` - Permissions rules, `$defaults`, classifier lists
+- `@smith-ctx-claude-mode-auto/SKILL.md` - Permissions rules, `$defaults`, classifier lists
 - `@smith-dev/SKILL.md` - Pre-commit checks this hook can enforce
 - `@smith-git/SKILL.md` - The protected-branch rule the recipe enforces
 

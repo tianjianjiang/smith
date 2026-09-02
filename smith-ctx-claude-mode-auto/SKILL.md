@@ -1,5 +1,5 @@
 ---
-name: smith-auto_mode
+name: smith-ctx-claude-mode-auto
 description: Claude Code auto mode classifier
 ---
 
