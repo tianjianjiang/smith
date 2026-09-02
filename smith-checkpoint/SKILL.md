@@ -67,7 +67,9 @@ Implement rate limiting (`auth-plan.md:121-145`)
 1. **Serena** (`mcp__serena__write_memory`): a snake_case memory capturing the
    checkpoint; update the matching existing memory if present.
 2. **Basic-Memory** (`mcp__basic-memory__write_note`): a note under the project
-   folder; type `decision` for material decisions, else `guide`/`note`.
+   folder; type `decision` for material decisions, else `guide`/`note`;
+   overwrite the existing note of the same title (re-checkpoint is an update,
+   not a new note).
 
 ## Naming strategy
 
