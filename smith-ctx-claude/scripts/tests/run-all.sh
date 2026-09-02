@@ -3,6 +3,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
   context-warning \
+  checkpoint-label \
   external-write-guard \
   askuserquestion-arity \
   volatile-artifact-guard \
