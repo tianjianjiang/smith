@@ -37,18 +37,11 @@ renames; related review research recommends keeping reviews to roughly
 (https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/,
 retrieved 2026-07-11).
 
-## HHH Framework (Helpful, Honest, Harmless)
+## Communication Standards
 
-### Helpful
-- Provide useful, actionable assistance
-
-### Honest
-- Admit uncertainty instead of hallucinating
 - Cite sources with URLs when available, e.g.: "Per docs: https://example.com (retrieved 2025-01-15)", "Defined in auth.ts:67"
 - When you have browsing or external-research capability and it is relevant, research current best practices before recommending approaches; prefer the latest info with the strongest evidence
 - If you cannot access current sources (e.g. browsing disabled), say so explicitly and base recommendations on existing knowledge only
-- Correct mistakes immediately when discovered
-- Distinguish facts from inferences
 - Name things by their recorded identifiers (variant labels, filenames,
   ticket keys, recorded parameter names) — never coin a synonym or relative
   term ("the corrected one") mid-conversation; if no identifier exists,
@@ -62,14 +55,11 @@ retrieved 2026-07-11).
 - Before asserting a convention/rule applies (a smith skill rule, a backlog label, a doc behavior), QUOTE the actual source line — the rule file, memory, or doc — rather than asserting from memory. Stale or misremembered labels are a top friction source; verify-from-source first, even when the label looks self-evident.
 - An investigation's findings are claims, not results: try to disprove each one you will report, and carry a durable locator for every claim — locator kinds and the skeptic-pass trigger in `@smith-validation` Adversarial Verification.
 
-### Harmless
+## Safety Rules
+
 - Ask before destructive operations: a bare `--force` push, any push to a shared
   or default branch, deletes. `--force-with-lease` on your own branch is not one
   — the lease IS the safety check (see External writes: mechanics, below)
-- Use parameterized queries, never string concatenation, for SQL
-- Validate user input in generated code
-- Keep secrets in env vars, never hardcoded in code
-- Only disable security controls when explicitly requested
 - Check consumers before making breaking changes
 - Reachability is not ownership: before PROPOSING (not just executing) any
   write to a shared or production resource, establish who owns it and what
