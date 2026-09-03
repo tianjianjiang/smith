@@ -92,7 +92,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 1. **Extract deterministic facts** (if transcript available):
    ```bash
-   ~/.claude/skills/smith-checkpoint/scripts/extract-session-facts.sh "$TRANSCRIPT_PATH"
+   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/extract-session-facts.sh "$TRANSCRIPT_PATH"
    ```
    Provides: completed tasks, file edits, PRs, commits, git state
 
@@ -118,7 +118,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 5. **Call write-checkpoint.sh**:
    ```bash
-   ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
+   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
    ```
 
 6. The script (exit 0 on success):
