@@ -13,9 +13,14 @@ description: Fundamental coding principles
 - MUST apply DRY before adding features
 - MUST apply KISS to choose simplest solution
 - MUST apply YAGNI to defer unneeded implementation
-- Keep one reason to change per class/module (Single Responsibility)
-- Depend on abstractions, not concretions, to avoid tight coupling
-- Abstract code that would otherwise be duplicated
+- One reason to change per module (Single Responsibility)
+- Open for extension, closed for modification (Open/Closed)
+- Subtypes substitutable for base types (Liskov Substitution)
+- Many specific interfaces over one general (Interface Segregation)
+- Depend on abstractions, not concretions (Dependency Inversion)
+- Complete coverage without overlap (MECE)
+- Fewest assumptions (Occam's Razor)
+- Simplicity requires effort (SINE)
 
 ## Related
 
@@ -24,8 +29,4 @@ description: Fundamental coding principles
 
 ## Before You Finish
 
-**Before implementing:**
-1. Check for existing abstractions (DRY)
-2. Choose simplest approach (KISS)
-3. Confirm feature is needed now (YAGNI)
-4. Verify single responsibility (SOLID-S)
+**Before implementing:** Check for existing abstractions (DRY), choose simplest approach (KISS), confirm feature is needed now (YAGNI), verify SOLID principles, verify MECE, Occam's Razor, and SINE
