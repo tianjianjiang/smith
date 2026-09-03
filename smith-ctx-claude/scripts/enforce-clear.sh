@@ -100,11 +100,6 @@ if [[ -f "$STATE_FILE" ]]; then
     fi
 fi
 
-if [[ -z "$ACTIVE_PLAN" ]] && [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type newest_adoptable_plan &>/dev/null; then
-    newest_adoptable_plan "" "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
-    ACTIVE_PLAN="$NEWEST_ADOPTABLE"
-fi
-
 if [[ -n "$ACTIVE_PLAN" ]]; then
     PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
     PENDING=$(echo "$PENDING" | tr -d '[:space:]')
@@ -137,16 +132,7 @@ if [[ -n "$ACTIVE_PLAN" ]]; then
 elif [[ -n "$COMPLETED_PLAN" ]]; then
     CHECKPOINT_LABEL=$(checkpoint_label_from_plan "$COMPLETED_PLAN")
 else
-    CONSOLIDATED_PLAN="${CTX_FLAGS_DIR}/smith-consolidated-plan.md"
-    if [[ -f "$CONSOLIDATED_PLAN" ]]; then
-        CHECKPOINT_LABEL="consolidated_plan_checkpoint"
-        ACTIVE_PLAN="$CONSOLIDATED_PLAN"
-        FLAG_TYPE="plan-pending"
-        PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-        PENDING=$(echo "$PENDING" | tr -d '[:space:]')
-    else
-        CHECKPOINT_LABEL=$(checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
-    fi
+    CHECKPOINT_LABEL=$(checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
 fi
 
 case "$FLAG_TYPE" in
