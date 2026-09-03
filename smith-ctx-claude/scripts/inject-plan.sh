@@ -441,9 +441,8 @@ PLAN_MODIFIED="$_MTIME_HUMAN"
 PROGRESS=$(calculate_progress "$PLAN_CONTENT")
 CURRENT_TASK=$(get_current_task "$PLAN_CONTENT")
 
-# Build full context with header and plan content
-FULL_CONTENT=$(printf '## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Progress:** %s\n**Current task:** %s\n\n---\n\n**IMPORTANT:** After completing tasks, UPDATE this plan file at `%s` to track progress.\n\n---\n\n%s' \
-    "$PLAN_BASENAME" "$PLAN_FILE" "$PLAN_MODIFIED" "$PROGRESS" "$CURRENT_TASK" "$PLAN_FILE" "$PLAN_CONTENT")
+FULL_CONTENT=$(printf '## Plan: `%s`\n\n**File:** `%s`\n**Modified:** %s\n**Progress:** %s\n**Current task:** %s\n\n**IMPORTANT:** After completing tasks, UPDATE this plan file at `%s` to track progress.' \
+    "$PLAN_BASENAME" "$PLAN_FILE" "$PLAN_MODIFIED" "$PROGRESS" "$CURRENT_TASK" "$PLAN_FILE")
 
 # Prepend action directive for auto-load scenarios (flag or /clear detection).
 # For trigger-word loads, the user's message IS the instruction — no directive needed.
