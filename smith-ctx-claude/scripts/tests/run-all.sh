@@ -25,7 +25,7 @@ for check in \
   post-merge-pull-reminder \
   coderabbit-status-check
 do
-  sh "$HERE/$check.test.sh" || status=1
+  bash "$HERE/$check.test.sh" || status=1
 done
 [ "$status" = 0 ] && echo "ALL PASS" || echo "SOME FAILED"
 exit "$status"
