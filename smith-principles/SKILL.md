@@ -17,23 +17,6 @@ description: Fundamental coding principles
 - Depend on abstractions, not concretions, to avoid tight coupling
 - Abstract code that would otherwise be duplicated
 
-## Core Principles
-
-- **DRY (Don't Repeat Yourself)**: Single source of truth
-- **KISS (Keep It Simple, Stupid)**: Simplest solution that works
-- **YAGNI (You Aren't Gonna Need It)**: Don't implement until needed
-- **SINE (Simple Is Not Easy)**: Simplicity requires deliberate effort
-- **MECE (Mutually Exclusive, Collectively Exhaustive)**: Complete coverage without overlap
-- **Occam's Razor**: Prefer solutions with fewest assumptions
-
-## SOLID Principles
-
-- **S (Single Responsibility)**: One reason to change per class/module
-- **O (Open/Closed)**: Open for extension, closed for modification
-- **L (Liskov Substitution)**: Subtypes substitutable for base types
-- **I (Interface Segregation)**: Many specific interfaces over one general
-- **D (Dependency Inversion)**: Depend on abstractions, not concretions
-
 ## Related
 
 - @smith-standards/SKILL.md - Universal coding standards
