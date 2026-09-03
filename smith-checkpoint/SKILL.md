@@ -113,7 +113,19 @@ When invoked via `/smith-checkpoint` (no arguments required):
    - Combine extracted facts (step 1) with rich context/reasoning
    - Add decisions (why, consequences), next steps with context
    - List Serena memories and Basic-Memory notes written this session under Related
-   - Write to: `${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md`
+   - Create file with Bash heredoc (Write tool requires Read first, even for new files):
+     ```bash
+     cat > "${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md" <<'EOF'
+     ## Completed
+     - [x] ...
+     
+     ## Decisions
+     ...
+     
+     ## Related
+     ...
+     EOF
+     ```
    - Omit `body=` only when session produced nothing durable
 
 5. **Call write-checkpoint.sh**:
