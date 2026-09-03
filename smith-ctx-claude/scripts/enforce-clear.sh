@@ -135,22 +135,33 @@ else
     CHECKPOINT_LABEL=$(checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
 fi
 
+EXTRACT_FACTS_SCRIPT="${SCRIPT_DIR}/../../smith-checkpoint/scripts/extract-session-facts.sh"
+EXTRACTED_FACTS=""
+if [[ -f "$EXTRACT_FACTS_SCRIPT" ]] && [[ -x "$EXTRACT_FACTS_SCRIPT" ]]; then
+    EXTRACTED_FACTS=$("$EXTRACT_FACTS_SCRIPT" "$TRANSCRIPT_PATH" 2>/dev/null || echo "")
+fi
+
 case "$FLAG_TYPE" in
     plan-pending)
         STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
-        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\" plan=\`${ACTIVE_PLAN}\`"
+        PLAN_ARG="plan=\`${ACTIVE_PLAN}\`"
         ;;
     plan-completed)
         STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
-        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\" plan=\`${COMPLETED_PLAN}\`"
+        PLAN_ARG="plan=\`${COMPLETED_PLAN}\`"
         ;;
     *)
         STATUS="Context at ${CONTEXT_PCT}%"
-        INVOKE="/smith-checkpoint \"${CHECKPOINT_LABEL}\""
+        PLAN_ARG=""
         ;;
 esac
 
-json_stop_block "${STATUS}
+MESSAGE="${STATUS}
 
-Invoke: ${INVOKE}
-Before invoking, write this session's durable facts to a body file and append body=«path» (format: smith-checkpoint SKILL.md)."
+${EXTRACTED_FACTS}
+
+Write checkpoint body combining these extracted facts with rich context/reasoning (decisions, why, consequences). Write body to file at \$CLAUDE_JOB_DIR/checkpoint-body.md, then call:
+
+~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh \"${CHECKPOINT_LABEL}\" ${PLAN_ARG} body=\$CLAUDE_JOB_DIR/checkpoint-body.md"
+
+json_stop_block "$MESSAGE"

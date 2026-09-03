@@ -90,28 +90,36 @@ Both writes are done by `write-checkpoint.sh` through each backend's CLI
 
 When invoked via `/smith-checkpoint` (no arguments required):
 
-1. **Infer label automatically**:
+1. **Extract deterministic facts** (if transcript available):
+   ```bash
+   ~/.claude/skills/smith-checkpoint/scripts/extract-session-facts.sh "$TRANSCRIPT_PATH"
+   ```
+   Provides: completed tasks, file edits, PRs, commits, git state
+
+2. **Infer label automatically**:
    - If plan file exists: slug of its first heading (snake_case)
    - Otherwise: infer from current session's primary work
    - Follow Naming strategy above (semantic, descriptive)
-2. **Draft the body** (<400 tokens, format above: Completed / Decisions /
-   Next / Related, no title or Date/Plan/Session header) and write it to a
-   file, e.g. `${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md`. Under Related,
-   list every Serena memory and Basic-Memory note written this session so a
-   reload from this checkpoint reaches them. Omit the `body=` argument
-   entirely only when the session produced nothing durable; `body=` with an
-   empty or missing path is an error.
-3. **Call write-checkpoint.sh**:
+
+3. **Draft the body** (<400 tokens, format above: Completed / Decisions /
+   Next / Related, no title or Date/Plan/Session header):
+   - Combine extracted facts (step 1) with rich context/reasoning
+   - Add decisions (why, consequences), next steps with context
+   - List Serena memories and Basic-Memory notes written this session under Related
+   - Write to: `${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md`
+   - Omit `body=` only when session produced nothing durable
+
+4. **Call write-checkpoint.sh**:
    ```bash
    ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
    ```
-4. The script (exit 0 on success):
-   - Prepends the header (label, date, plan, session) and adds the plan path
-     as the first entry under Related (creating the section when absent)
-   - Without `body=`, falls back to plan title, up to 10 pending plan items
-     and git state
-   - Writes the same content to both backends via CLI
-   - Outputs success confirmation to stderr and the Reload block to stdout
-5. If script exits non-zero, report its stderr error (unreadable body file,
-   or which backend failed).
-6. On success, output Reload block directly to user.
+
+5. The script (exit 0 on success):
+   - Prepends header (label, date, plan, session)
+   - Adds plan path as first Related entry
+   - Without `body=`, falls back to metadata only
+   - Writes to both backends (Serena + Basic-Memory)
+   - Outputs success to stderr, Reload block to stdout
+
+6. If script exits non-zero, report stderr error.
+7. On success, output Reload block to user.
