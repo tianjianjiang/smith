@@ -66,8 +66,9 @@ that mutate shared state or return plans instead of findings):
 > quoted evidence, not fixes or actions taken. If a step seems to need a
 > mutation, describe it for the main thread instead of doing it. Restate the
 > exact values you observed; do not summarize them away.
-> «Inline the specific conventions this task needs — subagents inherit no
-> skills, AGENTS.md, or memory»
+
+After pasting the contract above, add task-specific conventions inline —
+subagents inherit no skills, AGENTS.md, or memory.
 
 For a bounded EDITOR role the contract inverts: name the ONE artifact it may
 change and the single tool granted, and state that everything else stays
@@ -92,18 +93,13 @@ types (`plugin:agent`), and the built-in helpers named in
 criterion and never was — `Explore` and `Plan` hold Bash and write-capable
 `mcp__` tools, and are not exempt.
 
-**Editing this section is a code change.** The guard finds the block by the
-heading `## Contract template`, then takes the section's one and only
-blockquote, which must contain the `«placeholder»` line, and every line from
-the first placeholder to the end of the block must itself be a placeholder. Add
-a new clause BEFORE that line, never after: a clause added after it is printed
-in every refusal and enforced against nothing if it happens to contain
-guillemets of its own. Renaming the heading, indenting the block, fencing it as
-code, splitting it with a blank line, or adding a second blockquote anywhere in
-the section all stop the extraction —
-and the guard then allows every spawn unchecked, loudly, and fails this
-branch's `/smith-preflight`. `smith-ctx-claude/scripts/tests/subagent-contract-guard.test.sh`
-asserts the extracted text still contains both clauses, so run it after any
+**Editing this section is a code change.** The required contract text is
+hardcoded in `smith-ctx-claude/scripts/lib/contract-template.mjs` as
+`REQUIRED_CONTRACT`. Changing the blockquote above requires updating that
+constant in sync. The guard extracts the full blockquote for display in
+refusals, but enforces only against the hardcoded text.
+`smith-ctx-claude/scripts/tests/subagent-contract-guard.test.sh` asserts the
+extracted blockquote still matches the enforced constant, so run it after any
 edit here; that assertion is the deliberate second copy, and it exists to make
 a mis-edit fail loudly instead of silently narrowing what is enforced.
 

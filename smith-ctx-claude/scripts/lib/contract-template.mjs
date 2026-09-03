@@ -14,17 +14,19 @@ export const CONTRACT_SOURCE = resolve(
 );
 export const CONTRACT_HEADING = "## Contract template";
 
+export const REQUIRED_CONTRACT =
+  "READ-ONLY investigation. Return FINDINGS ONLY — do NOT edit, write, commit, " +
+  "push, or call any mutating / external-write tool. Report `file:line` facts and " +
+  "quoted evidence, not fixes or actions taken. If a step seems to need a " +
+  "mutation, describe it for the main thread instead of doing it. Restate the " +
+  "exact values you observed; do not summarize them away.";
+
 export function stripQuoteMarkers(text) {
   return text.replace(/^[ \t]*>[ \t]?/gm, "");
 }
 
 export function normalize(text) {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
-}
-
-function hasPlaceholder(line) {
-  const trimmed = line.trim();
-  return trimmed.includes("«") || trimmed.includes("»");
 }
 
 function blockquoteRuns(sectionLines) {
@@ -59,16 +61,16 @@ export function canonicalContract(sourcePath) {
   if (runs.length !== 1) return null;
 
   const quoted = runs[0];
-  if (!quoted.some(hasPlaceholder)) return null;
+  if (!quoted.length) return null;
 
-  const firstPlaceholder = quoted.findIndex(hasPlaceholder);
-  const fixed = quoted.slice(0, firstPlaceholder);
-  if (!fixed.length) return null;
-  if (!quoted.slice(firstPlaceholder).every(hasPlaceholder)) return null;
+  const display = quoted.join("\n");
+  const displayNormalized = normalize(stripQuoteMarkers(display));
+  const requiredNormalized = normalize(REQUIRED_CONTRACT);
+
+  if (displayNormalized !== requiredNormalized) return null;
 
   return {
-    display: quoted.join("\n"),
-    fixed,
-    required: normalize(fixed.join(" ")),
+    display,
+    required: requiredNormalized,
   };
 }

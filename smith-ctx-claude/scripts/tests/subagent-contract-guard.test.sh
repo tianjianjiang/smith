@@ -18,8 +18,8 @@ fail() { echo "FAIL: $1"; exit 1; }
 
 contract_fixture() {
   node -e 'import(process.argv[1]).then((m) => {
-      const c = m.canonicalContract(process.argv[2] || undefined);
-      process.stdout.write(c ? c.fixed.join("\n") + "\n" : "");
+      const lines = m.REQUIRED_CONTRACT.split(/\.\s+/).filter(Boolean);
+      process.stdout.write(lines.map(l => l + ".").join("\n") + "\n");
     });' "$HERE/../lib/contract-template.mjs" "${1:-}"
 }
 contract_fixture > "$TMP/contract.txt"
@@ -88,8 +88,6 @@ Read-only investigation. Report findings only and do not edit, write, commit
 or push anything. Give me file:line facts with quoted evidence, not fixes.
 EOF
 expect_blocked "re-worded prose contract" "$TMP/reworded.txt"
-grep -q 'Inline the specific conventions' "$TMP/err" \
-  || fail "the printed block must keep the «placeholder» line, or a paste of it is useless"
 
 grep -v 'describe it for the main thread' "$TMP/contract.txt" \
   | grep -v 'summarize them away' > "$TMP/two-clauses-dropped.txt"
@@ -281,35 +279,22 @@ ledger | grep -q '"verdict":"blocked"' \
 grep -q 'subagent-contract-guard' "$TMP/out" \
   || fail "stray blockquote: refusing to guess must be loud, got: $(cat "$TMP/out")"
 
-NP_TREE=$(scratch_tree no-placeholder)
-NP_SKILL="$TMP/no-placeholder/smith-subagents/SKILL.md"
-node -e 'const fs=require("node:fs");
-  const p=process.argv[1];
-  fs.writeFileSync(p, fs.readFileSync(p,"utf-8")
-    .replace(/«/g, "<").replace(/»/g, ">"));' "$NP_SKILL"
-TR_TREE=$(scratch_tree trailing-clause)
-TR_SKILL="$TMP/trailing-clause/smith-subagents/SKILL.md"
+MISMATCH_TREE=$(scratch_tree display-vs-constant-mismatch)
+MISMATCH_SKILL="$TMP/display-vs-constant-mismatch/smith-subagents/SKILL.md"
 node -e 'const fs=require("node:fs");
   const p=process.argv[1];
   const src=fs.readFileSync(p,"utf-8");
-  const marker="> skills, AGENTS.md, or memory»\n";
-  if (!src.includes(marker)) { console.error("marker not found"); process.exit(1); }
-  fs.writeFileSync(p, src.replace(marker,
-    marker + "> NEVER post to Slack, Jira, or GitHub under any circumstances.\n"));' \
-  "$TR_SKILL" || fail "trailing clause: could not build the fixture"
+  const before="> exact values you observed; do not summarize them away.";
+  if (!src.includes(before)) { console.error("anchor not found"); process.exit(1); }
+  fs.writeFileSync(p, src.replace(before,
+    before + "\n> NEVER post to Slack, Jira, or GitHub under any circumstances."));' \
+  "$MISMATCH_SKILL" || fail "display-constant mismatch: could not build the fixture"
 reset_ledger
 payload Agent "$REPO" general-purpose "$TMP/verbatim.txt" \
-  | node "$TR_TREE" >"$TMP/out" 2>"$TMP/err" \
-  || fail "trailing clause: must fail open rather than block"
+  | node "$MISMATCH_TREE" >"$TMP/out" 2>"$TMP/err" \
+  || fail "display-constant mismatch: must fail open rather than block"
 ledger | grep -q '"reason":"contract-source-unreadable"' \
-  || fail "a clause added after the «placeholder» must not be silently unenforced"
-
-reset_ledger
-payload Agent "$REPO" general-purpose "$TMP/verbatim.txt" \
-  | node "$NP_TREE" >"$TMP/out" 2>"$TMP/err" \
-  || fail "unmarked template: must fail open rather than block"
-ledger | grep -q '"reason":"contract-source-unreadable"' \
-  || fail "a template with no «placeholder» must not be enforced by guesswork"
+  || fail "a clause added to SKILL.md without updating REQUIRED_CONTRACT must not be silently unenforced"
 
 reset_ledger
 payload Agent "$REPO" general-purpose "$TMP/reworded.txt" \
