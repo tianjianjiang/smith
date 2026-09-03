@@ -137,8 +137,24 @@ fi
 
 EXTRACT_FACTS_SCRIPT="${SCRIPT_DIR}/../../smith-checkpoint/scripts/extract-session-facts.sh"
 EXTRACTED_FACTS=""
+FACTS_SUMMARY=""
 if [[ -f "$EXTRACT_FACTS_SCRIPT" ]] && [[ -x "$EXTRACT_FACTS_SCRIPT" ]]; then
     EXTRACTED_FACTS=$("$EXTRACT_FACTS_SCRIPT" "$TRANSCRIPT_PATH" 2>/dev/null || echo "")
+
+    FACTS_FILE="${CLAUDE_JOB_DIR:-/tmp}/session-facts-${CWD_KEY}.md"
+    printf '%s\n' "$EXTRACTED_FACTS" > "$FACTS_FILE"
+
+    FILE_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## Files Modified/,/^$/p' | grep -c '^- ' || echo 0)
+    PR_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## PRs/,/^$/p' | grep -c '^- ' || echo 0)
+    COMMIT_INFO=$(echo "$EXTRACTED_FACTS" | sed -n '/## Commits/,/^$/p' | grep '^- [0-9]' | head -1 || echo "")
+    GIT_STATE=$(echo "$EXTRACTED_FACTS" | sed -n '/## Git State/,/^$/p' | grep '^- Git:' | head -1 || echo "")
+
+    FACTS_SUMMARY="Session: "
+    [[ $FILE_COUNT -gt 0 ]] && FACTS_SUMMARY+="${FILE_COUNT} files modified, "
+    [[ $PR_COUNT -gt 0 ]] && FACTS_SUMMARY+="${PR_COUNT} PR operations, "
+    [[ -n "$COMMIT_INFO" ]] && FACTS_SUMMARY+="${COMMIT_INFO#- }, "
+    FACTS_SUMMARY+="${GIT_STATE#- }"
+    FACTS_SUMMARY="${FACTS_SUMMARY%, }"
 fi
 
 case "$FLAG_TYPE" in
@@ -166,9 +182,12 @@ fi
 CHECKPOINT_PARAMS="${CHECKPOINT_PARAMS}
 body=\${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md"
 
-AGENT_CONTEXT="${EXTRACTED_FACTS}
+AGENT_CONTEXT=""
+[[ -n "$FACTS_SUMMARY" ]] && AGENT_CONTEXT="${FACTS_SUMMARY}
 
-## Checkpoint Parameters
-${CHECKPOINT_PARAMS}"
+"
+AGENT_CONTEXT+="## Checkpoint Parameters
+${CHECKPOINT_PARAMS}
+facts_file=${FACTS_FILE:-}"
 
 json_stop_block "$REASON" "$AGENT_CONTEXT"
