@@ -96,7 +96,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
    ```
    Provides: completed tasks, file edits, PRs, commits, git state
 
-2. **Check for an active plan** — list `~/.claude/plans/*.md` and check
+2. **Check for an active plan** — list `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/*.md` and check
    whether one matches this session's current work. If one does, pass it
    explicitly as `plan=«path»` in step 4; never rely on inference alone.
    (write-checkpoint.sh also falls back to the ctx-claude plan-state file
