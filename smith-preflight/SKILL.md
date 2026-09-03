@@ -63,7 +63,7 @@ and never a substitute for evidence you could still go and find.
 - **subagent-contract** — machine when the ledger probe answers. See below.
 
 **branch-first.** Owner @smith-git CRITICAL, enforced by
-`smith-ctx-claude/scripts/branch-guard.mjs`. Protected: `main`,
+`smith-git/scripts/hooks/branch-guard.mjs`. Protected: `main`,
 `master`, `develop`, plus the default branch when one resolves — and
 that default counts in BOTH its full name and its last path segment.
 The hook compares only the segment (`origin/release/v2` becomes `v2`)
