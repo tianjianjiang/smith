@@ -53,8 +53,7 @@ management; read the section you need and unload it.
       {
         "hooks": [{
           "type": "command",
-          "command": "~/.smith/smith-ctx-claude/scripts/tool-output-hygiene.mjs",
-          "timeout": 5
+          "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/tool-output-hygiene.mjs\""
         }]
       }
     ]
@@ -62,11 +61,19 @@ management; read the section you need and unload it.
 }
 ```
 
-**Triggers**: Read, Bash, or any tool returning large output (>5K tokens estimated)
+**Triggers**: any tool call whose `tool_response` is present; for `Bash` the
+size estimate covers `stdout`+`stderr`, for every other tool it covers the
+whole `tool_response` object serialized to JSON (a rough proxy, not an exact
+token count — good enough to catch a large Read/Grep/WebFetch result).
 
-**Action**: Injects reminder as additionalContext suggesting to summarize findings and use file:line references instead of keeping full output
+**Action**: Injects reminder as `additionalContext` (and `systemMessage`)
+suggesting to summarize findings and use file:line references instead of
+keeping full output in context.
 
-**Registration**: Add to `~/.claude/settings.json` (user-global) or `.claude/settings.json` (project-specific)
+**Registration**: Add to `~/.claude/settings.json` (user-global) or
+`.claude/settings.json` (project-specific). Self-check:
+`smith-ctx-claude/scripts/tests/tool-output-hygiene.test.sh` (run via
+`smith-ctx-claude/scripts/tests/run-all.sh`).
 
 ## Hooks Reference
 

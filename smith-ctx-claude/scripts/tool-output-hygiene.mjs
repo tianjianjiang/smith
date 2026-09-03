@@ -17,6 +17,21 @@ function estimateTokens(text) {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
+function extractOutputText(toolName, toolResponse) {
+  if (toolResponse == null) return "";
+  if (typeof toolResponse === "string") return toolResponse;
+  if (toolName === "Bash") {
+    const stdout = typeof toolResponse.stdout === "string" ? toolResponse.stdout : "";
+    const stderr = typeof toolResponse.stderr === "string" ? toolResponse.stderr : "";
+    return stdout + stderr;
+  }
+  try {
+    return JSON.stringify(toolResponse);
+  } catch {
+    return "";
+  }
+}
+
 function main() {
   const raw = readStdin();
   if (!raw.trim()) return;
@@ -28,22 +43,27 @@ function main() {
     return;
   }
 
-  const toolResult = hookData?.tool_result;
-  if (!toolResult || typeof toolResult !== "string") return;
+  if (typeof hookData !== "object" || hookData === null) return;
 
-  const estimatedTokens = estimateTokens(toolResult);
+  const outputText = extractOutputText(hookData.tool_name, hookData.tool_response);
+  if (!outputText) return;
+
+  const estimatedTokens = estimateTokens(outputText);
 
   if (estimatedTokens > TOKEN_THRESHOLD) {
-    const reminder = `Tool output ~${estimatedTokens.toLocaleString()} tokens. ` +
-      `Summarize key findings and reference file:line instead of keeping full output in context.`;
+    const reminder =
+      `tool-output-hygiene: tool output ~${estimatedTokens.toLocaleString()} tokens. ` +
+      "Summarize key findings and reference file:line instead of keeping full output in context.";
 
-    const output = {
-      hookSpecificOutput: {
-        additionalContext: reminder
-      }
-    };
-
-    console.log(JSON.stringify(output));
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: reminder,
+        },
+        systemMessage: reminder,
+      }),
+    );
   }
 }
 
