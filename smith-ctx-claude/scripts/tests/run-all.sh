@@ -23,7 +23,8 @@ for check in \
   subagent-contract-guard \
   spawn-ledger-report \
   post-merge-pull-reminder \
-  coderabbit-status-check
+  coderabbit-status-check \
+  tool-output-hygiene
 do
   bash "$HERE/$check.test.sh" || status=1
 done
