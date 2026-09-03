@@ -16,6 +16,21 @@ extract_arg() {
     return 1
 }
 
+detect_active_plan() {
+    local lib_context="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../smith-ctx-claude/scripts" 2>/dev/null && pwd)/lib-context.sh"
+    [[ -f "$lib_context" ]] || return 0
+    source "$lib_context"
+
+    local cwd_key
+    cwd_key=$(session_key) || return 0
+    local state_file="${CTX_FLAGS_DIR}/.plan-state-${cwd_key}"
+    [[ -f "$state_file" ]] || return 0
+
+    local plan_path
+    plan_path=$(sed -n '5p' "$state_file" 2>/dev/null)
+    [[ -n "$plan_path" && -f "$plan_path" ]] && printf '%s\n' "$plan_path"
+}
+
 resolve_primary_checkout() {
     command -v git &>/dev/null || return 0
     git rev-parse --is-inside-work-tree &>/dev/null || return 0
@@ -202,6 +217,7 @@ require_readable_body() {
 
 main() {
     local plan_path=$(extract_arg plan)
+    [[ -z "$plan_path" ]] && plan_path=$(detect_active_plan)
     local body_path=""
     if body_path=$(extract_arg body); then
         require_readable_body "$body_path"

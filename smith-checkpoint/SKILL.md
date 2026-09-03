@@ -96,12 +96,19 @@ When invoked via `/smith-checkpoint` (no arguments required):
    ```
    Provides: completed tasks, file edits, PRs, commits, git state
 
-2. **Infer label automatically**:
+2. **Check for an active plan** — list `~/.claude/plans/*.md` and check
+   whether one matches this session's current work. If one does, pass it
+   explicitly as `plan=«path»` in step 4; never rely on inference alone.
+   (write-checkpoint.sh also falls back to the ctx-claude plan-state file
+   when `plan=` is omitted, but an explicit path is more reliable when a
+   plan is visibly in play.)
+
+3. **Infer label automatically**:
    - If plan file exists: slug of its first heading (snake_case)
    - Otherwise: infer from current session's primary work
    - Follow Naming strategy above (semantic, descriptive)
 
-3. **Draft the body** (<400 tokens, format above: Completed / Decisions /
+4. **Draft the body** (<400 tokens, format above: Completed / Decisions /
    Next / Related, no title or Date/Plan/Session header):
    - Combine extracted facts (step 1) with rich context/reasoning
    - Add decisions (why, consequences), next steps with context
@@ -109,17 +116,19 @@ When invoked via `/smith-checkpoint` (no arguments required):
    - Write to: `${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md`
    - Omit `body=` only when session produced nothing durable
 
-4. **Call write-checkpoint.sh**:
+5. **Call write-checkpoint.sh**:
    ```bash
    ~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
    ```
 
-5. The script (exit 0 on success):
+6. The script (exit 0 on success):
+   - Without `plan=`, falls back to the ctx-claude plan-state file for this
+     session's cwd (same source the stop hook uses)
    - Prepends header (label, date, plan, session)
    - Adds plan path as first Related entry
    - Without `body=`, falls back to metadata only
    - Writes to both backends (Serena + Basic-Memory)
    - Outputs success to stderr, Reload block to stdout
 
-6. If script exits non-zero, report stderr error.
-7. On success, output Reload block to user.
+7. If script exits non-zero, report stderr error.
+8. On success, output Reload block to user.
