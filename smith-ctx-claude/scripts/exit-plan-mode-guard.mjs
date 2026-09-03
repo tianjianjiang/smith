@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { writeSync } from "node:fs";
+import { writeSync, readFileSync } from "node:fs";
 import { readHookInput, blockWithError } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import {
   hasBlockType,
@@ -9,6 +9,22 @@ import {
 } from "../../smith-git/scripts/lib/transcript-turns.mjs";
 
 const MIN_ELABORATION_CHARS = 80;
+
+function getStateFilePath() {
+  const configDir = process.env.CLAUDE_CONFIG_DIR || `${process.env.HOME}/.claude`;
+  return `${configDir}/state/exit-plan-mode-message-classification.json`;
+}
+
+function wasLastMessageApproval() {
+  try {
+    const statePath = getStateFilePath();
+    const content = readFileSync(statePath, "utf8");
+    const state = JSON.parse(content);
+    return state && state.classification === "approval";
+  } catch (error) {
+    return false;
+  }
+}
 
 function hasSubstantialText(content) {
   if (!Array.isArray(content)) return false;
@@ -33,7 +49,9 @@ async function priorElaborationFound(transcriptPath) {
     }
 
     if (event.type === "user") {
-      if (isGenuineNewUserTurn(event)) found = false;
+      if (isGenuineNewUserTurn(event) && !wasLastMessageApproval()) {
+        found = false;
+      }
       continue;
     }
 

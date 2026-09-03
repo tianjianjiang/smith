@@ -11,6 +11,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
 | `skill-router.mjs` | UserPromptSubmit | Advisory: surfaces candidate skills per prompt |
+| `classify-user-message.mjs` | UserPromptSubmit | Advisory: classifies approval vs elaboration for exit-plan-mode-guard |
 | `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates human-facing writes to an `ask` prompt |
 | `askuserquestion-arity.mjs` | PreToolUse (`AskUserQuestion`) | Blocks a multi-question call |
 | `volatile-artifact-guard.mjs` | Stop / SubagentStop / SessionEnd | Advisory: lists files written under volatile paths |
@@ -33,6 +34,42 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
 UserPromptSubmit router that surfaces candidate smith skills per prompt from
 `skill-triggers.json`.
+
+## classify-user-message
+
+**classify-user-message** (`smith-ctx-claude/scripts/classify-user-message.mjs`)
+— advisory UserPromptSubmit hook that classifies each incoming user message
+as either "approval" or "elaboration" and writes the classification to
+`${CLAUDE_CONFIG_DIR}/state/exit-plan-mode-message-classification.json`. The
+classification is consumed by `exit-plan-mode-guard.mjs` (PreToolUse:ExitPlanMode)
+to distinguish short approval messages ("go", "yes", "ok", "繼續") from genuine
+new elaborations, preventing the infinite-loop failure mode where an approval
+resets the elaboration window immediately before the retry `ExitPlanMode` call.
+
+**Classification logic**: A message is "approval" if and only if:
+1. Length ≤ 20 characters (after trim), AND
+2. Matches the approval keyword regex:
+   `/^(go|yes|ok|y|proceed|continue|sure|yep|yeah|do it|好|可以|繼續|行|沒問題|開始|執行)(\s+(ahead|on|please|吧))?[!.。]*$/i`
+
+Otherwise it is "elaboration". The state file is written on every UserPromptSubmit
+(best-effort: fails silently to stderr on permission/quota errors, never blocks).
+The state schema is `{timestamp: ISO8601, classification: "approval"|"elaboration",
+message_preview: string}`. The hook never modifies `hookSpecificOutput`, so the
+classification is invisible to the user. `exit-plan-mode-guard.mjs` reads this
+state via `wasLastMessageApproval()` (missing/malformed state → `false`,
+preserving pre-collaboration reset-on-every-message behavior as a safe fallback).
+
+**Known limitations**: The regex is a structural proxy for approval intent, not
+semantic understanding. A 19-character message containing "yes" in a different
+context (e.g., "Yes, that's a bug") is misclassified as approval. The keyword
+list is English/Chinese-centric and will miss approval phrasing in other
+languages. No attempt is made to correlate the approval with a pending
+decision — any short approval-shaped message resets the classification,
+regardless of whether `ExitPlanMode` is actually pending. These tradeoffs were
+accepted to avoid context-heavy semantic analysis in a hot-path hook; the
+consequence of a false positive is that a genuine elaboration disguised as a
+short approval phrase might not reset the window when it should, requiring the
+user to rephrase.
 
 ## external-write-guard
 
@@ -533,7 +570,34 @@ main thread's elaboration requirement. Fails open on a missing/unreadable
 transcript or malformed hook input, distinguishing (stderr-only, never
 blocking either way) an expected missing-file case from an unexpected
 internal error, so a future logic bug is less likely to masquerade as
-intended fail-open silence. **Known limitations**: the 80-character
+intended fail-open silence.
+
+**Approval detection via dual-hook collaboration** (added 2026-09-04):
+To prevent the infinite-loop failure mode where a short approval message
+like "go" or "yes" resets the elaboration window before the retry
+`ExitPlanMode` call, the guard now collaborates with
+`classify-user-message.mjs` (a UserPromptSubmit hook): that hook
+classifies each incoming user message as either "approval"
+(≤20 chars matching a keyword regex like
+`/^(go|yes|ok|proceed|繼續)(\s+(ahead|please))?$/i`) or "elaboration",
+writing the classification to
+`${CLAUDE_CONFIG_DIR}/state/exit-plan-mode-message-classification.json`.
+The PreToolUse guard reads that state file and skips the elaboration-window
+reset for approval messages — only a genuine new elaboration still resets
+the window. The state write is best-effort (fails silently to stderr on
+permission/quota errors, returning `false` from `wasLastMessageApproval()`
+so the guard behaves like the pre-collaboration version); the read is also
+best-effort (missing/malformed state → `false`, preserving the original
+reset-on-every-user-message behavior as a safe fallback). Neither hook
+modifies `hookSpecificOutput`, so the collaboration is invisible to the
+user except that approval messages no longer trigger an infinite block.
+This dual-hook pattern was chosen over heuristic detection inside the
+PreToolUse hook alone (which would have required re-parsing the last user
+message from the transcript) to make the classification reusable by other
+hooks and to keep the PreToolUse hook focused on the elaboration-window
+logic rather than message parsing.
+
+**Known limitations**: the 80-character
 floor and whole-window scan are a structural proxy for "was this
 explained," not a semantic one — a long but low-content message (e.g. a
 wall of pasted code) satisfies it, the threshold itself is untuned, and
