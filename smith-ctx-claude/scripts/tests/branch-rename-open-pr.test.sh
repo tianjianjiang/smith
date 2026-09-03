@@ -75,6 +75,8 @@ GH_STUB_OPEN=1 EXPECT_HEAD=feature assert_exit "newline-joined multiline rename 
   '{"tool_name":"Bash","tool_input":{"command":"git add -A\ngit commit -m wip\ngit branch -m newname"}}' 2
 GH_STUB_OPEN=1 EXPECT_HEAD=feature assert_exit "env-prefixed rename blocks" \
   '{"tool_name":"Bash","tool_input":{"command":"GIT_EDITOR=true git branch -m newname"}}' 2
+GH_STUB_OPEN=1 EXPECT_HEAD=feature assert_exit "git -C with quoted path containing spaces blocks" \
+  '{"tool_name":"Bash","tool_input":{"command":"git -C \"/repo with spaces\" branch -m newname"}}' 2
 
 GH_STUB_OPEN=0 assert_exit "rename without open PR allowed" \
   '{"tool_name":"Bash","tool_input":{"command":"git branch -m newname"}}' 0

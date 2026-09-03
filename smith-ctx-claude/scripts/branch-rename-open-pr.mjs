@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeSync } from "node:fs";
+import { commandSegments, globalOptionKind } from "../../smith-git/scripts/lib/git-command-tokenizer.mjs";
 
 const SUBPROCESS_TIMEOUT_MS = 5000;
 const SUBPROCESS_OPTIONS = {
@@ -9,45 +10,15 @@ const SUBPROCESS_OPTIONS = {
   timeout: SUBPROCESS_TIMEOUT_MS,
   killSignal: "SIGKILL",
 };
-const COMMAND_SEGMENT_SEPARATORS = /[;&|\n\r\f\v]+/;
-const WHITESPACE = /\s+/;
-const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const MOVE_FLAG = /^--move$|^-[a-zA-Z]*[mM]/;
-const GLOBAL_OPTIONS_TAKING_A_VALUE = new Set([
-  "-C",
-  "-c",
-  "--git-dir",
-  "--work-tree",
-  "--namespace",
-  "--exec-path",
-]);
 
 function git(cwd, args) {
   return execFileSync("git", ["-C", cwd, ...args], SUBPROCESS_OPTIONS).trim();
 }
 
-function stripSurroundingQuotes(token) {
-  return token.replace(/^(['"])(.*)\1$/, "$2");
-}
-
-function globalOptionKind(token) {
-  if (GLOBAL_OPTIONS_TAKING_A_VALUE.has(token)) return "takes-value";
-  if (token.startsWith("-")) return "standalone";
-  return "not-an-option";
-}
-
-function withoutLeadingEnvAssignments(tokens) {
-  let index = 0;
-  while (index < tokens.length && ENV_ASSIGNMENT.test(tokens[index])) index += 1;
-  return tokens.slice(index);
-}
-
 function branchInvocationArguments(command) {
   const invocations = [];
-  for (const segment of command.split(COMMAND_SEGMENT_SEPARATORS)) {
-    const tokens = withoutLeadingEnvAssignments(
-      segment.trim().split(WHITESPACE).filter(Boolean).map(stripSurroundingQuotes),
-    );
+  for (const tokens of commandSegments(command)) {
     if (tokens[0] !== "git") continue;
     let index = 1;
     while (index < tokens.length) {
