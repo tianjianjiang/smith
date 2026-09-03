@@ -56,6 +56,8 @@ GH_STACK_INSTALLED=1 advises "env-prefixed gh pr create advises" \
   '{"tool_name":"Bash","tool_input":{"command":"GH_HOST=github.com gh pr create --base feature-x"}}'
 GH_STACK_INSTALLED=1 advises "env-prefixed git rebase --onto advises" \
   '{"tool_name":"Bash","tool_input":{"command":"GIT_EDITOR=true git rebase --onto origin/main feat/parent feat/child"}}'
+GH_STACK_INSTALLED=1 advises "git -C with quoted path containing spaces advises" \
+  '{"tool_name":"Bash","tool_input":{"command":"git -C \"/repo with spaces\" rebase --onto origin/main feat/parent feat/child"}}'
 
 GH_STACK_INSTALLED=1 silent "base equal to default branch is not stacked" \
   '{"tool_name":"Bash","tool_input":{"command":"gh pr create --base main --head child"}}'

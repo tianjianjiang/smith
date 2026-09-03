@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
+import { commandSegments } from "../../smith-git/scripts/lib/git-command-tokenizer.mjs";
 
 const CONFIG_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -17,28 +18,7 @@ const SUBPROCESS_OPTIONS = {
   timeout: 5000,
   killSignal: "SIGKILL",
 };
-const COMMAND_SEGMENT_SEPARATORS = /[;&|\n\r\f\v]+/;
-const WHITESPACE = /\s+/;
-const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const HAND_ROLLED_STACK_HINT = /--onto|pr\s+create/;
-
-function stripSurroundingQuotes(token) {
-  return token.replace(/^(['"])(.*)\1$/, "$2");
-}
-
-function withoutLeadingEnvAssignments(tokens) {
-  let index = 0;
-  while (index < tokens.length && ENV_ASSIGNMENT.test(tokens[index])) index += 1;
-  return tokens.slice(index);
-}
-
-function commandSegments(command) {
-  return command.split(COMMAND_SEGMENT_SEPARATORS).map((segment) =>
-    withoutLeadingEnvAssignments(
-      segment.trim().split(WHITESPACE).filter(Boolean).map(stripSurroundingQuotes),
-    ),
-  );
-}
 
 function rebasesOnto(tokens) {
   return (
