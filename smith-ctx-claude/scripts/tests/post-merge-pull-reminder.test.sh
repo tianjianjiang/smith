@@ -1,6 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-HOOK="$HERE/../post-merge-pull-reminder.mjs"
+HOOK="$HERE/../../../smith-git/scripts/hooks/post-merge-pull-reminder.mjs"
 
 fail() { echo "FAIL: $1"; exit 1; }
 

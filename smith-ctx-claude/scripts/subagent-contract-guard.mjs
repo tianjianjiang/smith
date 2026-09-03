@@ -171,7 +171,6 @@ function main() {
   if (!Object.keys(toolInput).length) return;
   const promptIsText = typeof toolInput.prompt === "string";
   const prompt = stringOrEmpty(toolInput.prompt);
-  if (promptIsText && !prompt.trim()) return;
 
   const subagentType = stringOrEmpty(toolInput.subagent_type);
   const cwd = stringOrEmpty(input.cwd);
@@ -193,13 +192,16 @@ function main() {
     allow(
       { ...entry, verdict: UNENFORCED, reason: "prompt-not-text" },
       scopeRoot,
-      "subagent-contract-guard: this spawn carried no prompt text to check, " +
-        `so the contract was NOT verified (fields seen: ${Object.keys(toolInput).join(", ")}). ` +
+      `subagent-contract-guard: this spawn carried no prompt text to check ` +
+        `(fields seen: ${Object.keys(toolInput).join(", ")}). ` +
         "If the Agent tool's prompt field has moved or been renamed, the guard " +
         "is a no-op until it is taught the new shape; make the ledger path " +
         "writable, or unregister the hook, until it is. " +
         unclearableFailNote(scopeRoot),
     );
+    return;
+  }
+  if (!prompt.trim()) {
     return;
   }
 

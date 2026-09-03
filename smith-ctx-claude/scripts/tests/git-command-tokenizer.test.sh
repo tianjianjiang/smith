@@ -1,6 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-MODULE="$HERE/../lib/git-command-tokenizer.mjs"
+MODULE="$HERE/../../../smith-git/scripts/lib/git-command-tokenizer.mjs"
 
 fail() { echo "FAIL: $1"; exit 1; }
 

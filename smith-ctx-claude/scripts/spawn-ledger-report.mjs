@@ -13,5 +13,5 @@ const { verdict, detail } = verdictFor(
 );
 
 process.stdout.write(
-  `subagent-contract ${verdict} — branch ${branch || "unknown"}: ${detail}\n`,
+  `subagent-contract ${verdict} — branch ${branch}: ${detail}\n`,
 );

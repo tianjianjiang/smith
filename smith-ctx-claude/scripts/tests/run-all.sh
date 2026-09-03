@@ -14,7 +14,6 @@ for check in \
   skill-claim-lint \
   gh-stack-guard \
   attribution \
-  branch-name-guard \
   git-command-tokenizer \
   transcript-turns \
   exit-plan-mode-guard \

@@ -122,10 +122,11 @@ report | grep -q "FAIL:unchecked-spawn" \
 
 : > "$LEDGER"
 entry "$BRANCH" contract-pasted ""
-chmod 000 "$LEDGER"
+rm "$LEDGER"
+mkdir "$LEDGER"
 expect "a ledger that exists but cannot be read is not absence" \
   "FAIL:unchecked-spawn(unreadable-ledger)"
-chmod 644 "$LEDGER"
+rm -rf "$LEDGER"
 
 : > "$LEDGER"
 entry "$BRANCH" contract-pasted ""

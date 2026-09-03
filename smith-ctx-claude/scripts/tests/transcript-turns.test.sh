@@ -1,6 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-MODULE="$HERE/../lib/transcript-turns.mjs"
+MODULE="$HERE/../../../smith-git/scripts/lib/transcript-turns.mjs"
 
 TMPD="$(mktemp -d)"
 trap 'rm -rf "$TMPD"' EXIT

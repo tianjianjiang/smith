@@ -106,8 +106,14 @@ export function readLedger(scopeRoots, branch) {
       }
       const verdict = typeof entry.verdict === "string" ? entry.verdict : "";
       const accountedFor = CHECKED_VERDICTS.has(token(verdict));
-      if (accountedFor && branch && entry.branch && entry.branch !== branch) {
-        continue;
+      if (accountedFor) {
+        if (!entry.branch || typeof entry.branch !== "string") {
+          unchecked += 1;
+          continue;
+        }
+        if (branch && entry.branch !== branch) {
+          continue;
+        }
       }
       entries.push(entry);
     }

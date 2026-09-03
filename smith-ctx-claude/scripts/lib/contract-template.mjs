@@ -23,7 +23,8 @@ export function normalize(text) {
 }
 
 function hasPlaceholder(line) {
-  return line.includes("«") || line.includes("»");
+  const trimmed = line.trim();
+  return trimmed.includes("«") || trimmed.includes("»");
 }
 
 function blockquoteRuns(sectionLines) {

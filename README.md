@@ -870,7 +870,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "matcher": "Agent|Task",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/review-orchestration-guard.mjs\"" },
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/subagent-contract-guard.mjs\"" }
+          { "type": "command", "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/subagent-contract-guard.mjs\"" }
         ]
       },
       {
