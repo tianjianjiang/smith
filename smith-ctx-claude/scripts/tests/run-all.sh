@@ -24,7 +24,8 @@ for check in \
   spawn-ledger-report \
   post-merge-pull-reminder \
   coderabbit-status-check \
-  tool-output-hygiene
+  tool-output-hygiene \
+  on-session-compact
 do
   bash "$HERE/$check.test.sh" || status=1
 done
