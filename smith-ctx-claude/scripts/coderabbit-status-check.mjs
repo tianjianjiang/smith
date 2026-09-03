@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
-import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from "./lib/git-command-tokenizer.mjs";
+import { UNWRAP_DEPTH_EXCEEDED, unwrappedCommandSegments } from "../../smith-git/scripts/lib/git-command-tokenizer.mjs";
 
 const HELP_FLAGS = new Set(["--help", "-h", "-V", "--version"]);
 const CODERABBIT_COMMANDS = new Set(["coderabbit", "cr"]);
