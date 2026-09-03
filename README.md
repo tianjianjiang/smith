@@ -564,6 +564,22 @@ through.
   squash merge can leave an orphan local branch to delete. Advisory only, never
   blocks (a PostToolUse hook cannot block a command that already ran).
 
+- **coderabbit-status-check** (`smith-ctx-claude/scripts/coderabbit-status-check.mjs`,
+  using shared helpers from `smith-ctx-claude/scripts/lib/git-command-tokenizer.mjs`)
+  — PostToolUse guard (matcher `Bash`) that emits an **advisory** after a
+  `coderabbit review --agent` or `cr review --agent` runs, reminding the session
+  to validate the output before treating it as a valid review. The advisory
+  names the required checks: `"status":"review_completed"` must be present AND
+  `reviewedFiles` must be a non-empty array. A rate-limit refusal
+  (`"errorType":"rate_limit"`) exits 0 and prints `"findings":0`, which reads
+  exactly like a clean pass but is NOT a review — likewise
+  `"status":"review_skipped"` with `"findings":0`. Fires only on `--agent`
+  invocations (the structured-output form agent workflows use); non-agent
+  `coderabbit review` stays silent because its human-readable output is not
+  mistakable the same way. Does NOT fire for `--help`/`-h`/`--version`/`-V`.
+  Advisory only, never blocks (a PostToolUse hook cannot block a command that
+  already ran). Owner rule: `@smith-gh-pr` "CodeRabbit fails OPEN".
+
 - **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
   using shared helpers from `smith-ctx-claude/scripts/lib/transcript-turns.mjs`)
   — PreToolUse guard (matcher `ExitPlanMode`) enforcing
@@ -884,7 +900,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-git/scripts/hooks/post-merge-pull-reminder.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-git/scripts/hooks/post-merge-pull-reminder.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/coderabbit-status-check.mjs\"" }
         ]
       }
     ],
@@ -1010,6 +1027,11 @@ then:
     fast-forward-only pull the default branch. Confirm `gh pr merge <PR> --auto`,
     `gh pr merge <PR> --help`, and a non-merge command (`gh pr view <PR>`) stay
     silent.
+21. **coderabbit-status-check** — run `coderabbit review --agent` or
+    `cr review --agent`; confirm the advisory appears reminding you to check
+    `"status":"review_completed"` and non-empty `reviewedFiles`. Confirm
+    `coderabbit review` (no `--agent`), `coderabbit --help`, and
+    `coderabbit auth status` stay silent.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not
