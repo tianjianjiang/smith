@@ -13,26 +13,14 @@ description: Fundamental coding principles
 - MUST apply DRY before adding features
 - MUST apply KISS to choose simplest solution
 - MUST apply YAGNI to defer unneeded implementation
-- Keep one reason to change per class/module (Single Responsibility)
-- Depend on abstractions, not concretions, to avoid tight coupling
-- Abstract code that would otherwise be duplicated
-
-## Core Principles
-
-- **DRY (Don't Repeat Yourself)**: Single source of truth
-- **KISS (Keep It Simple, Stupid)**: Simplest solution that works
-- **YAGNI (You Aren't Gonna Need It)**: Don't implement until needed
-- **SINE (Simple Is Not Easy)**: Simplicity requires deliberate effort
-- **MECE (Mutually Exclusive, Collectively Exhaustive)**: Complete coverage without overlap
-- **Occam's Razor**: Prefer solutions with fewest assumptions
-
-## SOLID Principles
-
-- **S (Single Responsibility)**: One reason to change per class/module
-- **O (Open/Closed)**: Open for extension, closed for modification
-- **L (Liskov Substitution)**: Subtypes substitutable for base types
-- **I (Interface Segregation)**: Many specific interfaces over one general
-- **D (Dependency Inversion)**: Depend on abstractions, not concretions
+- One reason to change per module (Single Responsibility)
+- Open for extension, closed for modification (Open/Closed)
+- Subtypes substitutable for base types (Liskov Substitution)
+- Many specific interfaces over one general (Interface Segregation)
+- Depend on abstractions, not concretions (Dependency Inversion)
+- Complete coverage without overlap (MECE)
+- Fewest assumptions (Occam's Razor)
+- Simplicity requires effort (SINE)
 
 ## Related
 
@@ -41,8 +29,4 @@ description: Fundamental coding principles
 
 ## Before You Finish
 
-**Before implementing:**
-1. Check for existing abstractions (DRY)
-2. Choose simplest approach (KISS)
-3. Confirm feature is needed now (YAGNI)
-4. Verify single responsibility (SOLID-S)
+**Before implementing:** Check for existing abstractions (DRY), choose simplest approach (KISS), confirm feature is needed now (YAGNI), verify SOLID principles, verify MECE, Occam's Razor, and SINE
