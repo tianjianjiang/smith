@@ -143,12 +143,12 @@ fi
 
 case "$FLAG_TYPE" in
     plan-pending)
-        STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending). Plan: ${ACTIVE_PLAN}"
-        PLAN_ARG="plan=\`${ACTIVE_PLAN}\`"
+        STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending)"
+        PLAN_ARG="plan=${ACTIVE_PLAN}"
         ;;
     plan-completed)
-        STATUS="Context at ${CONTEXT_PCT}% (plan completed). Plan: ${COMPLETED_PLAN}"
-        PLAN_ARG="plan=\`${COMPLETED_PLAN}\`"
+        STATUS="Context at ${CONTEXT_PCT}% (plan completed)"
+        PLAN_ARG="plan=${COMPLETED_PLAN}"
         ;;
     *)
         STATUS="Context at ${CONTEXT_PCT}%"
@@ -156,12 +156,19 @@ case "$FLAG_TYPE" in
         ;;
 esac
 
-MESSAGE="${STATUS}
+REASON="${STATUS}. Checkpoint this session, then /clear."
 
-${EXTRACTED_FACTS}
+CHECKPOINT_PARAMS="label=${CHECKPOINT_LABEL}"
+if [[ -n "$PLAN_ARG" ]]; then
+    CHECKPOINT_PARAMS="${CHECKPOINT_PARAMS}
+${PLAN_ARG}"
+fi
+CHECKPOINT_PARAMS="${CHECKPOINT_PARAMS}
+body=\${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md"
 
-Write checkpoint body combining these extracted facts with rich context/reasoning (decisions, why, consequences). Write body to file at \$CLAUDE_JOB_DIR/checkpoint-body.md, then call:
+AGENT_CONTEXT="${EXTRACTED_FACTS}
 
-~/.claude/skills/smith-checkpoint/scripts/write-checkpoint.sh \"${CHECKPOINT_LABEL}\" ${PLAN_ARG} body=\$CLAUDE_JOB_DIR/checkpoint-body.md"
+## Checkpoint Parameters
+${CHECKPOINT_PARAMS}"
 
-json_stop_block "$MESSAGE"
+json_stop_block "$REASON" "$AGENT_CONTEXT"
