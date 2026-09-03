@@ -261,13 +261,39 @@ and there is no plan to auto-resume.
 ### Checkpoint memory-restore flag (separate file)
 
 `~/.claude/plans/.pending-memory-restore-<unique id>` — written by `/smith-checkpoint` via
-`write-reload-flag.sh`, read by `on-session-clear.sh`. **Deliberately separate** from
+`write-reload-flag.sh`, read by `on-session-clear.sh` (`clear`) and, more narrowly,
+`on-session-compact.sh` (`compact` — see below). **Deliberately separate** from
 `.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
 `inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
 would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
-The injected directive is context-only: the restore executes at the user's first prompt after
-`/clear` (any prompt) — no hook event can start a model turn in an interactive session
-(`initialUserMessage` is `-p`-only), so nothing visible happens at `/clear` itself.
+
+The injected directive is context-only, and delivered identically for every `SessionStart`
+source: verified directly against code.claude.com/docs/en/hooks ("Add context for Claude"),
+"Claude reads the reminder on the next model request... SessionStart ... at the start of the
+conversation, before the first prompt." The only mechanism that could instead SYNTHESIZE a
+turn — `initialUserMessage` — is documented, same page, "SessionStart decision control", as
+applying "in non-interactive mode with the `-p` flag ... Unlike `additionalContext`, which
+attaches to an existing turn, this creates the turn." So after `/clear` — which always returns
+control to the user — nothing visible happens until the user's own next prompt supplies that
+"next model request."
+
+**`/compact` does not have the same gap in every case**, because unlike `/clear` it does not
+end the session — the running process continues. When compaction fires automatically mid-task
+(context filling up during an already-running agentic loop: a long tool-use sequence, a
+background job, a Ralph loop), the loop's own next step already IS the next model request,
+independent of the user — so a reminder injected via `SessionStart:compact` becomes visible
+without anyone typing anything. When `/compact` is invoked manually in an otherwise-idle
+session, Claude Code returns control to the user just as `/clear` does, and the reminder waits
+on their next prompt the same way. Claude Code exposes both cases under one undifferentiated
+`source: "compact"` (verified: the `SessionStart` matcher table lists `compact` as a single
+value, "Auto or manual compaction" — no separate auto/manual matcher the way `PreCompact`/
+`PostCompact` expose `manual`/`auto`), so a hook cannot itself tell which case it is in; this is
+fine, since firing unconditionally is never worse than the `/clear`-only status quo and is
+sometimes strictly better.
+`on-session-compact.sh` (`smith-ctx-claude/scripts/on-session-compact.sh`) implements this: a
+narrow, non-destructive companion to `on-session-clear.sh` that reminds ONLY about a flag
+matching this session's own `session_key` (no cross-session offering, no expiry sweep, no
+consumption — a later `/clear` must still be able to see and properly consume the same flag).
 
 **Discovered by content, not by filename.** The writer runs under the Bash tool, whose
 ephemeral shell `$PPID` can never reproduce the hook's `session_key` (PPID:CWD) — the old
