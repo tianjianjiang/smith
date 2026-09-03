@@ -74,6 +74,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `stack-merge-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/stack-merge-guard.mjs` | Asks before deleting a branch with an open child PR | ctx-claude |
 | `amend-shared-commit-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/amend-shared-commit-guard.mjs` | Asks before amending a commit shared with another branch | ctx-claude |
 | `attribution-model-stamp` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/attribution-model-stamp.sh` | Refreshes the model-id file for `Assisted-by:` trailers | ctx-claude |
+| `uv-tool-health-check` | SessionStart (all sources) | `smith-serena/scripts/uv-tool-health-check.sh` | Self-heals a broken `uv tool`-managed venv (e.g. `serena-agent`) | serena |
 
 **Full detail, known limitations, the complete `settings.json` registration
 block, and the manual verification checklist** live with each hook's owning
@@ -83,6 +84,7 @@ skill, not here:
 - `smith-git/references/HOOKS.md` — `branch-guard`, `worktree-dirty-guard`,
   `branch-name-guard`, `post-merge-pull-reminder`
 - `smith-standards/references/HOOKS.md` — `inline-comment-lint`
+- `smith-serena/references/HOOKS.md` — `uv-tool-health-check`
 
 `/smith-checkpoint`'s runtime prerequisites (Serena/Basic-Memory availability,
 the reload-flag hook, the session-restart marker hook, cloud/fresh-clone
