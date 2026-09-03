@@ -3,8 +3,18 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../exit-plan-mode-guard.mjs"
 
 TMPD="$(mktemp -d)"
+export CLAUDE_CONFIG_DIR="$TMPD"
+STATE_FILE="$TMPD/state/exit-plan-mode-message-classification.json"
 trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
+set_approval_state() {
+  mkdir -p "$(dirname "$STATE_FILE")"
+  printf '{"timestamp":"%s","classification":"approval","message_preview":"go"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_FILE"
+}
+set_elaboration_state() {
+  mkdir -p "$(dirname "$STATE_FILE")"
+  printf '{"timestamp":"%s","classification":"elaboration","message_preview":"let me explain"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_FILE"
+}
 
 run() {
   printf '{"transcript_path":"%s"}' "$1" | node "$HOOK"
@@ -174,6 +184,32 @@ blocks "$current_call_flushed_substantial_bundle_after_prior_elaboration" \
   "the current call is flushed bundling SUBSTANTIAL new text, even though earlier elaboration exists"
 blocks "$text_bundled_with_non_exitplanmode_tool" \
   "text bundled with a non-ExitPlanMode tool call (Write) does not count as elaboration"
+
+approval_after_elaboration="$TMPD/approval-after-elaboration.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"user","message":{"content":"go"}}' \
+  > "$approval_after_elaboration"
+
+set_approval_state
+allows "$approval_after_elaboration" \
+  "approval message after elaboration does NOT reset window (dual-hook collaboration)"
+
+elaboration_after_elaboration="$TMPD/elaboration-after-elaboration.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"user","message":{"content":"actually change the approach entirely"}}' \
+  > "$elaboration_after_elaboration"
+
+set_elaboration_state
+blocks "$elaboration_after_elaboration" \
+  "genuine elaboration message resets window even with state file present"
+
+rm -f "$STATE_FILE"
+blocks "$elaboration_cleared_by_new_turn" \
+  "new user message resets window when state file is missing (fallback behavior)"
 
 allows "$TMPD/does-not-exist.jsonl" \
   "missing transcript file fails open"
