@@ -165,7 +165,7 @@ function ghExternalWriteCommand(tokens) {
 async function bashExternalWrite(command) {
   let tokenizer;
   try {
-    tokenizer = await import("./lib/git-command-tokenizer.mjs");
+    tokenizer = await import("../../smith-git/scripts/lib/git-command-tokenizer.mjs");
   } catch {
     return ["a Bash command that could not be scanned because the shared tokenizer failed to load"];
   }

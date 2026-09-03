@@ -6,7 +6,7 @@ import {
   isGenuineNewUserTurn,
   readTranscriptTurns,
   toolUseNames,
-} from "./lib/transcript-turns.mjs";
+} from "../../smith-git/scripts/lib/transcript-turns.mjs";
 
 const MIN_ELABORATION_CHARS = 80;
 

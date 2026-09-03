@@ -296,6 +296,114 @@ through.
   applicable agent set runs, instead of hand-picking individual agents. Advisory
   only (a one-off targeted spawn is legitimate).
 
+- **subagent-contract-guard** (`smith-ctx-claude/scripts/subagent-contract-guard.mjs`)
+  — PreToolUse guard (matcher `Agent|Task`) that **blocks** a subagent spawn
+  whose prompt does not carry the canonical read-only contract from
+  `smith-subagents/SKILL.md` ("Contract template"), and prints that block in
+  the refusal so pasting it is the cheapest way forward. It extracts the text
+  from that section at run time rather than holding a copy of its own. What it
+  reads is the INSTALLED copy — the path resolves next to the running script,
+  so under the usual `~/.claude/skills` symlink that is the primary checkout,
+  not the worktree you are sitting in. Editing the block on a branch changes
+  nothing until it is merged and installed.
+
+  Why it blocks rather than advises: the rule was documented-only, and that
+  failed every time it was measured. Most of the contract's clauses are also
+  stated, in other words, in the CRITICAL bullets above the template — so a
+  writer working from memory reproduces those. Two are not reproduced. One
+  ("restate the exact values you observed; do not summarize them away") has no
+  counterpart in that section at all; the nearest bullet assigns restating to
+  the MAIN THREAD, not to the subagent. The other ("if a step seems to need a
+  mutation, describe it for the main thread instead of doing it") has a
+  counterpart that is strictly narrower — it covers mutation of *shared
+  artifacts* only — which leaves room to argue that some particular write is
+  not covered. Re-derivation therefore does not fail at random: it loses the
+  same ground every time, and no further prose closes that.
+
+  The prompt may carry the block either plain or still in the `>` blockquote
+  form it has in `SKILL.md` — quote markers are stripped before matching, so the
+  form you get by copying the source is the form that works. Matching ignores
+  case and re-wrapping, and requires only the fixed sentences: the
+  `«placeholder»` line is yours to replace.
+
+  Exempt: plugin-namespaced subagent types (`plugin:agent`, e.g.
+  `pr-review-toolkit:code-reviewer`), which ship their own definitions and whose
+  prompts the main thread does not author, plus the types listed in
+  `smith-ctx-claude/subagent-contract-config.json`, which holds the same kind of
+  case — built-in helpers a command spawns for you, where there is no prompt of
+  yours to paste into. That list is the only source; the guard carries no
+  hardcoded fallback, so emptying it removes every name-based exemption.
+  Read-only-sounding built-ins are deliberately NOT on it: `Explore` and `Plan`
+  are granted Bash and the write-capable `mcp__` tools, and `fork` inherits the
+  full grant, so the contract still has something to withhold from all three.
+
+  A bounded editor spawn declares itself by opening a line with `EDITOR ROLE`,
+  capitalised — leading list, heading or emphasis markup is tolerated, and up to
+  three spaces of indent, but not four, which is a code block. It is a
+  DECLARATION, not a content check: any line that begins with those words claims
+  the exemption, so do not paste examples of the declaration into an ordinary
+  prompt. A mid-line mention does not count, nor does a `>`-quoted line — quote
+  markers are stripped for contract matching only, never for the declaration.
+
+  A payload with no `tool_input` keys at all is a malformed call and passes
+  through untouched. One that carries fields but no usable `prompt` string is
+  recorded as unchecked and names the fields it did see, because that is exactly
+  what an upstream rename of the payload's shape would look like. Per-checkout
+  opt-out: `touch <checkout>/.claude/subagent-contract-guard.disabled`. It
+  waives a check that WOULD have applied, so it outranks the editor declaration
+  — a waived self-declaration is recorded `unenforced` — but not the exemptions,
+  which are non-applicability rather than a bypass: there was never a prompt of
+  yours to check. It does not rescue a spawn the guard blocks for want of a
+  writable ledger; only a writable path, a different `CLAUDE_CONFIG_DIR`, or
+  unregistering the hook does. A missing or malformed config file is not
+  silently equivalent to an empty one: it removes every name-based exemption AND
+  says so.
+
+  Every spawn the guard sees is appended to a ledger at
+  `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.spawn-ledger-<checkout-key>`, one
+  JSON object per line, tagged with the branch it was spawned on.
+  `smith-ctx-claude/scripts/spawn-ledger-report.mjs` reads it and prints the
+  verdict `/smith-preflight` quotes, which is what turns `subagent-contract`
+  from an attested check into a machine one that survives `/clear`.
+
+  Read that verdict for what it measures. `PASS` means no spawn reached the tool
+  unaccounted for — it counts spawns the guard excused (`exempt`, `editor-role`)
+  and spawns it refused (`blocked`) alongside spawns that carried the contract,
+  because all four are accounted for. It is not a claim that every subagent
+  honoured the contract, which no hook can verify. And it covers the
+  `Agent`/`Task` tool channel only: a skill the harness runs in a subagent of
+  its own, or a cloud review agent, never raises that event and so never reaches
+  the ledger.
+
+  A spawn allowed without being checked (the opt-out, an unreadable contract
+  source, a non-text prompt, or the guard itself crashing) is recorded as
+  `unenforced` and FAILs — never a silent pass. So does a ledger line the
+  reporter cannot parse, a verdict it does not recognise, and a ledger file that
+  exists but cannot be read: a record that cannot be read cannot support a
+  `PASS`. The branch tag narrows only the ACCOUNTED-FOR records: a record that
+  cannot be shown to have been checked is never filtered away by branch, so no
+  branch name, missing branch, or detached HEAD can hide one. Over-counting is
+  the safe direction, and the verdict says so.
+
+  Two limits worth knowing. The ledger is keyed by the checkout's path, so it
+  outlives the checkout: delete a worktree and recreate one at the same path and
+  branch, and the new one inherits the old one's records. And a record filed
+  under a raw working directory — which happens only when git was unavailable at
+  spawn time — is found again only by a report run from that same directory.
+
+  That FAIL does not clear. The ledger is append-only and the unchecked spawn
+  really did run, so a later correct spawn does not erase it; the guard says so
+  at the time and names the ledger path. When the cause was damage rather than a
+  real unchecked spawn, inspecting and pruning that file is a legitimate repair
+  — it is a local audit trail under `plans/`, not a tamper-evident log — but do
+  it deliberately and say so, because deleting the file entirely downgrades the
+  verdict to `SKIP:no-ledger`, which is softer than the truth.
+
+  When a spawn can be neither checked nor recorded, the guard blocks it rather
+  than let it run with no trace anywhere. The one exception is the opt-out: that
+  is your explicit instruction to stand down, so it fails open with an advisory
+  instead.
+
 - **skill-read-substitution-guard** (`smith-ctx-claude/scripts/skill-read-substitution-guard.mjs`)
   — PreToolUse guard (matcher `Read`) that emits an **advisory** when a
   `SKILL.md` under a skills root (markers in
@@ -761,7 +869,8 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
       {
         "matcher": "Agent|Task",
         "hooks": [
-          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/review-orchestration-guard.mjs\"" }
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/review-orchestration-guard.mjs\"" },
+          { "type": "command", "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/subagent-contract-guard.mjs\"" }
         ]
       },
       {
@@ -885,7 +994,18 @@ then:
     (or `rtk find -L . -type f`); confirm the advisory appears pointing to
     `test -f` / `rtk proxy find`. Confirm `rtk proxy find -L . -type f` and a
     plain `find . -type f` (no `-L`) stay silent.
-20. **post-merge-pull-reminder** — merge a real pull request with
+20. **subagent-contract-guard** — spawn a `general-purpose` subagent with a
+    prompt that describes read-only investigation in your own words; confirm it
+    is blocked and that the refusal contains the block to paste. Paste that
+    block verbatim above your instructions and re-issue; confirm it proceeds.
+    Then run
+    `node "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/spawn-ledger-report.mjs"`
+    in the same checkout and confirm it reports `subagent-contract PASS` naming
+    the current branch and the spawn counts — the refused attempt counts as
+    accounted for. Confirm a spawn whose prompt OPENS A LINE with `EDITOR ROLE`
+    proceeds, and that a `pr-review-toolkit:*` spawn is not blocked (step 11's
+    orchestration advisory still fires on it — that is a different hook).
+21. **post-merge-pull-reminder** — merge a real pull request with
     `gh pr merge <PR> --squash`; confirm the advisory appears reminding you to
     fast-forward-only pull the default branch. Confirm `gh pr merge <PR> --auto`,
     `gh pr merge <PR> --help`, and a non-merge command (`gh pr view <PR>`) stay

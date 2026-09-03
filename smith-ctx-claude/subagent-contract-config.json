@@ -1,0 +1,3 @@
+{
+  "exemptSubagentTypes": ["statusline-setup", "claude-code-guide"]
+}
