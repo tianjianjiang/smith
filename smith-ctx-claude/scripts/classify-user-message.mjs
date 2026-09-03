@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
 
 const APPROVAL_REGEX =
-  /^(go|yes|ok|y|proceed|continue|sure|yep|yeah|do it|好|可以|繼續|行|沒問題|開始|執行)(\s+(ahead|on|please|吧))?[!.。]*$/i;
+  /^(go|yes|ok|y|proceed|continue|sure|yep|yeah|do it|好|可以|繼續|行|沒問題|開始|執行)(\s*(ahead|on|please|吧))?[!.。]*$/i;
 const LENGTH_THRESHOLD = 20;
 
 function classifyMessage(text) {
