@@ -3,6 +3,7 @@
 set -euo pipefail
 
 TRANSCRIPT="${1:-}"
+MAX_FILES=30
 
 if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then
     echo "# Session Facts"
@@ -16,47 +17,54 @@ if ! command -v jq &>/dev/null; then
     exit 1
 fi
 
+assistant_tool_input_first_line() {
+    local tool="$1" field="$2"
+    jq -r --arg tool "$tool" --arg field "$field" '
+        select(.type == "assistant")
+        | .message.content[]?
+        | select(.type == "tool_use" and .name == $tool)
+        | .input[$field]? // empty
+        | tostring
+        | split("\n")[0]
+    ' "$TRANSCRIPT" 2>/dev/null || true
+}
+
 extract_completed_tasks() {
     jq -r '
         select(.type == "assistant")
         | .message.content[]?
         | select(.type == "tool_use" and .name == "TaskUpdate")
         | select(.input.status == "completed")
-        | "- [x] Task #\(.input.taskId): \(.input.subject // "unknown")"
-    ' "$TRANSCRIPT" 2>/dev/null || true
-}
-
-extract_file_edits() {
-    jq -r '
-        select(.type == "assistant")
-        | .message.content[]?
-        | select(.type == "tool_use" and (.name == "Edit" or .name == "Write"))
-        | "- \(.input.file_path // "unknown file")"
+        | "- [x] Task #\(.input.taskId): \((.input.subject // "unknown") | tostring | split("\n")[0])"
     ' "$TRANSCRIPT" 2>/dev/null | sort -u || true
 }
 
+extract_file_edits() {
+    {
+        assistant_tool_input_first_line Edit file_path
+        assistant_tool_input_first_line Write file_path
+    } | sort -u
+}
+
+bash_command_heads() {
+    assistant_tool_input_first_line Bash command
+}
+
 extract_pr_operations() {
-    jq -r '
-        select(.type == "assistant")
-        | .message.content[]?
-        | select(.type == "tool_use" and .name == "Bash")
-        | select(.input.command | test("gh pr (create|merge|view)"))
-        | .input.command
-    ' "$TRANSCRIPT" 2>/dev/null \
-        | sed -E 's/^gh pr (create|merge) .*/- PR \1d/' \
-        | sort -u || true
+    bash_command_heads | sed -nE '
+        s|.*gh pr merge[^0-9]*([0-9]+).*|- PR #\1 merged|p
+        s|.*gh pr merge.*|- PR merged|p
+        s|.*gh pr create.*|- PR created|p
+    ' | sort -u
 }
 
 extract_commits() {
-    jq -r '
-        select(.type == "assistant")
-        | .message.content[]?
-        | select(.type == "tool_use" and .name == "Bash")
-        | select(.input.command | test("git commit"))
-        | .input.command
-    ' "$TRANSCRIPT" 2>/dev/null \
-        | sed -E 's/^git commit .*/- Commit created/' \
-        | sort -u || true
+    local count
+    count=$(bash_command_heads | grep -cE '(^|[;&|[:space:]])git commit([[:space:]]|$)' || true)
+    count=${count//[^0-9]/}
+    if [[ -n "$count" ]] && (( count > 0 )); then
+        echo "- ${count} commit command(s) run"
+    fi
 }
 
 extract_git_state() {
@@ -78,8 +86,12 @@ fi
 
 FILES=$(extract_file_edits)
 if [[ -n "$FILES" ]]; then
+    FILE_COUNT=$(printf '%s\n' "$FILES" | wc -l | tr -d '[:space:]')
     echo "## Files Modified"
-    echo "$FILES"
+    printf '%s\n' "$FILES" | head -n "$MAX_FILES" | sed 's|^|- |'
+    if (( FILE_COUNT > MAX_FILES )); then
+        echo "- ... and $((FILE_COUNT - MAX_FILES)) more"
+    fi
     echo ""
 fi
 
