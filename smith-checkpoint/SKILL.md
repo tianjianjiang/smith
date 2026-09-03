@@ -132,3 +132,38 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 7. If script exits non-zero, report stderr error.
 8. On success, output Reload block to user.
+
+## Runtime prerequisites
+
+`/smith-checkpoint` (capture) and its post-`/clear` reload flag have runtime
+dependencies. If they are missing, capture may still be attempted but the
+checkpoint is **incomplete** — it is not successful until all three backend
+writes succeed (the skill reports which failed rather than claiming success),
+and reload degrades:
+
+- **MCP servers** — the lifecycle writes and reads through them: **Serena**
+  (`write_memory`/`read_memory`), **Basic-Memory** (`write_note` / note search).
+  Both are **local-only** in a default setup (Serena memories live under
+  `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
+  unless Basic-Memory Cloud is enabled).
+- **Reload-flag hook** — the memory-restore directive is injected as context on
+  the next `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
+  (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
+  conditions and outcomes are in `smith-plan-claude/references/HOOKS.md`
+  "Checkpoint memory-restore flag". Without that hook, use the manual
+  `/smith-recon "resume …"` path printed in the checkpoint's Reload block.
+- **Session-restart marker hook** — register `mark-session-restart.sh` on
+  **SessionStart** for BOTH `clear` and `compact`. Without it, `inject-plan.sh`
+  cannot tell a real restart from a high-context Stop the user simply worked
+  through, and announces "POST-CLEAR RESUME" (plus the recent-plans listing) on
+  the next prompt either way — including after a `/compact`. Registering it is
+  what makes that announcement fire once per actual restart and name the route
+  it took. Auto-reload keeps its old ungated behaviour until the hook has run
+  once, so updating the scripts without this registration loses nothing. The
+  registration block lives with the rest of the hook set in
+  `smith-plan-claude/references/HOOKS.md` ("Configure the Hooks"), so there is
+  one copy to keep correct rather than two.
+- **Cloud / fresh-clone reach** — a cloud run (`/schedule`, `/code-review ultra`,
+  Claude Code web) clones the repo fresh with no local home dir, so it sees
+  **none** of the local backends — only committed git/PR state. Portable resume
+  there needs committed-to-repo state or an enabled cloud MCP (deferred).
