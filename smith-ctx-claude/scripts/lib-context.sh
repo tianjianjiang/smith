@@ -114,12 +114,11 @@ get_context_percentage() {
         return
     fi
 
-  
-  
     local last_line
     last_line=$(tail -c 204800 "$transcript" 2>/dev/null \
         | grep '^{' \
-        | grep '"assistant"' | tail -1) || last_line=""
+        | jq -R -c 'fromjson? | select(.type == "assistant" and (.isSidechain | not))' 2>/dev/null \
+        | tail -1) || last_line=""
 
     if [[ -z "$last_line" ]]; then
         echo "0"
@@ -138,7 +137,6 @@ get_context_percentage() {
         return
     fi
 
-  
     if [[ -z "$context_window" ]]; then
         local model
         model=$(echo "$last_line" | jq -r '.message.model // empty' 2>/dev/null) || model=""
