@@ -190,13 +190,17 @@ resolve_context_percentage() {
     fi
 }
 
-# Helper: output JSON for Stop hook block decisions using jq for proper escaping
 json_stop_block() {
-    local reason="$1"
-    jq -n --arg r "$reason" '{
-        decision: "block",
-        reason: $r
-    }'
+    local reason="$1" additional_context="${2:-}"
+    jq -n --arg r "$reason" --arg c "$additional_context" '
+        {decision: "block", reason: $r}
+        + (if $c == "" then {} else {
+            hookSpecificOutput: {
+                hookEventName: "Stop",
+                additionalContext: $c
+            }
+        } end)
+    '
 }
 
 json_hook_output() {
