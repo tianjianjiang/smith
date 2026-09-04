@@ -26,8 +26,11 @@ HOOK_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2; exit 1
 }
-STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
-STATE_BASENAME=".plan-state-${CWD_KEY}"
+PLAN_STATE_KEY=$(plan_state_key "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: plan_state_key failed" >&2; exit 1
+}
+STATE_FILE="${PLANS_DIR}/.plan-state-${PLAN_STATE_KEY}"
+STATE_BASENAME=".plan-state-${PLAN_STATE_KEY}"
 OWN_SCOPE=$(scope_key "${HOOK_CWD:-${PWD:-}}")
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 

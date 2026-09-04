@@ -53,6 +53,10 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2
     exit 1
 }
+PLAN_STATE_KEY=$(plan_state_key "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: plan_state_key failed" >&2
+    exit 1
+}
 
 # Flag directory (shared constant from lib-context.sh)
 FLAGS_DIR="$CTX_FLAGS_DIR"
@@ -89,7 +93,7 @@ if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
     exit 0
 fi
 
-STATE_FILE="${FLAGS_DIR}/.plan-state-${CWD_KEY}"
+STATE_FILE="${FLAGS_DIR}/.plan-state-${PLAN_STATE_KEY}"
 
 ACTIVE_PLAN=""
 PENDING=0
@@ -186,8 +190,5 @@ AGENT_CONTEXT=""
 [[ -n "$FACTS_SUMMARY" ]] && AGENT_CONTEXT="${FACTS_SUMMARY}
 
 "
-AGENT_CONTEXT+="## Checkpoint Parameters
-${CHECKPOINT_PARAMS}
-facts_file=${FACTS_FILE:-}"
 
 json_stop_block "$REASON" "$AGENT_CONTEXT"
