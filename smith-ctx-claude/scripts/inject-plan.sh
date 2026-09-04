@@ -55,9 +55,12 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
 }
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
-# Session-keyed state file (survives /clear; tracks plan, transcript state)
-STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
-STATE_BASENAME=".plan-state-${CWD_KEY}"
+# Plan state key (repo-wide, shared across sessions; survives /clear and /compact)
+PLAN_STATE_KEY=$(plan_state_key "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: plan_state_key failed" >&2; exit 1
+}
+STATE_FILE="${PLANS_DIR}/.plan-state-${PLAN_STATE_KEY}"
+STATE_BASENAME=".plan-state-${PLAN_STATE_KEY}"
 OWN_SCOPE=$(scope_key "${HOOK_CWD:-${PWD:-}}")
 
 # Save injection state for post-/clear detection.

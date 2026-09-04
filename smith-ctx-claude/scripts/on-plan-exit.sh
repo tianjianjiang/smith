@@ -24,8 +24,10 @@ CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
 }
 FLAG_FILE="${PLANS_DIR}/.pending-reload-${CWD_KEY}"
 
-# Session-keyed state file (survives /clear; tracks plan, transcript state)
-STATE_FILE="${PLANS_DIR}/.plan-state-${CWD_KEY}"
+PLAN_STATE_KEY=$(plan_state_key "${HOOK_CWD:-${PWD:-}}") || {
+    echo "Error: plan_state_key failed" >&2; exit 1
+}
+STATE_FILE="${PLANS_DIR}/.plan-state-${PLAN_STATE_KEY}"
 ACTIVE_PLAN=""
 if [[ -f "$STATE_FILE" ]]; then
     prev_plan=$(sed -n '5p' "$STATE_FILE" 2>/dev/null)

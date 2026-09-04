@@ -45,6 +45,19 @@ session_key() {
     printf '%s' "${hash:0:16}"
 }
 
+plan_state_key() {
+    local cwd="${1:-${PWD:-$(pwd)}}"
+    local hash
+    hash=$(printf '%s' "$cwd" | md5 -q 2>/dev/null) || \
+    hash=$(printf '%s' "$cwd" | md5sum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$cwd" | shasum 2>/dev/null | cut -d' ' -f1) || \
+    hash=$(printf '%s' "$cwd" | cksum 2>/dev/null | cut -d' ' -f1) || {
+        echo "Error: no hash command found, cannot compute plan state key" >&2
+        return 1
+    }
+    printf '%s' "${hash:0:16}"
+}
+
 # Map model ID to context window size in tokens.
 # Handles both SessionStart format (with [1m] suffix) and transcript format (without).
 # A [1m] suffix (SessionStart IDs only) means 1M. Fable/Mythos, Opus 4.6+ and Sonnet 4.6+
