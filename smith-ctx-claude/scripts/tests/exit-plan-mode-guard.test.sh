@@ -4,17 +4,22 @@ HOOK="$HERE/../exit-plan-mode-guard.mjs"
 
 TMPD="$(mktemp -d)"
 export CLAUDE_CONFIG_DIR="$TMPD"
-STATE_FILE="$TMPD/state/exit-plan-mode-message-classification.json"
 trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
-set_approval_state() {
-  mkdir -p "$(dirname "$STATE_FILE")"
-  printf '{"timestamp":"%s","classification":"approval","message_preview":"go"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_FILE"
+
+make_stub() {
+  cat > "$TMPD/$1" <<STUB
+#!/bin/sh
+cat > /dev/null
+$2
+STUB
+  chmod +x "$TMPD/$1"
 }
-set_elaboration_state() {
-  mkdir -p "$(dirname "$STATE_FILE")"
-  printf '{"timestamp":"%s","classification":"elaboration","message_preview":"let me explain"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_FILE"
-}
+make_stub says-elaboration 'echo elaboration'
+make_stub says-approval 'echo approval'
+make_stub classifier-unavailable 'exit 1'
+use_classifier() { SMITH_APPROVAL_CLASSIFIER_BIN="$TMPD/$1"; export SMITH_APPROVAL_CLASSIFIER_BIN; }
+use_classifier says-elaboration
 
 run() {
   printf '{"transcript_path":"%s"}' "$1" | node "$HOOK"
@@ -192,9 +197,9 @@ printf '%s\n' \
   '{"type":"user","message":{"content":"go"}}' \
   > "$approval_after_elaboration"
 
-set_approval_state
+use_classifier says-approval
 allows "$approval_after_elaboration" \
-  "approval message after elaboration does NOT reset window (dual-hook collaboration)"
+  "approval as the last user message allows the call"
 
 elaboration_after_elaboration="$TMPD/elaboration-after-elaboration.jsonl"
 printf '%s\n' \
@@ -203,13 +208,42 @@ printf '%s\n' \
   '{"type":"user","message":{"content":"actually change the approach entirely"}}' \
   > "$elaboration_after_elaboration"
 
-set_elaboration_state
+use_classifier says-elaboration
 blocks "$elaboration_after_elaboration" \
-  "genuine elaboration message resets window even with state file present"
+  "a message the model classifies as elaboration still resets the window"
 
-rm -f "$STATE_FILE"
+approval_after_blocked_exit_plan_mode="$TMPD/approval-after-blocked-exit-plan-mode.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"ExitPlanMode","input":{"plan":"v1"}}]}}' \
+  '{"type":"user","message":{"content":"approve"}}' \
+  > "$approval_after_blocked_exit_plan_mode"
+
+use_classifier says-approval
+allows "$approval_after_blocked_exit_plan_mode" \
+  "approval after an ExitPlanMode attempt allows the retry (the reported infinite-loop case)"
+
+use_classifier classifier-unavailable
+blocks "$approval_after_blocked_exit_plan_mode" \
+  "an unavailable classifier falls back to the elaboration requirement"
+
+local_command_echo_is_not_the_last_user_message="$TMPD/local-command-echo.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"ExitPlanMode","input":{"plan":"v1"}}]}}' \
+  '{"type":"user","message":{"content":"approve"}}' \
+  '{"type":"user","message":{"content":"<local-command-stdout>Set model to Opus</local-command-stdout>"}}' \
+  > "$local_command_echo_is_not_the_last_user_message"
+
+use_classifier says-approval
+allows "$local_command_echo_is_not_the_last_user_message" \
+  "a local-command echo does not displace the real last user message"
+
+use_classifier says-elaboration
 blocks "$elaboration_cleared_by_new_turn" \
-  "new user message resets window when state file is missing (fallback behavior)"
+  "a new user message resets the window"
 
 allows "$TMPD/does-not-exist.jsonl" \
   "missing transcript file fails open"

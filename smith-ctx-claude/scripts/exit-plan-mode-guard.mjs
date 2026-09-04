@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { writeSync, readFileSync } from "node:fs";
+import { writeSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { readHookInput, blockWithError } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import {
   hasBlockType,
@@ -9,22 +11,18 @@ import {
 } from "../../smith-git/scripts/lib/transcript-turns.mjs";
 
 const MIN_ELABORATION_CHARS = 80;
-
-function getStateFilePath() {
-  const configDir = process.env.CLAUDE_CONFIG_DIR || `${process.env.HOME}/.claude`;
-  return `${configDir}/state/exit-plan-mode-message-classification.json`;
-}
-
-function wasLastMessageApproval() {
-  try {
-    const statePath = getStateFilePath();
-    const content = readFileSync(statePath, "utf8");
-    const state = JSON.parse(content);
-    return state && state.classification === "approval";
-  } catch (error) {
-    return false;
-  }
-}
+const CLASSIFIER_BIN = process.env.SMITH_APPROVAL_CLASSIFIER_BIN || "claude";
+const CLASSIFIER_MODEL = process.env.SMITH_APPROVAL_CLASSIFIER_MODEL || "haiku";
+const CLASSIFIER_TIMEOUT_MS = Number(process.env.SMITH_APPROVAL_CLASSIFIER_TIMEOUT_MS) || 30000;
+const CLASSIFIER_REENTRY_ENV = "SMITH_APPROVAL_CLASSIFIER";
+const CLASSIFIER_SYSTEM_PROMPT = [
+  "You classify one message from a software engineering chat session.",
+  "The assistant has just presented a plan and is about to submit it for approval.",
+  "Decide whether the message is the user approving that plan so the work can proceed as it stands.",
+  "A message that adds instructions, asks a question, requests a change, or raises a doubt is not an approval,",
+  "even when it opens with an affirmative word.",
+  "Answer with exactly one lowercase word and nothing else: approval, or elaboration.",
+].join(" ");
 
 function hasSubstantialText(content) {
   if (!Array.isArray(content)) return false;
@@ -37,28 +35,90 @@ function hasSubstantialText(content) {
   return total >= MIN_ELABORATION_CHARS;
 }
 
-async function priorElaborationFound(transcriptPath) {
-  let found = false;
+function userTurnText(event) {
+  const content = event.message && event.message.content;
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block && block.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+}
+
+function isLocalCommandEcho(text) {
+  return text.startsWith("<local-command-stdout>") || text.startsWith("<command-name>");
+}
+
+async function scanTranscript(transcriptPath) {
+  let elaborationFound = false;
+  let pendingReset = false;
+  let lastUserText = "";
   for await (const event of readTranscriptTurns(transcriptPath)) {
     if (!event || event.isSidechain === true) continue;
 
+    if (pendingReset) {
+      elaborationFound = false;
+      pendingReset = false;
+    }
+
     if (event.type === "user") {
-      if (isGenuineNewUserTurn(event) && !wasLastMessageApproval()) {
-        found = false;
+      if (isGenuineNewUserTurn(event)) {
+        elaborationFound = false;
+        const text = userTurnText(event);
+        if (text && !isLocalCommandEcho(text)) lastUserText = text;
       }
       continue;
     }
 
     const content = event.message && event.message.content;
     if (toolUseNames(content).includes("ExitPlanMode")) {
-      found = false;
+      if (hasSubstantialText(content)) {
+        elaborationFound = false;
+      } else {
+        pendingReset = true;
+      }
       continue;
     }
     if (!hasBlockType(content, "tool_use") && hasSubstantialText(content)) {
-      found = true;
+      elaborationFound = true;
     }
   }
-  return found;
+  return { elaborationFound, lastUserText };
+}
+
+function classifiedAsApproval(message) {
+  const result = spawnSync(
+    CLASSIFIER_BIN,
+    [
+      "-p",
+      "--model",
+      CLASSIFIER_MODEL,
+      "--system-prompt",
+      CLASSIFIER_SYSTEM_PROMPT,
+      "--strict-mcp-config",
+      "--mcp-config",
+      '{"mcpServers":{}}',
+      "--setting-sources",
+      "",
+    ],
+    {
+      input: message,
+      encoding: "utf8",
+      cwd: tmpdir(),
+      timeout: CLASSIFIER_TIMEOUT_MS,
+      env: { ...process.env, [CLASSIFIER_REENTRY_ENV]: "1" },
+    },
+  );
+  if (result.error || result.status !== 0 || typeof result.stdout !== "string") {
+    writeSync(
+      2,
+      "exit-plan-mode-guard: approval classifier unavailable, falling back to the " +
+        `elaboration requirement: ${(result.error && result.error.message) || `exit ${result.status}`}\n`,
+    );
+    return false;
+  }
+  return result.stdout.trim().toLowerCase() === "approval";
 }
 
 function blockAndExit() {
@@ -66,8 +126,8 @@ function blockAndExit() {
     [
       "Blocked: ExitPlanMode was called with no prior turn of plain-text " +
         "elaboration since the last real user message or ExitPlanMode " +
-        "attempt. Send the explanation as its own turn (text only, no tool " +
-        "call) first.",
+        "attempt, and the last user message was not an approval. Send the " +
+        "explanation as its own turn (text only, no tool call) first.",
       "Per smith-plan-claude/SKILL.md §Explain Before ExitPlanMode: " +
         "deliver the explanation as plain text in its own turn first, " +
         "then call ExitPlanMode in a separate, later turn.",
@@ -76,16 +136,17 @@ function blockAndExit() {
 }
 
 async function main() {
+  if (process.env[CLASSIFIER_REENTRY_ENV] === "1") return;
+
   const input = readHookInput();
-  if (!input) return;
   if (!input || typeof input !== "object") return;
 
   const transcriptPath = input.transcript_path;
   if (typeof transcriptPath !== "string") return;
 
-  let found;
+  let scan;
   try {
-    found = await priorElaborationFound(transcriptPath);
+    scan = await scanTranscript(transcriptPath);
   } catch (error) {
     if (!error || error.code !== "ENOENT") {
       writeSync(
@@ -96,7 +157,9 @@ async function main() {
     return;
   }
 
-  if (!found) blockAndExit();
+  if (scan.elaborationFound) return;
+  if (scan.lastUserText && classifiedAsApproval(scan.lastUserText)) return;
+  blockAndExit();
 }
 
 main().catch(() => {});
