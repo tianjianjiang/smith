@@ -11,7 +11,6 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
 | `skill-router.mjs` | UserPromptSubmit | Advisory: surfaces candidate skills per prompt |
-| `classify-user-message.mjs` | UserPromptSubmit | Advisory: classifies approval vs elaboration for exit-plan-mode-guard |
 | `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates human-facing writes to an `ask` prompt |
 | `askuserquestion-arity.mjs` | PreToolUse (`AskUserQuestion`) | Blocks a multi-question call |
 | `volatile-artifact-guard.mjs` | Stop / SubagentStop / SessionEnd | Advisory: lists files written under volatile paths |
@@ -34,42 +33,6 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
 UserPromptSubmit router that surfaces candidate smith skills per prompt from
 `skill-triggers.json`.
-
-## classify-user-message
-
-**classify-user-message** (`smith-ctx-claude/scripts/classify-user-message.mjs`)
-— advisory UserPromptSubmit hook that classifies each incoming user message
-as either "approval" or "elaboration" and writes the classification to
-`${CLAUDE_CONFIG_DIR}/state/exit-plan-mode-message-classification.json`. The
-classification is consumed by `exit-plan-mode-guard.mjs` (PreToolUse:ExitPlanMode)
-to distinguish short approval messages ("go", "yes", "ok", "繼續") from genuine
-new elaborations, preventing the infinite-loop failure mode where an approval
-resets the elaboration window immediately before the retry `ExitPlanMode` call.
-
-**Classification logic**: A message is "approval" if and only if:
-1. Length ≤ 20 characters (after trim), AND
-2. Matches the approval keyword regex:
-   `/^(go|yes|ok|y|proceed|continue|sure|yep|yeah|do it|好|可以|繼續|行|沒問題|開始|執行)(\s+(ahead|on|please|吧))?[!.。]*$/i`
-
-Otherwise it is "elaboration". The state file is written on every UserPromptSubmit
-(best-effort: fails silently to stderr on permission/quota errors, never blocks).
-The state schema is `{timestamp: ISO8601, classification: "approval"|"elaboration",
-message_preview: string}`. The hook never modifies `hookSpecificOutput`, so the
-classification is invisible to the user. `exit-plan-mode-guard.mjs` reads this
-state via `wasLastMessageApproval()` (missing/malformed state → `false`,
-preserving pre-collaboration reset-on-every-message behavior as a safe fallback).
-
-**Known limitations**: The regex is a structural proxy for approval intent, not
-semantic understanding. A 19-character message containing "yes" in a different
-context (e.g., "Yes, that's a bug") is misclassified as approval. The keyword
-list is English/Chinese-centric and will miss approval phrasing in other
-languages. No attempt is made to correlate the approval with a pending
-decision — any short approval-shaped message resets the classification,
-regardless of whether `ExitPlanMode` is actually pending. These tradeoffs were
-accepted to avoid context-heavy semantic analysis in a hot-path hook; the
-consequence of a false positive is that a genuine elaboration disguised as a
-short approval phrase might not reset the window when it should, requiring the
-user to rephrase.
 
 ## external-write-guard
 
@@ -553,18 +516,24 @@ tool-call attempt, so a rejected attempt always requires fresh
 elaboration before the retry rather than carrying the original stale
 elaboration through. The docs warn `transcript_path` "may not yet
 include the current turn's most recent messages when a hook fires," so
-the reset from an `ExitPlanMode` tool-call turn is applied differently
-depending on whether that same (grouped) turn ALSO carries at least 80
-characters of its own text: if so (substantial text bundled directly
-into the call), the reset applies immediately, blocking regardless of
-any earlier elaboration — this is the exact same-message-bundling
-threat, and it's visible in this turn's own content whether or not the
-transcript write lagged behind; if not (a clean call, or only trivial
-bundled text), the reset is deferred to the next turn, never applied to
-the turn that triggered it, so a clean call can never self-block just
-because its own line(s) happened to already be flushed. Both
-flush-timing cases, and both bundled-text sizes, are covered by
-dedicated tests. Sidechain (subagent) transcript events are skipped
+the reset from an `ExitPlanMode` tool-call turn must never be applied to
+the current invocation's own call, which may or may not already be in the
+file. The `PreToolUse` payload carries `tool_use_id`, and it is the same
+identifier as the `id` on the matching `tool_use` block in the transcript
+(verified 2026-09-04 by capturing a real payload and matching it against
+the transcript line it came from), so the guard identifies its own call
+exactly rather than inferring it from position: an `ExitPlanMode` turn
+resets the window when its id differs from `tool_use_id`, and is skipped
+when it matches. A retry therefore still sees the earlier attempt's reset
+even when the retry's own line has not been flushed yet. One case
+overrides the identity check: a turn that bundles at least 80 characters
+of its own text directly into the `ExitPlanMode` call resets immediately
+whether or not it is the current call, because that is the
+same-message-bundling threat and it is visible in the turn's own content
+regardless of flush timing. When `tool_use_id` is absent from the payload,
+the guard falls back to the older behaviour of deferring the reset to the
+next transcript event, so a clean call still cannot self-block. All of
+these cases are covered by dedicated tests. Sidechain (subagent) transcript events are skipped
 entirely — a subagent's own text-only response can never satisfy the
 main thread's elaboration requirement. Fails open on a missing/unreadable
 transcript or malformed hook input, distinguishing (stderr-only, never
@@ -572,30 +541,42 @@ blocking either way) an expected missing-file case from an unexpected
 internal error, so a future logic bug is less likely to masquerade as
 intended fail-open silence.
 
-**Approval detection via dual-hook collaboration** (added 2026-09-04):
-To prevent the infinite-loop failure mode where a short approval message
-like "go" or "yes" resets the elaboration window before the retry
-`ExitPlanMode` call, the guard now collaborates with
-`classify-user-message.mjs` (a UserPromptSubmit hook): that hook
-classifies each incoming user message as either "approval"
-(≤20 chars matching a keyword regex like
-`/^(go|yes|ok|proceed|繼續)(\s+(ahead|please))?$/i`) or "elaboration",
-writing the classification to
-`${CLAUDE_CONFIG_DIR}/state/exit-plan-mode-message-classification.json`.
-The PreToolUse guard reads that state file and skips the elaboration-window
-reset for approval messages — only a genuine new elaboration still resets
-the window. The state write is best-effort (fails silently to stderr on
-permission/quota errors, returning `false` from `wasLastMessageApproval()`
-so the guard behaves like the pre-collaboration version); the read is also
-best-effort (missing/malformed state → `false`, preserving the original
-reset-on-every-user-message behavior as a safe fallback). Neither hook
-modifies `hookSpecificOutput`, so the collaboration is invisible to the
-user except that approval messages no longer trigger an infinite block.
-This dual-hook pattern was chosen over heuristic detection inside the
-PreToolUse hook alone (which would have required re-parsing the last user
-message from the transcript) to make the classification reusable by other
-hooks and to keep the PreToolUse hook focused on the elaboration-window
-logic rather than message parsing.
+**Approval detection by model classification** (added 2026-09-04):
+The reported failure mode is a plan the user approves in chat rather than
+through the `ExitPlanMode` dialog: the transcript then reads elaboration →
+`ExitPlanMode` attempt → user "approve", and because the attempt itself
+resets the window, every retry blocks no matter what the user types. The
+guard therefore short-circuits: when the elaboration scan already passes it
+allows the call and spends nothing, and only on the path where it would
+otherwise block does it ask a model whether the last genuine user message
+approves the plan. Classification runs as `claude -p --model haiku` over
+that one message, with `--setting-sources ''`, `--strict-mcp-config`, an
+empty MCP config, a replacement `--system-prompt`, and `os.tmpdir()` as the
+working directory, so the child loads no user settings, no hooks, no MCP
+servers and no project memory; the child also carries
+`SMITH_APPROVAL_CLASSIFIER=1`, on which the guard returns immediately, as a
+second barrier against re-entry. Verified 2026-09-04: a child launched with
+`--setting-sources user` does fire user `UserPromptSubmit` hooks and one
+launched with `--setting-sources ''` does not; the lean invocation costs
+3.0-3.3 seconds, paid only on the would-block path.
+
+`SMITH_APPROVAL_CLASSIFIER_BIN`, `SMITH_APPROVAL_CLASSIFIER_MODEL` and
+`SMITH_APPROVAL_CLASSIFIER_TIMEOUT_MS` override the binary, the model and
+the 30-second timeout; the tests use the binary override to substitute
+fixed-verdict stubs. A classifier that errors, times out, exits non-zero or
+answers anything other than `approval` falls back to the elaboration
+requirement (a stderr note, never a silent allow), so an unreachable model
+costs one extra elaboration turn rather than disabling the guard. A user
+turn whose text is a local-command echo (`<local-command-stdout>`,
+`<command-name>`) is not treated as the last user message.
+
+An earlier attempt at this (pull request #250, superseded) classified every
+incoming message from a `UserPromptSubmit` hook using a keyword regex and a
+20-character length cap, and passed the verdict through a state file. That
+is heuristic detection, which the design discussion had explicitly rejected;
+it also could not fix the reported case, because the state file only decided
+whether a user turn resets the window and the `ExitPlanMode` attempt had
+already reset it.
 
 **Known limitations**: the 80-character
 floor and whole-window scan are a structural proxy for "was this
