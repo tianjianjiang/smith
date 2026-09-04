@@ -39,14 +39,8 @@ function hasSubstantialText(content) {
 
 async function priorElaborationFound(transcriptPath) {
   let found = false;
-  let pendingReset = false;
   for await (const event of readTranscriptTurns(transcriptPath)) {
     if (!event || event.isSidechain === true) continue;
-
-    if (pendingReset) {
-      found = false;
-      pendingReset = false;
-    }
 
     if (event.type === "user") {
       if (isGenuineNewUserTurn(event) && !wasLastMessageApproval()) {
@@ -57,11 +51,7 @@ async function priorElaborationFound(transcriptPath) {
 
     const content = event.message && event.message.content;
     if (toolUseNames(content).includes("ExitPlanMode")) {
-      if (hasSubstantialText(content)) {
-        found = false;
-      } else {
-        pendingReset = true;
-      }
+      found = false;
       continue;
     }
     if (!hasBlockType(content, "tool_use") && hasSubstantialText(content)) {
