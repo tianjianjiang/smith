@@ -24,6 +24,19 @@ use_classifier says-elaboration
 run() {
   printf '{"transcript_path":"%s"}' "$1" | node "$HOOK"
 }
+run_as() {
+  printf '{"transcript_path":"%s","tool_use_id":"%s"}' "$1" "$2" | node "$HOOK"
+}
+blocks_as() {
+  out=$(run_as "$1" "$2" 2>&1)
+  code=$?
+  [ "$code" = 2 ] || fail "$3: expected block (exit 2), got exit $code"
+  echo "$out" | grep -q 'Blocked: ExitPlanMode' || fail "$3: expected block message, got: $out"
+}
+allows_as() {
+  out=$(run_as "$1" "$2") || fail "$3: hook crashed"
+  [ -z "$out" ] || fail "$3: expected silent allow, got: $out"
+}
 blocks() {
   out=$(run "$1" 2>&1)
   code=$?
@@ -240,6 +253,27 @@ printf '%s\n' \
 use_classifier says-approval
 allows "$local_command_echo_is_not_the_last_user_message" \
   "a local-command echo does not displace the real last user message"
+
+own_call_flushed_with_id="$TMPD/own-call-flushed-with-id.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_current","name":"ExitPlanMode","input":{"plan":"v1"}}]}}' \
+  > "$own_call_flushed_with_id"
+
+use_classifier says-elaboration
+allows_as "$own_call_flushed_with_id" toolu_current \
+  "the current call never resets its own window, identified by tool_use_id"
+
+retry_before_own_line_flushed="$TMPD/retry-before-own-line-flushed.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_first","name":"ExitPlanMode","input":{"plan":"v1"}}]}}' \
+  > "$retry_before_own_line_flushed"
+
+blocks_as "$retry_before_own_line_flushed" toolu_retry \
+  "a retry whose own line is not flushed yet still sees the earlier attempt's reset"
 
 use_classifier says-elaboration
 blocks "$elaboration_cleared_by_new_turn" \

@@ -516,18 +516,24 @@ tool-call attempt, so a rejected attempt always requires fresh
 elaboration before the retry rather than carrying the original stale
 elaboration through. The docs warn `transcript_path` "may not yet
 include the current turn's most recent messages when a hook fires," so
-the reset from an `ExitPlanMode` tool-call turn is applied differently
-depending on whether that same (grouped) turn ALSO carries at least 80
-characters of its own text: if so (substantial text bundled directly
-into the call), the reset applies immediately, blocking regardless of
-any earlier elaboration — this is the exact same-message-bundling
-threat, and it's visible in this turn's own content whether or not the
-transcript write lagged behind; if not (a clean call, or only trivial
-bundled text), the reset is deferred to the next turn, never applied to
-the turn that triggered it, so a clean call can never self-block just
-because its own line(s) happened to already be flushed. Both
-flush-timing cases, and both bundled-text sizes, are covered by
-dedicated tests. Sidechain (subagent) transcript events are skipped
+the reset from an `ExitPlanMode` tool-call turn must never be applied to
+the current invocation's own call, which may or may not already be in the
+file. The `PreToolUse` payload carries `tool_use_id`, and it is the same
+identifier as the `id` on the matching `tool_use` block in the transcript
+(verified 2026-09-04 by capturing a real payload and matching it against
+the transcript line it came from), so the guard identifies its own call
+exactly rather than inferring it from position: an `ExitPlanMode` turn
+resets the window when its id differs from `tool_use_id`, and is skipped
+when it matches. A retry therefore still sees the earlier attempt's reset
+even when the retry's own line has not been flushed yet. One case
+overrides the identity check: a turn that bundles at least 80 characters
+of its own text directly into the `ExitPlanMode` call resets immediately
+whether or not it is the current call, because that is the
+same-message-bundling threat and it is visible in the turn's own content
+regardless of flush timing. When `tool_use_id` is absent from the payload,
+the guard falls back to the older behaviour of deferring the reset to the
+next transcript event, so a clean call still cannot self-block. All of
+these cases are covered by dedicated tests. Sidechain (subagent) transcript events are skipped
 entirely — a subagent's own text-only response can never satisfy the
 main thread's elaboration requirement. Fails open on a missing/unreadable
 transcript or malformed hook input, distinguishing (stderr-only, never
