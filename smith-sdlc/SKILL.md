@@ -62,10 +62,17 @@ The originator brainstorms the problem with Claude in their own words —
 no formal language required — until scope, users, constraints and success
 criteria are concrete. Claude writes the result as `intent.md` (problem,
 proposed outcome, affected users/systems, constraints, open questions)
-using an organization template (encode this as a skill). The product owner
-corrects and commits it. Home: an `intent/` folder in the product repo for
-a single product; a directory in a monorepo; a dedicated intent repo only
-when intent spans many repositories.
+using an organization template (encode this as a skill). Per the
+playbook's own numbered steps: "The originator corrects anything Claude
+misunderstood," then commits `intent.md` — the product owner "picks the
+idea up from there" for Stage 2, rather than doing the correcting or
+committing themselves (a separate framing sentence earlier in the same
+play says the product owner reviews and corrects it "before it is
+committed," which sits in tension with those numbered steps — the
+numbered steps are the operational instructions, so treat those as
+authoritative). Home: an `intent/` folder in the product repo for a single
+product; a directory in a monorepo; a dedicated intent repo only when
+intent spans many repositories.
 
 **Measure:** time from first conversation to committed `intent.md`
 (leading); the survival rate of intents accepted into Design vs. closed,
