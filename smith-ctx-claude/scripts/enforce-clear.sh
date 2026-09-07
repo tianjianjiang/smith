@@ -21,8 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Source context functions (canonical location)
 source "${SCRIPT_DIR}/lib-context.sh"
 
-# Source plan-claude's lib for plan/Ralph/Orchestrator functions (optional)
-PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/../../smith-mode-plan-claude/scripts/lib-plan.sh}"
+# Source lib-plan.sh for plan/Ralph/Orchestrator functions (optional; co-located here, not in smith-mode-plan-claude)
+PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/lib-plan.sh}"
 if [[ -f "$PLAN_LIB" ]]; then
     source "$PLAN_LIB"
     PLAN_LIB_AVAILABLE=true
