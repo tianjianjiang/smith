@@ -58,16 +58,27 @@ safe; the hazard is any path that is itself a file symlink.
 
 ## Serena Activation Workflow
 
-**At session start, MUST activate Serena:**
+**Launch mode determines activation:**
 
-1. `activate_project()` - Activate the project
-2. `check_onboarding_performed()` - Verify onboarding status
-3. `list_memories()` - Discover available context
-4. `read_memory()` - Load relevant project context
+### Single-Project Auto-Activation (Default)
 
-**If onboarding not performed:**
-- Call `onboarding()` to get instructions
-- Follow onboarding steps before proceeding
+Claude Code with `--project-from-cwd` activates projects automatically from working directory.
+
+**At session start:**
+1. `initial_instructions()` — Load Serena manual (once per conversation)
+2. `onboarding()` — Check setup (returns instructions if needed)
+3. `list_memories()` — Discover available context
+4. `read_memory()` — Load project context
+
+### Multi-Project / Global MCP
+
+Without `--project-from-cwd`, manual activation required.
+
+**At session start:**
+1. `initial_instructions()` — Load manual
+2. `activate_project(name_or_path)` — Activate specific project
+3. `list_memories()` — Discover context
+4. `read_memory()` — Load context
 
 ## Core Serena Tools
 
