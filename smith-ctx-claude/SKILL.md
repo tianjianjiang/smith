@@ -23,7 +23,7 @@ everything after into a summary; pass focus instructions to steer it (access
 via `/rewind`; full path in ACTION below).
 
 **"/clear"** (full reset, save state first): stop hook enforced at 60% via
-`smith-plan-claude` using `stop_hook_active` (official best practice).
+`smith-mode-plan-claude` using `stop_hook_active` (official best practice).
 
 Check for uncommitted work before running `/clear`.
 

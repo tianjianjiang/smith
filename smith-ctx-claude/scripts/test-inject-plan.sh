@@ -64,7 +64,7 @@ SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
 # straight on gives `…/T//smith-…`, a path that compares unequal to the same
 # directory spelled once. Tests assert on these paths, so normalise it here.
 TEST_TMPROOT="${TMPDIR:-/tmp}"; TEST_TMPROOT="${TEST_TMPROOT%/}"
-TEST_DIR=$(mktemp -d "${TEST_TMPROOT}/smith-plan-claude-tests.XXXXXX")
+TEST_DIR=$(mktemp -d "${TEST_TMPROOT}/smith-mode-plan-claude-tests.XXXXXX")
 # Every scenario below builds its own repositories, so an INHERITED git environment
 # has nothing to contribute and plenty to break: rev-parse reads GIT_DIR before it
 # looks at -C, so the sandbox guard below reports every directory as inside a

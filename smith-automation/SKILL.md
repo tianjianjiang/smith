@@ -93,7 +93,7 @@ For local-machine durable scheduling without a cloud account, use Desktop schedu
 
 - `@smith-ctx-claude/SKILL.md` - Session model, background tasks, hooks
 - `@smith-ralph/SKILL.md` - Ralph Loop iterative-development pattern (uses `/loop` as a primitive)
-- `@smith-plan-claude/SKILL.md` - Plan automation (hooks, not `/loop`)
+- `@smith-mode-plan-claude/SKILL.md` - Plan automation (hooks, not `/loop`)
 
 ## Before You Finish
 

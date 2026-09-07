@@ -160,9 +160,9 @@ and reload degrades:
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled).
 - **Reload-flag hook** — the memory-restore directive is injected as context on
-  the next `/clear` only if the `smith-plan-claude` **SessionStart:clear** hook
+  the next `/clear` only if the `smith-mode-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
-  conditions and outcomes are in `smith-plan-claude/references/HOOKS.md`
+  conditions and outcomes are in `smith-mode-plan-claude/references/HOOKS.md`
   "Checkpoint memory-restore flag". Without that hook, use the manual
   `/smith-recon "resume …"` path printed in the checkpoint's Reload block.
 - **Session-restart marker hook** — register `mark-session-restart.sh` on
@@ -174,7 +174,7 @@ and reload degrades:
   it took. Auto-reload keeps its old ungated behaviour until the hook has run
   once, so updating the scripts without this registration loses nothing. The
   registration block lives with the rest of the hook set in
-  `smith-plan-claude/references/HOOKS.md` ("Configure the Hooks"), so there is
+  `smith-mode-plan-claude/references/HOOKS.md` ("Configure the Hooks"), so there is
   one copy to keep correct rather than two.
 - **Cloud / fresh-clone reach** — a cloud run (`/schedule`, `/code-review ultra`,
   Claude Code web) clones the repo fresh with no local home dir, so it sees

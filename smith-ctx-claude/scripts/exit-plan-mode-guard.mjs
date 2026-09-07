@@ -143,7 +143,7 @@ function blockAndExit() {
         "elaboration since the last real user message or ExitPlanMode " +
         "attempt, and the last user message was not an approval. Send the " +
         "explanation as its own turn (text only, no tool call) first.",
-      "Per smith-plan-claude/SKILL.md §Explain Before ExitPlanMode: " +
+      "Per smith-mode-plan-claude/SKILL.md §Explain Before ExitPlanMode: " +
         "deliver the explanation as plain text in its own turn first, " +
         "then call ExitPlanMode in a separate, later turn.",
     ].join(" "),

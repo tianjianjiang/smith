@@ -1436,7 +1436,7 @@ if [[ "$FLAG_TYPE" == "plan-pending" ]] && [[ $PENDING -gt 0 ]]; then
     ACTION_DIRECTIVE+="\n\n1. Reconstruct todos from plan checkboxes:"
     ACTION_DIRECTIVE+="\n   - For each \`- [ ]\` task: TaskCreate(subject=task_text, description=\"From plan\", activeForm=\"Working on ...\")"
     ACTION_DIRECTIVE+="\n   - Set first task: TaskUpdate(taskId, status=\"in_progress\")"
-    ACTION_DIRECTIVE+="\n2. Load skills: @smith-plan, @smith-plan-claude, @smith-ctx-claude"
+    ACTION_DIRECTIVE+="\n2. Load skills: @smith-mode-plan, @smith-mode-plan-claude, @smith-ctx-claude"
     ACTION_DIRECTIVE+="\n3. If Serena MCP available: list_memories() then read_memory() for session state"
     ACTION_DIRECTIVE+="\n4. Resume current task: ${CURRENT_TASK}"
     ACTION_DIRECTIVE+="\n\nIf user's message contains a different request, address that first."

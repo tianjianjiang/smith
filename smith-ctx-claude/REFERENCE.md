@@ -135,7 +135,7 @@ handler to filter on tool name AND arguments together using
 `"Bash(git *)"` fires only for `git` subcommands, `"Edit(*.ts)"` only for
 TypeScript edits.
 
-Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
+Cross-ref: `@smith-mode-plan-claude/SKILL.md` for plan-specific hooks.
 
 ## Permission Modes
 
@@ -346,8 +346,9 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 
 <!-- Workflow -->
 <skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
-<skill name="smith-plan" description="Plan tracking protocol (portable)">`@smith-plan/SKILL.md`</skill>
-<skill name="smith-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-plan-claude/SKILL.md`</skill>
+<skill name="smith-mode-plan" description="Plan tracking protocol (portable)">`@smith-mode-plan/SKILL.md`</skill>
+<skill name="smith-mode-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-mode-plan-claude/SKILL.md`</skill>
+<skill name="smith-sdlc" description="AI-native SDLC artifact chain: intent.md, spec.md, plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
 
@@ -386,8 +387,8 @@ skill via the Skill tool:
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
-**Plan**: Plan execution → `@smith-plan/SKILL.md`,
-  Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
+**Plan**: Plan execution → `@smith-mode-plan/SKILL.md`,
+  Claude Code hooks/`!load-plan` → `@smith-mode-plan-claude/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `Monitor`, polling for external state → `@smith-automation/SKILL.md`
 **Subagents**: spawning Task/Agent subagents, delegating investigation, parallel orchestration, OR a subagent touching shared state (PR/issue/file/remote) → `@smith-subagents/SKILL.md`
 **Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
@@ -427,7 +428,7 @@ SKILL.md keeps only the compact list of event names plus the core rule
 - **Task tools idle nudge** — `TaskCreate`/`TaskUpdate` present but unused
 - **File modification notice** — a touched file changed outside the agent's tool calls
 - **Skills available list** — periodic re-enumeration of Skill entries (informational)
-- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
+- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-mode-plan-claude/SKILL.md`)
 - **Background task completion** — a `Bash(run_in_background)` task ended
 - **Date change** — local date rolled over
 - **Auto mode active** — session is in auto mode (see `@smith-ctx-claude-mode-auto/SKILL.md`)
@@ -478,9 +479,11 @@ documentation and router-trigger design.
 
 ### Planning & Analysis
 
-**smith-plan**: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
+**smith-mode-plan**: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
 
-**smith-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+**smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+
+**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md, plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
 
 **smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
 

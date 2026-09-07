@@ -479,7 +479,7 @@ already ran). Owner rule: `@smith-gh-pr` "CodeRabbit fails OPEN".
 **exit-plan-mode-guard** (`smith-ctx-claude/scripts/exit-plan-mode-guard.mjs`,
 using shared helpers from `smith-git/scripts/lib/transcript-turns.mjs`)
 — PreToolUse guard (matcher `ExitPlanMode`) enforcing
-`smith-plan-claude/SKILL.md` §Explain Before ExitPlanMode: the plan
+`smith-mode-plan-claude/SKILL.md` §Explain Before ExitPlanMode: the plan
 explanation must be sent as its own turn (plain text, no tool call)
 before `ExitPlanMode` is called in a later, separate turn — never bundled
 into the same message, where the approval modal hides it. An earlier
