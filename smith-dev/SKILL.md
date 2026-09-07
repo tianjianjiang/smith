@@ -167,6 +167,12 @@ See `@smith-ralph/SKILL.md` for full patterns.
 **Before committing:**
 - Run formatters, linters, and tests (see `@smith-python/SKILL.md` or `@smith-typescript/SKILL.md`)
 
+**After implementing tools/hooks/configs (check applicable items):**
+- Hooks: Register PreToolUse/PostToolUse in settings.json (`@smith-settings/SKILL.md`)
+- MCP servers: Install in mcp.json or settings.json
+- Services/automation: Enable systemd services, cron jobs, etc.
+- Code in repo ≠ feature active — deployment is a separate required step
+
 **Task management:**
 - One task in_progress at a time
 - Mark complete only after tests pass
