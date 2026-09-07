@@ -24,7 +24,7 @@ case "$argv" in
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
     [ "${BM_FAIL:-0}" = "1" ] && { echo "NOTE_ALREADY_EXISTS" >&2; exit 1; }
-    echo '{"permalink": "smith/projects/smith/test-label"}' ;;
+    echo "{\"permalink\": \"projects/$(basename "$PWD")/test-label\"}" ;;
 esac
 exit 0
 EOF
@@ -40,13 +40,13 @@ out=$(run_script 2>"$SHIM/stderr") || fail "success path: script exited non-zero
 grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write-note argv missing --overwrite: $(cat "$SHIM/bm.argv")"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "Serena and Basic-Memory received different content"
 [ -s "$SHIM/serena.content" ] || fail "content passed to backends is empty"
-echo "$out" | grep -q 'Basic-Memory: smith/projects/smith/test-label' || fail "reload block missing permalink: $out"
+echo "$out" | grep -qF -- "Basic-Memory: projects/$(basename "$SHIM")/test-label" || fail "reload block missing permalink: $out"
 
 BM_FAIL=1 run_script >/dev/null 2>"$SHIM/stderr" && fail "failure path: script exited zero when write-note failed"
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
 
 grep -q -- 'serena memories write test_label --content' "$SHIM/serena.argv" || fail "outside git: serena argv should carry no project: $(cat "$SHIM/serena.argv")"
-grep -q -- '--folder projects/smith' "$SHIM/bm.argv" || fail "outside git: folder should default to projects/smith: $(cat "$SHIM/bm.argv")"
+grep -qF -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "outside git: folder should default to the current directory name: $(cat "$SHIM/bm.argv")"
 
 REPO="$SHIM/primary-repo"
 git init -q "$REPO" && (cd "$REPO" && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init)
