@@ -348,7 +348,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
 <skill name="smith-mode-plan" description="Plan tracking protocol (portable)">`@smith-mode-plan/SKILL.md`</skill>
 <skill name="smith-mode-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-mode-plan-claude/SKILL.md`</skill>
-<skill name="smith-sdlc" description="AI-native SDLC artifact chain: intent.md, spec.md, plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
+<skill name="smith-sdlc" description="AI-native SDLC artifact chain: intent.md, spec.md (EARS+GWT), design.md (ADR log), plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
 
@@ -483,7 +483,7 @@ documentation and router-trigger design.
 
 **smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
 
-**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md, plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
+**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md (EARS+GWT normative contract), an optional design.md (MADR-minimal ADR log, the "why"), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
 
 **smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
 

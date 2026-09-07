@@ -18,7 +18,7 @@
     { "pattern": "(?:\\b(?:log[- ]?in(?:to)?|sign[- ]?in(?:to)?|logg?ing in|signing in|auth|authenticat(?:e|ion))\\b.{0,40}\\b(?:browser|site|website|page|portal|console|dashboard|sso|here)\\b|\\b(?:browser|site|website|page|portal|console|dashboard|sso)\\b.{0,40}\\b(?:log[- ]?in(?:to)?|sign[- ]?in(?:to)?|logg?ing in|signing in|auth|authenticat(?:e|ion))\\b)", "skills": ["smith-browser_mcp"], "why": "browser login / interactive auth" },
     { "pattern": "\\bslack\\b", "skills": ["smith-slack"], "why": "Slack" },
     { "pattern": "\\b(execute the plan|load the plan|run the plan|implement the plan|plan mode)\\b", "skills": ["smith-mode-plan", "smith-mode-plan-claude"], "why": "plan execution" },
-    { "pattern": "\\b(intent\\.md|spec\\.md|ai-native sdlc|agentic sdlc|sdlc playbook|software development lifecycle)\\b", "skills": ["smith-sdlc"], "why": "AI-native SDLC artifact chain" },
+    { "pattern": "\\b(intent\\.md|spec\\.md|design\\.md|ai-native sdlc|agentic sdlc|sdlc playbook|software development lifecycle|\\bADR\\b|architecture decision record|\\bEARS\\b|given-when-then)\\b", "skills": ["smith-sdlc"], "why": "AI-native SDLC artifact chain" },
     { "pattern": "/loop\\b|/schedule\\b|\\b(?:ScheduleWakeup|cron|recurring|polling|poll for|every \\d+ ?(?:m|min|mins|minutes|h|hr|hours))\\b", "skills": ["smith-automation"], "why": "automation / scheduling" },
     { "pattern": "\\b(subagent|sub-agent|spawn|delegate|parallel agents|fan ?out|orchestrat)\\b", "skills": ["smith-subagents"], "why": "subagents / delegation" },
     { "pattern": "\\b(?:settings\\.json|defaultMode|permission|allowlist)\\b|\\.claude/settings", "skills": ["smith-settings", "smith-ctx-claude"], "why": "settings / config" },

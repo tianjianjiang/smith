@@ -1,10 +1,10 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle — intent.md/spec.md/plan.md artifact chain, hooks/skills/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
+description: AI-native software development lifecycle — intent.md/spec.md/design.md/plan.md artifact chain (spec.md as EARS+GWT contract, design.md as MADR-minimal ADR log), hooks/skills/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
 license: MIT
 metadata:
-  version: "1.0.0"
-  tags: ["sdlc", "intent", "spec", "plan", "governance", "evals"]
+  version: "1.1.0"
+  tags: ["sdlc", "intent", "spec", "design", "adr", "plan", "governance", "evals"]
 ---
 
 # AI-Native Software Development Lifecycle
@@ -71,7 +71,7 @@ when intent spans many repositories.
 (leading); the survival rate of intents accepted into Design vs. closed,
 and `intent.md` changes made after the first `spec.md` commit (lagging).
 
-## Stage 2: Design — spec.md
+## Stage 2: Design — spec.md (+ optional design.md)
 
 Once `intent.md` is accepted, one session — not two handoffs — produces
 the requirements-and-design spec, constrained by the organization's skills
@@ -80,6 +80,36 @@ against the intent and routes flagged concerns to policy owners before
 engineering sees it. Front-end work mocks up in Claude Design from the
 `intent.md`, then exports to Claude Code to build. Commit `spec.md`
 alongside `intent.md`.
+
+**The playbook mandates no internal notation for `spec.md`** — only that
+one session produces it, org skills constrain it, and committing it
+triggers Build. That leaves room to require a specific requirements
+notation without contradicting anything the playbook actually prescribes:
+
+- **`spec.md` as the normative contract**, in EARS (Easy Approach to
+  Requirements Syntax: ubiquitous / event-driven / state-driven /
+  optional-feature / unwanted-behaviour requirement forms) paired with
+  Given-When-Then acceptance scenarios per requirement. Reference
+  authoritative schemas/code by name rather than restating their fields.
+- **An optional companion `design.md`**, committed in the same session/gate
+  as `spec.md`, as an append-only ADR (Architecture Decision Record) log in
+  MADR-minimal form (context-and-problem → decision drivers → considered
+  options → decision outcome → consequences), with a decision index at the
+  top. This is the *why* behind `spec.md`'s choices — never superseded in
+  place, only appended to with a new ADR that marks the old one superseded.
+
+Stage 3's `plan.md` template (files/order/risks/proof — see Build below)
+never touches decision rationale, so nothing about splitting `spec.md`
+(contract) from `design.md` (rationale) collides with it; `plan.md` may
+cite a `design.md` ADR by ID when a risk traces back to a design decision.
+This two-file split is a smith-level choice layered on top of the
+playbook, not a requirement of it — the playbook's own minimal example
+uses one `spec.md` file for both halves. **Don't confuse either of these
+with a tool-native "spec" feature that already exists in some editors**
+(e.g. a three-file `requirements.md` + `design.md` + `tasks.md` bundle) —
+that convention names its `design.md` as the architecture/implementation
+design, not a decision-rationale log; the two are not interchangeable, and
+this skill's `design.md` means the ADR-log sense only.
 
 **Measure:** elapsed time between the `intent.md` and `spec.md` commits
 (leading); `spec.md` commits dated after the first `plan.md` commit for
@@ -209,7 +239,14 @@ incidents of the same class — which should fall as evals accumulate
   smith's own skill/hook system already is this pattern; this skill just
   names it against the playbook's stage vocabulary.
 - PR review discipline → `@smith-review/SKILL.md`, `@smith-gh-pr/SKILL.md`.
-- `intent.md`, `spec.md`, evals-on-agent-config, and the Stage 6
+- `spec.md`/`design.md` as EARS+GWT contract / MADR-minimal ADR log (see
+  Stage 2 above) reconciles this skill against a real prior convention,
+  not the playbook's own minimal single-file example — reconciled here
+  because it fits within what the playbook actually mandates (procedural,
+  not notational). A tool-native three-file `requirements.md`/`design.md`/
+  `tasks.md` spec bundle, where it exists in a given editor, is a
+  different, unrelated convention — don't conflate the two `design.md`s.
+- `intent.md`, evals-on-agent-config, and the Stage 6
   control-band/scan/on-call maintenance loop have no prior smith
   convention — this skill is their home until a repo adopts real file/folder
   conventions for them (deliberately left unprescribed here: pick a home

@@ -39,6 +39,64 @@ the engineering team. Describe clearly any areas of concern, especially
 where you cannot satisfy contradicting policies.
 ```
 
+## spec.md as an EARS+GWT contract (recommended notation, smith addition)
+
+The playbook mandates no internal notation for `spec.md` — this fills that
+gap. One requirement per `§section`, in EARS (Easy Approach to Requirements
+Syntax) form, each paired with a Given-When-Then acceptance scenario:
+
+```
+# <Feature> — Spec (the contract)
+
+> The *why* lives in design.md; the procedure in the relevant skill.
+
+## §<section-name>
+
+**EARS**: While <precondition>, when <trigger>, the system shall <response>.
+
+**GWT**:
+- Given <initial context>
+- When <event>
+- Then <expected outcome>
+```
+
+EARS forms: ubiquitous (always true), event-driven (when X), state-driven
+(while X), optional-feature (where X is present), unwanted-behaviour (if X,
+then). Reference authoritative schemas/code by name rather than restating
+their fields — the schema is the source of truth for exact field names.
+
+## design.md as an ADR log (optional companion, smith addition)
+
+Committed alongside `spec.md` in the same Design-stage session/gate.
+MADR-minimal (Markdown Architecture Decision Record) form, append-only:
+
+```
+# <Feature> — Design (ADR log)
+
+> The contract lives in spec.md; this doc owns the *why*.
+
+## Decision index
+
+- ADR-001 — <title> — accepted — #adr-001
+
+## ADR-001: <title>
+
+**Context and problem**: <what forced a decision>
+
+**Decision drivers**: <constraints that mattered>
+
+**Considered options**:
+- Option A — pros / cons
+- Option B — pros / cons
+
+**Decision outcome**: <chosen option and why>
+
+**Consequences**: <what this makes easier or harder later>
+```
+
+To reverse a decision, append a new ADR that supersedes it and mark the
+old entry's status `superseded` — never edit a decided ADR in place.
+
 ## plan.md template (Build stage — produced by Claude Code plan mode)
 
 ```
