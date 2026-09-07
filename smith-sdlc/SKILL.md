@@ -89,14 +89,18 @@ event-driven / state-driven / optional-feature / unwanted-behaviour
 requirement forms) paired with a Given-When-Then acceptance scenario per
 requirement, without contradicting anything the playbook actually
 prescribes. Reference authoritative schemas/code by name rather than
-restating their fields. `spec.md` is per feature/change, same cardinality
-as `intent.md` and `plan.md`.
+restating their fields. `spec.md` is committed alongside `intent.md` at
+this stage transition — the playbook calls them "the file pair" to
+describe that co-commit, not to assert a one-to-one count; it never
+discusses one `intent.md` splitting into several specs or several intents
+merging into one, so don't read a cardinality rule into language that was
+only describing what gets committed together.
 
-### design.md as an ADR log (optional, durable — not per-cycle like spec.md)
+### design.md as an ADR log (optional, durable, cross-cutting)
 
 Design decisions get *made* in this stage's session, which is why this
-lives here rather than under Build — but the log itself doesn't share
-`spec.md`'s cardinality: one `design.md` per subsystem/component, not per
+lives here rather than under Build — but the log itself is not part of
+that per-stage co-commit: one `design.md` per subsystem/component, not per
 feature, appended to only when a decision made during a Design-stage
 session is significant enough to outlive the current change. Most
 sessions produce no ADR entry at all; the decision's rationale just lives
