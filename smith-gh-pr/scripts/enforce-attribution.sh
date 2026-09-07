@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $# -eq 0 ]]; then
+    exit 0
+fi
+
 TOOL_NAME="$1"
 shift
-TOOL_ARGS="$*"
 
 [[ "$TOOL_NAME" != "gh" ]] && exit 0
-[[ "$TOOL_ARGS" != *"pr comment"* ]] && [[ "$TOOL_ARGS" != *"pr review"* ]] && exit 0
+
+ARGS_STR="$*"
+[[ "$ARGS_STR" != *"pr comment"* ]] && [[ "$ARGS_STR" != *"pr review"* ]] && exit 0
 
 BODY=""
-if [[ "$TOOL_ARGS" =~ -b\ (.+) ]]; then
-    BODY="${BASH_REMATCH[1]}"
-    BODY="${BODY#\"}"
-    BODY="${BODY%\"}"
-    BODY="${BODY#\'}"
-    BODY="${BODY%\'}"
-elif [[ "$TOOL_ARGS" =~ -F\ ([^\ ]+) ]]; then
-    FILE="${BASH_REMATCH[1]}"
-    [[ -f "$FILE" ]] && BODY=$(cat "$FILE")
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -b|--body)
+            shift
+            [[ $# -gt 0 ]] && BODY="$1"
+            break
+            ;;
+        -F|--body-file)
+            shift
+            if [[ $# -gt 0 && -f "$1" ]]; then
+                BODY=$(cat "$1")
+            fi
+            break
+            ;;
+    esac
+    shift
+done
 
 [[ -z "$BODY" ]] && exit 0
 
