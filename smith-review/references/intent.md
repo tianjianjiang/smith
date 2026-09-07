@@ -1,5 +1,5 @@
 # Intent: Multi-round code review effort level control
-Author: Mike Tian-Jian Jiang. Status: draft.
+Author: Mike Tian-Jian Jiang. Status: approved.
 
 ## Problem
 Multi-round convergence code reviews (`@smith-review`, `/smith-ship`) 
@@ -15,10 +15,10 @@ This affects: development teams using smith skills for PR quality gates.
 ## Proposed outcome
 `smith-review/SKILL.md` and `smith-subagents/SKILL.md` explicitly instruct:
 - Use `/code-review low` in all convergence rounds
-- For `pr-review-toolkit:review-pr`, include "use low effort level" in spawn prompt (does not auto-inherit session effort)
+- For `pr-review-toolkit:review-pr`, explicitly include "use low effort level" in spawn prompt (explicit statement ensures consistent effort level)
 - Spawn exactly one instance of each review tool per round
 
-Engineers see 60-80% cost reduction in multi-round review loops while 
+Engineers see significant cost reduction in multi-round review loops while 
 maintaining convergence quality.
 
 ## Affected users and systems
@@ -37,8 +37,8 @@ maintaining convergence quality.
 ## Constraints
 - Must preserve review signal quality (low effort still catches high-confidence bugs)
 - Cannot reduce tool coverage (still run all applicable tools, just once each at low effort)
-- Must align with Claude Code's `/code-review` effort levels (low/medium/high/xhigh/max)
-- All rounds use low effort (strategy confirmed 2026-09-08)
+- Must align with Claude Code's `/code-review` effort levels (low/medium/high/max/ultra per official docs)
+- All rounds use low effort (strategy confirmed 2026-09-07)
 
 ## Open questions
 None.

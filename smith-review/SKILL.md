@@ -50,14 +50,16 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    **Effort level in iterative reviews**: Use LOW effort for all convergence rounds:
    - `/code-review low` — quick check sufficient for iterative rounds
    - For `pr-review-toolkit:review-pr`, include "use low effort level" in the 
-     subagent spawn prompt (does not auto-inherit session effort)
+     subagent spawn prompt for consistency
    - Rationale: shallow levels return fast, high-confidence findings; deep effort 
      reserved for single-pass pre-merge reviews
+   - Before final merge: consider one HIGH/MAX effort pass for thorough verification
    
    **One instance per tool per round**: Run exactly ONE instance of each tool 
    per round, not multiple in parallel. The tools internally parallelize their 
-   own subagents (/code-review launches 4 agents; pr-review-toolkit coordinates 
-   6). Running multiple instances of the SAME tool is redundant and wastes tokens.
+   own subagents. Running multiple instances of the SAME tool is redundant and 
+   wastes tokens. This preserves tool coverage (line 48: "do not skip") while 
+   controlling cost through shallow effort depth, not fewer tools.
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
    (`@smith-validation` Bugfix Discipline, Adversarial Verification).

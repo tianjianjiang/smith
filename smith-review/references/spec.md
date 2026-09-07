@@ -1,5 +1,5 @@
 # Spec: Multi-round code review effort level control
-Status: approved. Based on: `intent/multi-round-review-effort-control.md`
+Status: approved. Based on: `smith-review/references/intent.md`
 
 ## Requirements
 
@@ -11,7 +11,7 @@ Status: approved. Based on: `intent/multi-round-review-effort-control.md`
 
 **FR2**: `smith-review/SKILL.md` MUST instruct including "use low effort level" in pr-review-toolkit spawn prompts
 - Same location as FR1
-- Clarify that pr-review-toolkit does not auto-inherit session effort
+- Explicit statement ensures consistent effort level across tools
 
 **FR3**: `smith-review/SKILL.md` MUST instruct running exactly one instance of each review tool per round
 - Same location as FR1
@@ -32,8 +32,8 @@ Status: approved. Based on: `intent/multi-round-review-effort-control.md`
 - Change is effort level only, not tool selection
 
 **NFR3**: Align with Claude Code parameters
-- Use official effort level names: `low`, `high`, `xhigh`, `max`
-- Reference official documentation (retrieved 2026-09-08)
+- Use official effort level names: `low`, `medium`, `high`, `max`, `ultra`
+- Reference: https://code.claude.com/docs/en/code-review (retrieved 2026-09-07)
 
 ## Design
 
@@ -46,7 +46,7 @@ Status: approved. Based on: `intent/multi-round-review-effort-control.md`
    **Effort level in iterative reviews**: Use LOW effort for all convergence rounds:
    - `/code-review low` — quick check sufficient for iterative rounds
    - For `pr-review-toolkit:review-pr`, include "use low effort level" in the 
-     subagent spawn prompt (does not auto-inherit session effort)
+     subagent spawn prompt (explicit statement ensures consistency)
    - Rationale: shallow levels return fast, high-confidence findings; deep effort 
      reserved for single-pass pre-merge reviews
    
@@ -71,7 +71,7 @@ When spawning review tools in an iterative convergence loop (e.g.,
 2. **Low effort level**: Use LOW effort for all rounds in convergence loops:
    - `/code-review low` — explicit flag
    - `pr-review-toolkit:review-pr` — include "use low effort level" in the 
-     spawn prompt (does not auto-inherit session effort)
+     spawn prompt (explicit statement ensures consistency)
    - Rationale: shallow levels return fast, high-confidence findings sufficient 
      for iterative rounds; deep effort reserved for single-pass pre-merge reviews
 
@@ -83,12 +83,12 @@ When spawning review tools in an iterative convergence loop (e.g.,
 ### Design Decisions
 
 **D1**: All rounds use low effort (not just subsequent rounds)
-- Rationale: User confirmed strategy 2026-09-08
+- Rationale: User confirmed strategy 2026-09-07
 - Alternative considered: first round default, others low (rejected)
 
 **D2**: Explicit prompt instruction for pr-review-toolkit
-- Rationale: Tool does not auto-inherit session effort level
-- Evidence: No documentation of automatic inheritance
+- Rationale: Explicit statement ensures consistent effort level across all review tools
+- Approach: Include "use low effort level" in spawn prompt rather than relying on implicit behavior
 
 **D3**: Add guidance to both smith-review and smith-subagents
 - Rationale: smith-review is the orchestrator; smith-subagents is the spawning discipline
@@ -120,12 +120,12 @@ When spawning review tools in an iterative convergence loop (e.g.,
 
 ## Evidence Base
 
-- [Code Review - Claude Code Docs](https://code.claude.com/docs/en/code-review) (retrieved 2026-09-08)
-- [Effort Levels for Code Review](https://thakicloud.com/tech-blog/en/dev/claude-code-review-effort-levels/) (retrieved 2026-09-08)
-- [Claude Code effort level and model selection](https://claude.com/blog/claude-model-and-effort-level-in-claude-code) (retrieved 2026-09-08)
+- [Code Review - Claude Code Docs](https://code.claude.com/docs/en/code-review) (retrieved 2026-09-07)
+  - Documents official effort levels: low, medium, high, max, ultra
+  - "At low and medium, the review reports only the findings it's most confident in"
 
 ## Impact
 
-**Expected benefit**: 60-80% cost reduction in multi-round review loops
+**Expected benefit**: Significant cost reduction in multi-round review loops (exact % unmeasured)
 **Risk**: Low (shallow effort still catches high-confidence bugs per official docs)
 **Affected users**: Engineers running `/smith-review` or `/smith-ship`
