@@ -483,7 +483,7 @@ documentation and router-trigger design.
 
 **smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
 
-**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md (EARS+GWT normative contract), an optional design.md (MADR-minimal ADR log, the "why"), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
+**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md (EARS+GWT normative contract, Design stage), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop; plus an optional design.md ADR log, produced during Design-stage sessions but durable and per-subsystem (not per-feature) like CLAUDE.md, not per-cycle like spec.md. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
 
 **smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
 

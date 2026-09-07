@@ -65,15 +65,21 @@ EARS forms: ubiquitous (always true), event-driven (when X), state-driven
 then). Reference authoritative schemas/code by name rather than restating
 their fields — the schema is the source of truth for exact field names.
 
-## design.md as an ADR log (optional companion, smith addition)
+## design.md as an ADR log (durable cross-cutting knowledge, smith addition)
 
-Committed alongside `spec.md` in the same Design-stage session/gate.
-MADR-minimal (Markdown Architecture Decision Record) form, append-only:
+One per subsystem/component, not per feature — it does not share
+`spec.md`'s cardinality or lifecycle, so title it after the subsystem, not
+the feature that happened to prompt an entry. Produced during Design-stage
+sessions (that's where design decisions get made — see `../SKILL.md`
+Stage 2), but shares `CLAUDE.md`'s durable, cross-cutting lifecycle rather
+than `spec.md`'s per-cycle one. MADR-minimal (Markdown Architecture
+Decision Record) form, append-only:
 
 ```
-# <Feature> — Design (ADR log)
+# <Subsystem/component> — Design (ADR log)
 
-> The contract lives in spec.md; this doc owns the *why*.
+> Per-feature contracts live in each change's spec.md; this doc owns the
+> *why* for decisions that outlive any single one of them.
 
 ## Decision index
 

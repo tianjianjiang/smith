@@ -1,9 +1,9 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle — intent.md/spec.md/design.md/plan.md artifact chain (spec.md as EARS+GWT contract, design.md as MADR-minimal ADR log), hooks/skills/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
+description: AI-native software development lifecycle — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as EARS+GWT contract), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md ADR log), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   tags: ["sdlc", "intent", "spec", "design", "adr", "plan", "governance", "evals"]
 ---
 
@@ -83,33 +83,56 @@ alongside `intent.md`.
 
 **The playbook mandates no internal notation for `spec.md`** — only that
 one session produces it, org skills constrain it, and committing it
-triggers Build. That leaves room to require a specific requirements
-notation without contradicting anything the playbook actually prescribes:
+triggers Build. That leaves room to require `spec.md` as the normative
+contract, in EARS (Easy Approach to Requirements Syntax: ubiquitous /
+event-driven / state-driven / optional-feature / unwanted-behaviour
+requirement forms) paired with a Given-When-Then acceptance scenario per
+requirement, without contradicting anything the playbook actually
+prescribes. Reference authoritative schemas/code by name rather than
+restating their fields. `spec.md` is per feature/change, same cardinality
+as `intent.md` and `plan.md`.
 
-- **`spec.md` as the normative contract**, in EARS (Easy Approach to
-  Requirements Syntax: ubiquitous / event-driven / state-driven /
-  optional-feature / unwanted-behaviour requirement forms) paired with
-  Given-When-Then acceptance scenarios per requirement. Reference
-  authoritative schemas/code by name rather than restating their fields.
-- **An optional companion `design.md`**, committed in the same session/gate
-  as `spec.md`, as an append-only ADR (Architecture Decision Record) log in
-  MADR-minimal form (context-and-problem → decision drivers → considered
-  options → decision outcome → consequences), with a decision index at the
-  top. This is the *why* behind `spec.md`'s choices — never superseded in
-  place, only appended to with a new ADR that marks the old one superseded.
+### design.md as an ADR log (optional, durable — not per-cycle like spec.md)
 
-Stage 3's `plan.md` template (files/order/risks/proof — see Build below)
-never touches decision rationale, so nothing about splitting `spec.md`
-(contract) from `design.md` (rationale) collides with it; `plan.md` may
-cite a `design.md` ADR by ID when a risk traces back to a design decision.
-This two-file split is a smith-level choice layered on top of the
-playbook, not a requirement of it — the playbook's own minimal example
-uses one `spec.md` file for both halves. **Don't confuse either of these
-with a tool-native "spec" feature that already exists in some editors**
-(e.g. a three-file `requirements.md` + `design.md` + `tasks.md` bundle) —
-that convention names its `design.md` as the architecture/implementation
-design, not a decision-rationale log; the two are not interchangeable, and
-this skill's `design.md` means the ADR-log sense only.
+Design decisions get *made* in this stage's session, which is why this
+lives here rather than under Build — but the log itself doesn't share
+`spec.md`'s cardinality: one `design.md` per subsystem/component, not per
+feature, appended to only when a decision made during a Design-stage
+session is significant enough to outlive the current change. Most
+sessions produce no ADR entry at all; the decision's rationale just lives
+in `spec.md` (or later, `plan.md`'s `Risks` section) and needs nothing
+more durable than that.
+
+Every artifact in this chain is already git-committed and permanently
+versioned (the playbook's own words: `plan.md` "joins the audit trail"),
+so versioning is never the gap `design.md` fills. What git's commit
+history doesn't give you for free is **curation**: a decision like "this
+subsystem uses Postgres, not DynamoDB, because X" can inform fifty later
+`spec.md`/`plan.md` cycles; leaving it embedded in whichever cycle first
+made that call means a future reader has to know which commit to search
+rather than reading one indexed log. Structure it as an append-only ADR
+(Architecture Decision Record) log in MADR-minimal form
+(context-and-problem → decision drivers → considered options → decision
+outcome → consequences), with a decision index at the top; never edit a
+decided entry, append a new one that supersedes it.
+
+**If nobody will maintain the index, skip `design.md` entirely** —
+`git log -- '**/spec.md'` is a legitimate, YAGNI-consistent decision
+history on its own for a small or single-maintainer repo; the index earns
+its keep only once enough decisions and enough readers exist to justify
+curating it. This is a smith-level addition, not something the playbook
+prescribes or even mentions — its own minimal example uses one `spec.md`
+file for both requirements and design, with no ADR concept.
+
+**Don't confuse this with a tool-native "spec" feature some editors
+ship** (a three-file `requirements.md` + `design.md` + `tasks.md` bundle)
+— that convention's `design.md` is the architecture/implementation design
+for one feature, not a cross-cutting decision-rationale log; the two are
+not interchangeable, and this skill's `design.md` means the ADR-log sense
+only. Because both conventions use the same filename inside a repo that
+might run either, name the actual directory unambiguously (e.g.
+`docs/<subsystem>/design.md` for the ADR-log sense) rather than relying on
+context to disambiguate.
 
 **Measure:** elapsed time between the `intent.md` and `spec.md` commits
 (leading); `spec.md` commits dated after the first `plan.md` commit for
@@ -144,6 +167,10 @@ this skill just names them against the playbook's vocabulary:
 - **Parallel sessions and subagents** — separate git worktrees per stream
   of independent work; recurring jobs become `.claude/agents/<name>.md`
   subagents with their own tools and context.
+
+(`design.md`, the ADR log, is covered under Stage 2 above — it's produced
+during Design-stage sessions, not Build, even though it shares Build's
+durable/cross-cutting lifecycle rather than `spec.md`'s per-feature one.)
 
 **Legacy systems sidebar:** for every artifact, name one system as the
 source of truth (the repo, the legacy system with the repo as a working
@@ -239,13 +266,18 @@ incidents of the same class — which should fall as evals accumulate
   smith's own skill/hook system already is this pattern; this skill just
   names it against the playbook's stage vocabulary.
 - PR review discipline → `@smith-review/SKILL.md`, `@smith-gh-pr/SKILL.md`.
-- `spec.md`/`design.md` as EARS+GWT contract / MADR-minimal ADR log (see
-  Stage 2 above) reconciles this skill against a real prior convention,
-  not the playbook's own minimal single-file example — reconciled here
-  because it fits within what the playbook actually mandates (procedural,
-  not notational). A tool-native three-file `requirements.md`/`design.md`/
-  `tasks.md` spec bundle, where it exists in a given editor, is a
-  different, unrelated convention — don't conflate the two `design.md`s.
+- `spec.md` as an EARS+GWT contract, plus an optional `design.md` ADR log
+  (see Stage 2 above) reconciles this skill against a real prior
+  convention, not the playbook's own minimal single-file example —
+  reconciled because it fits within what the playbook actually mandates
+  (procedural, not notational): `spec.md` stays per-feature; `design.md`
+  is a durable, per-subsystem log produced *during* Design-stage sessions
+  but shaped like `CLAUDE.md`'s cross-cutting lifecycle, not `spec.md`'s
+  per-cycle one — skip it entirely if nobody will maintain it as an index.
+  A tool-native three-file `requirements.md`/`design.md`/`tasks.md` spec
+  bundle, where it exists in a given editor, is a different, unrelated
+  convention — don't conflate its `design.md` (architecture) with this
+  skill's `design.md` (ADR log).
 - `intent.md`, evals-on-agent-config, and the Stage 6
   control-band/scan/on-call maintenance loop have no prior smith
   convention — this skill is their home until a repo adopts real file/folder
