@@ -2,11 +2,16 @@
 
 Full detail supporting `../SKILL.md`. Source: Anthropic, ["The AI-Native
 SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
-(2026-08-21, retrieved 2026-09-08). Quoted templates and prompts are
-Anthropic's own worked examples from that article, reproduced here for
-local reference.
+(2026-08-21, retrieved 2026-09-08). The `spec.md` prompt, `CLAUDE.md`
+block, evals workflow, `REVIEW.md`, both hook scripts, `bands.yaml`, and
+the managed-settings JSON below are Anthropic's own worked examples,
+reproduced verbatim. The `intent.md` and `plan.md` "templates" are **not**
+verbatim — Anthropic's actual examples use a specific "claims status
+self-service" scenario (author "J. Ortiz," a claims-center problem); the
+section headers below match that example exactly, but the content under
+each is genericized into fillable placeholders for reuse, not quoted.
 
-## intent.md template
+## intent.md template (section headers verbatim; content genericized)
 
 ```
 # Intent: <short title>
@@ -103,7 +108,7 @@ Decision Record) form, append-only:
 To reverse a decision, append a new ADR that supersedes it and mark the
 old entry's status `superseded` — never edit a decided ADR in place.
 
-## plan.md template (Build stage — produced by Claude Code plan mode)
+## plan.md template (Build stage; section headers verbatim, content genericized)
 
 ```
 # Plan: <short title> (from intent.md <date>)
@@ -258,13 +263,17 @@ safe inner loop so the deny list doesn't cause prompt fatigue.
 engineer, project file, or CLI flag can widen the rules. `sandbox` closes
 the gap permissions can't — a tool-level deny on WebFetch doesn't stop a
 shell command reaching the network; the OS-level domain allowlist does.
+`failIfUnavailable` + `allowUnsandboxedCommands` make the sandbox a gate:
+Claude Code refuses to start when the sandbox cannot initialize, and a
+command that fails inside the sandbox cannot be retried outside it.
 `credentials` denies shell-level reads of `~/.ssh`/`~/.aws/credentials`
 that a sandboxed command could otherwise still reach. `allowManagedHooksOnly`
 means the approval gates in this file are the only hooks that run.
 `disableSideloadFlags` + `strictKnownMarketplaces` means every skill,
 agent, hook and MCP server arrived through the approved plugin
-marketplace, never a home directory. `requiredMinimumVersion` refuses to
-start below the assessed floor.
+marketplace, never a home directory. `allowManagedMcpServersOnly` makes
+the agent's tool surface an allowlist owned by the platform team.
+`requiredMinimumVersion` refuses to start below the assessed floor.
 
 ## bands.yaml (Maintain stage — control-band config)
 
