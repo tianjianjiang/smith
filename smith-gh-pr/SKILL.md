@@ -114,10 +114,10 @@ Before drafting any PR review comment:
    ```
 
 2. Validate format:
-   - ✅ Matches: `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
-   - ✅ Model ID is valid session model (sonnet|opus|haiku|fable)
-   - ❌ NO "on behalf of" anywhere in comment
-   - ❌ NO hand-typed model IDs
+   - PASS: Matches `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
+   - PASS: Model ID is valid session model (sonnet|opus|haiku|fable)
+   - FAIL: "on behalf of" anywhere in comment
+   - FAIL: hand-typed model IDs
 
 3. Append to comment body:
    - Blank line before attribution

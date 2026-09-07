@@ -28,7 +28,7 @@ fi
 
 [[ -z "$BODY" ]] && exit 0
 
-if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+-[0-9]+' <<< "$BODY"; then
+if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?' <<< "$BODY"; then
     echo "Error: Missing or invalid assisted-by attribution" >&2
     echo "" >&2
     echo "Required format:" >&2
