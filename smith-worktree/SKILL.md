@@ -31,7 +31,7 @@ description: Claude Code worktree TOOLS
 A new worktree starts with a CLEAN tree: uncommitted changes in the current
 checkout never carry over — they stay behind, stranded from the task. The
 `worktree-dirty-guard` PreToolUse hook
-(`smith-ctx-claude/scripts/worktree-dirty-guard.mjs`, registered
+(`smith-git/scripts/hooks/worktree-dirty-guard.mjs`, registered
 user-globally) blocks `EnterWorktree` while `git status --porcelain` is
 non-empty; resolve deliberately (commit, stash-and-apply inside the worktree,
 or branch in place) before retrying.
