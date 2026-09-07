@@ -1,36 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -eq 0 ]]; then
-    exit 0
-fi
+command -v jq >/dev/null 2>&1 || exit 0
 
-TOOL_NAME="$1"
-shift
+input=$(cat) || exit 0
+command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
+[[ -z "$command" ]] && exit 0
 
-[[ "$TOOL_NAME" != "gh" ]] && exit 0
-
-ARGS_STR="$*"
-[[ "$ARGS_STR" != *"pr comment"* ]] && [[ "$ARGS_STR" != *"pr review"* ]] && exit 0
+[[ "$command" != gh\ * ]] && exit 0
+[[ "$command" != *"pr comment"* ]] && [[ "$command" != *"pr review"* ]] && exit 0
 
 BODY=""
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -b|--body)
-            shift
-            [[ $# -gt 0 ]] && BODY="$1"
-            break
-            ;;
-        -F|--body-file)
-            shift
-            if [[ $# -gt 0 && -f "$1" ]]; then
-                BODY=$(cat "$1")
-            fi
-            break
-            ;;
-    esac
-    shift
-done
+
+if [[ "$command" =~ -F[[:space:]]+\"([^\"]+)\" ]] || [[ "$command" =~ -F[[:space:]]+([^[:space:]]+) ]]; then
+    file="${BASH_REMATCH[1]}"
+    [[ -f "$file" ]] && BODY=$(cat "$file")
+elif [[ "$command" =~ --body-file=\"([^\"]+)\" ]] || [[ "$command" =~ --body-file=([^[:space:]]+) ]]; then
+    file="${BASH_REMATCH[1]}"
+    [[ -f "$file" ]] && BODY=$(cat "$file")
+elif [[ "$command" =~ -b[[:space:]]+\"(.*)\" ]]; then
+    BODY="${BASH_REMATCH[1]}"
+elif [[ "$command" =~ --body=\"(.*)\" ]]; then
+    BODY="${BASH_REMATCH[1]}"
+elif [[ "$command" =~ --body=([^[:space:]]+) ]]; then
+    BODY="${BASH_REMATCH[1]}"
+fi
 
 [[ -z "$BODY" ]] && exit 0
 
@@ -41,13 +35,13 @@ if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+-[0-9]
     ~/.smith/smith-ctx-claude/scripts/attribution.sh >&2
     echo "" >&2
     echo "NEVER hand-type the attribution - always run the script above" >&2
-    exit 1
+    exit 2
 fi
 
 if grep -qi "on behalf of" <<< "$BODY"; then
     echo "Error: Found forbidden 'on behalf of' pattern" >&2
     echo "Use assisted-by attribution only (run attribution.sh)" >&2
-    exit 1
+    exit 2
 fi
 
 exit 0
