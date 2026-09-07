@@ -66,7 +66,8 @@ Both writes are done by `write-checkpoint.sh` through each backend's CLI
 
 1. **Serena**: a snake_case memory named after the label, written into the
    primary checkout's project (works from a worktree); re-checkpoint replaces it.
-2. **Basic-Memory**: a note titled from the label under the project folder,
+2. **Basic-Memory**: a note titled from the label under the project folder
+   (primary checkout name, else the current directory name when outside git),
    type `guide`, tag `checkpoint`, written with `--overwrite` (re-checkpoint is
    an update, not a new note).
 

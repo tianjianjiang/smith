@@ -40,7 +40,7 @@ resolve_primary_checkout() {
 }
 
 detect_project_name() {
-    basename "${1:-smith}"
+    basename "${1:-$PWD}"
 }
 
 generate_timestamp() {
