@@ -55,12 +55,15 @@ function reminder() {
     "fast-forward-only pull the repository's default branch in the primary " +
     "checkout so it reflects the merge — after any pull request merge this is " +
     "decide-and-do, not optional " +
-    "(see @smith-gh-pr and @smith-worktree). For example: `git -C " +
-    "«primary-checkout» switch «default-branch» && git -C «primary-checkout» " +
-    "pull --ff-only`. Note: run from a worktree, `--delete-branch` can print " +
-    "`fatal: '«default-branch»' is already used by worktree …` even though the " +
-    "merge succeeded, and a squash merge can leave an orphan local branch to " +
-    "delete (@smith-worktree Sync-After-Squash-Merge)."
+    "(see @smith-gh-pr and @smith-worktree). From the primary checkout: " +
+    "`git switch «default-branch» && git pull --ff-only`. Inside a worktree " +
+    "session, call ExitWorktree first — Claude Code's isolation guard blocks " +
+    "`git -C «primary-checkout»`, and `git fetch origin «default-branch»:" +
+    "«default-branch»` is refused because the branch is checked out there. " +
+    "Note: run from a worktree, `--delete-branch` on gh older than 2.99.0 can " +
+    "print `fatal: '«default-branch»' is already used by worktree …` even " +
+    "though the merge succeeded, and a squash merge can leave an orphan local " +
+    "branch to delete (@smith-worktree Sync-After-Squash-Merge)."
   );
 }
 

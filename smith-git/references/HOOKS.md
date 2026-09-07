@@ -113,12 +113,16 @@ does not track which flags consume a value, and a commit subject of literally
 into its parent branch, yet the reminder still names the default branch; and a
 command wrapped in an unrecognized launcher (`timeout`, `xargs`) leaves the gh
 invocation unparsed, so the reminder is skipped. All are advisory fail-open
-misses or generic-wording edges, not blocking failures. The reminder text also
-names the two adjacent behaviours worth expecting: from
-a worktree, `gh pr merge --delete-branch` can print `fatal: '<default-branch>'
-is already used by worktree ...` even though the merge itself succeeded, and a
-squash merge can leave an orphan local branch to delete. Advisory only, never
-blocks (a PostToolUse hook cannot block a command that already ran).
+misses or generic-wording edges, not blocking failures. The reminder text
+tells a worktree session to `ExitWorktree` before pulling, because Claude
+Code's built-in isolation guard blocks `git -C <primary-checkout>` and git
+refuses `fetch origin <default>:<default>` while that branch is checked out
+in the primary checkout. It also names the two adjacent behaviours worth
+expecting: from a worktree, `gh pr merge --delete-branch` on gh older than
+2.99.0 can print `fatal: '<default-branch>' is already used by worktree ...`
+even though the merge itself succeeded, and a squash merge can leave an
+orphan local branch to delete. Advisory only, never blocks (a PostToolUse
+hook cannot block a command that already ran).
 
 ## Test runners
 

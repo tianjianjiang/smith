@@ -257,7 +257,7 @@ gh pr merge {PR} --squash
 
 Options: `--squash`, `--merge`, or `--rebase`
 
-**Post-merge cleanup** (use the repo's DEFAULT branch — `main`, `develop`, etc., never assume `main`):
+**Post-merge cleanup** (use the repo's DEFAULT branch — `main`, `develop`, etc., never assume `main`), run from the PRIMARY checkout:
 ```shell
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git checkout "$DEFAULT_BRANCH" && git fetch --prune origin && git pull --ff-only
@@ -265,6 +265,13 @@ git branch -d feat/my-feature
 ```
 `--ff-only` is mandatory: it refuses to create a stray merge commit if local has
 diverged (e.g. after a squash-merge), surfacing the problem instead of hiding it.
+
+Inside a worktree session this block cannot run as written: the default branch
+is checked out in the primary checkout, so `git checkout` fails, `git fetch
+origin «default»:«default»` is refused, and `git -C «primary-checkout»` is
+blocked by Claude Code's worktree isolation guard. `ExitWorktree` first, then
+run the block (`@smith-worktree/SKILL.md` Sync-After-Squash-Merge Protocol and
+Built-in Isolation Guard).
 
 **Check freshness** (`@{u}` = current branch's upstream, branch-name-agnostic):
 ```shell
