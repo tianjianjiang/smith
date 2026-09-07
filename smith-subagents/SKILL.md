@@ -54,6 +54,15 @@ file, remote)
 - Parallel file-mutating subagents need isolation — see
   `@smith-worktree/SKILL.md`. Read-only fan-out does not.
 
+## Multi-Round Review Discipline
+
+For review tool spawning in iterative convergence loops: see 
+`@smith-review/SKILL.md` § Full automated pass "Effort level in iterative 
+reviews" and "One instance per tool per round" — that section is canonical 
+(owns the loop). Summary: LOW effort (`/code-review low`; explicit "use low 
+effort level" in pr-review-toolkit spawn prompts), exactly one instance per 
+tool per round (tools internally parallelize).
+
 ## Contract template: paste inline when spawning
 
 The rules above are principles; a subagent sees none of them unless you paste
