@@ -104,6 +104,25 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 Inline comments anchored to line(s) with committable `suggestion` blocks. See `references/REVIEW-WORKFLOW.md` for full guidelines and examples.
 
+## Pre-Draft Verification
+
+Before drafting any PR review comment:
+
+1. Get attribution from script:
+   ```bash
+   ~/.smith/smith-ctx-claude/scripts/attribution.sh
+   ```
+
+2. Validate format:
+   - PASS: Matches `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
+   - PASS: Model ID is valid session model (sonnet|opus|haiku|fable)
+   - FAIL: "on behalf of" anywhere in comment
+   - FAIL: hand-typed model IDs
+
+3. Append to comment body:
+   - Blank line before attribution
+   - Attribution as last line of comment body
+
 ## Review Convergence & Auto-Fix
 
 Follow convergence protocol: fix high-confidence findings, merge on clean review. Full protocol in `references/REVIEW-WORKFLOW.md`.
