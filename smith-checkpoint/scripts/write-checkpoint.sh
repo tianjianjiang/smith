@@ -28,7 +28,10 @@ detect_active_plan() {
 
     local plan_path
     plan_path=$(sed -n '5p' "$state_file" 2>/dev/null)
-    [[ -n "$plan_path" && -f "$plan_path" ]] && printf '%s\n' "$plan_path"
+    if [[ -n "$plan_path" && -f "$plan_path" ]]; then
+        printf '%s\n' "$plan_path"
+    fi
+    return 0
 }
 
 resolve_primary_checkout() {

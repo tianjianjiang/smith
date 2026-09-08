@@ -278,4 +278,13 @@ printf '## Related Work\n- other\n' > "$SHIM/body-related-work.md"
 run_script test_label_relatedwork "plan=$PLAN" "body=$SHIM/body-related-work.md" >/dev/null 2>"$SHIM/stderr" || fail "Related Work body: script exited non-zero: $(cat "$SHIM/stderr")"
 [ "$(grep -c '^## Related$' "$SHIM/serena.content")" = 1 ] || fail "a heading that merely starts with Related must not absorb the Plan line: $(cat "$SHIM/serena.content")"
 
+reset_logs
+CTX_HOME="$SHIM/ctx-home"
+mkdir -p "$CTX_HOME/plans"
+CTX_LIB="$HERE/../../../smith-ctx-claude/scripts/lib-context.sh"
+STALE_KEY=$(cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=12345 bash -c "source '$CTX_LIB'; session_key")
+printf 'line1\nline2\nline3\nline4\n\n' > "$CTX_HOME/plans/.plan-state-${STALE_KEY}"
+(cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=12345 bash "$SCRIPT" test_label_staleplanstate "body=$BODY") >/dev/null 2>"$SHIM/stderr" || fail "a plan-state file with an empty plan-path line must not silently abort the checkpoint before either backend is touched: $(cat "$SHIM/stderr")"
+[ -s "$SHIM/serena.content" ] || fail "a stale plan-state file must not prevent the Serena write"
+
 echo "PASS: write-checkpoint"
