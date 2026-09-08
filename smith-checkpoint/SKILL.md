@@ -24,8 +24,8 @@ records.
 
 ## Compression Requirements
 
-**Guideline**: aim for ~400 tokens per checkpoint body (the script notes
-past ~1600 bytes). Completeness is the binding requirement: never drop a
+**Guideline**: aim for ~400 tokens per checkpoint body (the script prints a
+note past ~1600 bytes). Completeness is the binding requirement: never drop a
 decision, file:line anchor, PR/commit reference, or open follow-up to fit
 this number — an oversized-but-complete checkpoint is a successful
 checkpoint; a compact-but-incomplete one is not.
