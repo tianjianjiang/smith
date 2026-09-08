@@ -101,7 +101,7 @@ warn_if_body_exceeds_budget() {
     fi
 }
 
-generate_checkpoint_content() {
+generate_entry() {
     local plan_path="$1"
     local timestamp="$2"
     local body_path="$3"
@@ -115,13 +115,23 @@ generate_checkpoint_content() {
         body=$(generate_fallback_body "$plan_path") || return 1
     fi
 
-    echo "# ${LABEL}"
+    echo "## ${timestamp}"
     echo
-    echo "**Date**: ${timestamp}"
     [[ -n "$plan_path" ]] && echo "**Plan**: \`${plan_path}\`"
     echo "**Session**: ${session_id}"
     echo
     append_plan_to_related "$body" "$plan_path"
+}
+
+strip_title_line() {
+    local content="$1"
+    local title="# ${LABEL}"
+    local first_line="${content%%$'\n'*}"
+    if [[ "$first_line" == "$title" ]]; then
+        content="${content#*$'\n'}"
+        content="${content#$'\n'}"
+    fi
+    printf '%s' "$content"
 }
 
 append_plan_to_related() {
@@ -147,27 +157,51 @@ transform_label_to_basic_memory_title() {
     echo "$LABEL" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1'
 }
 
+read_serena_memory() {
+    local primary_checkout="$1"
+    uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>/dev/null
+}
+
 write_to_serena() {
-    local content="$1"
+    local entry="$1"
     local primary_checkout="$2"
     echo "Writing to Serena: ${LABEL}" >&2
-    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${content}" >&2
+    local existing prior document
+    existing=$(read_serena_memory "$primary_checkout") || existing=""
+    document="# ${LABEL}"$'\n\n'"${entry}"
+    if [[ -n "$existing" ]]; then
+        prior=$(strip_title_line "$existing")
+        [[ -n "$prior" ]] && document="${document}"$'\n\n'"${prior}"
+    fi
+    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
+}
+
+basic_memory_note_exists() {
+    local title="$1"
+    local result
+    result=$(uvx basic-memory tool read-note "$title" 2>/dev/null) || return 1
+    [[ "$(jq -r '.title // empty' <<<"$result" 2>/dev/null)" == "$title" ]]
 }
 
 write_to_basic_memory() {
-    local content="$1"
+    local entry="$1"
     local title="$2"
     local project="$3"
     local folder="projects/${project}"
 
     echo "Writing to Basic-Memory: ${title}" >&2
-    uvx basic-memory tool write-note \
-        --title "${title}" \
-        --folder "${folder}" \
-        --type guide \
-        --tags checkpoint \
-        --overwrite \
-        --content "${content}"
+    if basic_memory_note_exists "$title"; then
+        uvx basic-memory tool edit-note "$title" \
+            --operation prepend \
+            --content "${entry}"$'\n\n---\n'
+    else
+        uvx basic-memory tool write-note \
+            --title "${title}" \
+            --folder "${folder}" \
+            --type guide \
+            --tags checkpoint \
+            --content "# ${LABEL}"$'\n\n'"${entry}"
+    fi
 }
 
 generate_reload_block() {
@@ -226,20 +260,20 @@ main() {
     local primary_checkout=$(resolve_primary_checkout)
     local project=$(detect_project_name "$primary_checkout")
     local timestamp=$(generate_timestamp)
-    local content
-    content=$(generate_checkpoint_content "$plan_path" "$timestamp" "$body_path") || {
-        echo "Error: could not generate checkpoint content" >&2
+    local entry
+    entry=$(generate_entry "$plan_path" "$timestamp" "$body_path") || {
+        echo "Error: could not generate checkpoint entry" >&2
         exit 1
     }
     local bm_title=$(transform_label_to_basic_memory_title)
 
-    if ! write_to_serena "$content" "$primary_checkout"; then
+    if ! write_to_serena "$entry" "$primary_checkout"; then
         echo "Error: Serena write failed" >&2
         exit 1
     fi
 
     local bm_result
-    if ! bm_result=$(write_to_basic_memory "$content" "$bm_title" "$project"); then
+    if ! bm_result=$(write_to_basic_memory "$entry" "$bm_title" "$project"); then
         echo "Error: Basic-Memory write failed" >&2
         exit 1
     fi

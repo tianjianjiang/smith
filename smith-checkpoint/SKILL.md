@@ -65,17 +65,52 @@ Implement rate limiting (`auth-plan.md:121-145`)
 
 ## Targets and formats
 
-Both writes are done by `write-checkpoint.sh` through each backend's CLI
-(`serena memories write`, `basic-memory tool write-note`):
+`write-checkpoint.sh` reads the existing memory/note under the label first
+and, when one exists, prepends the new dated entry to it instead of
+replacing it — the doc under a given label is a continuously accumulating
+log, one `## «timestamp»` section per checkpoint, newest first. Nothing
+prior is dropped, regardless of how compact today's entry is: writing a
+~400-token entry is safe because it lands on top of the existing history,
+not in place of it. Both backends are done by `write-checkpoint.sh` through
+each backend's CLI:
 
-1. **Serena**: a snake_case memory named after the label, written into the
-   primary checkout's project (works from a worktree); re-checkpoint replaces it.
-2. **Basic-Memory**: a note titled from the label under the project folder
-   (primary checkout name, else the current directory name when outside git),
-   type `guide`, tag `checkpoint`, written with `--overwrite` (re-checkpoint is
-   an update, not a new note).
+1. **Serena** (`serena memories read` + `serena memories write`): a
+   snake_case memory named after the label, written into the primary
+   checkout's project (works from a worktree). The script reads any
+   existing content, strips its `# LABEL` title line, and writes back
+   `# LABEL` + the new entry + the prior entries — `write` always replaces
+   the whole file, so the accumulation is done by the script, not the CLI.
+2. **Basic-Memory** (`basic-memory tool read-note` + `edit-note --operation
+   prepend`, or `write-note` on first write): a note titled from the label
+   under the project folder (primary checkout name, else the current
+   directory name when outside git), type `guide`, tag `checkpoint`. The
+   script checks whether the note already exists and prepends the new entry
+   to it rather than overwriting; only the first checkpoint under a given
+   title creates the note.
+
+Because both backends must carry the SAME facts, an existing note/memory
+found under the label is always updated, never replaced wholesale — a
+same-named re-checkpoint accumulates, it does not destroy.
 
 ## Naming strategy
+
+**Look up the existing checkpoint identity before deriving a new label.**
+A freshly-inferred label is only safe to use when nothing durable already
+exists for this work thread — deriving a new label unconditionally each
+checkpoint risks fragmenting one thread's history across several
+similarly-named memories/notes (the read-then-prepend behavior in `write-
+checkpoint.sh` only accumulates when the label is an exact repeat). Before
+step 3 below:
+- If a plan file is in play, its `# ` heading already pins one deterministic
+  label across checkpoints — no lookup needed unless the heading itself
+  changed since the last checkpoint.
+- Without a plan file (or if unsure the heading is unchanged), check for an
+  existing checkpoint first: `serena memories list` (grep for a name
+  matching the current work topic) and/or Basic-Memory `search-notes` /
+  `read-note` on the candidate title. If a match is found, reuse ITS exact
+  name — do not derive a new one.
+- Only fall back to deriving a fresh label (below) when no existing
+  checkpoint for this work is found.
 
 **Use semantic names based on checkpoint context, not generic labels:**
 
@@ -108,12 +143,18 @@ When invoked via `/smith-checkpoint` (no arguments required):
    when `plan=` is omitted, but an explicit path is more reliable when a
    plan is visibly in play.)
 
-3. **Infer label automatically**:
+3. **Look up existing checkpoint identity before naming** (see Naming
+   strategy above): with a plan file, its heading already pins the label; without
+   one, check `serena memories list` / Basic-Memory `search-notes` for a
+   match on the current work topic and reuse its exact name if found.
+
+4. **Infer label automatically** (only when step 3 found no existing
+   checkpoint to reuse):
    - If plan file exists: slug of its first heading (snake_case)
    - Otherwise: infer from current session's primary work
    - Follow Naming strategy above (semantic, descriptive)
 
-4. **Draft the body** (~400 tokens as a starting aim, per Compression
+5. **Draft the body** (~400 tokens as a starting aim, per Compression
    Requirements above. Format: Completed / Decisions / Next / Related, no
    title or Date/Plan/Session header):
    - Combine extracted facts (step 1) with rich context/reasoning
@@ -134,22 +175,25 @@ When invoked via `/smith-checkpoint` (no arguments required):
      ```
    - Omit `body=` only when session produced nothing durable
 
-5. **Call write-checkpoint.sh**:
+6. **Call write-checkpoint.sh**:
    ```bash
    ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
    ```
 
-6. The script (exit 0 on success):
+7. The script (exit 0 on success):
    - Without `plan=`, falls back to the ctx-claude plan-state file for this
      session's cwd (same source the stop hook uses)
-   - Prepends header (label, date, plan, session)
+   - Builds a dated entry (`## «timestamp»`, plan, session, body)
    - Adds plan path as first Related entry
    - Without `body=`, falls back to metadata only
+   - Reads any existing memory/note under the label and prepends the new
+     entry to it (see Targets and formats above); only the first checkpoint
+     under a label creates fresh state
    - Writes to both backends (Serena + Basic-Memory)
    - Outputs success to stderr, Reload block to stdout
 
-7. If script exits non-zero, report stderr error.
-8. On success, output Reload block to user.
+8. If script exits non-zero, report stderr error.
+9. On success, output Reload block to user.
 
 ## Runtime prerequisites
 
