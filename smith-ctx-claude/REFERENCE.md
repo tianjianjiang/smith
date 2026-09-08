@@ -348,7 +348,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
 <skill name="smith-mode-plan" description="Plan tracking protocol (portable)">`@smith-mode-plan/SKILL.md`</skill>
 <skill name="smith-mode-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-mode-plan-claude/SKILL.md`</skill>
-<skill name="smith-sdlc" description="AI-native SDLC artifact chain: intent.md, spec.md (EARS+GWT), design.md (ADR log), plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
+<skill name="smith-sdlc" description="AI-native software development lifecycle artifact chain: intent.md, spec.md (Easy Approach to Requirements Syntax plus Given-When-Then), design.md (Architecture Decision Record log), plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
 
@@ -389,6 +389,7 @@ skill via the Skill tool:
   Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
 **Plan**: Plan execution → `@smith-mode-plan/SKILL.md`,
   Claude Code hooks/`!load-plan` → `@smith-mode-plan-claude/SKILL.md`
+**SDLC (software development lifecycle)**: `intent.md`/`spec.md`/`design.md`, AI-native or agentic software development lifecycle, the SDLC playbook, an ADR (Architecture Decision Record), Given-When-Then acceptance scenarios, or EARS (Easy Approach to Requirements Syntax) followed by one of `syntax`/`notation`/`form(s)`/`format`/`requirement(s)` — bare `EARS` deliberately does not trigger, because the router matches case-insensitively and would fire on the English word "ears" → `@smith-sdlc/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `Monitor`, polling for external state → `@smith-automation/SKILL.md`
 **Subagents**: spawning Task/Agent subagents, delegating investigation, parallel orchestration, OR a subagent touching shared state (PR/issue/file/remote) → `@smith-subagents/SKILL.md`
 **Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
@@ -483,7 +484,7 @@ documentation and router-trigger design.
 
 **smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
 
-**smith-sdlc**: AI-native SDLC artifact chain (Anthropic playbook) — intent.md, spec.md (EARS+GWT normative contract, Design stage), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop; plus an optional design.md ADR log, produced during Design-stage sessions but durable and per-subsystem (not per-feature) like CLAUDE.md, not per-cycle like spec.md. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
+**smith-sdlc**: AI-native software development lifecycle (SDLC) artifact chain (Anthropic playbook) — intent.md, spec.md (a normative contract in EARS, the Easy Approach to Requirements Syntax, paired with Given-When-Then acceptance scenarios; Design stage), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop; plus an optional design.md ADR (Architecture Decision Record) log, produced during Design-stage sessions but durable and per-subsystem (not per-feature) like CLAUDE.md, not per-cycle like spec.md. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
 
 **smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
 
