@@ -114,7 +114,7 @@ Before drafting any PR review comment:
    ```
 
 2. Validate format:
-   - PASS: Matches `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
+   - PASS: Matches `Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?`
    - PASS: Model ID is valid session model (sonnet|opus|haiku|fable)
    - FAIL: "on behalf of" anywhere in comment
    - FAIL: hand-typed model IDs

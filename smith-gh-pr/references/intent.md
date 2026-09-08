@@ -102,7 +102,7 @@ Before posting/drafting any PR review comment:
 1. **Load required skills**: Invoke smith-gh-pr and smith-style if not already loaded
 2. **Get attribution from script**: Run `~/.smith/smith-ctx-claude/scripts/attribution.sh` (NEVER hand-type)
 3. **Verify format**:
-   - ✅ Pattern matches: `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
+   - ✅ Pattern matches: `Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?`
    - ✅ Model ID is valid (check against known models: sonnet/opus/haiku/fable)
    - ❌ NO "on behalf of" anywhere in the comment
    - ❌ NO hand-typed model IDs like `claude-opus-4-5`
