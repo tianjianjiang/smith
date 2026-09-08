@@ -157,6 +157,18 @@ transform_label_to_basic_memory_title() {
     echo "$LABEL" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1'
 }
 
+build_merged_document() {
+    local entry="$1"
+    local existing="$2"
+    local document="# ${LABEL}"$'\n\n'"${entry}"
+    local prior
+    if [[ -n "$existing" ]]; then
+        prior=$(strip_title_line "$existing")
+        [[ -n "$prior" ]] && document="${document}"$'\n\n'"${prior}"
+    fi
+    printf '%s' "$document"
+}
+
 read_serena_memory() {
     local primary_checkout="$1"
     uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>/dev/null
@@ -166,21 +178,17 @@ write_to_serena() {
     local entry="$1"
     local primary_checkout="$2"
     echo "Writing to Serena: ${LABEL}" >&2
-    local existing prior document
+    local existing document
     existing=$(read_serena_memory "$primary_checkout") || existing=""
-    document="# ${LABEL}"$'\n\n'"${entry}"
-    if [[ -n "$existing" ]]; then
-        prior=$(strip_title_line "$existing")
-        [[ -n "$prior" ]] && document="${document}"$'\n\n'"${prior}"
-    fi
+    document=$(build_merged_document "$entry" "$existing")
     uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
 }
 
-basic_memory_note_exists() {
+read_basic_memory_note() {
     local title="$1"
     local result
     result=$(uvx basic-memory tool read-note "$title" 2>/dev/null) || return 1
-    [[ "$(jq -r '.title // empty' <<<"$result" 2>/dev/null)" == "$title" ]]
+    jq -r '.content // empty' <<<"$result" 2>/dev/null
 }
 
 write_to_basic_memory() {
@@ -190,18 +198,16 @@ write_to_basic_memory() {
     local folder="projects/${project}"
 
     echo "Writing to Basic-Memory: ${title}" >&2
-    if basic_memory_note_exists "$title"; then
-        uvx basic-memory tool edit-note "$title" \
-            --operation prepend \
-            --content "${entry}"$'\n\n---\n'
-    else
-        uvx basic-memory tool write-note \
-            --title "${title}" \
-            --folder "${folder}" \
-            --type guide \
-            --tags checkpoint \
-            --content "# ${LABEL}"$'\n\n'"${entry}"
-    fi
+    local existing document
+    existing=$(read_basic_memory_note "$title") || existing=""
+    document=$(build_merged_document "$entry" "$existing")
+    uvx basic-memory tool write-note \
+        --title "${title}" \
+        --folder "${folder}" \
+        --type guide \
+        --tags checkpoint \
+        --overwrite \
+        --content "${document}"
 }
 
 generate_reload_block() {

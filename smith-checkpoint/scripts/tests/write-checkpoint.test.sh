@@ -64,9 +64,9 @@ case "$argv" in
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_read.argv"
     if [ -f "$store" ]; then
-      printf '{"title": "%s", "permalink": "projects/%s/%s"}\n' "$title" "$(basename "$PWD")" "$(store_key "$title")"
+      jq -Rs --arg title "$title" --arg permalink "projects/$(basename "$PWD")/$(store_key "$title")" '{title: $title, permalink: $permalink, content: .}' < "$store"
     else
-      printf '{"title": null}\n'
+      printf '{"title": null, "content": null}\n'
     fi
     exit 0
     ;;
@@ -76,21 +76,8 @@ case "$argv" in
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
-    [ "${BM_FAIL:-0}" = "1" ] && { echo "NOTE_ALREADY_EXISTS" >&2; exit 1; }
+    [ "${BM_FAIL:-0}" = "1" ] && { echo "write-note failed" >&2; exit 1; }
     printf '%s' "$content" > "$store"
-    printf '{"permalink": "projects/%s/%s"}\n' "$(basename "$PWD")" "$(store_key "$title")"
-    exit 0
-    ;;
-  *"basic-memory tool edit-note"*)
-    title=$(extract_after_token edit-note "$@")
-    content=$(extract_flag_value --content "$@")
-    store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
-    printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
-    printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
-    [ "${BM_FAIL:-0}" = "1" ] && { echo "edit-note failed" >&2; exit 1; }
-    old=""
-    [ -f "$store" ] && old=$(cat "$store")
-    printf '%s%s' "$content" "$old" > "$store"
     printf '{"permalink": "projects/%s/%s"}\n' "$(basename "$PWD")" "$(store_key "$title")"
     exit 0
     ;;
@@ -112,8 +99,8 @@ reset_logs() {
 
 reset_logs
 out=$(run_script test_label_success "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "success path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- '--overwrite' "$SHIM/bm.argv" && fail "write-note argv must not force --overwrite: $(cat "$SHIM/bm.argv")"
-grep -q 'write-note' "$SHIM/bm.argv" || fail "first checkpoint under a label must create via write-note: $(cat "$SHIM/bm.argv")"
+grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write-note argv must pass --overwrite so it succeeds whether or not the note already exists: $(cat "$SHIM/bm.argv")"
+grep -q 'write-note' "$SHIM/bm.argv" || fail "checkpoint must write via write-note: $(cat "$SHIM/bm.argv")"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "fresh checkpoint: Serena and Basic-Memory must receive identical content"
 [ -s "$SHIM/serena.content" ] || fail "content passed to backends is empty"
 [ "$(grep -c '^# test_label_success$' "$SHIM/serena.content")" = 1 ] || fail "fresh checkpoint must carry exactly one title line"
@@ -126,20 +113,24 @@ grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missin
 reset_logs
 printf '## Completed\n- [x] first session thing\n' > "$SHIM/body1.md"
 run_script test_label_accumulate "body=$SHIM/body1.md" >/dev/null 2>"$SHIM/stderr1" || fail "accumulate first call: script exited non-zero: $(cat "$SHIM/stderr1")"
-grep -q 'write-note' "$SHIM/bm.argv" || fail "accumulate first call must create via write-note: $(cat "$SHIM/bm.argv")"
+grep -q 'write-note' "$SHIM/bm.argv" || fail "accumulate first call must write via write-note: $(cat "$SHIM/bm.argv")"
 
 printf '## Completed\n- [x] second session thing\n' > "$SHIM/body2.md"
 run_script test_label_accumulate "body=$SHIM/body2.md" >/dev/null 2>"$SHIM/stderr2" || fail "accumulate second call: script exited non-zero: $(cat "$SHIM/stderr2")"
-grep -q -- 'edit-note' "$SHIM/bm.argv" || fail "second checkpoint under an existing label must update via edit-note, not write-note: $(cat "$SHIM/bm.argv")"
-grep -q -- '--operation prepend' "$SHIM/bm.argv" || fail "second checkpoint must prepend, never overwrite: $(cat "$SHIM/bm.argv")"
+grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "second checkpoint must still pass --overwrite to write-note: $(cat "$SHIM/bm.argv")"
 grep -qF -- 'first session thing' "$SHIM/serena.content" || fail "accumulation must not drop the first checkpoint's facts from Serena: $(cat "$SHIM/serena.content")"
 grep -qF -- 'second session thing' "$SHIM/serena.content" || fail "accumulation must include the new checkpoint's facts in Serena"
-[ "$(grep -c '^# test_label_accumulate$' "$SHIM/serena.content")" = 1 ] || fail "accumulated document must carry exactly one title line, not one per checkpoint: $(cat "$SHIM/serena.content")"
+[ "$(grep -c '^# test_label_accumulate$' "$SHIM/serena.content")" = 1 ] || fail "accumulated Serena document must carry exactly one title line, not one per checkpoint: $(cat "$SHIM/serena.content")"
 newest_line=$(grep -n 'second session thing' "$SHIM/serena.content" | cut -d: -f1)
 oldest_line=$(grep -n 'first session thing' "$SHIM/serena.content" | cut -d: -f1)
-[ "$newest_line" -lt "$oldest_line" ] || fail "most recent checkpoint must be prepended (newest first): $(cat "$SHIM/serena.content")"
-grep -qF -- 'second session thing' "$SHIM/bm.content" || fail "the Basic-Memory prepend payload must carry the new checkpoint's facts"
-grep -qF -- 'first session thing' "$SHIM/bm.content" && fail "the Basic-Memory prepend payload must be the new entry only, not the full accumulated history"
+[ "$newest_line" -lt "$oldest_line" ] || fail "most recent checkpoint must be prepended (newest first) in Serena: $(cat "$SHIM/serena.content")"
+grep -qF -- 'first session thing' "$SHIM/bm.content" || fail "accumulation must not drop the first checkpoint's facts from Basic-Memory: $(cat "$SHIM/bm.content")"
+grep -qF -- 'second session thing' "$SHIM/bm.content" || fail "accumulation must include the new checkpoint's facts in Basic-Memory"
+[ "$(grep -c '^# test_label_accumulate$' "$SHIM/bm.content")" = 1 ] || fail "accumulated Basic-Memory document must carry exactly one title line, not have it pushed down by the new entry: $(cat "$SHIM/bm.content")"
+bm_newest_line=$(grep -n 'second session thing' "$SHIM/bm.content" | cut -d: -f1)
+bm_oldest_line=$(grep -n 'first session thing' "$SHIM/bm.content" | cut -d: -f1)
+[ "$bm_newest_line" -lt "$bm_oldest_line" ] || fail "most recent checkpoint must be prepended (newest first) in Basic-Memory: $(cat "$SHIM/bm.content")"
+cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "accumulate second call: Serena and Basic-Memory must receive identical merged content"
 
 reset_logs
 run_script test_label_outside_git "plan=/tmp/plan.md" >/dev/null 2>"$SHIM/stderr" || fail "outside-git path: script exited non-zero: $(cat "$SHIM/stderr")"

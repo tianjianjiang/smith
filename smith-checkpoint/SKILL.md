@@ -74,19 +74,24 @@ prior is dropped, regardless of how compact today's entry is: writing a
 not in place of it. Both backends are done by `write-checkpoint.sh` through
 each backend's CLI:
 
+Both backends use the same read-merge-write shape: read whatever exists under
+the label, strip its `# LABEL` title line, and write back `# LABEL` + the new
+entry + the prior entries as one document — neither backend's write primitive
+appends, so the merge happens in the script, not the CLI. A backend-native
+`prepend`/`append` edit was deliberately NOT used for Basic-Memory: it
+inserts before/after the whole note body, which would push the `# LABEL`
+title line down under the growing entry stack instead of leaving it at the
+top.
+
 1. **Serena** (`serena memories read` + `serena memories write`): a
    snake_case memory named after the label, written into the primary
-   checkout's project (works from a worktree). The script reads any
-   existing content, strips its `# LABEL` title line, and writes back
-   `# LABEL` + the new entry + the prior entries — `write` always replaces
-   the whole file, so the accumulation is done by the script, not the CLI.
-2. **Basic-Memory** (`basic-memory tool read-note` + `edit-note --operation
-   prepend`, or `write-note` on first write): a note titled from the label
-   under the project folder (primary checkout name, else the current
-   directory name when outside git), type `guide`, tag `checkpoint`. The
-   script checks whether the note already exists and prepends the new entry
-   to it rather than overwriting; only the first checkpoint under a given
-   title creates the note.
+   checkout's project (works from a worktree).
+2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
+   a note titled from the label under the project folder (primary checkout
+   name, else the current directory name when outside git), type `guide`,
+   tag `checkpoint`. `--overwrite` is passed unconditionally — it is safe on
+   both a first write (nothing to conflict with) and a re-checkpoint (the
+   payload is already the full merged document, so there is nothing to lose).
 
 Because both backends must carry the SAME facts, an existing note/memory
 found under the label is always updated, never replaced wholesale — a
@@ -98,7 +103,7 @@ same-named re-checkpoint accumulates, it does not destroy.
 A freshly-inferred label is only safe to use when nothing durable already
 exists for this work thread — deriving a new label unconditionally each
 checkpoint risks fragmenting one thread's history across several
-similarly-named memories/notes (the read-then-prepend behavior in `write-
+similarly-named memories/notes (the read-then-merge behavior in `write-
 checkpoint.sh` only accumulates when the label is an exact repeat). Before
 step 3 below:
 - If a plan file is in play, its `# ` heading already pins one deterministic
