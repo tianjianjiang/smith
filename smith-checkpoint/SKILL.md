@@ -24,7 +24,12 @@ records.
 
 ## Compression Requirements
 
-**Target**: <400 tokens per checkpoint body (the script warns above about 1600 bytes)
+**Guideline**: aim for ~400 tokens per checkpoint body when the content
+allows it (the script notes past ~1600 bytes). Completeness is the binding
+requirement: never drop a decision, file:line anchor, PR/commit reference,
+or open follow-up to fit this number. An oversized-but-complete checkpoint
+is a successful checkpoint; a compact-but-incomplete one is not (see
+"Runtime prerequisites" below on what counts as incomplete).
 
 **Format rules**:
 1. **Use references, not content duplication**:
@@ -109,8 +114,10 @@ When invoked via `/smith-checkpoint` (no arguments required):
    - Otherwise: infer from current session's primary work
    - Follow Naming strategy above (semantic, descriptive)
 
-4. **Draft the body** (<400 tokens, format above: Completed / Decisions /
-   Next / Related, no title or Date/Plan/Session header):
+4. **Draft the body** (~400 tokens as a starting aim — extend as needed to
+   capture everything durable; do not omit content to hit the number.
+   Format above: Completed / Decisions / Next / Related, no title or
+   Date/Plan/Session header):
    - Combine extracted facts (step 1) with rich context/reasoning
    - Add decisions (why, consequences), next steps with context
    - List Serena memories and Basic-Memory notes written this session under Related

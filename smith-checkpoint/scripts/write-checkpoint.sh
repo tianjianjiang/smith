@@ -97,7 +97,7 @@ warn_if_body_exceeds_budget() {
     local bytes
     bytes=$(wc -c < "$body_path" | tr -d ' ')
     if (( bytes > 1600 )); then
-        echo "Warning: body is ${bytes} bytes; target is <400 tokens (about 1600 bytes)" >&2
+        echo "Note: body is ${bytes} bytes (guideline ~1600); keep it if the content is necessary for a complete handover" >&2
     fi
 }
 
