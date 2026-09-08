@@ -2,10 +2,11 @@
 
 ## §budget-is-a-guideline
 
-**EARS**: While drafting a checkpoint body, the drafting agent shall treat
-~400 tokens as a non-binding starting aim, not a ceiling.
+**EARS (Easy Approach to Requirements Syntax)**: While drafting a checkpoint
+body, the drafting agent shall treat ~400 tokens as a non-binding starting
+aim, not a ceiling.
 
-**GWT**:
+**GWT (Given-When-Then)**:
 - Given a session with more durable content than fits in ~400 tokens
 - When the agent drafts the checkpoint body
 - Then the agent includes all durable content (decisions, file:line
