@@ -45,7 +45,7 @@ change.
 
 **GWT**:
 - Given the existing "Durable only" and "Use references, not content
-  duplication" rules (`SKILL.md:18-23`, `SKILL.md:29-33`)
+  duplication" rules (`SKILL.md:18-23`, `SKILL.md:34-40`)
 - When this fix is applied
 - Then those rules remain textually unchanged and still govern what
   counts as checkpoint content

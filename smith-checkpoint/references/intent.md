@@ -36,7 +36,7 @@ behavior changes — the warning already only warns.
 
 - Must not regress the existing "durable only" scoping (`SKILL.md:18-23`)
   or "use references, not content duplication" format rules
-  (`SKILL.md:29-33`) — only the budget-vs-completeness precedence changes.
+  (`SKILL.md:34-40`) — only the budget-vs-completeness precedence changes.
 - Must not turn the warning into a hard block; the script's job is to warn,
   not enforce.
 
