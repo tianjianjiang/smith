@@ -8,7 +8,8 @@ These hooks work together to manage plan execution across context boundaries:
 
 | Hook | Event | Fires | Purpose |
 |------|-------|-------|---------|
-| `inject-plan.sh` | UserPromptSubmit | Every prompt | Load plan, detect flags, detect context threshold |
+| `inject-plan.sh` | UserPromptSubmit | Every prompt | Load plan, detect flags |
+| `context-warning.sh` | UserPromptSubmit | Every prompt | Warn above the context threshold (owns this message; `inject-plan.sh` emits none) |
 | `enforce-clear.sh` | Stop | Agent stop | Block stop when context high + pending tasks |
 | `on-plan-exit.sh` | PostToolUse (ExitPlanMode) | Plan mode exit | Create reload flag for auto-load after `/clear` |
 | `on-session-clear.sh` | SessionStart (`clear`) | After `/clear` | Scan checkpoint flags, restore this session's, report the rest |
@@ -16,19 +17,29 @@ These hooks work together to manage plan execution across context boundaries:
 
 ## Installation
 
-### 1. Copy the Skill
+### 1. Copy the Skills
+
+The five hook scripts below (`inject-plan.sh`, `enforce-clear.sh`,
+`on-plan-exit.sh`, `on-session-clear.sh`, `mark-session-restart.sh`) live
+in `smith-ctx-claude/scripts/`, not this skill's own `scripts/` (which
+holds only the `list-plans.sh`/`load-plan.sh`/`plan-status.sh` CLI
+utilities) — both skills must be installed:
 
 ```bash
 # Symlink (recommended)
-ln -sf ~/.smith/smith-plan-claude ~/.claude/skills/smith-plan-claude
+ln -sf ~/.smith/smith-mode-plan-claude "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-mode-plan-claude"
+ln -sf ~/.smith/smith-ctx-claude "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude"
 
 # Make scripts executable
-chmod +x ~/.smith/smith-plan-claude/scripts/*.sh
+chmod +x ~/.smith/smith-mode-plan-claude/scripts/*.sh
+chmod +x ~/.smith/smith-ctx-claude/scripts/*.sh
 ```
 
 ### 2. Configure the Hooks
 
-Add to `~/.claude/settings.json`:
+Add to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json`. The `command`
+values must resolve `CLAUDE_CONFIG_DIR` too — a hardcoded `~/.claude/skills/...`
+path points at the wrong install under a non-default profile:
 
 ```json
 {
@@ -38,7 +49,7 @@ Add to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/inject-plan.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/inject-plan.sh",
             "timeout": 5000
           }
         ]
@@ -49,7 +60,7 @@ Add to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/enforce-clear.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/enforce-clear.sh",
             "timeout": 5000
           }
         ]
@@ -61,7 +72,7 @@ Add to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/on-plan-exit.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/on-plan-exit.sh",
             "timeout": 5000
           }
         ]
@@ -73,12 +84,12 @@ Add to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/on-session-clear.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/on-session-clear.sh",
             "timeout": 5000
           },
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/mark-session-restart.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/mark-session-restart.sh",
             "timeout": 5000
           }
         ]
@@ -88,7 +99,7 @@ Add to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/smith-plan-claude/scripts/mark-session-restart.sh",
+            "command": "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/mark-session-restart.sh",
             "timeout": 5000
           }
         ]
@@ -107,7 +118,7 @@ produces the false "POST-CLEAR RESUME" this hook exists to remove.
 Paths in this document assume the default profile (`CLAUDE_CONFIG_DIR`
 unset), i.e. `~/.claude/plans` resolves to `${CLAUDE_CONFIG_DIR}/plans`
 under an explicit profile override. Examples that already read `$PLANS_DIR`
-(sourced from `lib-common.sh`) are already profile-aware as written.
+(sourced from `lib-plan.sh`) are already profile-aware as written.
 
 ```bash
 mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
@@ -151,11 +162,11 @@ Fires after ExitPlanMode tool is used. Locates the active plan by first checking
 
 **Input JSON fields used:**
 - `session_id` - Current session identifier
-- `cwd` - Working directory (used to derive `CWD_KEY` via `session_key()` for `.plan-state-<CWD_KEY>` lookup)
+- `cwd` - Working directory (used to derive the key via `plan_state_key()` for `.plan-state-<KEY>` lookup — that function hashes the directory alone, so every session in a directory shares one state file; `session_key()`, which also hashes the parent process id, is what keys `.pending-reload-*`)
 
 ## Flag File Format
 
-`~/.claude/plans/.pending-reload-<CWD_KEY>` (`CWD_KEY` = first 16 chars of `md5(PPID:CWD)`, computed by `session_key()` in `lib-common.sh`; PPID is Claude Code's PID, stable across `/clear`):
+`~/.claude/plans/.pending-reload-<CWD_KEY>` (`CWD_KEY` = first 16 chars of `md5(PPID:CWD)`, computed by `session_key()` in `smith-ctx-claude/scripts/lib-context.sh` (sourced transitively via `lib-plan.sh`); PPID is Claude Code's PID, stable across `/clear`):
 
 ```
 /Users/user/.claude/plans/my-plan.md    <- line 1: absolute plan path
@@ -347,10 +358,11 @@ feature working.
 
 Known limitation, not yet addressed: a checkpoint armed from a **background job** keys to that
 job's own Claude Code process, so the interactive session's `/clear` sees it as another
-session's flag — offered by label rather than auto-restored. Verified rather than assumed: a
-background job runs as its own `claude bg-spare` process with its own pid, and the plan
-pipeline's `.plan-state-*` file for such a job is keyed by that pid, not the interactive
-session's.
+session's flag — offered by label rather than auto-restored. The mechanism is the
+`.pending-reload-*` flag, which `session_key()` keys by parent process id and directory
+together: a background job runs as its own `claude bg-spare` process with its own pid, so
+its flag never matches the interactive session's. The `.plan-state-*` file is NOT involved
+— `plan_state_key()` takes no pid, so both share one state file in a given directory.
 
 Two consequences are deliberate, and are stated here because each reads like an oversight:
 
@@ -716,11 +728,11 @@ Build a REST API for user management
 ### Test flag consumption (auto-reload)
 
 ```bash
-source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+source ~/.smith/smith-ctx-claude/scripts/lib-plan.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 
 echo '{"prompt":"go","session_id":"test1","cwd":"'$PWD'"}' | \
-  ~/.smith/smith-plan-claude/scripts/inject-plan.sh
+  ~/.smith/smith-ctx-claude/scripts/inject-plan.sh
 ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 ```
 
@@ -729,39 +741,39 @@ ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 ```bash
 dd if=/dev/zero bs=1024 count=900 of=/tmp/test-transcript.jsonl 2>/dev/null
 echo '{"prompt":"hello","session_id":"test2","transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
-  ~/.smith/smith-plan-claude/scripts/inject-plan.sh
+  ~/.smith/smith-ctx-claude/scripts/inject-plan.sh
 ```
 
 ### Test Stop hook blocking
 
 ```bash
-source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+source ~/.smith/smith-ctx-claude/scripts/lib-plan.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 rm -f "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
-  ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
+  ~/.smith/smith-ctx-claude/scripts/enforce-clear.sh
 ```
 
 ### Test Stop hook allow (flag exists)
 
 ```bash
-source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+source ~/.smith/smith-ctx-claude/scripts/lib-plan.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 printf '/tmp/plan.md\ntest\n'"$(date +%Y-%m-%d)"'\n/tmp\n' > "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
-  ~/.smith/smith-plan-claude/scripts/enforce-clear.sh
+  ~/.smith/smith-ctx-claude/scripts/enforce-clear.sh
 ```
 
 ### Test stale flag cleanup
 
 ```bash
-source ~/.smith/smith-plan-claude/scripts/lib-common.sh
+source ~/.smith/smith-ctx-claude/scripts/lib-plan.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
 printf '/path/plan.md\nold_session\n'"$(date +%Y-%m-%dT%H:%M:%S%z)"'\n/old/path\n' > "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 # Set file mtime to 2 hours ago to trigger cleanup
 touch -t $(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M) "$PLANS_DIR/.pending-reload-${CWD_KEY}"
 echo '{"prompt":"go","session_id":"different_session","cwd":"'$PWD'"}' | \
-  ~/.smith/smith-plan-claude/scripts/inject-plan.sh
+  ~/.smith/smith-ctx-claude/scripts/inject-plan.sh
 ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 ```
 
@@ -771,17 +783,17 @@ ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 
 1. Check settings.json syntax:
    ```bash
-   cat ~/.claude/settings.json | jq .
+   cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" | jq .
    ```
 
 2. Verify scripts are executable:
    ```bash
-   ls -la ~/.smith/smith-plan-claude/scripts/*.sh
+   ls -la ~/.smith/smith-mode-plan-claude/scripts/*.sh ~/.smith/smith-ctx-claude/scripts/*.sh
    ```
 
 3. Test hook manually:
    ```bash
-   echo '{"prompt":"execute the plan"}' | ~/.smith/smith-plan-claude/scripts/inject-plan.sh
+   echo '{"prompt":"execute the plan"}' | ~/.smith/smith-ctx-claude/scripts/inject-plan.sh
    ```
 
 ### Plan Not Updating Between Iterations

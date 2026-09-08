@@ -3,7 +3,7 @@
 # list-plans.sh - List available plan files with progress
 #
 
-source "$(dirname "$0")/../ctx-claude/scripts/lib-plan.sh"
+source "$(dirname "$0")/../../smith-ctx-claude/scripts/lib-plan.sh"
 OWN_SCOPE=$(scope_key "${PWD:-}")
 
 if [[ ! -d "$PLANS_DIR" ]]; then
@@ -41,8 +41,8 @@ while IFS= read -r file; do
     modified="${_MTIME_HUMAN:0:16}"
 
   
-    total=$(grep -c '^[[:space:]]*- \[.\]' "$file" 2>/dev/null || echo "0")
-    done=$(grep -c '^[[:space:]]*- \[x\]' "$file" 2>/dev/null || echo "0")
+    total=$(grep -c '^[[:space:]]*- \[.\]' "$file" 2>/dev/null) || total=0
+    done=$(grep -c '^[[:space:]]*- \[x\]' "$file" 2>/dev/null) || done=0
 
     if [[ $total -gt 0 ]]; then
         percent=$((done * 100 / total))

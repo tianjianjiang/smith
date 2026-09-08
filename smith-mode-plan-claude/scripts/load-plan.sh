@@ -6,7 +6,7 @@
 #        If no name given, loads most recent plan
 #
 
-source "$(dirname "$0")/../ctx-claude/scripts/lib-plan.sh"
+source "$(dirname "$0")/../../smith-ctx-claude/scripts/lib-plan.sh"
 PLAN_NAME="$1"
 OWN_SCOPE=$(scope_key "${PWD:-}")
 
@@ -57,8 +57,8 @@ MODIFIED="$_MTIME_HUMAN"
 
 # Calculate progress
 CONTENT=$(cat "$PLAN_FILE")
-TOTAL=$(echo "$CONTENT" | grep -c '^[[:space:]]*- \[.\]' || echo "0")
-DONE=$(echo "$CONTENT" | grep -c '^[[:space:]]*- \[x\]' || echo "0")
+TOTAL=$(echo "$CONTENT" | grep -c '^[[:space:]]*- \[.\]') || TOTAL=0
+DONE=$(echo "$CONTENT" | grep -c '^[[:space:]]*- \[x\]') || DONE=0
 
 if [[ $TOTAL -gt 0 ]]; then
     PERCENT=$((DONE * 100 / TOTAL))

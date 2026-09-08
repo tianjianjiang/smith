@@ -18,7 +18,7 @@
 #   must still see the same flag to consume it.
 # - Fires every compaction: if a flag stays unconsumed across several
 #   compactions in one long session, the reminder repeats every time. This
-#   is accepted, not suppressed -- see smith-plan-claude/references/HOOKS.md
+#   is accepted, not suppressed -- see smith-mode-plan-claude/references/HOOKS.md
 #   "Checkpoint memory-restore flag" for the rationale.
 #
 # additionalContext injected here is read on Claude's next model request

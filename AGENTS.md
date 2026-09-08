@@ -42,9 +42,11 @@ backends and ends with a Reload block. Its dependencies:
   (`write_note`) — both **local-only** by default (Serena memories gitignored;
   Basic-Memory local SQLite unless cloud enabled).
 - **Reload flag**: the memory-restore directive is injected as context on the next
-  `/clear` only if the `smith-plan-claude` SessionStart:clear hook is registered.
+  `/clear` only if the SessionStart:clear hook is registered
+  (`smith-ctx-claude/scripts/on-session-clear.sh` — the scripts live in
+  `smith-ctx-claude/scripts/`, documented by `smith-mode-plan-claude`).
   A restore is NOT guaranteed; the full conditions and outcomes are in
-  `smith-plan-claude/references/HOOKS.md` "Checkpoint memory-restore flag".
+  `smith-mode-plan-claude/references/HOOKS.md` "Checkpoint memory-restore flag".
   Otherwise resume manually via the Reload block's `/smith-recon "resume …"` line.
 - **Cloud/fresh-clone runs** (`/schedule`, `/code-review ultra`, web) see none of the
   local backends — only committed git/PR state.

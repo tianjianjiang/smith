@@ -135,7 +135,7 @@ handler to filter on tool name AND arguments together using
 `"Bash(git *)"` fires only for `git` subcommands, `"Edit(*.ts)"` only for
 TypeScript edits.
 
-Cross-ref: `@smith-plan-claude/SKILL.md` for plan-specific hooks.
+Cross-ref: `@smith-mode-plan-claude/SKILL.md` for plan-specific hooks.
 
 ## Permission Modes
 
@@ -346,8 +346,9 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 
 <!-- Workflow -->
 <skill name="smith-ralph" description="Ralph Loop iterative development">`@smith-ralph/SKILL.md`</skill>
-<skill name="smith-plan" description="Plan tracking protocol (portable)">`@smith-plan/SKILL.md`</skill>
-<skill name="smith-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-plan-claude/SKILL.md`</skill>
+<skill name="smith-mode-plan" description="Plan tracking protocol (portable)">`@smith-mode-plan/SKILL.md`</skill>
+<skill name="smith-mode-plan-claude" description="Plan automation (Claude Code hooks)">`@smith-mode-plan-claude/SKILL.md`</skill>
+<skill name="smith-sdlc" description="AI-native software development lifecycle artifact chain: intent.md, spec.md (Easy Approach to Requirements Syntax plus Given-When-Then), design.md (Architecture Decision Record log), plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
 
@@ -382,12 +383,12 @@ skill via the Skill tool:
 
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
-  Playwright → `@smith-playwright/SKILL.md`
+  Playwright → `@smith-playwright/SKILL.md` + `@smith-mcp-browser/SKILL.md`
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
-**Plan**: Plan execution → `@smith-plan/SKILL.md`,
-  Claude Code hooks/`!load-plan` → `@smith-plan-claude/SKILL.md`
+**Plan**: "execute/load/run/implement the plan", "plan mode" → `@smith-mode-plan/SKILL.md` + `@smith-mode-plan-claude/SKILL.md` (one rule, both skills)
+**SDLC (software development lifecycle)**: `intent.md`/`spec.md`/`design.md`, AI-native or agentic software development lifecycle, the SDLC playbook, an ADR (Architecture Decision Record), Given-When-Then acceptance scenarios, or EARS (Easy Approach to Requirements Syntax) followed by one of `syntax`/`notation`/`form(s)`/`format`/`requirement(s)` — bare `EARS` deliberately does not trigger, because the router matches case-insensitively and would fire on the English word "ears" → `@smith-sdlc/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `Monitor`, polling for external state → `@smith-automation/SKILL.md`
 **Subagents**: spawning Task/Agent subagents, delegating investigation, parallel orchestration, OR a subagent touching shared state (PR/issue/file/remote) → `@smith-subagents/SKILL.md`
 **Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
@@ -397,11 +398,12 @@ skill via the Skill tool:
   Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md` (router also emits the suggestion-block note below),
   Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md` (router also emits: a mechanical fix MUST carry the block, not prose describing the edit)
   Running or interpreting a CodeRabbit review, GitHub App or `coderabbit` command line → `@smith-gh-pr/SKILL.md` + `@smith-review/SKILL.md` (router also emits: a review that did not run looks identical to a clean one — check status, not the finding count)
-**Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md`,
+**Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md` + `@smith-settings/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
   Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-ctx-claude-mode-auto/SKILL.md`,
   Permission denial wording ("denied", "denial", "blocked by auto-mode/classifier") → `@smith-ctx-claude-mode-auto/SKILL.md` (router also emits: do not silently retry a denied action)
-**Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md`
+**Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md` + `@smith-ctx-claude/SKILL.md`
+**Skill authoring**: `SKILL.md`, `AGENTS.md`, progressive disclosure, "write a skill" → `@smith-skills/SKILL.md`
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
 **Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md` + `@smith-validation/SKILL.md`,
@@ -427,7 +429,7 @@ SKILL.md keeps only the compact list of event names plus the core rule
 - **Task tools idle nudge** — `TaskCreate`/`TaskUpdate` present but unused
 - **File modification notice** — a touched file changed outside the agent's tool calls
 - **Skills available list** — periodic re-enumeration of Skill entries (informational)
-- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-plan-claude/SKILL.md`)
+- **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-mode-plan-claude/SKILL.md`)
 - **Background task completion** — a `Bash(run_in_background)` task ended
 - **Date change** — local date rolled over
 - **Auto mode active** — session is in auto mode (see `@smith-ctx-claude-mode-auto/SKILL.md`)
@@ -478,9 +480,11 @@ documentation and router-trigger design.
 
 ### Planning & Analysis
 
-**smith-plan**: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
+**smith-mode-plan**: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
 
-**smith-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+**smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+
+**smith-sdlc**: AI-native software development lifecycle (SDLC) artifact chain (Anthropic playbook) — intent.md, spec.md (a normative contract in EARS, the Easy Approach to Requirements Syntax, paired with Given-When-Then acceptance scenarios; Design stage), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop; plus an optional design.md ADR (Architecture Decision Record) log, produced during Design-stage sessions but durable and per-subsystem (not per-feature) like CLAUDE.md, not per-cycle like spec.md. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
 
 **smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
 
@@ -554,7 +558,7 @@ documentation and router-trigger design.
 
 **smith-research**: Proactive research protocol for version queries, APIs, and best practices. Use when answering questions about library versions, API documentation, or technology assessments. Covers research triggers, source citation, and confidence indicators.
 
-**smith-secret_guard.local**: Local-only leak guard for the PUBLIC smith repo — scan staged diff, commit message, branch name, and PR title against the gitignored denylist of internal tokens (Jira keys, codenames, internal services) before any commit/push. Use when committing/pushing in the smith repo, editing a SKILL.md/AGENTS.md, writing a commit message or PR title, or when the user mentions a leak, a Jira key, or internal project names.
+**local-guard-secret**: Local-only leak guard for the PUBLIC smith repo — scan staged diff, commit message, branch name, and PR title against the gitignored denylist of internal tokens (Jira keys, codenames, internal services) before any commit/push. Use when committing/pushing in the smith repo, editing a SKILL.md/AGENTS.md, writing a commit message or PR title, or when the user mentions a leak, a Jira key, or internal project names.
 
 ### Other
 

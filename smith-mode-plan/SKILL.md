@@ -1,18 +1,34 @@
 ---
-name: smith-plan
-description: Plan tracking protocol . Progress tracking
+name: smith-mode-plan
+description: Plan mode definition and plan tracking protocol . Progress tracking
 license: MIT
 metadata:
   version: "1.0.0"
   tags: ["plan-mode", "workflow", "progress-tracking"]
 ---
 
-# Plan Tracking Protocol
+# Plan Mode and Plan Tracking Protocol
 
 Portable protocol for tracking plan progress across iterations. Platform-agnostic — works with any AI agent that can read/write files.
 
-**Load if:** Executing plans, tracking multi-step tasks
+**Load if:** Entering plan mode, executing plans, tracking multi-step tasks
 **Prerequisites:** @smith-ctx/SKILL.md
+
+## What Plan Mode Is (Platform-Neutral)
+
+Plan mode is a read-only interview stage that precedes implementation: the
+agent explores the codebase and interrogates the request without editing
+anything, then produces a written plan (files that change, order of work,
+tests, risks) for the human to approve before a single line of code is
+written. The plan itself, once approved, becomes the committed artifact
+that later stages — implementation, and any downstream review — check
+work against.
+
+This definition holds regardless of which coding agent or tool implements
+it. `@smith-mode-plan-claude/SKILL.md` covers Claude Code's specific
+implementation (the `ExitPlanMode` tool call, its approval modal, and the
+hooks that enforce it) — read this section first for what plan mode means,
+then that skill for how Claude Code's UI and hooks realize it.
 
 ## CRITICAL: Plan Sync Protocol
 
@@ -114,8 +130,9 @@ BLOCKER: «description of issue requiring human decision»
 ## Related
 
 - @smith-ctx/SKILL.md - Context management
-- `@smith-plan-claude/SKILL.md` - Claude Code automation (hooks, scripts)
+- `@smith-mode-plan-claude/SKILL.md` - Claude Code automation (hooks, scripts)
 - `@smith-ralph/SKILL.md` - Ralph Loop iterative development
+- `@smith-sdlc/SKILL.md` - the SDLC's `plan.md` artifact chain (this skill covers plan mode itself; smith-sdlc covers what happens before and after it)
 
 ## Before You Finish
 

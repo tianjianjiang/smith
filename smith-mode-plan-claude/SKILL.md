@@ -1,5 +1,5 @@
 ---
-name: smith-plan-claude
+name: smith-mode-plan-claude
 description: ExitPlanMode UI pattern
 license: MIT
 metadata:
@@ -10,10 +10,14 @@ metadata:
 
 # Plan Mode UI (Claude Code)
 
-ExitPlanMode UI pattern for Claude Code. For context management, auto-resume, and hooks, see `@smith-ctx-claude/SKILL.md`.
+Claude Code's specific implementation of plan mode: the `ExitPlanMode` tool
+call, its approval modal, and the hooks that enforce it. For what plan mode
+means independent of Claude Code, see `@smith-mode-plan/SKILL.md` "What Plan Mode
+Is (Platform-Neutral)". For context management, auto-resume, and hooks, see
+`@smith-ctx-claude/SKILL.md`.
 
 **Load if:** Using ExitPlanMode in Claude Code plan mode
-**Prerequisites:** `@smith-ctx-claude/SKILL.md`
+**Prerequisites:** `@smith-mode-plan/SKILL.md`, `@smith-ctx-claude/SKILL.md`
 
 ## Explain Before ExitPlanMode
 
@@ -56,7 +60,8 @@ ExitPlanMode rejection has three scenarios -- handle each differently:
 
 ## Related
 
-- `@smith-plan/SKILL.md` - Portable plan tracking protocol
+- `@smith-mode-plan/SKILL.md` - Portable plan tracking protocol
 - `@smith-ctx-claude/SKILL.md` - Context management, auto-resume, hooks, state
 - `@smith-ralph/SKILL.md` - Ralph Loop phase boundaries, resume
 - `@smith-checkpoint/SKILL.md` - Checkpoint (Serena + Basic-Memory)
+- `@smith-sdlc/SKILL.md` - Build-stage `plan.md`: commit the approved plan to the repo's own git history as an audit-trail artifact

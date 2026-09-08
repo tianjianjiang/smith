@@ -21,8 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Source context functions (canonical location)
 source "${SCRIPT_DIR}/lib-context.sh"
 
-# Source plan-claude's lib for plan/Ralph/Orchestrator functions (optional)
-PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/../../smith-plan-claude/scripts/lib-plan.sh}"
+# Source lib-plan.sh for plan/Ralph/Orchestrator functions (optional; co-located here, not in smith-mode-plan-claude)
+PLAN_LIB="${SMITH_PLAN_LIB:-${SCRIPT_DIR}/lib-plan.sh}"
 if [[ -f "$PLAN_LIB" ]]; then
     source "$PLAN_LIB"
     PLAN_LIB_AVAILABLE=true
@@ -105,8 +105,7 @@ if [[ -f "$STATE_FILE" ]]; then
 fi
 
 if [[ -n "$ACTIVE_PLAN" ]]; then
-    PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null || echo 0)
-    PENDING=$(echo "$PENDING" | tr -d '[:space:]')
+    PENDING=$(grep -c '^[[:space:]]*- \[ \]' "$ACTIVE_PLAN" 2>/dev/null) || PENDING=0
 fi
 
 # Create pending-reload flag
@@ -148,10 +147,10 @@ if [[ -f "$EXTRACT_FACTS_SCRIPT" ]] && [[ -x "$EXTRACT_FACTS_SCRIPT" ]]; then
     FACTS_FILE="${CLAUDE_JOB_DIR:-/tmp}/session-facts-${CWD_KEY}.md"
     printf '%s\n' "$EXTRACTED_FACTS" > "$FACTS_FILE"
 
-    FILE_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## Files Modified/,/^$/p' | grep -c '^- ' || echo 0)
-    PR_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## PRs/,/^$/p' | grep -c '^- ' || echo 0)
-    COMMIT_INFO=$(echo "$EXTRACTED_FACTS" | sed -n '/## Commits/,/^$/p' | grep '^- [0-9]' | head -1 || echo "")
-    GIT_STATE=$(echo "$EXTRACTED_FACTS" | sed -n '/## Git State/,/^$/p' | grep '^- Git:' | head -1 || echo "")
+    FILE_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## Files Modified/,/^$/p' | grep -c '^- ') || FILE_COUNT=0
+    PR_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## PRs/,/^$/p' | grep -c '^- ') || PR_COUNT=0
+    COMMIT_INFO=$(echo "$EXTRACTED_FACTS" | sed -n '/## Commits/,/^$/p' | grep '^- [0-9]' | head -1 || true)
+    GIT_STATE=$(echo "$EXTRACTED_FACTS" | sed -n '/## Git State/,/^$/p' | grep '^- Git:' | head -1 || true)
 
     FACTS_SUMMARY="Session: "
     [[ $FILE_COUNT -gt 0 ]] && FACTS_SUMMARY+="${FILE_COUNT} files modified, "
