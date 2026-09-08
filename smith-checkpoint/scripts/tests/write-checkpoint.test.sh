@@ -110,7 +110,6 @@ reset_logs() {
   rm -f "$SHIM/serena.argv" "$SHIM/serena.content" "$SHIM/bm.argv" "$SHIM/bm.content" "$SHIM/serena_read.argv" "$SHIM/bm_read.argv"
 }
 
-# --- fresh checkpoint: create path on both backends, same facts ---
 reset_logs
 out=$(run_script test_label_success "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "success path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- '--overwrite' "$SHIM/bm.argv" && fail "write-note argv must not force --overwrite: $(cat "$SHIM/bm.argv")"
@@ -120,12 +119,10 @@ cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "fresh checkpoint: Sere
 [ "$(grep -c '^# test_label_success$' "$SHIM/serena.content")" = 1 ] || fail "fresh checkpoint must carry exactly one title line"
 echo "$out" | grep -qF -- "Basic-Memory: projects/$(basename "$SHIM")/Test_Label_Success" || fail "reload block missing permalink: $out"
 
-# --- backend failure path ---
 reset_logs
 (BM_FAIL=1; export BM_FAIL; run_script test_label_failure >/dev/null 2>"$SHIM/stderr") && fail "failure path: script exited zero when write-note failed"
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
 
-# --- accumulation: same label, two checkpoints, nothing prior is dropped ---
 reset_logs
 printf '## Completed\n- [x] first session thing\n' > "$SHIM/body1.md"
 run_script test_label_accumulate "body=$SHIM/body1.md" >/dev/null 2>"$SHIM/stderr1" || fail "accumulate first call: script exited non-zero: $(cat "$SHIM/stderr1")"
@@ -144,13 +141,11 @@ oldest_line=$(grep -n 'first session thing' "$SHIM/serena.content" | cut -d: -f1
 grep -qF -- 'second session thing' "$SHIM/bm.content" || fail "the Basic-Memory prepend payload must carry the new checkpoint's facts"
 grep -qF -- 'first session thing' "$SHIM/bm.content" && fail "the Basic-Memory prepend payload must be the new entry only, not the full accumulated history"
 
-# --- outside git: serena argv carries no project, folder uses cwd name ---
 reset_logs
 run_script test_label_outside_git "plan=/tmp/plan.md" >/dev/null 2>"$SHIM/stderr" || fail "outside-git path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- 'serena memories write test_label_outside_git --content' "$SHIM/serena.argv" || fail "outside git: serena argv should carry no project: $(cat "$SHIM/serena.argv")"
 grep -qF -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "outside git: folder should default to the current directory name: $(cat "$SHIM/bm.argv")"
 
-# --- worktree: serena/bm calls name the primary checkout ---
 reset_logs
 REPO="$SHIM/primary-repo"
 git init -q "$REPO" && (cd "$REPO" && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init)
@@ -161,7 +156,6 @@ echo "$wt_out" | grep -q 'Serena: test_label_worktree (primary-repo project)' ||
 grep -qF -- "serena memories write test_label_worktree $PRIMARY --content" "$SHIM/serena.argv" || fail "worktree: serena argv should name the primary checkout: $(cat "$SHIM/serena.argv")"
 grep -q -- '--folder projects/primary-repo' "$SHIM/bm.argv" || fail "worktree: folder should use the primary checkout name: $(cat "$SHIM/bm.argv")"
 
-# --- body path ---
 reset_logs
 PLAN="$SHIM/groovy-greeting-pearl.md"
 printf '# Fix checkpoint body — Plan\n\n- [x] done item\n- [ ] first pending\n- [ ] second pending\n' > "$PLAN"
@@ -175,7 +169,6 @@ grep -qF -- "- Plan: $PLAN" "$SHIM/serena.content" || fail "plan path must still
 grep -qi 'zero tokens' "$SHIM/serena.content" && fail "placeholder sentence must not appear when a body is given"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "body path: fresh checkpoint, Serena and Basic-Memory must receive identical content"
 
-# --- no-body fallback ---
 reset_logs
 run_script test_label_nobody "plan=$PLAN" >/dev/null 2>"$SHIM/stderr" || fail "no-body path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q 'Fix checkpoint body' "$SHIM/serena.content" || fail "no-body fallback must carry the plan title: $(cat "$SHIM/serena.content")"
@@ -184,7 +177,6 @@ grep -qF -- '- [x] done item' "$SHIM/serena.content" && fail "no-body fallback m
 grep -qi 'zero tokens' "$SHIM/serena.content" && fail "placeholder sentence must not appear in the fallback body"
 grep -qi 'Load context from plan file' "$SHIM/serena.content" && fail "placeholder next-step sentence must not appear in the fallback body"
 
-# --- Related section already present mid-body ---
 reset_logs
 BODY_MID="$SHIM/body-related-mid.md"
 printf '## Completed\n- [x] thing\n\n## Related\n- Serena: `sibling`\n\n## Next\nresume here\n' > "$BODY_MID"
@@ -194,7 +186,6 @@ next_line_no=$(grep -n '^## Next' "$SHIM/serena.content" | cut -d: -f1)
 [ -n "$plan_line_no" ] && [ -n "$next_line_no" ] && [ "$plan_line_no" -lt "$next_line_no" ] || fail "plan line must be filed under Related, not after the last section: $(cat "$SHIM/serena.content")"
 [ "$(grep -c '^## Related' "$SHIM/serena.content")" = 1 ] || fail "related-mid: Related heading must appear exactly once"
 
-# --- missing / empty / blank body file must fail before any backend write ---
 reset_logs
 run_script test_label_missingbody "plan=$PLAN" "body=$SHIM/does-not-exist.md" >/dev/null 2>"$SHIM/stderr" && fail "missing body file must make the script exit non-zero"
 grep -q 'body file not found' "$SHIM/stderr" || fail "missing body file must be reported: $(cat "$SHIM/stderr")"
@@ -212,14 +203,12 @@ run_script test_label_blankbody "plan=$PLAN" "body=$SHIM/blank-body.md" >/dev/nu
 grep -q 'body file is empty' "$SHIM/stderr" || fail "blank body file must be reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/serena.content" ] || fail "blank body file must not write to Serena"
 
-# --- no-plan path ---
 reset_logs
 run_script test_label_noplan "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "no-plan path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- '^- Plan:' "$SHIM/serena.content" && fail "without plan= no Plan line may be emitted: $(cat "$SHIM/serena.content")"
 grep -q '^\*\*Plan\*\*' "$SHIM/serena.content" && fail "without plan= the header must not carry an empty Plan line"
 grep -q 'sibling_memory_name' "$SHIM/serena.content" || fail "no-plan path must still carry the body"
 
-# --- fully-completed plan fallback ---
 reset_logs
 DONE_PLAN="$SHIM/all-done.md"
 printf 'no heading\n- [x] everything done\n' > "$DONE_PLAN"
@@ -227,18 +216,15 @@ run_script test_label_donefallback "plan=$DONE_PLAN" >/dev/null 2>"$SHIM/stderr"
 grep -q 'No session body was supplied' "$SHIM/serena.content" || fail "completed-plan fallback must carry the status sentence"
 grep -q '^## Pending' "$SHIM/serena.content" && fail "completed plan must not emit a Pending section"
 
-# --- missing plan= is a warning, not fatal ---
 reset_logs
 run_script test_label_missingplan "plan=$SHIM/missing-plan.md" "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "missing plan= must not be fatal: $(cat "$SHIM/stderr")"
 grep -q 'plan file not found' "$SHIM/stderr" || fail "missing plan= must be reported on stderr: $(cat "$SHIM/stderr")"
 
-# --- a directory as body= must fail ---
 reset_logs
 mkdir -p "$SHIM/body-dir"
 run_script test_label_bodydir "plan=$PLAN" "body=$SHIM/body-dir" >/dev/null 2>"$SHIM/stderr" && fail "a directory passed as body= must fail"
 grep -q 'not found or unreadable' "$SHIM/stderr" || fail "directory body= must be reported as not a readable file: $(cat "$SHIM/stderr")"
 
-# --- a heading that merely starts with "Related" must not absorb the Plan line ---
 reset_logs
 printf '## Related Work\n- other\n' > "$SHIM/body-related-work.md"
 run_script test_label_relatedwork "plan=$PLAN" "body=$SHIM/body-related-work.md" >/dev/null 2>"$SHIM/stderr" || fail "Related Work body: script exited non-zero: $(cat "$SHIM/stderr")"
