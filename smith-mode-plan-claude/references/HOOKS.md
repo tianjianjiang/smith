@@ -8,7 +8,8 @@ These hooks work together to manage plan execution across context boundaries:
 
 | Hook | Event | Fires | Purpose |
 |------|-------|-------|---------|
-| `inject-plan.sh` | UserPromptSubmit | Every prompt | Load plan, detect flags, detect context threshold |
+| `inject-plan.sh` | UserPromptSubmit | Every prompt | Load plan, detect flags |
+| `context-warning.sh` | UserPromptSubmit | Every prompt | Warn above the context threshold (owns this message; `inject-plan.sh` emits none) |
 | `enforce-clear.sh` | Stop | Agent stop | Block stop when context high + pending tasks |
 | `on-plan-exit.sh` | PostToolUse (ExitPlanMode) | Plan mode exit | Create reload flag for auto-load after `/clear` |
 | `on-session-clear.sh` | SessionStart (`clear`) | After `/clear` | Scan checkpoint flags, restore this session's, report the rest |
@@ -161,7 +162,7 @@ Fires after ExitPlanMode tool is used. Locates the active plan by first checking
 
 **Input JSON fields used:**
 - `session_id` - Current session identifier
-- `cwd` - Working directory (used to derive `CWD_KEY` via `session_key()` for `.plan-state-<CWD_KEY>` lookup)
+- `cwd` - Working directory (used to derive the key via `plan_state_key()` for `.plan-state-<KEY>` lookup — that function hashes the directory alone, so every session in a directory shares one state file; `session_key()`, which also hashes the parent process id, is what keys `.pending-reload-*`)
 
 ## Flag File Format
 
@@ -357,10 +358,11 @@ feature working.
 
 Known limitation, not yet addressed: a checkpoint armed from a **background job** keys to that
 job's own Claude Code process, so the interactive session's `/clear` sees it as another
-session's flag — offered by label rather than auto-restored. Verified rather than assumed: a
-background job runs as its own `claude bg-spare` process with its own pid, and the plan
-pipeline's `.plan-state-*` file for such a job is keyed by that pid, not the interactive
-session's.
+session's flag — offered by label rather than auto-restored. The mechanism is the
+`.pending-reload-*` flag, which `session_key()` keys by parent process id and directory
+together: a background job runs as its own `claude bg-spare` process with its own pid, so
+its flag never matches the interactive session's. The `.plan-state-*` file is NOT involved
+— `plan_state_key()` takes no pid, so both share one state file in a given directory.
 
 Two consequences are deliberate, and are stated here because each reads like an oversight:
 
