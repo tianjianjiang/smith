@@ -15,7 +15,7 @@ reads "<400 tokens" as a hard ceiling and cuts durable content (decisions,
 file:line anchors, follow-ups) to fit it. This contradicts the skill's own
 completeness requirement: a checkpoint is "not successful until all three
 backend writes succeed" (`SKILL.md:153`), and the skill's stated mission is
-to "capture what would otherwise be lost across sessions" (`SKILL.md:8`).
+to "capture what would otherwise be lost across sessions" (`SKILL.md:10`).
 
 ## Proposed outcome
 
@@ -36,7 +36,7 @@ behavior changes — the warning already only warns.
 
 - Must not regress the existing "durable only" scoping (`SKILL.md:18-23`)
   or "use references, not content duplication" format rules
-  (`SKILL.md:34-40`) — only the budget-vs-completeness precedence changes.
+  (`SKILL.md:33-37`) — only the budget-vs-completeness precedence changes.
 - Must not turn the warning into a hard block; the script's job is to warn,
   not enforce.
 
