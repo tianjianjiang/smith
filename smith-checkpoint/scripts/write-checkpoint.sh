@@ -28,7 +28,10 @@ detect_active_plan() {
 
     local plan_path
     plan_path=$(sed -n '5p' "$state_file" 2>/dev/null)
-    [[ -n "$plan_path" && -f "$plan_path" ]] && printf '%s\n' "$plan_path"
+    if [[ -n "$plan_path" && -f "$plan_path" ]]; then
+        printf '%s\n' "$plan_path"
+    fi
+    return 0
 }
 
 resolve_primary_checkout() {
@@ -101,7 +104,7 @@ warn_if_body_exceeds_budget() {
     fi
 }
 
-generate_checkpoint_content() {
+generate_entry() {
     local plan_path="$1"
     local timestamp="$2"
     local body_path="$3"
@@ -115,13 +118,30 @@ generate_checkpoint_content() {
         body=$(generate_fallback_body "$plan_path") || return 1
     fi
 
-    echo "# ${LABEL}"
+    echo "## ${timestamp}"
     echo
-    echo "**Date**: ${timestamp}"
     [[ -n "$plan_path" ]] && echo "**Plan**: \`${plan_path}\`"
     echo "**Session**: ${session_id}"
     echo
     append_plan_to_related "$body" "$plan_path"
+}
+
+strip_title_line() {
+    local content="$1"
+    local title="# ${LABEL}"
+    while [[ "$content" == $'\n'* ]]; do
+        content="${content#$'\n'}"
+    done
+    local first_line="${content%%$'\n'*}"
+    if [[ "$first_line" == "$title" ]]; then
+        if [[ "$content" == "$title" ]]; then
+            content=""
+        else
+            content="${content#*$'\n'}"
+            content="${content#$'\n'}"
+        fi
+    fi
+    printf '%s' "$content"
 }
 
 append_plan_to_related() {
@@ -147,27 +167,85 @@ transform_label_to_basic_memory_title() {
     echo "$LABEL" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1'
 }
 
+build_merged_document() {
+    local entry="$1"
+    local existing="$2"
+    local document="# ${LABEL}"$'\n\n'"${entry}"
+    local prior
+    if [[ -n "$existing" ]]; then
+        prior=$(strip_title_line "$existing")
+        [[ -n "$prior" ]] && document="${document}"$'\n\n'"${prior}"
+    fi
+    printf '%s' "$document"
+}
+
+serena_memories() {
+    uvx --from git+https://github.com/oraios/serena serena memories "$@"
+}
+
+read_serena_memory() {
+    local primary_checkout="$1"
+    local output error_file error_output
+    error_file=$(mktemp)
+    if output=$(serena_memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>"$error_file"); then
+        rm -f "$error_file"
+        printf '%s' "$output"
+        return 0
+    fi
+    error_output=$(cat "$error_file")
+    rm -f "$error_file"
+    if grep -qiE "Memory named '.*' not found" <<<"$error_output"; then
+        return 0
+    fi
+    echo "Error: could not read existing Serena memory for ${LABEL}: ${error_output}" >&2
+    return 1
+}
+
 write_to_serena() {
-    local content="$1"
+    local entry="$1"
     local primary_checkout="$2"
     echo "Writing to Serena: ${LABEL}" >&2
-    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${content}" >&2
+    local existing document
+    existing=$(read_serena_memory "$primary_checkout") || return 1
+    document=$(build_merged_document "$entry" "$existing")
+    serena_memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
+}
+
+read_basic_memory_note() {
+    local title="$1"
+    local result content error_file error_output
+    error_file=$(mktemp)
+    if ! result=$(uvx basic-memory tool read-note "$title" 2>"$error_file"); then
+        error_output=$(cat "$error_file")
+        rm -f "$error_file"
+        echo "Error: could not read existing Basic-Memory note for ${title}: ${error_output}" >&2
+        return 1
+    fi
+    rm -f "$error_file"
+    if ! content=$(jq -r '.content // empty' <<<"$result" 2>&1); then
+        echo "Error: could not parse Basic-Memory read-note output for ${title}: ${content}" >&2
+        return 1
+    fi
+    printf '%s' "$content"
 }
 
 write_to_basic_memory() {
-    local content="$1"
+    local entry="$1"
     local title="$2"
     local project="$3"
     local folder="projects/${project}"
 
     echo "Writing to Basic-Memory: ${title}" >&2
+    local existing document
+    existing=$(read_basic_memory_note "$title") || return 1
+    document=$(build_merged_document "$entry" "$existing")
     uvx basic-memory tool write-note \
         --title "${title}" \
         --folder "${folder}" \
         --type guide \
         --tags checkpoint \
         --overwrite \
-        --content "${content}"
+        --content "${document}"
 }
 
 generate_reload_block() {
@@ -216,6 +294,10 @@ require_readable_body() {
 }
 
 main() {
+    command -v jq &>/dev/null || {
+        echo "Error: jq is required (used to parse Basic-Memory CLI output)" >&2
+        exit 1
+    }
     local plan_path=$(extract_arg plan)
     [[ -z "$plan_path" ]] && plan_path=$(detect_active_plan)
     local body_path=""
@@ -226,25 +308,29 @@ main() {
     local primary_checkout=$(resolve_primary_checkout)
     local project=$(detect_project_name "$primary_checkout")
     local timestamp=$(generate_timestamp)
-    local content
-    content=$(generate_checkpoint_content "$plan_path" "$timestamp" "$body_path") || {
-        echo "Error: could not generate checkpoint content" >&2
+    local entry
+    entry=$(generate_entry "$plan_path" "$timestamp" "$body_path") || {
+        echo "Error: could not generate checkpoint entry" >&2
         exit 1
     }
     local bm_title=$(transform_label_to_basic_memory_title)
 
-    if ! write_to_serena "$content" "$primary_checkout"; then
+    if ! write_to_serena "$entry" "$primary_checkout"; then
         echo "Error: Serena write failed" >&2
         exit 1
     fi
 
     local bm_result
-    if ! bm_result=$(write_to_basic_memory "$content" "$bm_title" "$project"); then
+    if ! bm_result=$(write_to_basic_memory "$entry" "$bm_title" "$project"); then
         echo "Error: Basic-Memory write failed" >&2
         exit 1
     fi
 
-    local permalink=$(echo "$bm_result" | grep -o '"permalink": "[^"]*"' | cut -d'"' -f4)
+    local permalink
+    if ! permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>&1); then
+        echo "Warning: could not parse Basic-Memory permalink from write-note output: ${permalink}" >&2
+        permalink=""
+    fi
 
     report_success "$permalink" "$project" "$timestamp"
     generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project"
