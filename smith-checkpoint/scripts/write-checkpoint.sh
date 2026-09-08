@@ -175,15 +175,19 @@ build_merged_document() {
 
 read_serena_memory() {
     local primary_checkout="$1"
-    local output
-    if output=$(uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>&1); then
+    local output error_file error_output
+    error_file=$(mktemp)
+    if output=$(uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>"$error_file"); then
+        rm -f "$error_file"
         printf '%s' "$output"
         return 0
     fi
-    if grep -qiE "Memory named '.*' not found" <<<"$output"; then
+    error_output=$(cat "$error_file")
+    rm -f "$error_file"
+    if grep -qiE "Memory named '.*' not found" <<<"$error_output"; then
         return 0
     fi
-    echo "Error: could not read existing Serena memory for ${LABEL}: ${output}" >&2
+    echo "Error: could not read existing Serena memory for ${LABEL}: ${error_output}" >&2
     return 1
 }
 

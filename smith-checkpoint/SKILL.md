@@ -66,22 +66,21 @@ Implement rate limiting (`auth-plan.md:121-145`)
 ## Targets and formats
 
 `write-checkpoint.sh` reads the existing memory/note under the label first
-and, when one exists, prepends the new dated entry to it instead of
-replacing it — the doc under a given label is a continuously accumulating
-log, one `## «timestamp»` section per checkpoint, newest first. Nothing
-prior is dropped, regardless of how compact today's entry is: writing a
-~400-token entry is safe because it lands on top of the existing history,
-not in place of it. Both backends are done by `write-checkpoint.sh` through
-each backend's CLI:
+and merges the new dated entry into it instead of replacing it: the doc
+under a given label is a continuously accumulating log, one
+`## «timestamp»` section per checkpoint, newest first. Nothing prior is
+dropped regardless of how compact today's entry is — writing a ~400-token
+entry is safe because it lands on top of the existing history, not in place
+of it.
 
-Both backends use the same read-merge-write shape: read whatever exists under
-the label, strip its `# LABEL` title line, and write back `# LABEL` + the new
-entry + the prior entries as one document — neither backend's write primitive
-appends, so the merge happens in the script, not the CLI. A backend-native
-`prepend`/`append` edit was deliberately NOT used for Basic-Memory: it
-inserts before/after the whole note body, which would push the `# LABEL`
-title line down under the growing entry stack instead of leaving it at the
-top.
+Both backends use the same read-merge-write shape: read whatever exists
+under the label, strip its `# LABEL` title line, and write back `# LABEL` +
+the new entry + the prior entries as one document. Neither backend's write
+primitive appends, so the merge happens in the script, not the CLI. A
+backend-native `prepend`/`append` edit was deliberately NOT used for
+Basic-Memory: it inserts before/after the whole note body, which would push
+the `# LABEL` title line down under the growing entry stack instead of
+leaving it at the top.
 
 1. **Serena** (`serena memories read` + `serena memories write`): a
    snake_case memory named after the label, written into the primary
@@ -92,6 +91,11 @@ top.
    tag `checkpoint`. `--overwrite` is passed unconditionally — it is safe on
    both a first write (nothing to conflict with) and a re-checkpoint (the
    payload is already the full merged document, so there is nothing to lose).
+   Known limitation: the read side addresses the note by bare title, not by
+   its folder-qualified permalink, so if the same label is ever checkpointed
+   from two different projects the read could resolve to the wrong project's
+   note under Basic-Memory's title-search fallback. Not yet hardened —
+   avoid reusing a label across projects.
 
 Because both backends must carry the SAME facts, an existing note/memory
 found under the label is always updated, never replaced wholesale — a
@@ -213,6 +217,10 @@ and reload degrades:
   Both are **local-only** in a default setup (Serena memories live under
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled).
+- **`jq`** — `write-checkpoint.sh` shells out to it to parse the Basic-Memory
+  CLI's JSON output (note content on read, permalink on write); not
+  preinstalled on stock macOS. Its absence aborts the whole checkpoint
+  (Serena side included) with a clear error before either backend is touched.
 - **Reload-flag hook** — the memory-restore directive is injected as context on
   the next `/clear` only if the `smith-mode-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full

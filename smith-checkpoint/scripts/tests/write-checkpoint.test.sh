@@ -36,6 +36,7 @@ case "$argv" in
       exit 1
     fi
     if [ -f "$store" ]; then
+      [ "${SERENA_READ_NOISE:-0}" = "1" ] && echo "Resolved 1 package in 3ms" >&2
       cat "$store"
       exit 0
     fi
@@ -156,6 +157,14 @@ rm -f "$SHIM/bm.argv" "$SHIM/bm.content"
 grep -qi 'could not read existing Basic-Memory note' "$SHIM/stderr" || fail "a genuine Basic-Memory read failure must be reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/bm.content" ] || fail "a genuine Basic-Memory read failure must not proceed to overwrite the note"
 grep -qF -- 'before the broken bm read' "$SHIM/store_bm_Test_Label_Bmreadbroken" || fail "a genuine Basic-Memory read failure must leave prior history intact"
+
+reset_logs
+printf '## Completed\n- [x] before the noisy read\n' > "$SHIM/body_beforenoise.md"
+run_script test_label_readnoise "body=$SHIM/body_beforenoise.md" >/dev/null 2>"$SHIM/stderr" || fail "readnoise seed: script exited non-zero: $(cat "$SHIM/stderr")"
+printf '## Completed\n- [x] after the noisy read\n' > "$SHIM/body_afternoise.md"
+( export SERENA_READ_NOISE=1; run_script test_label_readnoise "body=$SHIM/body_afternoise.md" >/dev/null 2>"$SHIM/stderr" ) || fail "readnoise second call: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qi 'Resolved 1 package' "$SHIM/serena.content" && fail "stderr noise from a successful uvx read must not be merged into the memory content: $(cat "$SHIM/serena.content")"
+[ "$(grep -c '^# test_label_readnoise$' "$SHIM/serena.content")" = 1 ] || fail "stderr noise on a successful read must not corrupt the title line: $(cat "$SHIM/serena.content")"
 
 reset_logs
 BASH_BIN="$(command -v bash)"
