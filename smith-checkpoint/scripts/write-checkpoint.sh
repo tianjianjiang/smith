@@ -128,8 +128,12 @@ strip_title_line() {
     local title="# ${LABEL}"
     local first_line="${content%%$'\n'*}"
     if [[ "$first_line" == "$title" ]]; then
-        content="${content#*$'\n'}"
-        content="${content#$'\n'}"
+        if [[ "$content" == "$title" ]]; then
+            content=""
+        else
+            content="${content#*$'\n'}"
+            content="${content#$'\n'}"
+        fi
     fi
     printf '%s' "$content"
 }
@@ -171,7 +175,16 @@ build_merged_document() {
 
 read_serena_memory() {
     local primary_checkout="$1"
-    uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>/dev/null
+    local output
+    if output=$(uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>&1); then
+        printf '%s' "$output"
+        return 0
+    fi
+    if grep -qi 'not found' <<<"$output"; then
+        return 0
+    fi
+    echo "Error: could not read existing Serena memory for ${LABEL}: ${output}" >&2
+    return 1
 }
 
 write_to_serena() {
@@ -179,7 +192,7 @@ write_to_serena() {
     local primary_checkout="$2"
     echo "Writing to Serena: ${LABEL}" >&2
     local existing document
-    existing=$(read_serena_memory "$primary_checkout") || existing=""
+    existing=$(read_serena_memory "$primary_checkout") || return 1
     document=$(build_merged_document "$entry" "$existing")
     uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
 }
@@ -256,6 +269,10 @@ require_readable_body() {
 }
 
 main() {
+    command -v jq &>/dev/null || {
+        echo "Error: jq is required (used to parse Basic-Memory CLI output)" >&2
+        exit 1
+    }
     local plan_path=$(extract_arg plan)
     [[ -z "$plan_path" ]] && plan_path=$(detect_active_plan)
     local body_path=""
@@ -284,7 +301,7 @@ main() {
         exit 1
     fi
 
-    local permalink=$(echo "$bm_result" | grep -o '"permalink": "[^"]*"' | cut -d'"' -f4)
+    local permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>/dev/null)
 
     report_success "$permalink" "$project" "$timestamp"
     generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project"

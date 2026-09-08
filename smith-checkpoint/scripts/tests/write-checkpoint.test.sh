@@ -10,18 +10,7 @@ cat > "$SHIM/uvx" <<'EOF'
 #!/bin/sh
 argv="$*"
 
-extract_flag_value() {
-  flag="$1"; shift
-  while [ $# -gt 0 ]; do
-    if [ "$1" = "$flag" ]; then
-      printf '%s' "$2"
-      return 0
-    fi
-    shift
-  done
-}
-
-extract_after_token() {
+value_after() {
   token="$1"; shift
   found=0
   for arg in "$@"; do
@@ -39,9 +28,13 @@ store_key() {
 
 case "$argv" in
   *"serena memories read"*)
-    label=$(extract_after_token read "$@")
+    label=$(value_after read "$@")
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/serena_read.argv"
     store="$UVX_LOG_DIR/store_serena_$(store_key "$label")"
+    if [ "${SERENA_READ_BROKEN:-0}" = "1" ]; then
+      echo "connection reset by peer" >&2
+      exit 1
+    fi
     if [ -f "$store" ]; then
       cat "$store"
       exit 0
@@ -50,8 +43,8 @@ case "$argv" in
     exit 1
     ;;
   *"serena memories write"*)
-    label=$(extract_after_token write "$@")
-    content=$(extract_flag_value --content "$@")
+    label=$(value_after write "$@")
+    content=$(value_after --content "$@")
     store="$UVX_LOG_DIR/store_serena_$(store_key "$label")"
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/serena.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/serena.content"
@@ -60,7 +53,7 @@ case "$argv" in
     exit 0
     ;;
   *"basic-memory tool read-note"*)
-    title=$(extract_after_token read-note "$@")
+    title=$(value_after read-note "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_read.argv"
     if [ -f "$store" ]; then
@@ -71,8 +64,8 @@ case "$argv" in
     exit 0
     ;;
   *"basic-memory tool write-note"*)
-    title=$(extract_flag_value --title "$@")
-    content=$(extract_flag_value --content "$@")
+    title=$(value_after --title "$@")
+    content=$(value_after --content "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
@@ -107,7 +100,7 @@ cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "fresh checkpoint: Sere
 echo "$out" | grep -qF -- "Basic-Memory: projects/$(basename "$SHIM")/Test_Label_Success" || fail "reload block missing permalink: $out"
 
 reset_logs
-(BM_FAIL=1; export BM_FAIL; run_script test_label_failure >/dev/null 2>"$SHIM/stderr") && fail "failure path: script exited zero when write-note failed"
+( export BM_FAIL=1; run_script test_label_failure >/dev/null 2>"$SHIM/stderr" ) && fail "failure path: script exited zero when write-note failed"
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
 
 reset_logs
@@ -131,6 +124,24 @@ bm_newest_line=$(grep -n 'second session thing' "$SHIM/bm.content" | cut -d: -f1
 bm_oldest_line=$(grep -n 'first session thing' "$SHIM/bm.content" | cut -d: -f1)
 [ "$bm_newest_line" -lt "$bm_oldest_line" ] || fail "most recent checkpoint must be prepended (newest first) in Basic-Memory: $(cat "$SHIM/bm.content")"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "accumulate second call: Serena and Basic-Memory must receive identical merged content"
+[ "$(wc -l < "$SHIM/serena_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Serena before writing: $(cat "$SHIM/serena_read.argv")"
+[ "$(wc -l < "$SHIM/bm_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Basic-Memory before writing: $(cat "$SHIM/bm_read.argv")"
+
+reset_logs
+printf '# test_label_titleonly\n' > "$SHIM/store_serena_test_label_titleonly"
+printf '# test_label_titleonly\n' > "$SHIM/store_bm_Test_Label_Titleonly"
+printf '## Completed\n- [x] after a title-only prior memory\n' > "$SHIM/body_titleonly.md"
+run_script test_label_titleonly "body=$SHIM/body_titleonly.md" >/dev/null 2>"$SHIM/stderr" || fail "title-only prior memory: script exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(grep -c '^# test_label_titleonly$' "$SHIM/serena.content")" = 1 ] || fail "a prior memory containing only the title line must not be duplicated into the merged document: $(cat "$SHIM/serena.content")"
+
+reset_logs
+printf '## Completed\n- [x] before the broken read\n' > "$SHIM/body_beforebreak.md"
+run_script test_label_readbroken "body=$SHIM/body_beforebreak.md" >/dev/null 2>"$SHIM/stderr" || fail "readbroken seed: script exited non-zero: $(cat "$SHIM/stderr")"
+rm -f "$SHIM/serena.argv" "$SHIM/serena.content"
+( export SERENA_READ_BROKEN=1; run_script test_label_readbroken "body=$SHIM/body_beforebreak.md" >/dev/null 2>"$SHIM/stderr" ) && fail "a genuine Serena read failure must abort the checkpoint, not silently drop prior history"
+grep -qi 'could not read existing Serena memory' "$SHIM/stderr" || fail "a genuine Serena read failure must be reported: $(cat "$SHIM/stderr")"
+[ ! -e "$SHIM/serena.content" ] || fail "a genuine Serena read failure must not proceed to overwrite the memory"
+grep -qF -- 'before the broken read' "$SHIM/store_serena_test_label_readbroken" || fail "a genuine Serena read failure must leave prior history intact"
 
 reset_logs
 run_script test_label_outside_git "plan=/tmp/plan.md" >/dev/null 2>"$SHIM/stderr" || fail "outside-git path: script exited non-zero: $(cat "$SHIM/stderr")"
