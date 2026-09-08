@@ -1,6 +1,6 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as EARS+GWT contract), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md ADR log), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
+description: AI-native software development lifecycle (SDLC) — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as an Easy Approach to Requirements Syntax plus Given-When-Then contract), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md Architecture Decision Record log), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
 license: MIT
 metadata:
   version: "1.2.0"
@@ -42,7 +42,8 @@ it is what triggers the next stage:
 
 1. **Plan** → `intent.md` — a human-readable, machine-actionable proto-spec
 2. **Design** → `spec.md` — requirements + design in one pass, applied
-   against organizational skills (brand, security, compliance, UX)
+   against organizational skills (brand, security, compliance, user
+   experience)
 3. **Build** → `plan.md` — Claude Code's plan-mode output, committed (see
    Build stage below); then the diff and its tests
 4. **Test** → test output pasted into the session/PR, plus the continuous
@@ -82,11 +83,11 @@ and `intent.md` changes made after the first `spec.md` commit (lagging).
 
 Once `intent.md` is accepted, one session — not two handoffs — produces
 the requirements-and-design spec, constrained by the organization's skills
-for brand, security, compliance and UX. The product owner reviews the spec
-against the intent and routes flagged concerns to policy owners before
-engineering sees it. Front-end work mocks up in Claude Design from the
-`intent.md`, then exports to Claude Code to build. Commit `spec.md`
-alongside `intent.md`.
+for brand, security, compliance and user experience. The product owner
+reviews the spec against the intent and routes flagged concerns to policy
+owners before engineering sees it. Front-end work mocks up in Claude
+Design from the `intent.md`, then exports to Claude Code to build. Commit
+`spec.md` alongside `intent.md`.
 
 **The playbook mandates no internal notation for `spec.md`** — only that
 one session produces it, org skills constrain it, and committing it
@@ -103,7 +104,7 @@ discusses one `intent.md` splitting into several specs or several intents
 merging into one, so don't read a cardinality rule into language that was
 only describing what gets committed together.
 
-### design.md as an ADR log (optional, durable, cross-cutting)
+### design.md as an Architecture Decision Record (ADR) log (optional, durable, cross-cutting)
 
 Design decisions get *made* in this stage's session, which is why this
 lives here rather than under Build — but the log itself is not part of
@@ -122,9 +123,10 @@ subsystem uses Postgres, not DynamoDB, because X" can inform fifty later
 `spec.md`/`plan.md` cycles; leaving it embedded in whichever cycle first
 made that call means a future reader has to know which commit to search
 rather than reading one indexed log. Structure it as an append-only ADR
-(Architecture Decision Record) log in MADR-minimal form
-(context-and-problem → decision drivers → considered options → decision
-outcome → consequences), with a decision index at the top; never edit a
+log in the minimal form of MADR (Markdown Architectural Decision Records,
+a template for writing ADRs as Markdown files — https://adr.github.io/madr/):
+context-and-problem → decision drivers → considered options → decision
+outcome → consequences, with a decision index at the top; never edit a
 decided entry, append a new one that supersedes it.
 
 **If nobody will maintain the index, skip `design.md` entirely** —
@@ -152,8 +154,9 @@ the same change, i.e. requirements rework after build starts (lagging).
 ## Stage 3: Build — plan.md, CLAUDE.md, skills, hooks
 
 **`plan.md` is Claude Code's native plan mode, committed.** It is not a
-separate artifact type — see `@smith-mode-plan-claude/SKILL.md` for what
-plan mode is and how Claude Code implements it. The playbook's addition on
+separate artifact type — see `@smith-mode-plan/SKILL.md` for what plan
+mode is independent of any platform, and `@smith-mode-plan-claude/SKILL.md`
+for how Claude Code implements it. The playbook's addition on
 top of plan mode itself: commit the approved plan to the repo's own git
 history as `plan.md` so it joins the audit trail, and check the eventual
 diff against it at PR review (Stage 5). `@smith-mode-plan/SKILL.md` covers
@@ -198,7 +201,8 @@ the agent from editing that test file via a hook while it fixes the bug.
 For UI: a browser/screenshot tool and 2-3 iterate rounds against the mock.
 
 **Continuous evals** regression-test the agent's own configuration
-(`CLAUDE.md`, skills, hooks) the way CI regression-tests code: 20-50 real
+(`CLAUDE.md`, skills, hooks) the way continuous integration (CI)
+regression-tests code: 20-50 real
 tasks with accepted outcomes, run on a schedule and on any PR touching
 `CLAUDE.md`/`.claude/**`, gating the config change on pass rate. Every
 production incident becomes a permanent eval. Smith has no existing
@@ -224,7 +228,12 @@ what counts as Important vs. Nit and what to skip.
 production-deploy authorization, change-management sign-off for
 migrations, protected-path edits. Team hooks live in `.claude/settings.json`;
 non-negotiable ones live in admin-owned managed settings an engineer
-cannot override. A block should explain itself and name the approval
+cannot override. The two tiers are not additive: once managed settings set
+`allowManagedHooksOnly`, every project hook stops running, so a gate that
+must hold belongs in the managed file itself. Gate a structured tool
+argument rather than substrings of a shell command — a substring test
+misses the ordinary phrasings of the action it names. A block should
+explain itself and name the approval
 route. See `references/PLAYBOOK.md` for a worked managed-settings example
 (deny/allow lists, sandboxing, plugin allowlisting).
 
@@ -277,7 +286,8 @@ incidents of the same class — which should fall as evals accumulate
   smith's own skill/hook system already is this pattern; this skill just
   names it against the playbook's stage vocabulary.
 - PR review discipline → `@smith-review/SKILL.md`, `@smith-gh-pr/SKILL.md`.
-- `spec.md` as an EARS+GWT contract, plus an optional `design.md` ADR log
+- `spec.md` as an EARS plus Given-When-Then contract, plus an optional
+  `design.md` ADR log
   (see Stage 2 above) reconciles this skill against a real prior
   convention, not the playbook's own minimal single-file example —
   reconciled because it fits within what the playbook actually mandates
