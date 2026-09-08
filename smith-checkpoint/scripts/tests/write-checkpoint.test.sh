@@ -110,6 +110,11 @@ reset_logs
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
 
 reset_logs
+( export SERENA_FAIL=1; run_script test_label_serenafailure >/dev/null 2>"$SHIM/stderr" ) && fail "Serena failure path: script exited zero when serena write failed"
+grep -q 'Serena write failed' "$SHIM/stderr" || fail "Serena failure path: missing error message: $(cat "$SHIM/stderr")"
+[ -e "$SHIM/bm.content" ] && fail "a Serena write failure must not proceed to write Basic-Memory, leaving the two backends inconsistent"
+
+reset_logs
 printf '## Completed\n- [x] first session thing\n' > "$SHIM/body1.md"
 run_script test_label_accumulate "body=$SHIM/body1.md" >/dev/null 2>"$SHIM/stderr1" || fail "accumulate first call: script exited non-zero: $(cat "$SHIM/stderr1")"
 grep -q 'write-note' "$SHIM/bm.argv" || fail "accumulate first call must write via write-note: $(cat "$SHIM/bm.argv")"
@@ -218,6 +223,17 @@ grep -qi 'zero tokens' "$SHIM/serena.content" && fail "placeholder sentence must
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "body path: fresh checkpoint, Serena and Basic-Memory must receive identical content"
 
 reset_logs
+BIG_BODY="$SHIM/big-body.md"
+printf '## Completed\n' > "$BIG_BODY"
+yes '- [x] padding line to exceed the compression budget' | head -100 >> "$BIG_BODY"
+run_script test_label_bigbody "body=$BIG_BODY" >/dev/null 2>"$SHIM/stderr" || fail "big-body path: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qi 'guideline ~1600' "$SHIM/stderr" || fail "a body over the compression budget must warn: $(cat "$SHIM/stderr")"
+
+reset_logs
+run_script test_label_smallbody "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "small-body path: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qi 'guideline ~1600' "$SHIM/stderr" && fail "a body under the compression budget must not warn: $(cat "$SHIM/stderr")"
+
+reset_logs
 run_script test_label_nobody "plan=$PLAN" >/dev/null 2>"$SHIM/stderr" || fail "no-body path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q 'Fix checkpoint body' "$SHIM/serena.content" || fail "no-body fallback must carry the plan title: $(cat "$SHIM/serena.content")"
 grep -qF -- '- [ ] first pending' "$SHIM/serena.content" || fail "no-body fallback must list pending plan items"
@@ -286,5 +302,14 @@ STALE_KEY=$(cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=12345 bash -
 printf 'line1\nline2\nline3\nline4\n\n' > "$CTX_HOME/plans/.plan-state-${STALE_KEY}"
 (cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=12345 bash "$SCRIPT" test_label_staleplanstate "body=$BODY") >/dev/null 2>"$SHIM/stderr" || fail "a plan-state file with an empty plan-path line must not silently abort the checkpoint before either backend is touched: $(cat "$SHIM/stderr")"
 [ -s "$SHIM/serena.content" ] || fail "a stale plan-state file must not prevent the Serena write"
+
+reset_logs
+ACTIVE_PLAN="$SHIM/active-plan.md"
+printf '# Auto-detected active plan\n\n- [ ] pending item\n' > "$ACTIVE_PLAN"
+ACTIVE_KEY=$(cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=54321 bash -c "source '$CTX_LIB'; session_key")
+printf 'line1\nline2\nline3\nline4\n%s\n' "$ACTIVE_PLAN" > "$CTX_HOME/plans/.plan-state-${ACTIVE_KEY}"
+(cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=54321 bash "$SCRIPT" test_label_autoplan "body=$BODY") >/dev/null 2>"$SHIM/stderr" || fail "auto-detected active plan: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qF -- "**Plan**: \`$ACTIVE_PLAN\`" "$SHIM/serena.content" || fail "a plan auto-detected from the ctx-claude plan-state file must be threaded into the entry: $(cat "$SHIM/serena.content")"
+grep -qF -- "- Plan: $ACTIVE_PLAN" "$SHIM/serena.content" || fail "an auto-detected plan must also appear under Related: $(cat "$SHIM/serena.content")"
 
 echo "PASS: write-checkpoint"
