@@ -71,7 +71,7 @@ fi
 [[ -z "$BODY" ]] && exit 0
 
 # Validate attribution format
-if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+-[0-9]+' <<< "$BODY"; then
+if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?' <<< "$BODY"; then
     echo "Error: Missing or invalid assisted-by attribution" >&2
     echo "" >&2
     echo "Required format:" >&2
@@ -189,7 +189,7 @@ Before drafting any PR review comment:
    ```
 
 2. **Validate format**:
-   - ✅ Matches: `Assisted-by: Claude:claude-[a-z]+-[0-9]+-.*`
+   - ✅ Matches: `Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?`
    - ✅ Model ID is valid session model (sonnet|opus|haiku|fable)
    - ❌ NO "on behalf of" anywhere in comment
    - ❌ NO hand-typed model IDs
