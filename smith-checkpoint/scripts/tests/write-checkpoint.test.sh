@@ -181,10 +181,12 @@ grep -qi 'Resolved 1 package' "$SHIM/bm.content" && fail "stderr noise from a su
 [ "$(grep -c '^# test_label_bmreadnoise$' "$SHIM/bm.content")" = 1 ] || fail "stderr noise on a successful Basic-Memory read must not corrupt the title line: $(cat "$SHIM/bm.content")"
 
 reset_logs
+printf '\n\n# test_label_leadingblank\n' > "$SHIM/store_serena_test_label_leadingblank"
 printf '\n\n# test_label_leadingblank\n' > "$SHIM/store_bm_Test_Label_Leadingblank"
 printf '## Completed\n- [x] after a leading-blank-line prior note\n' > "$SHIM/body_leadingblank.md"
 run_script test_label_leadingblank "body=$SHIM/body_leadingblank.md" >/dev/null 2>"$SHIM/stderr" || fail "leading-blank-line prior note: script exited non-zero: $(cat "$SHIM/stderr")"
-[ "$(grep -c '^# test_label_leadingblank$' "$SHIM/bm.content")" = 1 ] || fail "a prior note whose title line is preceded by blank lines must not be duplicated into the merged document: $(cat "$SHIM/bm.content")"
+[ "$(grep -c '^# test_label_leadingblank$' "$SHIM/serena.content")" = 1 ] || fail "a prior Serena memory whose title line is preceded by blank lines must not be duplicated into the merged document: $(cat "$SHIM/serena.content")"
+[ "$(grep -c '^# test_label_leadingblank$' "$SHIM/bm.content")" = 1 ] || fail "a prior Basic-Memory note whose title line is preceded by blank lines must not be duplicated into the merged document: $(cat "$SHIM/bm.content")"
 
 reset_logs
 BASH_BIN="$(command -v bash)"
