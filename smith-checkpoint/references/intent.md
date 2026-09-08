@@ -1,6 +1,6 @@
 # Intent: Fix smith-checkpoint's over-strict token budget
 
-Author: Mike Tian-Jian Jiang (a.k.a. Chiang, Tien Chien). Status: draft.
+Author: Mike Tian-Jian Jiang (a.k.a. Chiang, Tien Chien). Status: implemented.
 
 ## Problem
 
