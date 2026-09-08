@@ -180,7 +180,7 @@ read_serena_memory() {
         printf '%s' "$output"
         return 0
     fi
-    if grep -qi 'not found' <<<"$output"; then
+    if grep -qiE "Memory named '.*' not found" <<<"$output"; then
         return 0
     fi
     echo "Error: could not read existing Serena memory for ${LABEL}: ${output}" >&2
@@ -199,9 +199,16 @@ write_to_serena() {
 
 read_basic_memory_note() {
     local title="$1"
-    local result
-    result=$(uvx basic-memory tool read-note "$title" 2>/dev/null) || return 1
-    jq -r '.content // empty' <<<"$result" 2>/dev/null
+    local result content
+    if ! result=$(uvx basic-memory tool read-note "$title" 2>&1); then
+        echo "Error: could not read existing Basic-Memory note for ${title}: ${result}" >&2
+        return 1
+    fi
+    if ! content=$(jq -r '.content // empty' <<<"$result" 2>&1); then
+        echo "Error: could not parse Basic-Memory read-note output for ${title}: ${content}" >&2
+        return 1
+    fi
+    printf '%s' "$content"
 }
 
 write_to_basic_memory() {
@@ -212,7 +219,7 @@ write_to_basic_memory() {
 
     echo "Writing to Basic-Memory: ${title}" >&2
     local existing document
-    existing=$(read_basic_memory_note "$title") || existing=""
+    existing=$(read_basic_memory_note "$title") || return 1
     document=$(build_merged_document "$entry" "$existing")
     uvx basic-memory tool write-note \
         --title "${title}" \
@@ -301,7 +308,11 @@ main() {
         exit 1
     fi
 
-    local permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>/dev/null)
+    local permalink
+    if ! permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>&1); then
+        echo "Warning: could not parse Basic-Memory permalink from write-note output: ${permalink}" >&2
+        permalink=""
+    fi
 
     report_success "$permalink" "$project" "$timestamp"
     generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project"

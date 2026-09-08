@@ -56,6 +56,10 @@ case "$argv" in
     title=$(value_after read-note "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_read.argv"
+    if [ "${BM_READ_BROKEN:-0}" = "1" ]; then
+      echo "connection reset by peer" >&2
+      exit 1
+    fi
     if [ -f "$store" ]; then
       jq -Rs --arg title "$title" --arg permalink "projects/$(basename "$PWD")/$(store_key "$title")" '{title: $title, permalink: $permalink, content: .}' < "$store"
     else
@@ -133,6 +137,7 @@ printf '# test_label_titleonly\n' > "$SHIM/store_bm_Test_Label_Titleonly"
 printf '## Completed\n- [x] after a title-only prior memory\n' > "$SHIM/body_titleonly.md"
 run_script test_label_titleonly "body=$SHIM/body_titleonly.md" >/dev/null 2>"$SHIM/stderr" || fail "title-only prior memory: script exited non-zero: $(cat "$SHIM/stderr")"
 [ "$(grep -c '^# test_label_titleonly$' "$SHIM/serena.content")" = 1 ] || fail "a prior memory containing only the title line must not be duplicated into the merged document: $(cat "$SHIM/serena.content")"
+[ "$(grep -c '^# test_label_titleonly$' "$SHIM/bm.content")" = 1 ] || fail "a prior Basic-Memory note containing only the title line must not be duplicated into the merged document: $(cat "$SHIM/bm.content")"
 
 reset_logs
 printf '## Completed\n- [x] before the broken read\n' > "$SHIM/body_beforebreak.md"
@@ -142,6 +147,23 @@ rm -f "$SHIM/serena.argv" "$SHIM/serena.content"
 grep -qi 'could not read existing Serena memory' "$SHIM/stderr" || fail "a genuine Serena read failure must be reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/serena.content" ] || fail "a genuine Serena read failure must not proceed to overwrite the memory"
 grep -qF -- 'before the broken read' "$SHIM/store_serena_test_label_readbroken" || fail "a genuine Serena read failure must leave prior history intact"
+
+reset_logs
+printf '## Completed\n- [x] before the broken bm read\n' > "$SHIM/body_bmbeforebreak.md"
+run_script test_label_bmreadbroken "body=$SHIM/body_bmbeforebreak.md" >/dev/null 2>"$SHIM/stderr" || fail "bm-readbroken seed: script exited non-zero: $(cat "$SHIM/stderr")"
+rm -f "$SHIM/bm.argv" "$SHIM/bm.content"
+( export BM_READ_BROKEN=1; run_script test_label_bmreadbroken "body=$SHIM/body_bmbeforebreak.md" >/dev/null 2>"$SHIM/stderr" ) && fail "a genuine Basic-Memory read failure must abort the checkpoint, not silently drop prior history"
+grep -qi 'could not read existing Basic-Memory note' "$SHIM/stderr" || fail "a genuine Basic-Memory read failure must be reported: $(cat "$SHIM/stderr")"
+[ ! -e "$SHIM/bm.content" ] || fail "a genuine Basic-Memory read failure must not proceed to overwrite the note"
+grep -qF -- 'before the broken bm read' "$SHIM/store_bm_Test_Label_Bmreadbroken" || fail "a genuine Basic-Memory read failure must leave prior history intact"
+
+reset_logs
+BASH_BIN="$(command -v bash)"
+FAKE_PATH_NO_JQ="$SHIM/no-jq-path"
+mkdir -p "$FAKE_PATH_NO_JQ"
+ln -s "$SHIM/uvx" "$FAKE_PATH_NO_JQ/uvx"
+(PATH="$FAKE_PATH_NO_JQ" "$BASH_BIN" "$SCRIPT" test_label_nojq "body=$BODY") >/dev/null 2>"$SHIM/stderr" && fail "a missing jq dependency must make the script exit non-zero"
+grep -qi 'jq is required' "$SHIM/stderr" || fail "a missing jq dependency must be reported: $(cat "$SHIM/stderr")"
 
 reset_logs
 run_script test_label_outside_git "plan=/tmp/plan.md" >/dev/null 2>"$SHIM/stderr" || fail "outside-git path: script exited non-zero: $(cat "$SHIM/stderr")"
