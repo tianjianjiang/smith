@@ -98,7 +98,7 @@ export _SMITH_PPID=$$
 
 PASS=0
 FAIL=0
-TOTAL=214
+TOTAL=216
 
 cleanup() {
     rm -rf "$TEST_DIR"
@@ -107,6 +107,15 @@ trap cleanup EXIT
 
 # Compute session key (same logic as scripts -- state/flag files keyed by PPID:CWD)
 # Uses _SMITH_PPID (exported above) to match what hooks will compute.
+compute_plan_state_key() {
+    local cwd="$1"
+    local hash
+    hash=$(printf '%s' "$cwd" | md5 -q 2>/dev/null) || \
+    hash=$(printf '%s' "$cwd" | md5sum 2>/dev/null | cut -d' ' -f1) || \
+    hash="0000000000000000"
+    printf '%s' "${hash:0:16}"
+}
+
 compute_session_key() {
     local cwd="$1"
     local ppid="${_SMITH_PPID:-$$}"
@@ -159,6 +168,9 @@ create_patched_scripts() {
 
     cp "$SCRIPT_DIR/../smith-ctx-claude/scripts/lib-context.sh" "$TEST_DIR/lib-context.sh"
 
+    cp "$SCRIPT_DIR/../smith-ctx-claude/scripts/context-warning.sh" "$TEST_DIR/context-warning.sh"
+    chmod +x "$TEST_DIR/context-warning.sh"
+
     export SMITH_CTX_LIB="$TEST_DIR/lib-context.sh"
     export SMITH_PLAN_LIB="$TEST_DIR/lib-plan.sh"
     export CLAUDE_CONFIG_DIR="$TEST_DIR"
@@ -189,6 +201,10 @@ create_transcript_pct() {
   
     local context_window
     context_window=$(source "$TEST_DIR/lib-plan.sh" && model_to_context_window "$model")
+    if [[ ! "$context_window" =~ ^[0-9]+$ ]] || (( context_window == 0 )); then
+        echo "FATAL: model_to_context_window '$model' gave '$context_window'; every percentage fixture would be 0%." >&2
+        exit 1
+    fi
     local tokens=$(( pct * context_window / 100 ))
     printf '{"type":"assistant","message":{"model":"%s","usage":{"input_tokens":%d,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}\n' "$model" "$tokens" > "$path"
     echo "$path"
@@ -281,10 +297,19 @@ create_patched_scripts
 
 # Compute session key for tests 1-8 (all share $PWD as their CWD)
 CWD_DEFAULT_KEY=$(compute_session_key "$PWD")
+CWD_DEFAULT_KEY_PLANSTATE=$(compute_plan_state_key "$PWD")
 
 # ============================================================================
 # CORE TESTS (1-21): Updated for percentage-based context detection
 # ============================================================================
+#
+# `set -e` guarded the setup statements above (not the helper bodies, which run
+# later, from here); from here on a failing assertion must record a
+# FAIL and let the run continue. Under `set -e` the first test whose assertion
+# fails also leaves its artifacts missing, and the next command that reads one
+# (a `sed` on an absent file, say) aborts the whole suite mid-test -- so a
+# single early regression silently hides every later test instead of failing it.
+set +e
 
 # --- Test 1: Flag reload ---
 echo "Test 1: Flag reload -> directive with 'POST-CLEAR RESUME'"
@@ -307,7 +332,7 @@ echo "Test 2: Trigger words -> no directive, plan content present"
 create_test_plan
 TRANSCRIPT=$(create_transcript_pct 10)
 # Need state file so it doesn't look like a fresh session (state is CWD-keyed)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "51200" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "51200" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"execute the plan","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if assert_not_contains "2" "$OUTPUT" "ACTION REQUIRED" && \
    assert_contains "2" "$OUTPUT" "Task 2"; then
@@ -325,8 +350,9 @@ rm -f "$PLANS_DIR"/.pending-reload-*
 CWD_3="$TEST_DIR/worktree-3"
 mkdir -p "$CWD_3"
 CWD_3_KEY=$(compute_session_key "$CWD_3")
+CWD_3_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_3")
 # Create state file pointing to test plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_3" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_3_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_3" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_3_KEY_PLANSTATE}"
 # Create flag file (required for auto-resume gate)
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_3" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_3" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_3_KEY}"
 OUTPUT=$(echo '{"cwd":"'"$CWD_3"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -341,15 +367,16 @@ else
 fi
 
 # --- Test 4: Context threshold (percentage-based) ---
-echo "Test 4: Context threshold -> CONTEXT WARNING at 50%"
+echo "Test 4: Context threshold -> context-warning.sh warns at 50%, inject-plan.sh stays quiet"
 create_test_plan
 rm -f "$PLANS_DIR"/.pending-reload-*
 # Create transcript at 55% context (above 50% warning, below 60% critical)
 TRANSCRIPT=$(create_transcript_pct 55 "t4")
 # Update state so we're in an active session (CWD-keyed state)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if assert_contains "4" "$OUTPUT" "CONTEXT WARNING" && \
+WARN_4=$(echo '{"prompt":"do something","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/context-warning.sh")
+if assert_contains "4" "$WARN_4" "Context at 55% (warning)" && \
    assert_not_contains "4" "$OUTPUT" "ACTION REQUIRED"; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -378,7 +405,7 @@ echo "Test 6: Generic prompt (no trigger, no flag, low context) -> silent exit"
 create_test_plan
 TRANSCRIPT=$(create_transcript_pct 20)
 # Set state file so we are in an active session with matching parameters (CWD-keyed)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "20480" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "20480" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if [[ -z "$OUTPUT" ]]; then
     echo "  PASS"
@@ -395,7 +422,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 # Create transcript at 65% context (above 60% critical threshold)
 TRANSCRIPT=$(create_transcript_pct 65 "t7")
 # enforce-clear needs a CWD-keyed state file to find the active plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_test" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_DEFAULT_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"transcript_path":"'"$TRANSCRIPT"'","session_id":"sess_test","cwd":"'"$PWD"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh")
 if assert_contains "7" "$OUTPUT" '"decision"' && \
    assert_contains "7" "$OUTPUT" "block" && \
@@ -430,14 +457,16 @@ WORKTREE_A="$TEST_DIR/worktree-a"
 WORKTREE_B="$TEST_DIR/worktree-b"
 mkdir -p "$WORKTREE_A" "$WORKTREE_B"
 CWD_A_KEY=$(compute_session_key "$WORKTREE_A")
+CWD_A_KEY_PLANSTATE=$(compute_plan_state_key "$WORKTREE_A")
 CWD_B_KEY=$(compute_session_key "$WORKTREE_B")
+CWD_B_KEY_PLANSTATE=$(compute_plan_state_key "$WORKTREE_B")
 
 # --- Test 9: on-plan-exit creates CWD-specific flag (worktree A) ---
 echo "Test 9: on-plan-exit.sh creates flag keyed to worktree A's CWD"
 create_test_plan
 rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 # Create state file so on-plan-exit finds the plan (ls -t fallback removed)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY_PLANSTATE}"
 # Run on-plan-exit.sh with worktree A's CWD
 OUTPUT=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
 # Flag should exist for worktree A's CWD hash, NOT worktree B's
@@ -506,8 +535,8 @@ TRANSCRIPT_HIGH=$(create_transcript_pct 65 "t12-high")
 TRANSCRIPT_LOW=$(create_transcript_pct 2 "t12-low")
 
 # Set up state files so context threshold detection works
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_HIGH" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_HIGH" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_HIGH" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY_PLANSTATE}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_HIGH" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY_PLANSTATE}"
 
 # Step 1: Worktree A hits context threshold -> flag created for A's CWD
 OUTPUT_A1=$(echo '{"prompt":"do something","session_id":"sess_a","transcript_path":"'"$TRANSCRIPT_HIGH"'","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/inject-plan.sh")
@@ -531,8 +560,6 @@ if [[ "$FLAG_A_EXISTS_1" == "yes" ]] && \
    [[ "$FLAG_A_EXISTS_2" == "yes" ]] && \
    [[ "$FLAG_B_EXISTS_2" == "yes" ]] && \
    [[ "$FLAG_B_EXISTS_3" == "yes" ]] && \
-   assert_contains "12-a1" "$OUTPUT_A1" "CONTEXT WARNING" && \
-   assert_contains "12-b1" "$OUTPUT_B1" "CONTEXT WARNING" && \
    assert_contains "12-a2" "$OUTPUT_A2" "POST-CLEAR RESUME" && \
    assert_contains "12-b2" "$OUTPUT_B2" "POST-CLEAR RESUME"; then
     echo "  PASS"
@@ -557,7 +584,7 @@ TRANSCRIPT_SMALL=$(create_transcript_pct 2 "t13-small")
 printf '%s\n' '# Plan A - Worktree A'\''s work' '' '## Tasks' '- [x] Task A1: Done' '- [ ] Task A2: Worktree A pending work' > "$PLANS_DIR/plan-a.md"
 
 # Create state file for session A pointing to plan-a
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY_PLANSTATE}"
 
 # Worktree A triggers ExitPlanMode -> on-plan-exit flags plan-a (from state)
 _OUTPUT_EXIT_A=$(echo '{"session_id":"sess_a","cwd":"'"$WORKTREE_A"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
@@ -568,7 +595,7 @@ sleep 1
 printf '%s\n' '# Plan B - Worktree B'\''s work' '' '## Tasks' '- [x] Task B1: Done' '- [ ] Task B2: Worktree B pending work' > "$PLANS_DIR/plan-b.md"
 
 # Create state file for session B pointing to plan-b
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_b" "$TRANSCRIPT_SMALL" "5120" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B_KEY_PLANSTATE}"
 
 # Worktree B triggers ExitPlanMode -> on-plan-exit flags plan-b (from state)
 _OUTPUT_EXIT_B=$(echo '{"session_id":"sess_b","cwd":"'"$WORKTREE_B"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
@@ -636,14 +663,15 @@ create_test_plan
 rm -f "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 TRANSCRIPT=$(create_transcript_pct 5 "t14")
 CWD_14_KEY="$CWD_DEFAULT_KEY"
+CWD_14_KEY_PLANSTATE="$CWD_DEFAULT_KEY_PLANSTATE"
 # No state file for sess_14 -> new session -> no auto-load
 # Use trigger word to force load
 OUTPUT=$(echo '{"prompt":"execute the plan","session_id":"sess_14","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if [[ -f "$PLANS_DIR/.plan-state-${CWD_14_KEY}" ]] && \
+if [[ -f "$PLANS_DIR/.plan-state-${CWD_14_KEY_PLANSTATE}" ]] && \
    assert_contains "14" "$OUTPUT" "Task 2"; then
   
-    STATE_SESSION=$(sed -n '1p' "$PLANS_DIR/.plan-state-${CWD_14_KEY}")
-    STATE_PATH=$(sed -n '2p' "$PLANS_DIR/.plan-state-${CWD_14_KEY}")
+    STATE_SESSION=$(sed -n '1p' "$PLANS_DIR/.plan-state-${CWD_14_KEY_PLANSTATE}")
+    STATE_PATH=$(sed -n '2p' "$PLANS_DIR/.plan-state-${CWD_14_KEY_PLANSTATE}")
     if [[ "$STATE_SESSION" == "sess_14" ]] && [[ "$STATE_PATH" == "$TRANSCRIPT" ]]; then
         echo "  PASS"
         PASS=$((PASS + 1))
@@ -653,7 +681,7 @@ if [[ -f "$PLANS_DIR/.plan-state-${CWD_14_KEY}" ]] && \
     fi
 else
     echo "  FAIL"
-    [[ ! -f "$PLANS_DIR/.plan-state-${CWD_14_KEY}" ]] && echo "  State file was NOT created"
+    [[ ! -f "$PLANS_DIR/.plan-state-${CWD_14_KEY_PLANSTATE}" ]] && echo "  State file was NOT created"
     FAIL=$((FAIL + 1))
 fi
 
@@ -661,8 +689,9 @@ fi
 echo "Test 15: Same session + moderate transcript -> silent (debounced by state)"
 TRANSCRIPT_LARGE=$(create_transcript_pct 20 "t15")
 CWD_15_KEY="$CWD_DEFAULT_KEY"
+CWD_15_KEY_PLANSTATE="$CWD_DEFAULT_KEY_PLANSTATE"
 # Create state to record the transcript
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_15" "$TRANSCRIPT_LARGE" "51200" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_15_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_15" "$TRANSCRIPT_LARGE" "51200" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_15_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_15","transcript_path":"'"$TRANSCRIPT_LARGE"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if [[ -z "$OUTPUT" ]]; then
     echo "  PASS"
@@ -676,8 +705,9 @@ fi
 echo "Test 16: New CWD (no state, no flag) -> no auto-load"
 # Fresh CWD with no state file, no flag -> should NOT auto-load
 CWD_16_KEY=$(compute_session_key "$TEST_DIR/worktree-16")
+CWD_16_KEY_PLANSTATE=$(compute_plan_state_key "$TEST_DIR/worktree-16")
 mkdir -p "$TEST_DIR/worktree-16"
-rm -f "$PLANS_DIR/.plan-state-${CWD_16_KEY}"
+rm -f "$PLANS_DIR/.plan-state-${CWD_16_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_16","transcript_path":"'"$TRANSCRIPT_LARGE"'","cwd":"'"$TEST_DIR/worktree-16"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if [[ -z "$OUTPUT" ]]; then
     echo "  PASS"
@@ -709,8 +739,9 @@ echo "Test 18: on-session-clear with missing plan file -> fresh start directive"
 CWD_18="$TEST_DIR/worktree-18"
 mkdir -p "$CWD_18"
 CWD_18_KEY=$(compute_session_key "$CWD_18")
+CWD_18_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_18")
 # Create state pointing to a plan file that does not exist
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_18" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/nonexistent-plan.md" > "$PLANS_DIR/.plan-state-${CWD_18_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_18" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/nonexistent-plan.md" > "$PLANS_DIR/.plan-state-${CWD_18_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"cwd":"'"$CWD_18"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "18" "$OUTPUT" "fresh-start" && \
    assert_contains "18" "$OUTPUT" "file missing"; then
@@ -730,7 +761,9 @@ WORKTREE_A19="$TEST_DIR/worktree-a19"
 WORKTREE_B19="$TEST_DIR/worktree-b19"
 mkdir -p "$WORKTREE_A19" "$WORKTREE_B19"
 CWD_A19_KEY=$(compute_session_key "$WORKTREE_A19")
+CWD_A19_KEY_PLANSTATE=$(compute_plan_state_key "$WORKTREE_A19")
 CWD_B19_KEY=$(compute_session_key "$WORKTREE_B19")
+CWD_B19_KEY_PLANSTATE=$(compute_plan_state_key "$WORKTREE_B19")
 
 # Create plan-a and plan-b
 printf '%s\n' '# Plan A' '## Tasks' '- [x] Task A1: Done' '- [ ] Task A2: Session A work' > "$PLANS_DIR/plan-a.md"
@@ -740,8 +773,8 @@ sleep 1
 printf '%s\n' '# Plan B' '## Tasks' '- [x] Task B1: Done' '- [ ] Task B2: Session B work' > "$PLANS_DIR/plan-b.md"
 
 # plan-b is now newer. Create state files linking each CWD to its own plan.
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_a19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A19_KEY}"
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_b19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B19_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_a19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-a.md" > "$PLANS_DIR/.plan-state-${CWD_A19_KEY_PLANSTATE}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_b19" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/plan-b.md" > "$PLANS_DIR/.plan-state-${CWD_B19_KEY_PLANSTATE}"
 # Create flag files (required for auto-resume gate)
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/plan-a.md" "sess_a19" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WORKTREE_A19" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_A19_KEY}"
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/plan-b.md" "sess_b19" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WORKTREE_B19" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_B19_KEY}"
@@ -779,8 +812,8 @@ if [[ "$T19_PASS" == "true" ]]; then
     PASS=$((PASS + 1))
 else
     echo "  FAIL"
-    echo "  State file A plan (line 5): $(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_A19_KEY}" 2>/dev/null || echo 'MISSING')"
-    echo "  State file B plan (line 5): $(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_B19_KEY}" 2>/dev/null || echo 'MISSING')"
+    echo "  State file A plan (line 5): $(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_A19_KEY_PLANSTATE}" 2>/dev/null || echo 'MISSING')"
+    echo "  State file B plan (line 5): $(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_B19_KEY_PLANSTATE}" 2>/dev/null || echo 'MISSING')"
     FAIL=$((FAIL + 1))
 fi
 
@@ -866,6 +899,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_22="$TEST_DIR/worktree-ralph-22"
 mkdir -p "$RALPH_CWD_22/.claude"
 CWD_22_KEY=$(compute_session_key "$RALPH_CWD_22")
+CWD_22_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_22")
 
 # Create Ralph state: active, iteration 5, max 20
 create_ralph_state "$RALPH_CWD_22" "true" "5" "20" "TASK DONE" "Fix all bugs in auth module."
@@ -874,7 +908,7 @@ create_ralph_state "$RALPH_CWD_22" "true" "5" "20" "TASK DONE" "Fix all bugs in 
 TRANSCRIPT_22=$(create_transcript_pct 25 "t22")
 
 # Set up state file pointing to plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_22" "$TRANSCRIPT_22" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_22_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_22" "$TRANSCRIPT_22" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_22_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_22","transcript_path":"'"$TRANSCRIPT_22"'","cwd":"'"$RALPH_CWD_22"'"}' | bash "$TEST_DIR/inject-plan.sh")
 
@@ -912,6 +946,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_23="$TEST_DIR/worktree-ralph-23"
 mkdir -p "$RALPH_CWD_23/.claude"
 CWD_23_KEY=$(compute_session_key "$RALPH_CWD_23")
+CWD_23_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_23")
 
 # Create Ralph state: active, iteration 5, max 20
 create_ralph_state "$RALPH_CWD_23" "true" "5" "20" "ALL TESTS PASS" "Run test suite and fix failures."
@@ -920,7 +955,7 @@ create_ralph_state "$RALPH_CWD_23" "true" "5" "20" "ALL TESTS PASS" "Run test su
 TRANSCRIPT_23=$(create_transcript_pct 52 "t23")
 
 # Set up state file pointing to plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_23" "$TRANSCRIPT_23" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_23_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_23" "$TRANSCRIPT_23" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_23_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_23","transcript_path":"'"$TRANSCRIPT_23"'","cwd":"'"$RALPH_CWD_23"'"}' | bash "$TEST_DIR/inject-plan.sh")
 
@@ -964,6 +999,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_24="$TEST_DIR/worktree-ralph-24"
 mkdir -p "$RALPH_CWD_24/.claude"
 CWD_24_KEY=$(compute_session_key "$RALPH_CWD_24")
+CWD_24_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_24")
 
 # Create Ralph state: active, iteration 7, max 20
 create_ralph_state "$RALPH_CWD_24" "true" "7" "20" "DEPLOY SUCCESS" "Deploy and verify staging."
@@ -972,7 +1008,7 @@ create_ralph_state "$RALPH_CWD_24" "true" "7" "20" "DEPLOY SUCCESS" "Deploy and 
 TRANSCRIPT_24=$(create_transcript_pct 62 "t24")
 
 # Set up state file pointing to plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_24" "$TRANSCRIPT_24" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_24_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_24" "$TRANSCRIPT_24" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_24_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"prompt":"continue working","session_id":"sess_24","transcript_path":"'"$TRANSCRIPT_24"'","cwd":"'"$RALPH_CWD_24"'"}' | bash "$TEST_DIR/inject-plan.sh")
 
@@ -1030,6 +1066,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_25="$TEST_DIR/worktree-ralph-25"
 mkdir -p "$RALPH_CWD_25/.claude"
 CWD_25_KEY=$(compute_session_key "$RALPH_CWD_25")
+CWD_25_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_25")
 
 # Create active Ralph state file in the CWD
 create_ralph_state "$RALPH_CWD_25" "true" "3" "20" "DONE" "Continue."
@@ -1038,7 +1075,7 @@ create_ralph_state "$RALPH_CWD_25" "true" "3" "20" "DONE" "Continue."
 TRANSCRIPT_25=$(create_transcript_pct 65 "t25")
 
 # State file pointing to plan (normally enforce-clear would block)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_25" "$TRANSCRIPT_25" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_25_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_25" "$TRANSCRIPT_25" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_25_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"transcript_path":"'"$TRANSCRIPT_25"'","session_id":"sess_25","cwd":"'"$RALPH_CWD_25"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh")
 EXIT_CODE=$?
@@ -1070,6 +1107,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_26="$TEST_DIR/worktree-ralph-26"
 mkdir -p "$RALPH_CWD_26"
 CWD_26_KEY=$(compute_session_key "$RALPH_CWD_26")
+CWD_26_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_26")
 
 # NO Ralph state file in CWD, but a resume file exists in PLANS_DIR
 # (simulates: inject-plan.sh already force-exited Ralph and saved resume)
@@ -1080,7 +1118,7 @@ printf 'Continue fixing bugs.' > "$PLANS_DIR/.ralph-resume-${CWD_26_KEY}.prompt"
 TRANSCRIPT_26=$(create_transcript_pct 65 "t26")
 
 # State file for plan context
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_26" "$TRANSCRIPT_26" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_26_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_26" "$TRANSCRIPT_26" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_26_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"transcript_path":"'"$TRANSCRIPT_26"'","session_id":"sess_26","cwd":"'"$RALPH_CWD_26"'","stop_hook_active":false}' | bash "$TEST_DIR/enforce-clear.sh")
 EXIT_CODE=$?
@@ -1111,13 +1149,14 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_27="$TEST_DIR/worktree-ralph-27"
 mkdir -p "$RALPH_CWD_27"
 CWD_27_KEY=$(compute_session_key "$RALPH_CWD_27")
+CWD_27_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_27")
 
 # Create resume files (as inject-plan.sh would create them before /clear)
 printf '20\n7\nALL TESTS PASS\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "$(date +%Y-%m-%dT%H:%M:%S%z)" > "$PLANS_DIR/.ralph-resume-${CWD_27_KEY}"
 printf 'Run test suite and fix failures.' > "$PLANS_DIR/.ralph-resume-${CWD_27_KEY}.prompt"
 
 # Create state file pointing to plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_27" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_27_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_27" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_27_KEY_PLANSTATE}"
 # Create flag file (required for auto-resume gate)
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_27" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$RALPH_CWD_27" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_27_KEY}"
 
@@ -1241,12 +1280,13 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ra
 RALPH_CWD_29="$TEST_DIR/worktree-ralph-29"
 mkdir -p "$RALPH_CWD_29/.claude"
 CWD_29_KEY=$(compute_session_key "$RALPH_CWD_29")
+CWD_29_KEY_PLANSTATE=$(compute_plan_state_key "$RALPH_CWD_29")
 
 # Ralph state: active=false (phase completed, Ralph exited via promise)
 create_ralph_state "$RALPH_CWD_29" "false" "5" "20" "PHASE_COMPLETE" "Execute the plan tasks."
 
 # State file pointing to plan (simulates previous session had a plan)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_29" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_29_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_29" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_29_KEY_PLANSTATE}"
 # Create flag file (required for auto-resume gate)
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_29" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$RALPH_CWD_29" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_29_KEY}"
 
@@ -1388,8 +1428,9 @@ TRANSCRIPT=$(create_transcript_pct 5 "t32")
 CWD_32="$TEST_DIR/worktree-reload-32"
 mkdir -p "$CWD_32"
 CWD_32_KEY=$(compute_session_key "$CWD_32")
+CWD_32_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_32")
 # Create state file pointing to plan (simulates previous session)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_32" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_32_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_32" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_32_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"reload","session_id":"sess_32","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$CWD_32"'"}' | bash "$TEST_DIR/inject-plan.sh")
 T32_PASS=true
 # Should contain plan content (trigger word load)
@@ -1416,7 +1457,8 @@ rm -f "$PLANS_DIR"/.pending-reload-*
 CWD_33="$TEST_DIR/worktree-reload-33"
 mkdir -p "$CWD_33"
 CWD_33_KEY=$(compute_session_key "$CWD_33")
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_33" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_33_KEY}"
+CWD_33_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_33")
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_33" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_33_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"please reload plan","session_id":"sess_33","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$CWD_33"'"}' | bash "$TEST_DIR/inject-plan.sh")
 T33_PASS=true
 if ! assert_contains "33" "$OUTPUT" "Task 2"; then
@@ -1441,7 +1483,8 @@ rm -f "$PLANS_DIR"/.pending-reload-*
 CWD_34="$TEST_DIR/worktree-reload-34"
 mkdir -p "$CWD_34"
 CWD_34_KEY=$(compute_session_key "$CWD_34")
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_34" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_34_KEY}"
+CWD_34_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_34")
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_34" "$TRANSCRIPT" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_34_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"reload the plan","session_id":"sess_34","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$CWD_34"'"}' | bash "$TEST_DIR/inject-plan.sh")
 T34_PASS=true
 if ! assert_contains "34" "$OUTPUT" "Task 2"; then
@@ -1474,12 +1517,13 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 CWD_35="$TEST_DIR/worktree-35"
 mkdir -p "$CWD_35"
 CWD_35_KEY=$(compute_session_key "$CWD_35")
+CWD_35_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_35")
 
 # Create plan with NO pending tasks (all completed)
 printf '%s\n' '# Completed Plan' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan.md"
 
 # Create state file pointing to completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_35" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan.md" > "$PLANS_DIR/.plan-state-${CWD_35_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_35" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan.md" > "$PLANS_DIR/.plan-state-${CWD_35_KEY_PLANSTATE}"
 
 # No flag file
 OUTPUT=$(echo '{"cwd":"'"$CWD_35"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -1518,12 +1562,13 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 CWD_36="$TEST_DIR/worktree-36"
 mkdir -p "$CWD_36"
 CWD_36_KEY=$(compute_session_key "$CWD_36")
+CWD_36_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_36")
 
 # Create plan with NO pending tasks (all completed)
 printf '%s\n' '# Completed Plan 36' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-36.md"
 
 # Create state file pointing to completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_36" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-36.md" > "$PLANS_DIR/.plan-state-${CWD_36_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_36" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-36.md" > "$PLANS_DIR/.plan-state-${CWD_36_KEY_PLANSTATE}"
 
 # Create flag file with empty plan path (as enforce-clear now does for completed plans)
 printf '%s\n%s\n%s\n%s\n%s\n' "" "sess_36" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_36" "plan-completed" > "$PLANS_DIR/.pending-reload-${CWD_36_KEY}"
@@ -1813,6 +1858,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.mo
 CWD_46="$TEST_DIR/worktree-46"
 mkdir -p "$CWD_46"
 CWD_46_KEY=$(compute_session_key "$CWD_46")
+CWD_46_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_46")
 
 # Create session model file (as on-session-clear.sh would)
 printf 'claude-opus-4-6[1m]\n' > "$PLANS_DIR/.model-${CWD_46_KEY}"
@@ -1822,7 +1868,7 @@ printf 'claude-opus-4-6[1m]\n' > "$PLANS_DIR/.model-${CWD_46_KEY}"
 TRANSCRIPT_46=$(create_transcript_pct 55 "t46" "claude-sonnet-4-5")
 
 # Set up state file
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_46" "$TRANSCRIPT_46" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_46_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_46" "$TRANSCRIPT_46" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_46_KEY_PLANSTATE}"
 
 # Should NOT trigger context warning (11% < 50%) because session model overrides
 OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_46","transcript_path":"'"$TRANSCRIPT_46"'","cwd":"'"$CWD_46"'"}' | bash "$TEST_DIR/inject-plan.sh")
@@ -1904,6 +1950,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.mo
 CWD_48="$TEST_DIR/worktree-48"
 mkdir -p "$CWD_48"
 CWD_48_KEY=$(compute_session_key "$CWD_48")
+CWD_48_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_48")
 
 # Create session model file with plain legacy Sonnet (no [1m] suffix, pre-4.6)
 printf 'claude-sonnet-4-5\n' > "$PLANS_DIR/.model-${CWD_48_KEY}"
@@ -1912,15 +1959,15 @@ printf 'claude-sonnet-4-5\n' > "$PLANS_DIR/.model-${CWD_48_KEY}"
 TRANSCRIPT_48=$(create_transcript_pct 55 "t48" "claude-sonnet-4-5")
 
 # Set up state file with plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_48" "$TRANSCRIPT_48" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_48" "$TRANSCRIPT_48" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48_KEY_PLANSTATE}"
 
 # Should trigger context warning (55% >= 50%) because legacy Sonnet uses 200K window
-OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48","transcript_path":"'"$TRANSCRIPT_48"'","cwd":"'"$CWD_48"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48","transcript_path":"'"$TRANSCRIPT_48"'","cwd":"'"$CWD_48"'"}' | bash "$TEST_DIR/context-warning.sh")
+if echo "$OUTPUT" | grep -q "(warning)"; then
     echo "  PASS (warning triggered at 55% of 200K)"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL (expected CONTEXT WARNING, got: $(echo "$OUTPUT" | head -3))"
+    echo "  FAIL (expected a context warning, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"
@@ -1933,6 +1980,7 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.mo
 CWD_48B="$TEST_DIR/worktree-48b"
 mkdir -p "$CWD_48B"
 CWD_48B_KEY=$(compute_session_key "$CWD_48B")
+CWD_48B_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_48B")
 
 # Create session model file with plain current-gen Sonnet (no [1m] suffix -- 1M is now standard)
 printf 'claude-sonnet-4-6\n' > "$PLANS_DIR/.model-${CWD_48B_KEY}"
@@ -1943,16 +1991,16 @@ printf 'claude-sonnet-4-6\n' > "$PLANS_DIR/.model-${CWD_48B_KEY}"
 TRANSCRIPT_48B=$(create_transcript_pct 11 "t48b" "claude-sonnet-4-6")
 
 # Set up state file with plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_48b" "$TRANSCRIPT_48B" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48B_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_48b" "$TRANSCRIPT_48B" "1000" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_48B_KEY_PLANSTATE}"
 
 # Should NOT trigger context warning (110K / 1M = 11%, below 50%) now that current-gen
 # Sonnet correctly resolves to its real 1M window instead of the legacy 200K assumption.
-OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48b","transcript_path":"'"$TRANSCRIPT_48B"'","cwd":"'"$CWD_48B"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if [[ -z "$OUTPUT" ]] || ! echo "$OUTPUT" | grep -q "CONTEXT WARNING"; then
+OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_48b","transcript_path":"'"$TRANSCRIPT_48B"'","cwd":"'"$CWD_48B"'"}' | bash "$TEST_DIR/context-warning.sh")
+if [[ -z "$OUTPUT" ]] || ! echo "$OUTPUT" | grep -q "(warning)\|(critical)"; then
     echo "  PASS (no false warning at 11% of the real 1M window)"
     PASS=$((PASS + 1))
 else
-    echo "  FAIL (expected no CONTEXT WARNING, got: $(echo "$OUTPUT" | head -3))"
+    echo "  FAIL (expected no context warning, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR/.model-${CWD_48B_KEY}"
@@ -1964,12 +2012,13 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 CWD_49="$TEST_DIR/worktree-49"
 mkdir -p "$CWD_49"
 CWD_49_KEY=$(compute_session_key "$CWD_49")
+CWD_49_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_49")
 
 # Create completed plan (0 pending)
 printf '%s\n' '# Completed Plan 49' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-49.md"
 
 # Create state file with completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_49" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-49.md" > "$PLANS_DIR/.plan-state-${CWD_49_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_49" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-49.md" > "$PLANS_DIR/.plan-state-${CWD_49_KEY_PLANSTATE}"
 
 TRANSCRIPT_49=$(create_transcript_pct 65 "t49")
 
@@ -1994,7 +2043,7 @@ else
     T49_PASS=false
 fi
 # State file should also have empty plan path (line 5)
-STATE_49="$PLANS_DIR/.plan-state-${CWD_49_KEY}"
+STATE_49="$PLANS_DIR/.plan-state-${CWD_49_KEY_PLANSTATE}"
 if [[ -f "$STATE_49" ]]; then
     STATE_PLAN_49=$(sed -n '5p' "$STATE_49")
     if [[ -n "$STATE_PLAN_49" ]]; then
@@ -2021,12 +2070,13 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 CWD_50="$TEST_DIR/worktree-50"
 mkdir -p "$CWD_50"
 CWD_50_KEY=$(compute_session_key "$CWD_50")
+CWD_50_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_50")
 
 # Create a plan that could be picked up by ls -t
 printf '%s\n' '# Decoy Plan 50' '' '## Tasks' '' '- [ ] Task A: Should not be loaded' > "$PLANS_DIR/decoy-plan-50.md"
 
 # Create state file with EMPTY plan path (simulating post-completed state)
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_50" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${CWD_50_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_50" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${CWD_50_KEY_PLANSTATE}"
 
 TRANSCRIPT_50=$(create_transcript_pct 10 "t50")
 
@@ -2035,7 +2085,7 @@ OUTPUT=$(echo '{"prompt":"do something","session_id":"sess_50","transcript_path"
 
 T50_PASS=true
 # State file should NOT have adopted the decoy plan
-STATE_50="$PLANS_DIR/.plan-state-${CWD_50_KEY}"
+STATE_50="$PLANS_DIR/.plan-state-${CWD_50_KEY_PLANSTATE}"
 if [[ -f "$STATE_50" ]]; then
     STATE_PLAN_50=$(sed -n '5p' "$STATE_50")
     if [[ "$STATE_PLAN_50" == *"decoy-plan-50"* ]]; then
@@ -2059,12 +2109,13 @@ rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 CWD_51="$TEST_DIR/worktree-51"
 mkdir -p "$CWD_51"
 CWD_51_KEY=$(compute_session_key "$CWD_51")
+CWD_51_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_51")
 
 # Create completed plan
 printf '%s\n' '# Completed Plan 51' '' '## Tasks' '' '- [x] Task 1: Done' > "$PLANS_DIR/completed-plan-51.md"
 
 # Create state file with completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_51" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-51.md" > "$PLANS_DIR/.plan-state-${CWD_51_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_51" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-51.md" > "$PLANS_DIR/.plan-state-${CWD_51_KEY_PLANSTATE}"
 
 # Create an existing flag (plan-pending) that should be updated to plan-completed
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-51.md" "sess_51" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_51" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_51_KEY}"
@@ -2108,12 +2159,13 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 CWD_52="$TEST_DIR/worktree-52"
 mkdir -p "$CWD_52"
 CWD_52_KEY=$(compute_session_key "$CWD_52")
+CWD_52_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_52")
 
 # Create completed plan
 printf '%s\n' '# Completed Plan 52' '' '## Tasks' '' '- [x] Task 1: Done' > "$PLANS_DIR/completed-plan-52.md"
 
 # Create state file with completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_52" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-52.md" > "$PLANS_DIR/.plan-state-${CWD_52_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_52" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-52.md" > "$PLANS_DIR/.plan-state-${CWD_52_KEY_PLANSTATE}"
 
 # Create flag with plan-completed type BUT still has plan path (legacy or edge case)
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/completed-plan-52.md" "sess_52" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_52" "plan-completed" > "$PLANS_DIR/.pending-reload-${CWD_52_KEY}"
@@ -2146,12 +2198,13 @@ rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-
 CWD_53="$TEST_DIR/worktree-53"
 mkdir -p "$CWD_53"
 CWD_53_KEY=$(compute_session_key "$CWD_53")
+CWD_53_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_53")
 
 # Create completed plan (0 pending)
 printf '%s\n' '# Completed Plan 53' '' '## Tasks' '' '- [x] Task 1: Done' '- [x] Task 2: Done' > "$PLANS_DIR/completed-plan-53.md"
 
 # Create state file with completed plan
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_53" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-53.md" > "$PLANS_DIR/.plan-state-${CWD_53_KEY}"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_53" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/completed-plan-53.md" > "$PLANS_DIR/.plan-state-${CWD_53_KEY_PLANSTATE}"
 
 OUTPUT=$(echo '{"session_id":"sess_53","cwd":"'"$CWD_53"'"}' | bash "$TEST_DIR/on-plan-exit.sh")
 
@@ -2388,7 +2441,8 @@ CWD_64="$TEST_DIR/worktree-64"
 mkdir -p "$CWD_64"
 rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.pending-reload-*
 CWD_64_KEY=$(compute_session_key "$CWD_64")
-printf '%s\n%s\n%s\n%s\n%s\n' "sess_64" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_64_KEY}"
+CWD_64_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_64")
+printf '%s\n%s\n%s\n%s\n%s\n' "sess_64" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_64_KEY_PLANSTATE}"
 printf '%s\n%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_64" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_64" "plan-pending" > "$PLANS_DIR/.pending-reload-${CWD_64_KEY}"
 MR_FLAG_64="$PLANS_DIR/.pending-memory-restore-20260718T000007-99999"
 printf '%s\n%s\n%s\n%s\n' "sess_64" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_64" "checkpoint-64" > "$MR_FLAG_64"
@@ -2487,9 +2541,9 @@ mkdir -p "$PROFILE_68/plans"
 FAKE_HOME_68="$TEST_DIR/fake-home-68"
 mkdir -p "$FAKE_HOME_68/.claude/plans"
 printf '%s\n' '# Test 68 Plan' '' '- [x] Task A' '- [ ] Task B' > "$PROFILE_68/plans/test68-plan.md"
-LIST_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/list-plans.sh" 2>&1)
-LOAD_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/load-plan.sh" test68-plan 2>&1)
-STATUS_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/scripts/plan-status.sh" test68-plan 2>&1)
+LIST_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/../smith-mode-plan-claude/scripts/list-plans.sh" 2>&1)
+LOAD_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/../smith-mode-plan-claude/scripts/load-plan.sh" test68-plan 2>&1)
+STATUS_OUT=$(HOME="$FAKE_HOME_68" CLAUDE_CONFIG_DIR="$PROFILE_68" bash "$SCRIPT_DIR/../smith-mode-plan-claude/scripts/plan-status.sh" test68-plan 2>&1)
 if assert_contains "68" "$LIST_OUT" "test68-plan" && \
    assert_contains "68" "$LOAD_OUT" "Test 68 Plan" && \
    assert_contains "68" "$STATUS_OUT" "test68-plan.md"; then
@@ -2501,10 +2555,10 @@ else
 fi
 
 # --- Test 69: smith-ctx-claude/scripts/enforce-clear.sh FLAGS_DIR stays in
-# sync with lib-plan.sh PLANS_DIR. That sibling hook hand-duplicates the
-# directory expression (different skill directory, can't source lib-plan.sh),
-# so nothing else in this suite exercises it -- compare the two expressions
-# textually so an independent drift fails loudly here.
+# sync with lib-plan.sh PLANS_DIR. Both are expected to read the same shared
+# constant from lib-context.sh rather than rebuild the path, and nothing else
+# in this suite compares them -- compare the two expressions textually so that
+# either one drifting off the shared constant fails loudly here.
 echo "Test 69: smith-ctx-claude enforce-clear.sh FLAGS_DIR expression matches lib-plan.sh PLANS_DIR"
 CTX_ENFORCE="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
 LIB_EXPR=$(grep -m1 '^PLANS_DIR=' "$SCRIPT_DIR/scripts/lib-plan.sh" | sed 's/^PLANS_DIR=//')
@@ -5113,16 +5167,17 @@ fi
 echo "Test 157: state file age is established under GNU stat, not left unknown"
 CWD_157="$TEST_DIR/wd-157"; mkdir -p "$CWD_157"
 KEY_157=$(compute_session_key "$CWD_157")
+KEY_157_PLANSTATE=$(compute_plan_state_key "$CWD_157")
 mr_gnu_stat 157
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_157" "$TEST_DIR/transcript-157" "51200" \
-    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_157}"
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_157_PLANSTATE}"
 OUTPUT=$(echo '{"cwd":"'"$CWD_157"'"}' | PATH="$MR_SHIM:$PATH" bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "157" "$OUTPUT" "State file: found (no plan recorded, age: [0-9]"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_157}"
+/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_157_PLANSTATE}"
 
 # --- Test 158: the human-readable mtime probe must also ask GNU first ---
 # Six call sites carried their own copy of this two-form probe and four asked BSD
@@ -5260,8 +5315,9 @@ fi
 echo "Test 163: state age is left unknown when the clock cannot be read"
 CWD_163="$TEST_DIR/wd-163"; mkdir -p "$CWD_163" "$TEST_DIR/nodate-163"
 KEY_163=$(compute_session_key "$CWD_163")
+KEY_163_PLANSTATE=$(compute_plan_state_key "$CWD_163")
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_163" "$TEST_DIR/transcript-163" "51200" \
-    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_163}"
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "" > "$PLANS_DIR/.plan-state-${KEY_163_PLANSTATE}"
 printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/nodate-163/date"
 chmod +x "$TEST_DIR/nodate-163/date"
 OUTPUT=$(echo '{"cwd":"'"$CWD_163"'"}' | PATH="$TEST_DIR/nodate-163:$PATH" bash "$TEST_DIR/on-session-clear.sh")
@@ -5271,7 +5327,7 @@ if assert_contains "163" "$OUTPUT" "age: ?m" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_163}"
+/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_163_PLANSTATE}"
 
 # --- Tests 164-165: the two skipped-scan directives must NAME the directory ---
 # Both exist to tell the reader which path to look at, and both ran with an empty one.
@@ -6055,13 +6111,14 @@ echo "Test 202: plan-mode first entry -> newest plan claimed by another scope is
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_202="$TEST_DIR/worktree-202"; mkdir -p "$CWD_202"
 CWD_202_KEY=$(compute_session_key "$CWD_202")
+CWD_202_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_202")
 printf '%s\n' '# Foreign Plan 202' '' '- [ ] client task' > "$PLANS_DIR/foreign-plan-202.md"
 printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f202" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
     "$PLANS_DIR/foreign-plan-202.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-deadbeefdeadbeef"
 TRANSCRIPT_202=$(create_transcript_pct 10 "t202")
 OUT_202=$(echo '{"prompt":"do something","session_id":"sess_202","transcript_path":"'"$TRANSCRIPT_202"'","cwd":"'"$CWD_202"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
 if assert_contains "202" "$OUT_202" "PLAN ADOPTION REFUSED" && \
-   assert_file_not_exists "202" "$PLANS_DIR/.plan-state-${CWD_202_KEY}" && \
+   assert_file_not_exists "202" "$PLANS_DIR/.plan-state-${CWD_202_KEY_PLANSTATE}" && \
    assert_file_not_exists "202" "$PLANS_DIR/.pending-reload-${CWD_202_KEY}"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
@@ -6074,11 +6131,12 @@ echo "Test 203: plan-mode first entry -> unclaimed newest is adopted and records
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_203="$TEST_DIR/worktree-203"; mkdir -p "$CWD_203"
 CWD_203_KEY=$(compute_session_key "$CWD_203")
+CWD_203_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_203")
 printf '%s\n' '# Own Plan 203' '' '- [ ] my task' > "$PLANS_DIR/own-plan-203.md"
 EXP_SCOPE_203=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_203")
 TRANSCRIPT_203=$(create_transcript_pct 10 "t203")
 echo '{"prompt":"do something","session_id":"sess_203","transcript_path":"'"$TRANSCRIPT_203"'","cwd":"'"$CWD_203"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
-STATE_203="$PLANS_DIR/.plan-state-${CWD_203_KEY}"
+STATE_203="$PLANS_DIR/.plan-state-${CWD_203_KEY_PLANSTATE}"
 T203_PLAN=$(sed -n '5p' "$STATE_203" 2>/dev/null || true)
 T203_SCOPE=$(sed -n '6p' "$STATE_203" 2>/dev/null || true)
 if assert_file_exists "203" "$STATE_203" && \
@@ -6095,11 +6153,12 @@ echo "Test 204: a guessed first-entry adoption does not create a pending-reload 
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_204="$TEST_DIR/worktree-204"; mkdir -p "$CWD_204"
 CWD_204_KEY=$(compute_session_key "$CWD_204")
+CWD_204_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_204")
 printf '%s\n' '# Own Plan 204' '' '- [ ] my task' > "$PLANS_DIR/own-plan-204.md"
 TRANSCRIPT_204=$(create_transcript_pct 10 "t204")
 echo '{"prompt":"do something","session_id":"sess_204","transcript_path":"'"$TRANSCRIPT_204"'","cwd":"'"$CWD_204"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
-T204_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_204_KEY}" 2>/dev/null || true)
-if assert_file_exists "204" "$PLANS_DIR/.plan-state-${CWD_204_KEY}" && \
+T204_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_204_KEY_PLANSTATE}" 2>/dev/null || true)
+if assert_file_exists "204" "$PLANS_DIR/.plan-state-${CWD_204_KEY_PLANSTATE}" && \
    [[ "$T204_PLAN" == *"own-plan-204.md" ]] && \
    assert_file_not_exists "204" "$PLANS_DIR/.pending-reload-${CWD_204_KEY}"; then
     echo "  PASS"; PASS=$((PASS + 1))
@@ -6113,13 +6172,14 @@ echo "Test 205: plan-mode first entry -> a same-scope sibling's plan is adopted"
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_205="$TEST_DIR/worktree-205"; mkdir -p "$CWD_205"
 CWD_205_KEY=$(compute_session_key "$CWD_205")
+CWD_205_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_205")
 printf '%s\n' '# Shared Plan 205' '' '- [ ] shared task' > "$PLANS_DIR/shared-plan-205.md"
 OWN_SCOPE_205=$(bash -c 'source "$1/lib-plan.sh"; scope_key "$2"' _ "$TEST_DIR" "$CWD_205")
 printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_sib205" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
     "$PLANS_DIR/shared-plan-205.md" "$OWN_SCOPE_205" > "$PLANS_DIR/.plan-state-cafecafecafecafe"
 TRANSCRIPT_205=$(create_transcript_pct 10 "t205")
 OUT_205=$(echo '{"prompt":"do something","session_id":"sess_205","transcript_path":"'"$TRANSCRIPT_205"'","cwd":"'"$CWD_205"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
-STATE_205="$PLANS_DIR/.plan-state-${CWD_205_KEY}"
+STATE_205="$PLANS_DIR/.plan-state-${CWD_205_KEY_PLANSTATE}"
 T205_PLAN=$(sed -n '5p' "$STATE_205" 2>/dev/null || true)
 if assert_file_exists "205" "$STATE_205" && \
    [[ "$T205_PLAN" == *"shared-plan-205.md" ]] && \
@@ -6135,6 +6195,7 @@ echo "Test 206: plan-mode first entry -> foreign newest skipped, older unclaimed
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_206="$TEST_DIR/worktree-206"; mkdir -p "$CWD_206"
 CWD_206_KEY=$(compute_session_key "$CWD_206")
+CWD_206_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_206")
 printf '%s\n' '# Older Own 206' '' '- [ ] mine' > "$PLANS_DIR/older-206.md"
 touch -t "$(date -v-2H +%Y%m%d%H%M 2>/dev/null || date -d '2 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/older-206.md"
 printf '%s\n' '# Newer Foreign 206' '' '- [ ] theirs' > "$PLANS_DIR/newer-foreign-206.md"
@@ -6143,7 +6204,7 @@ printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f206" "unknown" "0" "$(date +%Y-%m-%dT%H
     "$PLANS_DIR/newer-foreign-206.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-beefbeefbeefbeef"
 TRANSCRIPT_206=$(create_transcript_pct 10 "t206")
 OUT_206=$(echo '{"prompt":"do something","session_id":"sess_206","transcript_path":"'"$TRANSCRIPT_206"'","cwd":"'"$CWD_206"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
-STATE_206="$PLANS_DIR/.plan-state-${CWD_206_KEY}"
+STATE_206="$PLANS_DIR/.plan-state-${CWD_206_KEY_PLANSTATE}"
 T206_PLAN=$(sed -n '5p' "$STATE_206" 2>/dev/null || true)
 T206_NEWEST=$(ls -t "$PLANS_DIR"/*.md 2>/dev/null | head -1)
 if assert_file_exists "206" "$STATE_206" && \
@@ -6161,13 +6222,14 @@ echo "Test 207: plan-mode first entry -> plan claimed by a legacy scope-less sta
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_207="$TEST_DIR/worktree-207"; mkdir -p "$CWD_207"
 CWD_207_KEY=$(compute_session_key "$CWD_207")
+CWD_207_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_207")
 printf '%s\n' '# Legacy-claimed 207' '' '- [ ] task' > "$PLANS_DIR/legacy-207.md"
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_l207" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
     "$PLANS_DIR/legacy-207.md" > "$PLANS_DIR/.plan-state-1207120712071207"
 TRANSCRIPT_207=$(create_transcript_pct 10 "t207")
 OUT_207=$(echo '{"prompt":"do something","session_id":"sess_207","transcript_path":"'"$TRANSCRIPT_207"'","cwd":"'"$CWD_207"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
 if assert_contains "207" "$OUT_207" "PLAN ADOPTION REFUSED" && \
-   assert_file_not_exists "207" "$PLANS_DIR/.plan-state-${CWD_207_KEY}"; then
+   assert_file_not_exists "207" "$PLANS_DIR/.plan-state-${CWD_207_KEY_PLANSTATE}"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
@@ -6200,7 +6262,7 @@ printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f210" "unknown" "0" "$(date +%Y-%m-%dT%H
     "$PLANS_DIR/foreign-210.md" "repo:/some/client/repo" > "$PLANS_DIR/.plan-state-2102102102102102"
 TRANSCRIPT_210=$(create_transcript_pct 10 "t210")
 OUT_210=$(echo '{"prompt":"!load-plan foreign-210","session_id":"sess_210","transcript_path":"'"$TRANSCRIPT_210"'","cwd":"'"$CWD_210"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
-if assert_contains "210" "$OUT_210" "Foreign 210" && \
+if assert_contains "210" "$OUT_210" "foreign-210.md" && \
    assert_not_contains "210" "$OUT_210" "PLAN ADOPTION REFUSED"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
@@ -6213,12 +6275,13 @@ echo "Test 211: plan-mode first entry -> a stale unclaimed plan is refused, not 
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_211="$TEST_DIR/worktree-211"; mkdir -p "$CWD_211"
 CWD_211_KEY=$(compute_session_key "$CWD_211")
+CWD_211_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_211")
 printf '%s\n' '# Stale Orphan 211' '' '- [ ] task' > "$PLANS_DIR/stale-211.md"
 touch -t 202501010000 "$PLANS_DIR/stale-211.md"
 TRANSCRIPT_211=$(create_transcript_pct 10 "t211")
 OUT_211=$(echo '{"prompt":"do something","session_id":"sess_211","transcript_path":"'"$TRANSCRIPT_211"'","cwd":"'"$CWD_211"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
 if assert_contains "211" "$OUT_211" "PLAN ADOPTION REFUSED" && \
-   assert_file_not_exists "211" "$PLANS_DIR/.plan-state-${CWD_211_KEY}"; then
+   assert_file_not_exists "211" "$PLANS_DIR/.plan-state-${CWD_211_KEY_PLANSTATE}"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
@@ -6230,12 +6293,13 @@ echo "Test 212: plan-mode first entry -> a 23h-old unclaimed plan is adopted (in
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_212="$TEST_DIR/worktree-212"; mkdir -p "$CWD_212"
 CWD_212_KEY=$(compute_session_key "$CWD_212")
+CWD_212_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_212")
 printf '%s\n' '# Fresh Edge 212' '' '- [ ] task' > "$PLANS_DIR/fresh-212.md"
 touch -t "$(date -v-23H +%Y%m%d%H%M 2>/dev/null || date -d '23 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/fresh-212.md"
 TRANSCRIPT_212=$(create_transcript_pct 10 "t212")
 echo '{"prompt":"do something","session_id":"sess_212","transcript_path":"'"$TRANSCRIPT_212"'","cwd":"'"$CWD_212"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh" > /dev/null
-T212_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_212_KEY}" 2>/dev/null || true)
-if assert_file_exists "212" "$PLANS_DIR/.plan-state-${CWD_212_KEY}" && \
+T212_PLAN=$(sed -n '5p' "$PLANS_DIR/.plan-state-${CWD_212_KEY_PLANSTATE}" 2>/dev/null || true)
+if assert_file_exists "212" "$PLANS_DIR/.plan-state-${CWD_212_KEY_PLANSTATE}" && \
    [[ "$T212_PLAN" == *"fresh-212.md" ]]; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
@@ -6248,12 +6312,13 @@ echo "Test 213: plan-mode first entry -> a 25h-old unclaimed plan is refused (pa
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_213="$TEST_DIR/worktree-213"; mkdir -p "$CWD_213"
 CWD_213_KEY=$(compute_session_key "$CWD_213")
+CWD_213_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_213")
 printf '%s\n' '# Stale Edge 213' '' '- [ ] task' > "$PLANS_DIR/stale-213.md"
 touch -t "$(date -v-25H +%Y%m%d%H%M 2>/dev/null || date -d '25 hours ago' +%Y%m%d%H%M)" "$PLANS_DIR/stale-213.md"
 TRANSCRIPT_213=$(create_transcript_pct 10 "t213")
 OUT_213=$(echo '{"prompt":"do something","session_id":"sess_213","transcript_path":"'"$TRANSCRIPT_213"'","cwd":"'"$CWD_213"'","permission_mode":"plan"}' | bash "$TEST_DIR/inject-plan.sh")
 if assert_contains "213" "$OUT_213" "PLAN ADOPTION REFUSED" && \
-   assert_file_not_exists "213" "$PLANS_DIR/.plan-state-${CWD_213_KEY}"; then
+   assert_file_not_exists "213" "$PLANS_DIR/.plan-state-${CWD_213_KEY_PLANSTATE}"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
@@ -6268,11 +6333,38 @@ printf '%s\n' '# Old Own 214' '' '- [ ] task' > "$PLANS_DIR/old-own-214.md"
 touch -t 202501010000 "$PLANS_DIR/old-own-214.md"
 TRANSCRIPT_214=$(create_transcript_pct 10 "t214")
 OUT_214=$(echo '{"prompt":"execute the plan","session_id":"sess_214","transcript_path":"'"$TRANSCRIPT_214"'","cwd":"'"$CWD_214"'"}' | bash "$TEST_DIR/inject-plan.sh")
-if assert_contains "214" "$OUT_214" "Old Own 214" && \
+if assert_contains "214" "$OUT_214" "old-own-214.md" && \
    assert_not_contains "214" "$OUT_214" "Plan Not Found"; then
     echo "  PASS"; PASS=$((PASS + 1))
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
+fi
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+
+echo "Test 215: enforce-clear.sh PLAN_LIB default (no SMITH_PLAN_LIB) is the sibling lib-plan.sh"
+ENFORCE_REAL_DIR=$(cd "$(dirname "$ENFORCE_SCRIPT")" && pwd)
+PLAN_LIB_DEFAULT_215=$(grep -m1 '^PLAN_LIB=' "$ENFORCE_SCRIPT")
+if [[ "$PLAN_LIB_DEFAULT_215" == *'SMITH_PLAN_LIB:-'* ]] \
+   && [[ "$PLAN_LIB_DEFAULT_215" == *'${SCRIPT_DIR}/lib-plan.sh'* \
+         || "$PLAN_LIB_DEFAULT_215" == *'$SCRIPT_DIR/lib-plan.sh'* ]] \
+   && grep -q '^save_state_file()' "$ENFORCE_REAL_DIR/lib-plan.sh"; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (default expression: $PLAN_LIB_DEFAULT_215)"; FAIL=$((FAIL + 1))
+fi
+
+echo "Test 216: enforce-clear.sh writes a plan-state file with SMITH_PLAN_LIB unset"
+rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+CWD_216="$TEST_DIR/worktree-216"; mkdir -p "$CWD_216"
+TRANSCRIPT_216=$(create_transcript_pct 70 "t216")
+echo '{"session_id":"sess_216","transcript_path":"'"$TRANSCRIPT_216"'","cwd":"'"$CWD_216"'"}' \
+    | env -u SMITH_PLAN_LIB bash "$TEST_DIR/enforce-clear.sh" > /dev/null 2>"$TEST_DIR/err-216.txt"
+STATE_KEY_216=$(source "$TEST_DIR/lib-context.sh" && plan_state_key "$CWD_216")
+ERR_216=$(grep -E 'arithmetic syntax error|No such file or directory' "$TEST_DIR/err-216.txt")
+if assert_file_exists "216" "$PLANS_DIR/.plan-state-${STATE_KEY_216}" && [[ -z "$ERR_216" ]]; then
+    echo "  PASS"; PASS=$((PASS + 1))
+else
+    echo "  FAIL (stderr: $(cat "$TEST_DIR/err-216.txt"))"; FAIL=$((FAIL + 1))
 fi
 rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
