@@ -2,14 +2,28 @@
 
 Full detail supporting `../SKILL.md`. Source: Anthropic, ["The AI-Native
 SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
-(2026-08-21, retrieved 2026-09-08). The `spec.md` prompt, `CLAUDE.md`
-block, evals workflow, `REVIEW.md`, both hook scripts, `bands.yaml`, and
-the managed-settings JSON below are Anthropic's own worked examples,
-reproduced verbatim. The `intent.md` and `plan.md` "templates" are **not**
-verbatim — Anthropic's actual examples use a specific "claims status
+(2026-08-21, retrieved 2026-09-08). Three provenance tiers, because the
+distinction matters when you copy from here:
+
+**Verbatim** — the `spec.md` prompt, `CLAUDE.md` block, evals workflow,
+`REVIEW.md` and `bands.yaml` are Anthropic's own worked examples,
+reproduced unchanged.
+
+**Adapted** — the production-gate hook and the managed-settings JSON began
+as Anthropic's examples and have since been rewritten here. The gate now
+matches a structured tool argument rather than substrings of a shell
+command, and the managed-settings block narrows its `Bash(git *)` allow
+rule, re-roots its `denyRead` paths, and adds `strictAllowlist`,
+`allowManagedDomainsOnly`, `allowManagedReadPathsOnly`,
+`strictPluginOnlyCustomization`, `allowedMcpServers` and a higher
+`requiredMinimumVersion`. Treat them as this repository's guidance, not as
+quotations.
+
+**Genericized** — the `intent.md` and `plan.md` "templates" are not
+verbatim. Anthropic's actual examples use a specific "claims status
 self-service" scenario (author "J. Ortiz," a claims-center problem); the
 section headers below match that example exactly, but the content under
-each is genericized into fillable placeholders for reuse, not quoted.
+each is fillable placeholders for reuse, not quoted.
 
 ## intent.md template (section headers verbatim; content genericized)
 
@@ -53,7 +67,9 @@ Syntax) form, each paired with a Given-When-Then (GWT) acceptance scenario:
 ```
 # <Feature> — Spec (the contract)
 
-> The *why* lives in design.md; the procedure in the relevant skill.
+> The *why* for this feature lives here; the procedure in the relevant
+> skill. Only decisions that outlive this cycle move to design.md, which
+> is optional — see the ADR-log section below.
 
 ## §<section-name>
 
@@ -205,6 +221,17 @@ named `environment` argument instead of guessing, and gate every tool in
 that trio that changes production state — `rollback` is an unreviewed
 production change too.
 
+**Do not put the server's name in the matcher.** A tool arrives as
+`mcp__«server»__«tool»`, and `«server»` is the label whoever ran
+`claude mcp add` chose, not the endpoint. A matcher of
+`mcp__deploy__(deploy|rollback)` is therefore satisfied or evaded by
+renaming: register the same approved endpoint as `shipping` and its tools
+become `mcp__shipping__deploy`, which the hook never sees. `mcp__[^_]+__`
+matches whatever the server is called, so the gate keys on the *action*.
+Endpoint identity is a separate job, and `allowedMcpServers` with
+`serverUrl` entries is what does it — the two controls compose, and
+neither substitutes for the other.
+
 The `Bash` denials below raise the cost of going around the tool; they do
 not close the door. The permissions documentation says so directly —
 "Bash permission patterns that try to constrain command arguments are
@@ -228,7 +255,7 @@ Managed settings:
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__deploy__(deploy|rollback)",
+        "matcher": "mcp__[^_]+__(deploy|rollback)",
         "hooks": [
           { "type": "command",
             "command": "/opt/org-hooks/production-gate.sh" }
@@ -258,8 +285,18 @@ case "$environment" in
     dev|development|test|staging) exit 0 ;;
 esac
 
-[[ -n "${RELEASE_APPROVAL:-}" ]] \
-    || deny "production-gate: deploy to '$environment' needs a release authorization — file a release ticket and re-run with RELEASE_APPROVAL set."
+verify_release_authorization() {
+    local env="$1"
+    local ticket="${RELEASE_APPROVAL:-}"
+    local token="${RELEASE_VERIFIER_TOKEN:-}"
+    [[ -n "$ticket" && -n "$token" ]] || return 1
+    curl -sf --max-time 5 -H "Authorization: Bearer $token" \
+        "https://releases.internal.example.com/api/authorizations/$ticket" \
+        | jq -e --arg e "$env" '.status == "approved" and .environment == $e' >/dev/null
+}
+
+verify_release_authorization "$environment" \
+    || deny "production-gate: no approved release authorization for '$environment' — file a release ticket, then re-run with RELEASE_APPROVAL set to its id."
 exit 0
 ```
 
@@ -284,15 +321,24 @@ branch at the end later, so the `||` spelling is the one that stays correct
 when it does.
 
 `exit 2` is what blocks the action; the message on stderr goes to Claude,
-which is why each one names the approval route. `RELEASE_APPROVAL` must come
-from the deploy pipeline — a gate that reads a variable the agent can set
-is not a gate. That is a property you have to arrange, not one this file
-gives you: the `env` settings key has "Any file" scope and its values reach
-every subprocess Claude Code starts, hooks included, so a project
-`.claude/settings.json` carrying `{"env": {"RELEASE_APPROVAL": "x"}}`
-satisfies the check. Deny `Edit(.claude/settings.json)` alongside this gate,
-and treat non-emptiness as the floor rather than the ceiling: validate the
-authorization against the release system if you have one.
+which is why each one names the approval route.
+
+**Never let non-emptiness be the check.** The `env` settings key has "Any
+file" scope and its values reach every subprocess Claude Code starts, hooks
+included, so `{"env": {"RELEASE_APPROVAL": "x"}}` in a settings file
+satisfies a `[[ -n … ]]` test — and denying `Edit(.claude/settings.json)`
+does not close that, because `.claude/settings.local.json` outranks it (and
+is where Claude Code itself writes a "don't ask again" rule), with
+`~/.claude/settings.json` outside the repository entirely. Enumerating
+files to deny is the losing half of this problem.
+
+The winning half is to stop treating the variable as the credential.
+`RELEASE_APPROVAL` above carries a release *identifier*, which the gate
+looks up against the release system over an authenticated call; forging the
+variable then only names a ticket that has to already exist, be approved,
+and match this environment. `RELEASE_VERIFIER_TOKEN` belongs to the machine
+the hook runs on, deployed the same way the hook is — if it can be set from
+a settings file, you have moved the problem rather than solved it.
 
 ## Worked example: managed settings for a regulated enterprise
 
@@ -338,7 +384,7 @@ policy.
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__deploy__(deploy|rollback)",
+        "matcher": "mcp__[^_]+__(deploy|rollback)",
         "hooks": [
           { "type": "command", "command": "/opt/org-hooks/production-gate.sh" }
         ]
@@ -423,8 +469,12 @@ exfiltration needs a TLS-terminating proxy, not this allowlist.
 that a sandboxed command could otherwise still reach — sandboxed Bash
 commands only.
 
-`allowManagedHooksOnly` runs only the hooks deployed in *this* file and
-blocks every user, project, local and plugin hook. That is why the
+`allowManagedHooksOnly` blocks user, project, local and plugin hooks. Two
+kinds still run alongside the ones deployed in this file: hooks from
+plugins force-enabled through managed `enabledPlugins`, and SDK hooks. So
+"only what the organization deploys" is accurate, "only what is in this
+file" is not — audit `enabledPlugins` as part of the same policy. That is
+why the
 production gate above is registered here and not in
 `.claude/settings.json`: with this flag set and no `hooks` block, a
 project-scoped gate is silently disabled — committed, reviewed, believed
