@@ -62,6 +62,7 @@ case "$argv" in
       exit 1
     fi
     if [ -f "$store" ]; then
+      [ "${BM_READ_NOISE:-0}" = "1" ] && echo "Resolved 1 package in 3ms" >&2
       jq -Rs --arg title "$title" --arg permalink "projects/$(basename "$PWD")/$(store_key "$title")" '{title: $title, permalink: $permalink, content: .}' < "$store"
     else
       printf '{"title": null, "content": null}\n'
@@ -167,11 +168,25 @@ grep -qi 'Resolved 1 package' "$SHIM/serena.content" && fail "stderr noise from 
 [ "$(grep -c '^# test_label_readnoise$' "$SHIM/serena.content")" = 1 ] || fail "stderr noise on a successful read must not corrupt the title line: $(cat "$SHIM/serena.content")"
 
 reset_logs
+printf '## Completed\n- [x] before the bm noisy read\n' > "$SHIM/body_bmbeforenoise.md"
+run_script test_label_bmreadnoise "body=$SHIM/body_bmbeforenoise.md" >/dev/null 2>"$SHIM/stderr" || fail "bm-readnoise seed: script exited non-zero: $(cat "$SHIM/stderr")"
+printf '## Completed\n- [x] after the bm noisy read\n' > "$SHIM/body_bmafternoise.md"
+( export BM_READ_NOISE=1; run_script test_label_bmreadnoise "body=$SHIM/body_bmafternoise.md" >/dev/null 2>"$SHIM/stderr" ) || fail "bm-readnoise second call: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qi 'Resolved 1 package' "$SHIM/bm.content" && fail "stderr noise from a successful Basic-Memory read must not be merged into the note content: $(cat "$SHIM/bm.content")"
+[ "$(grep -c '^# test_label_bmreadnoise$' "$SHIM/bm.content")" = 1 ] || fail "stderr noise on a successful Basic-Memory read must not corrupt the title line: $(cat "$SHIM/bm.content")"
+
+reset_logs
+printf '\n\n# test_label_leadingblank\n' > "$SHIM/store_bm_Test_Label_Leadingblank"
+printf '## Completed\n- [x] after a leading-blank-line prior note\n' > "$SHIM/body_leadingblank.md"
+run_script test_label_leadingblank "body=$SHIM/body_leadingblank.md" >/dev/null 2>"$SHIM/stderr" || fail "leading-blank-line prior note: script exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(grep -c '^# test_label_leadingblank$' "$SHIM/bm.content")" = 1 ] || fail "a prior note whose title line is preceded by blank lines must not be duplicated into the merged document: $(cat "$SHIM/bm.content")"
+
+reset_logs
 BASH_BIN="$(command -v bash)"
 FAKE_PATH_NO_JQ="$SHIM/no-jq-path"
 mkdir -p "$FAKE_PATH_NO_JQ"
 ln -s "$SHIM/uvx" "$FAKE_PATH_NO_JQ/uvx"
-(PATH="$FAKE_PATH_NO_JQ" "$BASH_BIN" "$SCRIPT" test_label_nojq "body=$BODY") >/dev/null 2>"$SHIM/stderr" && fail "a missing jq dependency must make the script exit non-zero"
+(PATH="$FAKE_PATH_NO_JQ" "$BASH_BIN" "$SCRIPT" test_label_nojq) >/dev/null 2>"$SHIM/stderr" && fail "a missing jq dependency must make the script exit non-zero"
 grep -qi 'jq is required' "$SHIM/stderr" || fail "a missing jq dependency must be reported: $(cat "$SHIM/stderr")"
 
 reset_logs

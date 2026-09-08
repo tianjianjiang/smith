@@ -126,6 +126,9 @@ generate_entry() {
 strip_title_line() {
     local content="$1"
     local title="# ${LABEL}"
+    while [[ "$content" == $'\n'* ]]; do
+        content="${content#$'\n'}"
+    done
     local first_line="${content%%$'\n'*}"
     if [[ "$first_line" == "$title" ]]; then
         if [[ "$content" == "$title" ]]; then
@@ -173,11 +176,15 @@ build_merged_document() {
     printf '%s' "$document"
 }
 
+serena_memories() {
+    uvx --from git+https://github.com/oraios/serena serena memories "$@"
+}
+
 read_serena_memory() {
     local primary_checkout="$1"
     local output error_file error_output
     error_file=$(mktemp)
-    if output=$(uvx --from git+https://github.com/oraios/serena serena memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>"$error_file"); then
+    if output=$(serena_memories read "${LABEL}" ${primary_checkout:+"$primary_checkout"} 2>"$error_file"); then
         rm -f "$error_file"
         printf '%s' "$output"
         return 0
@@ -198,16 +205,20 @@ write_to_serena() {
     local existing document
     existing=$(read_serena_memory "$primary_checkout") || return 1
     document=$(build_merged_document "$entry" "$existing")
-    uvx --from git+https://github.com/oraios/serena serena memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
+    serena_memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
 }
 
 read_basic_memory_note() {
     local title="$1"
-    local result content
-    if ! result=$(uvx basic-memory tool read-note "$title" 2>&1); then
-        echo "Error: could not read existing Basic-Memory note for ${title}: ${result}" >&2
+    local result content error_file error_output
+    error_file=$(mktemp)
+    if ! result=$(uvx basic-memory tool read-note "$title" 2>"$error_file"); then
+        error_output=$(cat "$error_file")
+        rm -f "$error_file"
+        echo "Error: could not read existing Basic-Memory note for ${title}: ${error_output}" >&2
         return 1
     fi
+    rm -f "$error_file"
     if ! content=$(jq -r '.content // empty' <<<"$result" 2>&1); then
         echo "Error: could not parse Basic-Memory read-note output for ${title}: ${content}" >&2
         return 1

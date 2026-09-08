@@ -67,11 +67,14 @@ Implement rate limiting (`auth-plan.md:121-145`)
 
 `write-checkpoint.sh` reads the existing memory/note under the label first
 and merges the new dated entry into it instead of replacing it: the doc
-under a given label is a continuously accumulating log, one
-`## «timestamp»` section per checkpoint, newest first. Nothing prior is
-dropped regardless of how compact today's entry is — writing a ~400-token
-entry is safe because it lands on top of the existing history, not in place
-of it.
+under a given label is a continuously accumulating log, newest first, each
+checkpoint opening with a `## «timestamp»` line. The body's own `##`
+headings (Completed/Decisions/Next/Related, per Compression Requirements
+below) sit at that same markdown level rather than nested under it — a
+reader tells entries apart by the `## «timestamp»` lines, not by heading
+depth. Nothing prior is dropped regardless of how compact today's entry
+is — writing a ~400-token entry is safe because it lands on top of the
+existing history, not in place of it.
 
 Both backends use the same read-merge-write shape: read whatever exists
 under the label, strip its `# LABEL` title line, and write back `# LABEL` +
@@ -96,6 +99,23 @@ leaving it at the top.
    from two different projects the read could resolve to the wrong project's
    note under Basic-Memory's title-search fallback. Not yet hardened —
    avoid reusing a label across projects.
+
+**Other known limitations**, both accepted for now given a checkpoint is
+one agent session's own tool, invoked sequentially rather than concurrently:
+- **Read-merge-write is not atomic.** Two checkpoints racing for the same
+  label (concurrent sessions, or a retry issued while the first attempt is
+  still writing) can both read the same prior state and each write back
+  `entry + prior`; whichever write lands second wins, silently dropping the
+  other's entry. Likewise, if Serena's write succeeds but Basic-Memory's
+  then fails, a naive retry re-reads Serena's already-updated memory and
+  prepends a second near-duplicate entry there while Basic-Memory only gets
+  one — there is no operation identifier to detect and dedupe a
+  partially-completed retry.
+- **The document has no size bound or rotation.** Every write sends the full
+  accumulated history as one CLI argument; nothing truncates or archives old
+  entries, so a long-lived label eventually risks hitting the `ARG_MAX`
+  ceiling. Prune stale checkpoints under a label manually if this becomes a
+  problem in practice.
 
 Because both backends must carry the SAME facts, an existing note/memory
 found under the label is always updated, never replaced wholesale — a
