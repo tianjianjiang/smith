@@ -113,6 +113,25 @@ trailer or contains "on behalf of". A harness-level trailer (e.g. a default
 - **`--no-ff`**: Preserve merge commit for feature branches (maintains history)
 - **`-S`**: GPG sign commits
 
+## Status Output Semantics
+
+- **`??` in `git status --short` means untracked AND NOT ignored.** Ignored
+  files do not appear in `git status` output at all. Reading `??` as
+  "gitignored" inverts the meaning, and an all-`??` listing then looks like
+  proof that a glob covers only disposable files when it proves the opposite.
+- **Before deleting by glob, run `git ls-files <glob>`** to list the tracked
+  files that glob covers, and `git check-ignore -v <path>` to see which rule
+  (if any) actually matches. Any output from `git ls-files` is a stop
+  signal — narrow the glob or handle those tracked paths explicitly before
+  deleting. A directory full of untracked data files can still hold tracked
+  ones under the same naming pattern, and deleting those is silent until a
+  later `git status` shows a ` D ` entry.
+- Recover such a deletion with `git restore <path>`, which restores the
+  file's last committed (or staged) content — any uncommitted edits made
+  before the delete are still lost. An untracked file deleted the same way
+  cannot be recovered by git at all, so establish tracked-ness before the
+  delete, not after.
+
 ## Claude Code Plugin Integration
 
 **When commit-commands plugin is available:**
