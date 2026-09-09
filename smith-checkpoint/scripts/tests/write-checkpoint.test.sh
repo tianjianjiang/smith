@@ -401,7 +401,7 @@ RELOAD_FLAG_LOG="$SHIM/reload-flag.log"
 export RELOAD_FLAG_LOG
 rm -f "$RELOAD_FLAG_LOG"
 out=$(run_script_from_tree "$TREE_ARMED" test_label_armed "plan=$PLAN" "body=$BODY") || fail "checkpoint must succeed when the reload-flag sibling succeeds"
-echo "$out" | grep -q 'Auto-reload: armed' || fail "a successful reload-flag write must report Auto-reload: armed: $out"
+echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
 [ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
 grep -q '^test_label_armed$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
 unset RELOAD_FLAG_LOG

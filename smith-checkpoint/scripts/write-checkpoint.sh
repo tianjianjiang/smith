@@ -315,7 +315,7 @@ EOF
 
     case "$reload_status" in
         armed)
-            echo "Auto-reload: armed"
+            echo "Auto-reload: flag written (restore not guaranteed; a live /clear proves it)"
             ;;
         failed)
             echo "Auto-reload: flag write failed — use manual resume above"
