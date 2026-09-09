@@ -48,11 +48,12 @@ write_reload_flag() {
 
     local output
     if output=$("$reload_script" "$LABEL" 2>&1); then
-        echo "armed"
+        echo "written"
     else
         echo "Warning: reload-flag write failed: ${output}" >&2
         echo "failed"
     fi
+    return 0
 }
 
 resolve_primary_checkout() {
@@ -314,7 +315,7 @@ EOF
     fi
 
     case "$reload_status" in
-        armed)
+        written)
             echo "Auto-reload: flag written (restore not guaranteed; a live /clear proves it)"
             ;;
         failed)

@@ -111,9 +111,10 @@ make_fake_repo_root() {
 }
 
 install_reload_sibling() {
-  mkdir -p "$1/smith-ctx-claude/scripts"
-  cat > "$1/smith-ctx-claude/scripts/write-reload-flag.sh"
-  chmod +x "$1/smith-ctx-claude/scripts/write-reload-flag.sh"
+  root="$1"; mode="${2:-executable}"
+  mkdir -p "$root/smith-ctx-claude/scripts"
+  cat > "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
+  [ "$mode" = executable ] && chmod +x "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
 }
 
 run_script_from_tree() {
@@ -371,8 +372,10 @@ rm -rf "$TREE_NOFLAG"
 reset_logs
 TREE_NOTEXEC="$SHIM/tree-notexec"
 make_fake_repo_root "$TREE_NOTEXEC"
-mkdir -p "$TREE_NOTEXEC/smith-ctx-claude/scripts"
-printf '#!/bin/sh\nexit 0\n' > "$TREE_NOTEXEC/smith-ctx-claude/scripts/write-reload-flag.sh"
+install_reload_sibling "$TREE_NOTEXEC" non-executable <<'EOF'
+#!/bin/sh
+exit 0
+EOF
 out=$(run_script_from_tree "$TREE_NOTEXEC" test_label_noreloadexec "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr") || fail "a non-executable reload-flag script must not fail the checkpoint: $(cat "$SHIM/stderr")"
 echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a non-executable reload-flag script must not be reported as merely unavailable: $out"
 grep -q 'not executable' "$SHIM/stderr" || fail "a non-executable reload-flag script must be reported on stderr: $(cat "$SHIM/stderr")"
@@ -389,9 +392,9 @@ echo "$out" | grep -q 'Auto-reload: unavailable' || fail "a resolved-but-missing
 rm -rf "$TREE_SCRIPTS_DIR_ONLY"
 
 reset_logs
-TREE_ARMED="$SHIM/tree-armed"
-make_fake_repo_root "$TREE_ARMED"
-install_reload_sibling "$TREE_ARMED" <<'EOF'
+TREE_WRITTEN="$SHIM/tree-armed"
+make_fake_repo_root "$TREE_WRITTEN"
+install_reload_sibling "$TREE_WRITTEN" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$1" > "$RELOAD_FLAG_LOG"
 echo "Wrote reload flag: fake"
@@ -400,12 +403,12 @@ EOF
 RELOAD_FLAG_LOG="$SHIM/reload-flag.log"
 export RELOAD_FLAG_LOG
 rm -f "$RELOAD_FLAG_LOG"
-out=$(run_script_from_tree "$TREE_ARMED" test_label_armed "plan=$PLAN" "body=$BODY") || fail "checkpoint must succeed when the reload-flag sibling succeeds"
+out=$(run_script_from_tree "$TREE_WRITTEN" test_label_written "plan=$PLAN" "body=$BODY") || fail "checkpoint must succeed when the reload-flag sibling succeeds"
 echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
 [ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
-grep -q '^test_label_armed$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
+grep -q '^test_label_written$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
 unset RELOAD_FLAG_LOG
-rm -rf "$TREE_ARMED"
+rm -rf "$TREE_WRITTEN"
 
 reset_logs
 TREE_FAILED="$SHIM/tree-failed"
