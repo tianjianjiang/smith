@@ -89,16 +89,20 @@ leaving it at the top.
    snake_case memory named after the label, written into the primary
    checkout's project (works from a worktree).
 2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
-   a note titled from the label under the project folder (primary checkout
-   name, else the current directory name when outside git), type `guide`,
-   tag `checkpoint`. `--overwrite` is passed unconditionally — it is safe on
-   both a first write (nothing to conflict with) and a re-checkpoint (the
-   payload is already the full merged document, so there is nothing to lose).
-   Known limitation: the read side addresses the note by bare title, not by
-   its folder-qualified permalink, so if the same label is ever checkpointed
-   from two different projects the read could resolve to the wrong project's
-   note under Basic-Memory's title-search fallback. Not yet hardened —
-   avoid reusing a label across projects.
+   a note titled from the label, type `guide`, tag `checkpoint`.
+   `--overwrite` is passed unconditionally — it is safe on both a first
+   write (nothing to conflict with) and a re-checkpoint (the payload is
+   already the full merged document, so there is nothing to lose). The
+   folder is taken from the existing note's own `file_path` (from the same
+   `read-note` call) when one is found, so a re-checkpoint lands back in
+   whatever folder the note already lives in rather than being force-moved;
+   only a brand-new note falls back to the project folder (primary checkout
+   name, else the current directory name when outside git).
+   Known limitation: the read side still addresses the note by bare title,
+   not by a folder-qualified permalink, so if the same label is ever
+   checkpointed from two different Basic-Memory projects the read could
+   resolve to the wrong project's note under Basic-Memory's title-search
+   fallback. Not yet hardened — avoid reusing a label across projects.
 
 **Other known limitations**, both accepted for now given a checkpoint is
 one agent session's own tool, invoked sequentially rather than concurrently:

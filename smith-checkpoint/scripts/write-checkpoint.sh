@@ -211,9 +211,9 @@ write_to_serena() {
     serena_memories write "${LABEL}" ${primary_checkout:+"$primary_checkout"} --content "${document}" >&2
 }
 
-read_basic_memory_note() {
+read_basic_memory_note_json() {
     local title="$1"
-    local result content error_file error_output
+    local result error_file error_output
     error_file=$(mktemp)
     if ! result=$(uvx basic-memory tool read-note "$title" 2>"$error_file"); then
         error_output=$(cat "$error_file")
@@ -222,6 +222,11 @@ read_basic_memory_note() {
         return 1
     fi
     rm -f "$error_file"
+    printf '%s' "$result"
+}
+
+extract_basic_memory_content() {
+    local result="$1" title="$2" content
     if ! content=$(jq -r '.content // empty' <<<"$result" 2>&1); then
         echo "Error: could not parse Basic-Memory read-note output for ${title}: ${content}" >&2
         return 1
@@ -229,15 +234,34 @@ read_basic_memory_note() {
     printf '%s' "$content"
 }
 
+extract_basic_memory_file_path() {
+    local result="$1"
+    jq -r '.file_path // empty' <<<"$result" 2>/dev/null
+}
+
+basic_memory_folder_from_file_path() {
+    local file_path="$1"
+    if [[ -z "$file_path" ]]; then
+        return 0
+    elif [[ "$file_path" == */* ]]; then
+        printf '%s' "${file_path%/*}"
+    else
+        printf '.'
+    fi
+}
+
 write_to_basic_memory() {
     local entry="$1"
     local title="$2"
     local project="$3"
-    local folder="projects/${project}"
 
     echo "Writing to Basic-Memory: ${title}" >&2
-    local existing document
-    existing=$(read_basic_memory_note "$title") || return 1
+    local result existing file_path existing_folder folder document
+    result=$(read_basic_memory_note_json "$title") || return 1
+    existing=$(extract_basic_memory_content "$result" "$title") || return 1
+    file_path=$(extract_basic_memory_file_path "$result")
+    existing_folder=$(basic_memory_folder_from_file_path "$file_path")
+    folder="${existing_folder:-projects/${project}}"
     document=$(build_merged_document "$entry" "$existing")
     uvx basic-memory tool write-note \
         --title "${title}" \
