@@ -147,22 +147,26 @@ cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "accumulate second call
 [ "$(wc -l < "$SHIM/serena_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Serena before writing: $(cat "$SHIM/serena_read.argv")"
 [ "$(wc -l < "$SHIM/bm_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Basic-Memory before writing: $(cat "$SHIM/bm_read.argv")"
 
-reset_logs
-printf '# test_label_customfolder\n- [x] prior fact from another folder scheme\n' > "$SHIM/store_bm_Test_Label_Customfolder"
-printf 'smith' > "$SHIM/store_bm_folder_Test_Label_Customfolder"
-run_script test_label_customfolder >/dev/null 2>"$SHIM/stderr" || fail "custom-folder path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- '--folder smith' "$SHIM/bm.argv" || fail "an existing note's own folder must be reused, not the default projects/<project> scheme: $(cat "$SHIM/bm.argv")"
-grep -qF -- 'prior fact from another folder scheme' "$SHIM/bm.content" || fail "custom-folder note's prior content must still be merged in: $(cat "$SHIM/bm.content")"
+assert_existing_note_folder_reused() {
+  local label="$1" title_key="$2" seeded_folder="$3"
+  reset_logs
+  printf '# %s\n- [x] prior fact from folder %s\n' "$label" "$seeded_folder" > "$SHIM/store_bm_${title_key}"
+  printf '%s' "$seeded_folder" > "$SHIM/store_bm_folder_${title_key}"
+  run_script "$label" >/dev/null 2>"$SHIM/stderr" || fail "$label: script exited non-zero: $(cat "$SHIM/stderr")"
+  grep -qF -- "--folder $seeded_folder" "$SHIM/bm.argv" || fail "$label: an existing note's own folder ($seeded_folder) must be reused, not the default projects/<project> scheme: $(cat "$SHIM/bm.argv")"
+  grep -qF -- "prior fact from folder $seeded_folder" "$SHIM/bm.content" || fail "$label: prior content must still be merged in: $(cat "$SHIM/bm.content")"
+}
 
-reset_logs
-printf '# test_label_rootfolder\n- [x] prior fact from a root-level note\n' > "$SHIM/store_bm_Test_Label_Rootfolder"
-printf '.' > "$SHIM/store_bm_folder_Test_Label_Rootfolder"
-run_script test_label_rootfolder >/dev/null 2>"$SHIM/stderr" || fail "root-folder path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- '--folder .' "$SHIM/bm.argv" || fail "a note living at the Basic-Memory project root must be re-written to that same root folder: $(cat "$SHIM/bm.argv")"
+assert_existing_note_folder_reused test_label_customfolder Test_Label_Customfolder smith
+assert_existing_note_folder_reused test_label_rootfolder Test_Label_Rootfolder .
+
+assert_existing_note_folder_reused test_label_folderaccumulate Test_Label_Folderaccumulate smith
+run_script test_label_folderaccumulate >/dev/null 2>"$SHIM/stderr" || fail "folder-accumulate second call: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -qF -- '--folder smith' "$SHIM/bm.argv" || fail "a second checkpoint on a custom-folder note must not drift back to the default projects/<project> folder: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 run_script test_label_newnote >/dev/null 2>"$SHIM/stderr" || fail "new-note path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "a brand-new note with no prior folder must still default to projects/<project>: $(cat "$SHIM/bm.argv")"
+grep -qF -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "a brand-new note with no prior folder must still default to projects/<project>: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 printf '# test_label_titleonly\n' > "$SHIM/store_serena_test_label_titleonly"

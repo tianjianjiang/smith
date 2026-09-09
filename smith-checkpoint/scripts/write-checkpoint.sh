@@ -234,9 +234,13 @@ extract_basic_memory_content() {
     printf '%s' "$content"
 }
 
-extract_basic_memory_folder() {
-    local result="$1" file_path
-    file_path=$(jq -r '.file_path // empty' <<<"$result" 2>/dev/null) || return 0
+extract_basic_memory_file_path() {
+    local result="$1"
+    jq -r '.file_path // empty' <<<"$result" 2>/dev/null
+}
+
+basic_memory_folder_from_file_path() {
+    local file_path="$1"
     if [[ -z "$file_path" ]]; then
         return 0
     elif [[ "$file_path" == */* ]]; then
@@ -252,10 +256,11 @@ write_to_basic_memory() {
     local project="$3"
 
     echo "Writing to Basic-Memory: ${title}" >&2
-    local result existing existing_folder folder document
+    local result existing file_path existing_folder folder document
     result=$(read_basic_memory_note_json "$title") || return 1
     existing=$(extract_basic_memory_content "$result" "$title") || return 1
-    existing_folder=$(extract_basic_memory_folder "$result")
+    file_path=$(extract_basic_memory_file_path "$result")
+    existing_folder=$(basic_memory_folder_from_file_path "$file_path")
     folder="${existing_folder:-projects/${project}}"
     document=$(build_merged_document "$entry" "$existing")
     uvx basic-memory tool write-note \
