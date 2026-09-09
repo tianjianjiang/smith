@@ -223,6 +223,10 @@ When invoked via `/smith-checkpoint` (no arguments required):
      entry to it (see Targets and formats above); only the first checkpoint
      under a label creates fresh state
    - Writes to both backends (Serena + Basic-Memory)
+   - On Claude Code, also writes the post-`/clear` memory-restore flag via
+     `write-reload-flag.sh` (see Runtime prerequisites below); on another
+     platform, or if that sibling script is missing, this step is skipped
+     without failing the checkpoint
    - Outputs success to stderr, Reload block to stdout
 
 8. If script exits non-zero, report stderr error.

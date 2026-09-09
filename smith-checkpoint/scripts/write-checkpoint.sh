@@ -34,6 +34,23 @@ detect_active_plan() {
     return 0
 }
 
+write_reload_flag() {
+    local reload_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../smith-ctx-claude/scripts" 2>/dev/null && pwd)/write-reload-flag.sh"
+    if [[ ! -x "$reload_script" ]]; then
+        echo "unavailable"
+        return 0
+    fi
+
+    local output
+    if output=$("$reload_script" "$LABEL" 2>&1); then
+        echo "armed"
+    else
+        echo "Warning: reload-flag write failed: ${output}" >&2
+        echo "failed"
+    fi
+    return 0
+}
+
 resolve_primary_checkout() {
     command -v git &>/dev/null || return 0
     git rev-parse --is-inside-work-tree &>/dev/null || return 0
@@ -277,6 +294,7 @@ generate_reload_block() {
     local plan_path="$2"
     local timestamp="$3"
     local project="$4"
+    local reload_status="$5"
 
     cat <<EOF
 
@@ -290,6 +308,18 @@ EOF
     if [[ -n "$plan_path" ]]; then
         echo "- plan: ${plan_path}"
     fi
+
+    case "$reload_status" in
+        armed)
+            echo "Auto-reload: armed"
+            ;;
+        failed)
+            echo "Auto-reload: flag write failed — use manual resume above"
+            ;;
+        *)
+            echo "Auto-reload: unavailable (no Claude Code reload-flag script found)"
+            ;;
+    esac
 }
 
 report_success() {
@@ -356,8 +386,11 @@ main() {
         permalink=""
     fi
 
+    local reload_status
+    reload_status=$(write_reload_flag)
+
     report_success "$permalink" "$project" "$timestamp"
-    generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project"
+    generate_reload_block "$permalink" "$plan_path" "$timestamp" "$project" "$reload_status"
 }
 
 main
