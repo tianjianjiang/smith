@@ -1,16 +1,18 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle (SDLC) — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as an Easy Approach to Requirements Syntax plus Given-When-Then contract), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md Architecture Decision Record log), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
+description: AI-native software development lifecycle (SDLC) — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as an Easy Approach to Requirements Syntax plus Given-When-Then contract, smith addition), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md Architecture Decision Record log, smith addition), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   tags: ["sdlc", "intent", "spec", "design", "adr", "plan", "governance", "evals"]
 ---
 
 # AI-Native Software Development Lifecycle
 
 Source: Anthropic, ["The AI-Native SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
-(published 2026-08-21, retrieved 2026-09-08); companion posts
+(published 2026-08-21, retrieved 2026-09-08) and the companion
+["AI-Native SDLC Playbook" course](https://academy.claude.com/courses/ai-native-sdlc-playbook)
+on Claude Academy (retrieved 2026-09-10); related posts
 ["How Anthropic secures its AI-native software development lifecycle"](https://claude.com/blog/how-anthropic-secures-its-ai-native-software-development-lifecycle)
 and ["Claude on call: How Claude Tag serves as Anthropic's first responder for CI/CD failures"](https://claude.com/blog/ai-ci-cd-on-call).
 Full per-stage detail (exact prompts, file templates, governance/measurement
@@ -45,12 +47,12 @@ it is what triggers the next stage:
    against organizational skills (brand, security, compliance, user
    experience)
 3. **Build** → `plan.md` — Claude Code's plan-mode output, committed (see
-   Build stage below); then the diff and its tests
-4. **Test** → test output pasted into the session/PR, plus the continuous
-   eval suite's pass/fail
+   Build stage below)
+4. **Test** → the diff and its tests, plus the continuous eval suite's
+   own pass/fail
 5. **Deploy** → the PR with its review findings, then the merged commit
-6. **Maintain** → a detected control-band breach or scan finding, written
-   back as a new `intent.md`
+6. **Maintain** → the incident record — a detected control-band breach or
+   scan finding, written back as a new `intent.md`
 
 The chain of commits is the audit trail: who asked for what, what the
 agent produced, and who approved it at each gate. Early-stage artifacts
@@ -104,7 +106,7 @@ discusses one `intent.md` splitting into several specs or several intents
 merging into one, so don't read a cardinality rule into language that was
 only describing what gets committed together.
 
-### design.md as an Architecture Decision Record (ADR) log (optional, durable, cross-cutting)
+### design.md as an Architecture Decision Record (ADR) log (optional, durable, cross-cutting, smith addition)
 
 Design decisions get *made* in this stage's session, which is why this
 lives here rather than under Build — but the log itself is not part of
@@ -162,6 +164,12 @@ history as `plan.md` so it joins the audit trail, and check the eventual
 diff against it at PR review (Stage 5). `@smith-mode-plan/SKILL.md` covers
 tracking progress through a plan's tasks once implementation starts.
 
+The playbook's own instruction: "When implementation departs from the
+plan, update `plan.md` in the same commit. Consider using a hook to
+enforce synchronization between the two." The template's four headings —
+**Files that change**, **Order of work**, **Risks**, **Proof** — live in
+`references/PLAYBOOK.md`.
+
 Four other build-stage plays, all things smith already does in spirit —
 this skill just names them against the playbook's vocabulary:
 
@@ -187,10 +195,22 @@ during Design-stage sessions, not Build, even though it shares Build's
 durable/cross-cutting lifecycle rather than `spec.md`'s per-feature one.)
 
 **Legacy systems sidebar:** for every artifact, name one system as the
-source of truth (the repo, the legacy system with the repo as a working
-copy, or linkage as the minimum bar — record ID in the artifact, commit
-SHA in the legacy record). Don't let two systems both claim authority
-with no link between them.
+source of truth — three models, detailed in `references/PLAYBOOK.md`:
+
+- **The repo as source of truth** — markdown artifacts are authoritative;
+  the legacy system just references commits.
+- **The legacy system as source of truth** — Jira/ServiceNow/etc. holds
+  the record; markdown is a working copy Claude reads at session start
+  and writes back to via MCP.
+- **Linkage as the minimum bar** — record ID in the artifact, commit SHA
+  in the legacy record; both sources of truth coexist for now.
+
+Don't let two systems both claim authority with no link between them.
+
+**Measure:** share of changes that merge from the first implementation
+pass, and time from plan approval to merged PR (leading); rework cycles
+per change, and how often the merged diff still matches the committed
+`plan.md` (lagging).
 
 ## Stage 4: Test — feedback loop + continuous evals
 
@@ -266,7 +286,10 @@ invocation path, and what it finds re-enters as `intent.md`.
   review gate, wider findings become `intent.md`.
 - **Claude on call** (Claude Tag) — incidents arriving via Slack/Teams get
   Claude as first responder under its own identity; the channel thread is
-  the audit trail. Small fixes become a PR; larger work becomes `intent.md`.
+  the audit trail. The playbook's own words: Claude "writes the
+  post-mortem to a version-controlled lessons file that future
+  investigations can read." Small fixes become a PR; larger work becomes
+  `intent.md`.
 
 Every finding that ships a fix also adds a permanent eval for that
 incident class, so the same regression cannot reach production twice

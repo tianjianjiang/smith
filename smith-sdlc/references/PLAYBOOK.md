@@ -2,8 +2,10 @@
 
 Full detail supporting `../SKILL.md`. Source: Anthropic, ["The AI-Native
 SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
-(2026-08-21, retrieved 2026-09-08). Three provenance tiers, because the
-distinction matters when you copy from here:
+(2026-08-21, retrieved 2026-09-08) and the companion
+["AI-Native SDLC Playbook" course](https://academy.claude.com/courses/ai-native-sdlc-playbook)
+on Claude Academy (retrieved 2026-09-10). Three provenance tiers, because
+the distinction matters when you copy from here:
 
 **Verbatim** — the `spec.md` prompt, `CLAUDE.md` block, evals workflow,
 `REVIEW.md` and `bands.yaml` are Anthropic's own worked examples,
