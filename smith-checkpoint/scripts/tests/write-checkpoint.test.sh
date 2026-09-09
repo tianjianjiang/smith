@@ -105,6 +105,25 @@ reset_logs() {
   rm -f "$SHIM/serena.argv" "$SHIM/serena.content" "$SHIM/bm.argv" "$SHIM/bm.content" "$SHIM/serena_read.argv" "$SHIM/bm_read.argv"
 }
 
+make_fake_repo_root() {
+  mkdir -p "$1/smith-checkpoint/scripts"
+  cp "$SCRIPT" "$1/smith-checkpoint/scripts/write-checkpoint.sh"
+}
+
+install_reload_sibling() {
+  root="$1"; mode="${2:-executable}"
+  mkdir -p "$root/smith-ctx-claude/scripts"
+  cat > "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
+  if [ "$mode" = executable ]; then
+    chmod +x "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
+  fi
+}
+
+run_script_from_tree() {
+  root="$1"; shift
+  (cd "$SHIM" && bash "$root/smith-checkpoint/scripts/write-checkpoint.sh" "$@")
+}
+
 reset_logs
 out=$(run_script test_label_success "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "success path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write-note argv must pass --overwrite so it succeeds whether or not the note already exists: $(cat "$SHIM/bm.argv")"
@@ -343,5 +362,68 @@ printf 'line1\nline2\nline3\nline4\n%s\n' "$ACTIVE_PLAN" > "$CTX_HOME/plans/.pla
 (cd "$SHIM" && CLAUDE_CONFIG_DIR="$CTX_HOME" _SMITH_PPID=54321 bash "$SCRIPT" test_label_autoplan "body=$BODY") >/dev/null 2>"$SHIM/stderr" || fail "auto-detected active plan: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -qF -- "**Plan**: \`$ACTIVE_PLAN\`" "$SHIM/serena.content" || fail "a plan auto-detected from the ctx-claude plan-state file must be threaded into the entry: $(cat "$SHIM/serena.content")"
 grep -qF -- "- Plan: $ACTIVE_PLAN" "$SHIM/serena.content" || fail "an auto-detected plan must also appear under Related: $(cat "$SHIM/serena.content")"
+
+reset_logs
+TREE_NOFLAG="$SHIM/tree-noflag"
+make_fake_repo_root "$TREE_NOFLAG"
+out=$(run_script_from_tree "$TREE_NOFLAG" test_label_noreloadscript "plan=$PLAN" "body=$BODY") || fail "checkpoint must still succeed when no smith-ctx-claude sibling is present"
+echo "$out" | grep -q 'Auto-reload: unavailable' || fail "missing reload-flag script must report Auto-reload: unavailable: $out"
+[ -s "$SHIM/serena.content" ] || fail "missing reload-flag script must not block the Serena write"
+rm -rf "$TREE_NOFLAG"
+
+reset_logs
+TREE_NOTEXEC="$SHIM/tree-notexec"
+make_fake_repo_root "$TREE_NOTEXEC"
+install_reload_sibling "$TREE_NOTEXEC" non-executable <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+out=$(run_script_from_tree "$TREE_NOTEXEC" test_label_noreloadexec "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr") || fail "a non-executable reload-flag script must not fail the checkpoint: $(cat "$SHIM/stderr")"
+echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a non-executable reload-flag script must not be reported as merely unavailable: $out"
+grep -q 'not executable' "$SHIM/stderr" || fail "a non-executable reload-flag script must be reported on stderr: $(cat "$SHIM/stderr")"
+[ -s "$SHIM/serena.content" ] || fail "a non-executable reload-flag script must not block the Serena write"
+rm -rf "$TREE_NOTEXEC"
+
+reset_logs
+TREE_SCRIPTS_DIR_ONLY="$SHIM/tree-scripts-dir-only"
+make_fake_repo_root "$TREE_SCRIPTS_DIR_ONLY"
+mkdir -p "$TREE_SCRIPTS_DIR_ONLY/smith-ctx-claude/scripts"
+out=$(run_script_from_tree "$TREE_SCRIPTS_DIR_ONLY" test_label_scriptsdironly "plan=$PLAN" "body=$BODY") || fail "a smith-ctx-claude/scripts directory with no write-reload-flag.sh in it must not fail the checkpoint"
+echo "$out" | grep -q 'Auto-reload: unavailable' || fail "a resolved-but-missing reload-flag script must report Auto-reload: unavailable: $out"
+[ -s "$SHIM/serena.content" ] || fail "a resolved-but-missing reload-flag script must not block the Serena write"
+rm -rf "$TREE_SCRIPTS_DIR_ONLY"
+
+reset_logs
+TREE_WRITTEN="$SHIM/tree-written"
+make_fake_repo_root "$TREE_WRITTEN"
+install_reload_sibling "$TREE_WRITTEN" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" > "$RELOAD_FLAG_LOG"
+echo "Wrote reload flag: fake"
+exit 0
+EOF
+RELOAD_FLAG_LOG="$SHIM/reload-flag.log"
+export RELOAD_FLAG_LOG
+rm -f "$RELOAD_FLAG_LOG"
+out=$(run_script_from_tree "$TREE_WRITTEN" test_label_written "plan=$PLAN" "body=$BODY") || fail "checkpoint must succeed when the reload-flag sibling succeeds"
+echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
+[ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
+grep -q '^test_label_written$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
+unset RELOAD_FLAG_LOG
+rm -rf "$TREE_WRITTEN"
+
+reset_logs
+TREE_FAILED="$SHIM/tree-failed"
+make_fake_repo_root "$TREE_FAILED"
+install_reload_sibling "$TREE_FAILED" <<'EOF'
+#!/bin/sh
+echo "cannot write reload flag: disk full" >&2
+exit 1
+EOF
+out=$(run_script_from_tree "$TREE_FAILED" test_label_reloadfail "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr") || fail "a failing reload-flag write must not fail the checkpoint: $(cat "$SHIM/stderr")"
+echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a failed reload-flag write must report Auto-reload: flag write failed: $out"
+grep -q 'reload-flag write failed' "$SHIM/stderr" || fail "a failed reload-flag write must be reported on stderr: $(cat "$SHIM/stderr")"
+[ -s "$SHIM/serena.content" ] || fail "a failed reload-flag write must not block the Serena write"
+rm -rf "$TREE_FAILED"
 
 echo "PASS: write-checkpoint"
