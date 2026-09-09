@@ -56,6 +56,7 @@ case "$argv" in
   *"basic-memory tool read-note"*)
     title=$(value_after read-note "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
+    folder_store="$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_read.argv"
     if [ "${BM_READ_BROKEN:-0}" = "1" ]; then
       echo "connection reset by peer" >&2
@@ -63,21 +64,29 @@ case "$argv" in
     fi
     if [ -f "$store" ]; then
       [ "${BM_READ_NOISE:-0}" = "1" ] && echo "Resolved 1 package in 3ms" >&2
-      jq -Rs --arg title "$title" --arg permalink "projects/$(basename "$PWD")/$(store_key "$title")" '{title: $title, permalink: $permalink, content: .}' < "$store"
+      if [ -f "$folder_store" ]; then
+        folder=$(cat "$folder_store")
+      else
+        folder="projects/$(basename "$PWD")"
+      fi
+      jq -Rs --arg title "$title" --arg file_path "$folder/$title.md" '{title: $title, file_path: $file_path, content: .}' < "$store"
     else
-      printf '{"title": null, "content": null}\n'
+      printf '{"title": null, "file_path": null, "content": null}\n'
     fi
     exit 0
     ;;
   *"basic-memory tool write-note"*)
     title=$(value_after --title "$@")
+    folder=$(value_after --folder "$@")
     content=$(value_after --content "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
+    folder_store="$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
     [ "${BM_FAIL:-0}" = "1" ] && { echo "write-note failed" >&2; exit 1; }
     printf '%s' "$content" > "$store"
-    printf '{"permalink": "projects/%s/%s"}\n' "$(basename "$PWD")" "$(store_key "$title")"
+    printf '%s' "$folder" > "$folder_store"
+    printf '{"permalink": "%s/%s"}\n' "$folder" "$(store_key "$title")"
     exit 0
     ;;
 esac
@@ -137,6 +146,23 @@ bm_oldest_line=$(grep -n 'first session thing' "$SHIM/bm.content" | cut -d: -f1)
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "accumulate second call: Serena and Basic-Memory must receive identical merged content"
 [ "$(wc -l < "$SHIM/serena_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Serena before writing: $(cat "$SHIM/serena_read.argv")"
 [ "$(wc -l < "$SHIM/bm_read.argv" | tr -d ' ')" = 2 ] || fail "each checkpoint must read Basic-Memory before writing: $(cat "$SHIM/bm_read.argv")"
+
+reset_logs
+printf '# test_label_customfolder\n- [x] prior fact from another folder scheme\n' > "$SHIM/store_bm_Test_Label_Customfolder"
+printf 'smith' > "$SHIM/store_bm_folder_Test_Label_Customfolder"
+run_script test_label_customfolder >/dev/null 2>"$SHIM/stderr" || fail "custom-folder path: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- '--folder smith' "$SHIM/bm.argv" || fail "an existing note's own folder must be reused, not the default projects/<project> scheme: $(cat "$SHIM/bm.argv")"
+grep -qF -- 'prior fact from another folder scheme' "$SHIM/bm.content" || fail "custom-folder note's prior content must still be merged in: $(cat "$SHIM/bm.content")"
+
+reset_logs
+printf '# test_label_rootfolder\n- [x] prior fact from a root-level note\n' > "$SHIM/store_bm_Test_Label_Rootfolder"
+printf '.' > "$SHIM/store_bm_folder_Test_Label_Rootfolder"
+run_script test_label_rootfolder >/dev/null 2>"$SHIM/stderr" || fail "root-folder path: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- '--folder .' "$SHIM/bm.argv" || fail "a note living at the Basic-Memory project root must be re-written to that same root folder: $(cat "$SHIM/bm.argv")"
+
+reset_logs
+run_script test_label_newnote >/dev/null 2>"$SHIM/stderr" || fail "new-note path: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "a brand-new note with no prior folder must still default to projects/<project>: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 printf '# test_label_titleonly\n' > "$SHIM/store_serena_test_label_titleonly"
