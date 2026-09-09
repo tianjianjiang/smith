@@ -741,6 +741,18 @@ never guessed. Every target **pulls** it, so the line is never hand-typed:
   message. No MCP hook: the single source guarantees the format; only presence
   depends on remembering to include it.
 
+**Presence on `git commit` and `gh pr create/edit/comment/review` is enforced,
+not just documented above** — see `smith-git/scripts/hooks/commit-attribution-guard.sh`
+(`@smith-git/references/HOOKS.md`) and `smith-gh-pr/scripts/enforce-attribution.sh`
+(`smith-gh-pr/README.md`), both sharing the regex/"on behalf of" check in
+`attribution-lib.sh`'s `attribution_check_body` function. A harness-level default
+trailer (Claude Code's own `Co-Authored-By:`/"Generated with" text) does not satisfy
+either hook; also set `attribution.commit`/`attribution.pr` to `""` in `settings.json`
+so the harness stops appending a competing trailer in the first place — hardcoding
+those settings to a literal `Assisted-by:` string instead is NOT an option: they take
+only a static string with no model-name templating, which reintroduces the exact
+staleness problem this mechanism exists to avoid.
+
 Limitations (by design; the model id is not reachable as an environment variable,
 so the file keyed by working directory is the only coordinate a hook and a
 Bash-context pull can share): two concurrent sessions in the SAME checkout on
@@ -986,6 +998,16 @@ then:
     `"status":"review_completed"` and non-empty `reviewedFiles`. Confirm
     `coderabbit review` (no `--agent`), `coderabbit --help`, and
     `coderabbit auth status` stay silent.
+22. **commit-attribution-guard** — attempt `git commit -m "x"` with no
+    `Assisted-by:` trailer; confirm it blocks with the required-format
+    guidance. Confirm a commit whose message includes a correct
+    `Assisted-by: Claude:<model>` trailer (via `-m`, `-F`, or the
+    `-m "$(cat <<'EOF' ...)"` heredoc form) is allowed, and that
+    `git status`/`git log` stay silent.
+23. **enforce-attribution** — attempt `gh pr create --body "x"` (or `--body-file`,
+    `pr edit`, `pr comment`, `pr review`) with no `Assisted-by:` trailer; confirm
+    it blocks. Confirm a body containing the correct trailer is allowed, and
+    that "on behalf of" in the body blocks even with a correct trailer present.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not

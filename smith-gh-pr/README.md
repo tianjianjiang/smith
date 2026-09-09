@@ -6,7 +6,7 @@ GitHub Pull Request workflows: creation, review, stacking, merging.
 
 ### Attribution Format Enforcement
 
-Register `enforce-attribution.sh` as a PreToolUse hook to validate PR comment attribution format:
+Register `enforce-attribution.sh` as a PreToolUse hook to validate PR body/comment attribution format:
 
 ```json
 {
@@ -21,9 +21,16 @@ Register `enforce-attribution.sh` as a PreToolUse hook to validate PR comment at
 Add to `~/.claude/settings.json` or project `.claude/settings.json`.
 
 The hook validates:
-- `gh pr comment` and `gh pr review` commands contain `Assisted-by: Claude:claude-[model]` format
+- `gh pr comment`, `gh pr review`, `gh pr create`, and `gh pr edit` commands contain
+  `Assisted-by: Claude:claude-[model]` format — including a heredoc body
+  (`--body "$(cat <<'EOF' ...)"`), not just `-b`/`--body=`/`-F`
 - No "on behalf of" pattern
 - Attribution from `~/.smith/smith-ctx-claude/scripts/attribution.sh` (never hand-typed)
+
+The regex and "on behalf of" check live in `smith-ctx-claude/scripts/attribution-lib.sh`'s
+`attribution_check_body` function, shared with `smith-git`'s
+`commit-attribution-guard.sh` (see `@smith-git/SKILL.md` Commit Standards) so the two
+hooks can't drift apart the way the docs and the enforced regex once did (#261).
 
 ## Related
 

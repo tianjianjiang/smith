@@ -7,9 +7,7 @@ input=$(cat) || exit 0
 command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [[ -z "$command" ]] && exit 0
 
-[[ "$command" != gh\ * ]] && exit 0
-[[ "$command" != *"pr comment"* ]] && [[ "$command" != *"pr review"* ]] \
-    && [[ "$command" != *"pr create"* ]] && [[ "$command" != *"pr edit"* ]] && exit 0
+[[ "$command" != *"git commit"* ]] && exit 0
 
 BODY=""
 
@@ -25,23 +23,23 @@ if [[ -z "$BODY" ]]; then
     if [[ "$command" =~ -F[[:space:]]+\"([^\"]+)\" ]] || [[ "$command" =~ -F[[:space:]]+([^[:space:]]+) ]]; then
         file="${BASH_REMATCH[1]}"
         [[ -f "$file" ]] && BODY=$(cat "$file")
-    elif [[ "$command" =~ --body-file=\"([^\"]+)\" ]] || [[ "$command" =~ --body-file=([^[:space:]]+) ]]; then
+    elif [[ "$command" =~ --file=\"([^\"]+)\" ]] || [[ "$command" =~ --file=([^[:space:]]+) ]]; then
         file="${BASH_REMATCH[1]}"
         [[ -f "$file" ]] && BODY=$(cat "$file")
     fi
 fi
 
 if [[ -z "$BODY" ]]; then
-    if [[ "$command" =~ (-b|--body)[[:space:]=]+\"(.*)\" ]]; then
-        BODY="${BASH_REMATCH[2]}"
-    elif [[ "$command" =~ --body=([^[:space:]]+) ]]; then
-        BODY="${BASH_REMATCH[1]}"
-    fi
+    scan="$command"
+    while [[ "$scan" =~ (-m|--message)[[:space:]=]+\"([^\"]*)\" ]]; do
+        BODY+="${BASH_REMATCH[2]}"$'\n'
+        scan="${scan/${BASH_REMATCH[0]}/}"
+    done
 fi
 
 [[ -z "$BODY" ]] && exit 0
 
-source "$(dirname "$0")/../../smith-ctx-claude/scripts/attribution-lib.sh"
+source "$(dirname "$0")/../../../smith-ctx-claude/scripts/attribution-lib.sh"
 attribution_check_body "$BODY" || exit 2
 
 exit 0

@@ -44,3 +44,22 @@ attribution_model_from_transcript() {
             | .message.model' 2>/dev/null \
         | tail -1
 }
+
+attribution_check_body() {
+    local body="$1"
+    if ! grep -qE 'Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?' <<< "$body"; then
+        echo "Error: Missing or invalid assisted-by attribution" >&2
+        echo "" >&2
+        echo "Required format:" >&2
+        ~/.smith/smith-ctx-claude/scripts/attribution.sh >&2
+        echo "" >&2
+        echo "NEVER hand-type the attribution - always run the script above" >&2
+        return 2
+    fi
+    if grep -qi "on behalf of" <<< "$body"; then
+        echo "Error: Found forbidden 'on behalf of' pattern" >&2
+        echo "Use assisted-by attribution only (run attribution.sh)" >&2
+        return 2
+    fi
+    return 0
+}
