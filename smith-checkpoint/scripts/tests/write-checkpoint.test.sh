@@ -355,7 +355,7 @@ grep -qF -- "**Plan**: \`$ACTIVE_PLAN\`" "$SHIM/serena.content" || fail "a plan 
 grep -qF -- "- Plan: $ACTIVE_PLAN" "$SHIM/serena.content" || fail "an auto-detected plan must also appear under Related: $(cat "$SHIM/serena.content")"
 
 reset_logs
-TREE_NOFLAG="$(mktemp -d)"
+TREE_NOFLAG="$SHIM/tree-noflag"
 make_tree_reproducing_sibling_layout "$TREE_NOFLAG"
 out=$(run_script_from_tree "$TREE_NOFLAG" test_label_noreloadscript "plan=$PLAN" "body=$BODY") || fail "checkpoint must still succeed when no smith-ctx-claude sibling is present"
 echo "$out" | grep -q 'Auto-reload: unavailable' || fail "missing reload-flag script must report Auto-reload: unavailable: $out"
@@ -363,7 +363,7 @@ echo "$out" | grep -q 'Auto-reload: unavailable' || fail "missing reload-flag sc
 rm -rf "$TREE_NOFLAG"
 
 reset_logs
-TREE_ARMED="$(mktemp -d)"
+TREE_ARMED="$SHIM/tree-armed"
 make_tree_reproducing_sibling_layout "$TREE_ARMED"
 mkdir -p "$TREE_ARMED/smith-ctx-claude/scripts"
 cat > "$TREE_ARMED/smith-ctx-claude/scripts/write-reload-flag.sh" <<'EOF'
@@ -384,7 +384,7 @@ unset RELOAD_FLAG_LOG
 rm -rf "$TREE_ARMED"
 
 reset_logs
-TREE_FAILED="$(mktemp -d)"
+TREE_FAILED="$SHIM/tree-failed"
 make_tree_reproducing_sibling_layout "$TREE_FAILED"
 mkdir -p "$TREE_FAILED/smith-ctx-claude/scripts"
 cat > "$TREE_FAILED/smith-ctx-claude/scripts/write-reload-flag.sh" <<'EOF'
