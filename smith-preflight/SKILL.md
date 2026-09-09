@@ -29,7 +29,7 @@ owning skill, and the owner's wording wins over this file's.
 - Authenticated login: !`gh api user --jq .login 2>/dev/null | head -1`
 - Subagent spawn ledger (written by `subagent-contract-guard`; see
   subagent-contract below):
-  !`node -e 'const b=process.env.CLAUDE_CONFIG_DIR||process.env.HOME+"/.claude";import(b+"/skills/smith-ctx-claude/scripts/spawn-ledger-report.mjs").catch(()=>console.log("subagent-contract PROBE-UNAVAILABLE — this profile has no guard installed at its skills path"))'`
+  !`node -e 'const configDir=process.env.CLAUDE_CONFIG_DIR||process.env.HOME+"/.claude";import(configDir+"/skills/smith-ctx-claude/scripts/spawn-ledger-report.mjs").catch(()=>console.log("subagent-contract PROBE-UNAVAILABLE — this profile has no guard installed at its skills path"))' 2>/dev/null || echo "subagent-contract PROBE-UNAVAILABLE — this profile has no guard installed at its skills path"`
 
 ## Checks
 
