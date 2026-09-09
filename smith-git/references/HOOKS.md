@@ -19,6 +19,7 @@ import from this skill.
 | `branch-guard.mjs` | PreToolUse (`Edit\|Write\|NotebookEdit\|serena writes`) | Blocks file edits while a repo is on its default branch |
 | `worktree-dirty-guard.mjs` | PreToolUse (`EnterWorktree`) | Blocks entering a worktree while the checkout has uncommitted changes |
 | `branch-name-guard.mjs` | PreToolUse (`Bash`, `EnterWorktree`) | Blocks a non-Conventional-Branch-Names branch create/rename |
+| `commit-attribution-guard.sh` | PreToolUse (`Bash`) | Blocks a `git commit` whose message is missing the `Assisted-by:` trailer |
 | `post-merge-pull-reminder.mjs` | PostToolUse (`Bash`) | Advisory: reminds to fast-forward-only pull the default branch after `gh pr merge` |
 
 ## branch-guard

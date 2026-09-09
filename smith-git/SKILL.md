@@ -98,7 +98,13 @@ commit type, description is lowercase hyphen-separated words, e.g.
 
 **Attribution**: AI-assisted commits carry an `Assisted-by:` trailer; the agent
 never adds `Signed-off-by:` (only humans certify the DCO) — see
-`@smith-style/SKILL.md`.
+`@smith-style/SKILL.md`. **Enforced deterministically by
+`smith-git/scripts/hooks/commit-attribution-guard.sh`** (PreToolUse, matcher
+`Bash`) — blocks a `git commit` whose message (via `-m`, `--message`, `-F`,
+`--file=`, or the `-m "$(cat <<'EOF' ...)"` heredoc form) is missing the
+trailer or contains "on behalf of". A harness-level trailer (e.g. a default
+`Co-Authored-By:` line) does not satisfy this — the hook checks for the
+`Assisted-by:` pattern specifically.
 
 ## Non-Obvious Flags
 

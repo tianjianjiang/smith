@@ -96,6 +96,18 @@ assisted, not the human who directed the work — the commit's author field, or
 the account it posts under, already carries that name, so do not pair it
 with an "on behalf of" line (`@smith-gh-pr`).
 
+**Claude Code's own default trailer competes with this.** The harness appends
+its own `Co-Authored-By:`/"Generated with Claude Code" text to commits and PR
+bodies unless `settings.json`'s `attribution.commit`/`attribution.pr` keys are
+set to `""` (the deprecated `includeCoAuthoredBy` boolean predates this and is
+superseded by it). Set both to empty rather than to a literal `Assisted-by:`
+string: `attribution.commit`/`.pr` take only a static string with no
+model-name templating, so hardcoding one there reintroduces the exact
+staleness problem `attribution.sh` exists to avoid. Emptying them removes the
+competing default; `commit-attribution-guard.sh` and `enforce-attribution.sh`
+(`@smith-git`, `@smith-gh-pr`) are what actually enforce the correct trailer's
+presence.
+
 ## Branch Names
 
 **Pattern**: `type/description` — the Conventional Branch specification
