@@ -769,6 +769,23 @@ Each ships a self-check (fixture JSON → stdin, assert exit code + stdout):
 
 ## Registration
 
+**Never register a hook against code that isn't on the branch its path
+resolves to yet.** `~/.smith` and `~/.claude/skills` are plain symlinks to
+this repo's checkout — whichever branch is currently checked out there,
+normally `main`. A `settings.json` entry naming a script under either path
+takes effect immediately, on every Bash call, in every session, the moment
+it's saved — it does not wait for a PR to merge. Adding a new hook's
+`settings.json` entry in the same step as writing the script on a feature
+branch/worktree points that entry at a file that doesn't exist on `main`
+yet, and every Bash call anywhere starts failing with
+`PreToolUse:Bash hook error ... No such file or directory` until the branch
+merges. The fix is sequencing, not a different path scheme: write and test
+the script on its branch, merge the PR, fast-forward-pull `main` in the
+primary checkout, confirm the file resolves through the live symlink
+(`test -x ~/.smith/<path>`), *then* add the `settings.json` entry — as a
+separate step, after merge, never bundled into the same PR/commit that adds
+the script.
+
 **Where to save it**: these are user-level hooks, so they belong in
 `$HOME/.claude/settings.json` — not a project's `.claude/settings.json`.
 Open (or create) it:
