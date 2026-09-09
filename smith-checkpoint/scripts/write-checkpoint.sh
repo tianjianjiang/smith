@@ -36,8 +36,13 @@ detect_active_plan() {
 
 write_reload_flag() {
     local reload_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../smith-ctx-claude/scripts" 2>/dev/null && pwd)/write-reload-flag.sh"
-    if [[ ! -x "$reload_script" ]]; then
+    if [[ ! -e "$reload_script" ]]; then
         echo "unavailable"
+        return 0
+    fi
+    if [[ ! -x "$reload_script" ]]; then
+        echo "Warning: reload-flag script found but not executable: ${reload_script}" >&2
+        echo "failed"
         return 0
     fi
 
@@ -48,7 +53,6 @@ write_reload_flag() {
         echo "Warning: reload-flag write failed: ${output}" >&2
         echo "failed"
     fi
-    return 0
 }
 
 resolve_primary_checkout() {
