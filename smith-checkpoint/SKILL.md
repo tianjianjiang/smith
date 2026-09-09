@@ -240,7 +240,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 `/smith-checkpoint` (capture) and its post-`/clear` reload flag have runtime
 dependencies. If they are missing, capture may still be attempted but the
-checkpoint is **incomplete** — it is not successful until all three backend
+checkpoint is **incomplete** — it is not successful until both backend
 writes succeed (the skill reports which failed rather than claiming success),
 and reload degrades:
 

@@ -114,7 +114,9 @@ install_reload_sibling() {
   root="$1"; mode="${2:-executable}"
   mkdir -p "$root/smith-ctx-claude/scripts"
   cat > "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
-  [ "$mode" = executable ] && chmod +x "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
+  if [ "$mode" = executable ]; then
+    chmod +x "$root/smith-ctx-claude/scripts/write-reload-flag.sh"
+  fi
 }
 
 run_script_from_tree() {
@@ -392,7 +394,7 @@ echo "$out" | grep -q 'Auto-reload: unavailable' || fail "a resolved-but-missing
 rm -rf "$TREE_SCRIPTS_DIR_ONLY"
 
 reset_logs
-TREE_WRITTEN="$SHIM/tree-armed"
+TREE_WRITTEN="$SHIM/tree-written"
 make_fake_repo_root "$TREE_WRITTEN"
 install_reload_sibling "$TREE_WRITTEN" <<'EOF'
 #!/bin/sh
