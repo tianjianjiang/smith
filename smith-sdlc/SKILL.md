@@ -12,7 +12,7 @@ metadata:
 Source: Anthropic, ["The AI-Native SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
 (published 2026-08-21, retrieved 2026-09-08) and the companion
 ["AI-Native SDLC Playbook" course](https://academy.claude.com/courses/ai-native-sdlc-playbook)
-on Claude Academy (retrieved 2026-09-10); companion posts
+on Claude Academy (retrieved 2026-09-10); related posts
 ["How Anthropic secures its AI-native software development lifecycle"](https://claude.com/blog/how-anthropic-secures-its-ai-native-software-development-lifecycle)
 and ["Claude on call: How Claude Tag serves as Anthropic's first responder for CI/CD failures"](https://claude.com/blog/ai-ci-cd-on-call).
 Full per-stage detail (exact prompts, file templates, governance/measurement
@@ -164,11 +164,11 @@ history as `plan.md` so it joins the audit trail, and check the eventual
 diff against it at PR review (Stage 5). `@smith-mode-plan/SKILL.md` covers
 tracking progress through a plan's tasks once implementation starts.
 
-When implementation departs from the plan, update `plan.md` in the same
-commit — the playbook's own instruction; consider a hook that enforces
-this synchronization instead of relying on habit. The template's four
-headings — **Files that change**, **Order of work**, **Risks**, **Proof**
-— live in `references/PLAYBOOK.md`.
+The playbook's own instruction: "When implementation departs from the
+plan, update `plan.md` in the same commit. Consider using a hook to
+enforce synchronization between the two." The template's four headings —
+**Files that change**, **Order of work**, **Risks**, **Proof** — live in
+`references/PLAYBOOK.md`.
 
 Four other build-stage plays, all things smith already does in spirit —
 this skill just names them against the playbook's vocabulary:
@@ -286,9 +286,10 @@ invocation path, and what it finds re-enters as `intent.md`.
   review gate, wider findings become `intent.md`.
 - **Claude on call** (Claude Tag) — incidents arriving via Slack/Teams get
   Claude as first responder under its own identity; the channel thread is
-  the audit trail. Claude writes the post-mortem to a version-controlled
-  lessons file that future investigations can read. Small fixes become a
-  PR; larger work becomes `intent.md`.
+  the audit trail. The playbook's own words: Claude "writes the
+  post-mortem to a version-controlled lessons file that future
+  investigations can read." Small fixes become a PR; larger work becomes
+  `intent.md`.
 
 Every finding that ships a fix also adds a permanent eval for that
 incident class, so the same regression cannot reach production twice
