@@ -223,13 +223,20 @@ on a stack.
 
 - **Prefer the native `gh stack` extension (github/gh-stack) when it is
   installed** — it builds and manages the whole stack (`gh stack init` / `add`
-  / `submit` / `push` / `sync` / `rebase` / `merge`) instead of hand-rolling
-  the base-retarget and rebase cascade. Confirm availability with `gh
-  extension list`; never assert from memory that it is absent (recurring
-  miss — verify from source, `@smith-guidance` Honest). The manual git/gh
-  workflows in `references/STACKS.md` are the fallback when the extension is
-  unavailable, and remain the reference for WHY each step matters (e.g. the
-  cli/cli#1168 child-close race).
+  / `submit` / `push` / `sync` / `rebase` / `checkout` / `link` / `merge`)
+  instead of hand-rolling the base-retarget and rebase cascade. Confirm
+  availability with `gh extension list`; never assert from memory that it is
+  absent (recurring miss — verify from source, `@smith-guidance` Honest). The
+  manual git/gh workflows in `references/STACKS.md` are the fallback when the
+  extension is unavailable, and remain the reference for WHY each step
+  matters (e.g. the cli/cli#1168 child-close race).
+- **`gh stack view` saying "not part of a stack" is a per-worktree tracking
+  gap, not a licence to hand-roll.** Run `gh stack checkout <stack#|PR#>` to
+  restore tracking in this worktree, then `gh stack sync`. Hand-rolled
+  `git rebase --onto` cascades, raw-SHA `--force-with-lease` refspec pushes,
+  and edits to `.git/gh-stack` are blocked-by-ask (`gh-stack-guard`); the
+  2026-09-11 incident walkthrough is in `references/STACKS.md` "Existing
+  stack from a fresh worktree".
 - Merge bottom-up: retarget each child's base onto its grandparent (or the
   default branch) BEFORE merging or deleting the parent — never after.
   `gh pr merge --delete-branch` on a parent whose child still targets it

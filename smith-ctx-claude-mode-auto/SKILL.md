@@ -6,7 +6,7 @@ description: Claude Code auto mode classifier
 # Auto Mode Classifier — Denial Recovery
 
 **Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
-**Load if:** An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`
+**Load if:** An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`, OR a "safeguards flagged this message ... Switched to" model-fallback banner appeared
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
 **Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode (verified 2026-05-21)
 
@@ -145,6 +145,33 @@ remaining soft blocks; a general request like "clean up the repo" does **not**
 count — the message must describe the exact action). As with `environment`,
 include the literal `"$defaults"` in any of these arrays to keep the built-in
 rules while adding your own.
+
+## Model Safeguard Fallback (not a classifier denial)
+
+A second, unrelated gate sits server-side: the model's own safeguard can flag
+one request, and Claude Code then swaps the model for the rest of the session.
+The transcript records it as a `system` entry with `subtype:
+model_refusal_fallback`, an `apiRefusalCategory` (e.g. `cyber`), and a
+`fallbackModel`; the visible banner reads "«model»'s safeguards flagged this
+message ... Switched to «fallback»." There is no assistant text, no denial
+reason, and no auto-mode counter involved.
+
+- **It is silent and sticky.** Every later turn is answered by the fallback
+  model until the user runs `/model`. Say so in-band the moment it happens
+  ("this and later turns are from «fallback model»"), because the user
+  otherwise cannot tell which model wrote what, and `Assisted-by:` trailers
+  follow the model that actually ran.
+- **Do not retry the flagged command shape.** Known false positive
+  (2026-09-11): a per-branch cascade of `git checkout --detach <sha> && git
+  rebase --onto ...` followed by `git push --force-with-lease=<branch>:<sha>
+  origin <sha>:refs/heads/<branch>` reads as history tampering and was flagged
+  `[cyber]`. The prevention is upstream of the classifier: `gh stack sync`
+  never emits that shape (`@smith-gh-pr` Stacked PRs; `gh-stack-guard` asks
+  before the hand-rolled form).
+- **Recovery order:** state the fallback → finish or park the current step
+  with the safe tool → let the user decide whether to `/model` back. A
+  fallback is not permission to continue the flagged approach on the other
+  model.
 
 ## Related
 
