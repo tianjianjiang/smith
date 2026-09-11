@@ -70,8 +70,12 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 5. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
-6. Reply to comments with commit SHA
-7. **Resolve threads after addressing** - don't leave resolved issues open
+6. Reply with commit SHA — by reviewer type:
+   - **Automated reviewer's thread, no human joined**: post directly (mechanics)
+   - **Human reviewer, or a human joined the bot thread**: draft, show, post
+     only on an explicit yes, one reply per turn (`@smith-guidance` External writes)
+7. **Resolve only automated reviewers' threads** after addressing — don't leave
+   them open. A human's thread is theirs to resolve; leave it open after replying.
 8. Re-check for new comments after CI passes
 
 **Code review response rules:**
@@ -81,7 +85,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
   Review Findings" below) so the author commits it in one click instead of
   re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
-- Reply with commit SHA, then resolve thread with `gh pr-review threads resolve`
+- Reply with commit SHA; in an automated reviewer's thread that no human joined, then resolve it with `gh pr-review threads resolve`. A human reviewer's thread gets the reply only after their explicit yes and stays open for them to resolve (`@smith-guidance` External writes)
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is content — show it and post on a yes (`@smith-guidance` Harmless)
 - **Attribution**: When Claude Code generates or posts a comment, end it with the `Assisted-by:` line (see `@smith-style`). No "on behalf of" line — the account it posts under already names that human. A handle in a body names the person the comment addresses, never its poster.

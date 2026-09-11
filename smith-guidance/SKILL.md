@@ -86,8 +86,9 @@ retrieved 2026-07-11).
     user authored (authorship says which PRs are *eligible*, never that merging
     was authorized), `--force-with-lease` on a branch you own (personal or your
     PR's, never shared or default — `@smith-git`), ff-only sync,
-    resolving threads, and replies to an automated reviewer's own thread that no
-    human has joined. Decide-and-proceed; do not re-ask between obvious steps.
+    resolving an automated reviewer's threads (a human reviewer's thread stays
+    open for them to resolve), and replies to an automated reviewer's own thread
+    that no human has joined. Decide-and-proceed; do not re-ask between obvious steps.
   - Whether to ship at all is never mechanics — it needs its own explicit
     instruction (see the commit/push/external-write bullet above).
     Decide-and-proceed governs only the steps inside an already-authorized ship.
