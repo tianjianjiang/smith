@@ -144,9 +144,10 @@ comment wording are point-in-time; the review-event test is not.
   per turn. A reply to an automated reviewer's own thread is mechanics and needs
   no yes — unless a human has joined that thread, which makes it theirs.
   Canonical split: `@smith-guidance` Harmless.
-- Merging, `--force-with-lease`, ff-sync, and resolving threads are mechanics —
-  decide-and-proceed inside an authorized ship (the PR ownership gate above
-  bounds which PRs qualify).
+- Merging, `--force-with-lease`, ff-sync, and resolving an automated
+  reviewer's threads are mechanics — decide-and-proceed inside an authorized
+  ship (the PR ownership gate above bounds which PRs qualify). A human
+  reviewer's thread stays open for them to resolve.
 - Always end the body with the `Assisted-by:` line (`@smith-style`)
 
 ## Approving a PR by command
