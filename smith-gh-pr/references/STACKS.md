@@ -18,14 +18,63 @@ and it automates most of the manual dance documented below:
   on GitHub (the create-the-PRs step)
 - `gh stack push` — push the active branches in the stack to the remote only,
   without creating or updating PRs
-- `gh stack sync` / `rebase` — keep local and remote in sync after changes
+- `gh stack sync` — fetch, reconcile with the stack on GitHub, fast-forward
+  the trunk, cascade-rebase every branch onto its updated parent, push all
+  branches with `--force-with-lease --atomic`, and link the open PRs into
+  the GitHub stack object. The one command for "update the stack after
+  trunk or a parent moved"
+- `gh stack rebase` — the cascade rebase alone; `--continue` after resolving
+  a conflict, `--abort` restores every branch
+- `gh stack checkout <stack#|PR#|PR-URL>` — adopt an existing stack from
+  GitHub into the current checkout (fetches the branches and writes local
+  tracking)
+- `gh stack link <bottom> ... <top>` — register existing PRs as a stack on
+  GitHub without local tracking; a stack number as the first argument appends
+  to that stack
 - `gh stack merge` — merge the chain bottom-up
-- `gh stack view` / `modify` — inspect or restructure
+- `gh stack view` / `modify` / `unstack` — inspect, restructure, or dissolve
 
 The manual `git rebase --onto` cascade and per-child base-retargeting in the
-sections below remain the fallback when the extension is unavailable, and the
-explanation for WHY each safeguard exists (e.g. the cli/cli#1168 child-close
-race) so a manual recovery stays correct.
+sections below remain the fallback ONLY when the extension is unavailable, and
+the explanation for WHY each safeguard exists (e.g. the cli/cli#1168
+child-close race) so a manual recovery stays correct.
+
+### Existing stack from a fresh worktree
+
+Local tracking lives per checkout (`.git/gh-stack` for the main checkout,
+`.git/worktrees/<name>/gh-stack` for each worktree). A new worktree therefore
+starts with none, and `gh stack view` reports:
+
+```text
+✗ current branch "feat/child" is not part of a stack
+Checkout an existing stack using `gh stack checkout` ...
+```
+
+That message is a missing tracking file, not a missing stack. Recovery:
+
+1. `gh stack checkout <stack#>` (the number in the GitHub stack UI; a PR
+   number or URL also works) — restores tracking in this worktree from GitHub
+2. `gh stack sync` — rebases the cascade and pushes atomically
+3. On a conflict, `gh stack rebase`, resolve, `gh stack rebase --continue`
+   (or `--abort`)
+
+Never do any of the following while the extension is installed; each one was
+the wrong turn in the 2026-09-11 incident (a five-PR stack, twelve hand-rolled
+rebases, and a false conflict):
+
+- Hand-roll `git checkout --detach <sha> && git rebase --onto <parent-tip>
+  <old-parent-tip>` per branch. The `trunk.head` recorded in the tracking file
+  goes stale the moment trunk moves; using it as the `--onto` base replays
+  commits that trunk already merged and surfaces them as conflicts.
+- Push with `--force-with-lease=<branch>:<sha> origin <sha>:refs/heads/<branch>`
+  per branch. The raw-SHA refspec cascade reads as history tampering to the
+  model safeguard and has triggered a `[cyber]` model fallback.
+- Edit `.git/gh-stack` or `.git/worktrees/*/gh-stack` by hand (`jq`, Python).
+  `gh stack sync` rewrites it from GitHub.
+
+A branch checked out in another worktree cannot be rebased; `git -C <that
+worktree> checkout --detach` first, then run `gh stack sync` from the
+worktree that owns the stack tracking.
 
 ## When to stack
 

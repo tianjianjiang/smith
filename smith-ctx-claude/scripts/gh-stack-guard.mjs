@@ -18,12 +18,28 @@ const SUBPROCESS_OPTIONS = {
   timeout: 5000,
   killSignal: "SIGKILL",
 };
-const HAND_ROLLED_STACK_HINT = /--onto|pr\s+create/;
+const HAND_ROLLED_STACK_HINT = /--onto|pr\s+create|force-with-lease=|gh-stack/;
+const TRACKING_FILE = /(^|\/)\.git\/(worktrees\/[^/]+\/)?gh-stack$/;
+const RAW_SHA_REFSPEC = /^[0-9a-f]{7,40}:refs\/heads\//;
+const LEASE_WITH_SHA = /^--force-with-lease=[^:]+:[0-9a-f]{7,40}$/;
 
 function rebasesOnto(tokens) {
   return (
     tokens[0] === "git" && tokens.includes("rebase") && tokens.includes("--onto")
   );
+}
+
+function pushesRawShaRefspec(tokens) {
+  return (
+    tokens[0] === "git" &&
+    tokens.includes("push") &&
+    tokens.some((token) => LEASE_WITH_SHA.test(token)) &&
+    tokens.some((token) => RAW_SHA_REFSPEC.test(token))
+  );
+}
+
+function touchesTrackingFile(tokens) {
+  return tokens.some((token) => TRACKING_FILE.test(token));
 }
 
 function stackedCreateBase(tokens) {
@@ -64,18 +80,21 @@ function defaultBranch(cwd) {
   return "";
 }
 
-function handRollsStack(command, cwd) {
+function classify(command, cwd) {
   let resolvedDefaultBranch;
+  let advisory = false;
   for (const tokens of commandSegments(command)) {
-    if (rebasesOnto(tokens)) return true;
+    if (rebasesOnto(tokens)) return "ask";
+    if (pushesRawShaRefspec(tokens)) return "ask";
+    if (touchesTrackingFile(tokens)) return "ask";
     const base = stackedCreateBase(tokens);
     if (base === null) continue;
     if (resolvedDefaultBranch === undefined) {
       resolvedDefaultBranch = defaultBranch(cwd);
     }
-    if (resolvedDefaultBranch && base !== resolvedDefaultBranch) return true;
+    if (resolvedDefaultBranch && base !== resolvedDefaultBranch) advisory = true;
   }
-  return false;
+  return advisory ? "advise" : null;
 }
 
 function nativeStackMarkers() {
@@ -99,14 +118,32 @@ function nativeStackInstalled(markers) {
   }
 }
 
-function reminder() {
+const NATIVE_FLOW =
+  "The gh stack extension (github/gh-stack) is installed; drive the stack " +
+  "with it: `gh stack view` says \"not part of a stack\" → `gh stack checkout " +
+  "<stack#|PR#>` (tracking is per worktree), then `gh stack sync` (fetch, " +
+  "cascade rebase, --force-with-lease --atomic push, link PRs); conflicts → " +
+  "`gh stack rebase` / `--continue` / `--abort`. Per @smith-gh-pr Stacked PRs.";
+
+function askReason() {
   return (
-    "gh-stack-guard: this command hand-builds a stacked pull " +
-    "request (gh pr create with a non-default --base, or git rebase --onto), " +
-    "but the gh stack extension (github/gh-stack) is installed. Prefer gh stack " +
-    "(init / add / submit / push / sync / rebase / merge) over hand-rolling the " +
-    "base-retarget and rebase cascade. Verify tools with `gh extension list`; do " +
-    "not assume a native tool is absent. Per @smith-gh-pr Stacked PRs."
+    "gh-stack-guard: this command hand-rolls a stacked-PR rebase " +
+    "(git rebase --onto, a raw-SHA --force-with-lease refspec push, or a " +
+    "write to the .git/gh-stack tracking file). A stale tracking-file trunk " +
+    "head used as the --onto base replays already-merged commits into a " +
+    "false conflict, and the raw-SHA cascade has been flagged by the model " +
+    "safeguard as history tampering. " +
+    NATIVE_FLOW
+  );
+}
+
+function advisory() {
+  return (
+    "gh-stack-guard: this command hand-builds a stacked pull request " +
+    "(gh pr create with a non-default --base). Prefer `gh stack submit` " +
+    "(or `gh stack link` for branches managed elsewhere). Verify tools with " +
+    "`gh extension list`; do not assume a native tool is absent. " +
+    NATIVE_FLOW
   );
 }
 
@@ -120,10 +157,23 @@ function main() {
   if (!HAND_ROLLED_STACK_HINT.test(command)) return;
 
   const cwd = input.cwd || process.cwd();
-  if (!handRollsStack(command, cwd)) return;
+  const decision = classify(command, cwd);
+  if (decision === null) return;
   if (!nativeStackInstalled(nativeStackMarkers())) return;
 
-  const message = reminder();
+  if (decision === "ask") {
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "ask",
+          permissionDecisionReason: askReason(),
+        },
+      }) + "\n",
+    );
+    return;
+  }
+  const message = advisory();
   process.stdout.write(
     JSON.stringify({
       hookSpecificOutput: {

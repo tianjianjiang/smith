@@ -20,7 +20,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `subagent-contract-guard.mjs` | PreToolUse (`Agent\|Task`) | Blocks a subagent spawn missing the read-only contract |
 | `skill-read-substitution-guard.mjs` | PreToolUse (`Read`) | Advisory: Read of a `SKILL.md` should be a Skill-tool invocation instead |
 | `skill-claim-lint.mjs` | Stop | Advisory: flags a claimed-but-not-invoked skill |
-| `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Advisory: prefer `gh stack` over hand-built stacked PRs |
+| `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
 | `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround |
 | `coderabbit-status-check.mjs` | PostToolUse (`Bash`) | Advisory: validate CodeRabbit `--agent` output before trusting it |
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
@@ -354,12 +354,26 @@ companion to `skill-read-substitution-guard`. Advisory only, never blocks.
 ## gh-stack-guard
 
 **gh-stack-guard** (`smith-ctx-claude/scripts/gh-stack-guard.mjs`)
-— PreToolUse guard (matcher `Bash`) that emits an **advisory** when a command
-hand-builds a stacked pull request (`gh pr create` with a non-default `--base`,
-or `git rebase --onto`) while the native `gh stack` extension (markers in
-`smith-ctx-claude/gh-stack-config.json`) is installed: prefer `gh stack`
-over the manual base-retarget and rebase cascade. Only fires when the extension
-is actually present (`gh extension list`); advisory only, never blocks.
+— PreToolUse guard (matcher `Bash`) that fires only while the native `gh
+stack` extension (markers in `smith-ctx-claude/gh-stack-config.json`) is
+installed (`gh extension list`). Two tiers:
+
+- **Asks** (`permissionDecision: ask`) on a hand-rolled stacked-PR rebase:
+  `git rebase --onto` in any segment (including `git checkout --detach <sha>
+  && git rebase -q --onto ...`), a `git push --force-with-lease=<branch>:<sha>
+  ... <sha>:refs/heads/<branch>` raw-SHA refspec push, or any token naming a
+  `.git/gh-stack` / `.git/worktrees/<name>/gh-stack` tracking file. The reason
+  text carries the recovery: `gh stack checkout <stack#|PR#>` when `gh stack
+  view` says "not part of a stack", then `gh stack sync`, `gh stack rebase
+  --continue` / `--abort` for conflicts. Escalated from advisory after the
+  2026-09-11 incident, where the advisory-tier text was known to the model
+  and the cascade was hand-rolled anyway (twelve rebases, a false conflict
+  from a stale tracking-file trunk head, and a `[cyber]` model fallback).
+- **Advisory** on `gh pr create` with a non-default `--base`: prefer `gh stack
+  submit` / `gh stack link`.
+
+A plain `git push --force-with-lease origin <branch>` (branch name, no SHA) and
+every `gh stack` subcommand stay silent.
 
 ## rtk-find-symlink-guard
 
@@ -966,7 +980,9 @@ then:
     without invoking it via the Skill tool; confirm the advisory appears.
 14. **gh-stack-guard** — with the `gh stack` extension installed,
     run `gh pr create --base <a-non-default-branch>`; confirm the advisory points
-    you to `gh stack`. Without the extension it stays silent.
+    you to `gh stack`. Then run `git rebase --onto x y` as a Bash tool call;
+    confirm a permission prompt whose reason names `gh stack checkout` and
+    `gh stack sync`. Without the extension both stay silent.
 15. **attribution-model-stamp** — run any Bash command, then confirm
     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
     model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
