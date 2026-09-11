@@ -33,7 +33,7 @@ if [[ -z "$BODY" ]]; then
     scan="$command"
     while [[ "$scan" =~ (-m|--message)[[:space:]=]+\"([^\"]*)\" ]]; do
         BODY+="${BASH_REMATCH[2]}"$'\n'
-        scan="${scan/${BASH_REMATCH[0]}/}"
+        scan="${scan#*"${BASH_REMATCH[0]}"}"
     done
 fi
 

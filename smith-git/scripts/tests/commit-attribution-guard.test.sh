@@ -7,7 +7,7 @@ command -v jq >/dev/null 2>&1 || { echo "SKIP: commit-attribution-guard (jq not 
 fail() { echo "FAIL: $1"; exit 1; }
 
 assert_exit() {
-  printf '%s' "$2" | "$HOOK" >/dev/null 2>&1
+  printf '%s' "$2" | timeout 5 "$HOOK" >/dev/null 2>&1
   got=$?
   [ "$got" = "$3" ] || fail "$1 (expected exit $3, got $got)"
 }
@@ -40,5 +40,12 @@ assert_exit "null stdin allowed" 'null' 0
 
 assert_exit "commit -F pointing at a nonexistent file is skipped, not false-blocked" \
   '{"tool_input":{"command":"git commit -F /nonexistent/path/for/test-guard"}}' 0
+
+assert_exit "-m with glob characters and valid trailer allowed (no hang)" \
+  "{\"tool_input\":{\"command\":\"git commit -m \\\"feat: [DCA] x\\n\\n$VALID_TRAILER\\\"\"}}" 0
+assert_exit "-m with glob characters missing trailer blocked (no hang)" \
+  '{"tool_input":{"command":"git commit -m \"feat: [DCA] x\""}}' 2
+assert_exit "second -m carries trailer after glob-character first -m allowed" \
+  "{\"tool_input\":{\"command\":\"git commit -m \\\"feat: [DCA] x\\\" -m \\\"$VALID_TRAILER\\\"\"}}" 0
 
 echo "PASS: commit-attribution-guard"
