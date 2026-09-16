@@ -6,6 +6,12 @@ SHIM="$(mktemp -d)"
 trap 'rm -rf "$SHIM"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
+unset BASIC_MEMORY_CONFIG_DIR BASIC_MEMORY_HOME BASIC_MEMORY_MCP_PROJECT
+export CLAUDE_CONFIG_DIR="$SHIM/claude-home"
+mkdir -p "$CLAUDE_CONFIG_DIR/plans"
+count_real_flags() { ls "$HOME/.claude/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' '; }
+REAL_FLAGS_BEFORE=$(count_real_flags)
+
 cat > "$SHIM/uvx" <<'EOF'
 #!/bin/sh
 argv="$*"
@@ -256,7 +262,7 @@ git init -q "$REPO" && (cd "$REPO" && git -c user.email=t@t -c user.name=t commi
 git -C "$REPO" worktree add -q "$REPO/.claude/worktrees/wt" -b wt
 PRIMARY="$(cd "$REPO" && pwd -P)"
 wt_out=$(cd "$REPO/.claude/worktrees/wt" && bash "$SCRIPT" test_label_worktree "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "worktree path: script exited non-zero: $(cat "$SHIM/stderr")"
-echo "$wt_out" | grep -q 'Serena: test_label_worktree (primary-repo project)' || fail "reload block must name the resolved Serena project: $wt_out"
+echo "$wt_out" | grep -qF -- "- Serena: $PRIMARY/.serena/memories/test_label_worktree.md" || fail "reload block must name the Serena memory file by absolute path: $wt_out"
 grep -qF -- "serena memories write test_label_worktree $PRIMARY --content" "$SHIM/serena.argv" || fail "worktree: serena argv should name the primary checkout: $(cat "$SHIM/serena.argv")"
 grep -q -- '--folder projects/primary-repo' "$SHIM/bm.argv" || fail "worktree: folder should use the primary checkout name: $(cat "$SHIM/bm.argv")"
 
@@ -425,5 +431,187 @@ echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a failed reload-
 grep -q 'reload-flag write failed' "$SHIM/stderr" || fail "a failed reload-flag write must be reported on stderr: $(cat "$SHIM/stderr")"
 [ -s "$SHIM/serena.content" ] || fail "a failed reload-flag write must not block the Serena write"
 rm -rf "$TREE_FAILED"
+
+make_repo_with_worktree() {
+  repo="$1"
+  git init -q "$repo" && (cd "$repo" && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init)
+  git -C "$repo" worktree add -q "$repo/.claude/worktrees/wt" -b wt
+}
+
+set_primary_project() {
+  mkdir -p "$1/.claude"
+  printf '{"basicMemory": {"primaryProject": "%s"}}\n' "$3" > "$1/.claude/$2"
+}
+
+run_script_in() {
+  dir="$1"; shift
+  (cd "$dir" && bash "$SCRIPT" "$@")
+}
+
+assert_no_backend_argv() {
+  for f in serena_read.argv serena.argv bm_read.argv bm.argv; do
+    [ ! -e "$SHIM/$f" ] || fail "$1: $f exists, a backend was called before the guard: $(cat "$SHIM/$f")"
+  done
+}
+
+reset_logs
+R1="$SHIM/repo-t1"
+make_repo_with_worktree "$R1"
+( export BASIC_MEMORY_CONFIG_DIR=/x; run_script_in "$R1" test_label_retiredvar "body=$BODY" >/dev/null 2>"$SHIM/stderr" ) && fail "T1: a retired BASIC_MEMORY_CONFIG_DIR must make the script exit non-zero"
+grep -qF -- 'BASIC_MEMORY_CONFIG_DIR=/x' "$SHIM/stderr" || fail "T1: stderr must name the variable and its value: $(cat "$SHIM/stderr")"
+grep -q 'settings.local.json' "$SHIM/stderr" && grep -q 'launcher' "$SHIM/stderr" && grep -q 'shell' "$SHIM/stderr" || fail "T1: stderr must name the three possible sources: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T1"
+( export BASIC_MEMORY_HOME=/y; run_script_in "$R1" test_label_retiredhome "body=$BODY" >/dev/null 2>"$SHIM/stderr" ) && fail "T1: a retired BASIC_MEMORY_HOME must make the script exit non-zero"
+grep -qF -- 'BASIC_MEMORY_HOME=/y' "$SHIM/stderr" || fail "T1: stderr must name BASIC_MEMORY_HOME: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T1 (HOME)"
+
+reset_logs
+set_primary_project "$R1" settings.local.json alpha
+( export BASIC_MEMORY_MCP_PROJECT=locked; run_script_in "$R1" test_label_lockconflict "body=$BODY" >/dev/null 2>"$SHIM/stderr" ) && fail "T2: an environment lock that differs from primaryProject must make the script exit non-zero"
+grep -qF -- 'BASIC_MEMORY_MCP_PROJECT=locked' "$SHIM/stderr" || fail "T2: stderr must name the lock: $(cat "$SHIM/stderr")"
+grep -qF -- 'primaryProject alpha' "$SHIM/stderr" || fail "T2: stderr must name the conflicting primaryProject: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T2"
+
+reset_logs
+R3="$SHIM/repo-t3"
+make_repo_with_worktree "$R3"
+out=$( export BASIC_MEMORY_MCP_PROJECT=locked; run_script_in "$R3" test_label_lockonly "body=$BODY" 2>"$SHIM/stderr" ) || fail "T3: a lock without primaryProject must succeed: $(cat "$SHIM/stderr")"
+grep -q -- '--project' "$SHIM/bm.argv" && fail "T3: no --project may be passed when the environment lock decides: $(cat "$SHIM/bm.argv")"
+echo "$out" | grep -qF -- 'project: locked (locked by BASIC_MEMORY_MCP_PROJECT)' || fail "T3: reload block must report the lock: $out"
+
+reset_logs
+set_primary_project "$R1" settings.json other
+run_script_in "$R1" test_label_projectlocal "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T4: script exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- '--project alpha' "$SHIM/bm_read.argv" || fail "T4: read-note must carry --project from settings.local.json: $(cat "$SHIM/bm_read.argv")"
+grep -q -- '--project alpha' "$SHIM/bm.argv" || fail "T4: write-note must carry --project from settings.local.json: $(cat "$SHIM/bm.argv")"
+grep -q -- '--project other' "$SHIM/bm.argv" && fail "T4: settings.local.json must win over settings.json: $(cat "$SHIM/bm.argv")"
+reset_logs
+out=$(run_script_in "$R3" test_label_projectdefault "body=$BODY" 2>"$SHIM/stderr") || fail "T4: default-project script exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- '--project' "$SHIM/bm.argv" && fail "T4: without primaryProject no --project may be passed: $(cat "$SHIM/bm.argv")"
+echo "$out" | grep -qF -- 'project: (default)' || fail "T4: reload block must say the default project is used: $out"
+echo "$out" | grep -qF -- 'folder: projects/repo-t3' || fail "T4: reload block must name the folder: $out"
+reset_logs
+R4="$SHIM/repo-t4"
+make_repo_with_worktree "$R4"
+set_primary_project "$R4" settings.json shared
+run_script_in "$R4" test_label_projectshared "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T4: settings.json-only run exited non-zero: $(cat "$SHIM/stderr")"
+grep -q -- '--project shared' "$SHIM/bm.argv" || fail "T4: settings.json must be read when settings.local.json has no primaryProject: $(cat "$SHIM/bm.argv")"
+reset_logs
+printf '{"basicMemory": {"primaryProject": "broken"' > "$R4/.claude/settings.local.json"
+run_script_in "$R4" test_label_brokensettings "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T4: a malformed settings.local.json must make the script exit non-zero, not fall back"
+grep -q 'cannot read basicMemory.primaryProject' "$SHIM/stderr" || fail "T4: malformed settings must be reported with the file: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T4 (malformed)"
+reset_logs
+printf '{"basicMemory": {"primaryProject": 42}}\n' > "$R4/.claude/settings.local.json"
+run_script_in "$R4" test_label_nonstringproject "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T4: a non-string primaryProject must make the script exit non-zero"
+grep -q 'must be a string' "$SHIM/stderr" || fail "T4: non-string primaryProject must be reported: $(cat "$SHIM/stderr")"
+reset_logs
+printf '{"basicMemory": {"primaryProject": false}}\n' > "$R4/.claude/settings.local.json"
+run_script_in "$R4" test_label_falseproject "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T4: a boolean primaryProject must make the script exit non-zero"
+grep -q 'must be a string' "$SHIM/stderr" || fail "T4: boolean primaryProject must be reported: $(cat "$SHIM/stderr")"
+reset_logs
+printf '{"basicMemory": {"primaryProject": null}}\n' > "$R4/.claude/settings.local.json"
+run_script_in "$R4" test_label_nullproject "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T4: a null primaryProject must count as unset and fall through to settings.json: $(cat "$SHIM/stderr")"
+grep -q -- '--project shared' "$SHIM/bm.argv" || fail "T4: null primaryProject must fall through to settings.json: $(cat "$SHIM/bm.argv")"
+rm -f "$R4/.claude/settings.local.json"
+
+reset_logs
+W1="$R1/.claude/worktrees/wt"
+P1="$(cd "$R1" && pwd -P)"
+run_script_in "$W1" test_label_wtheader "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T5: worktree run exited non-zero: $(cat "$SHIM/stderr")"
+grep -q '^\*\*Git\*\*: wt @ ' "$SHIM/serena.content" || fail "T5: header must carry the Git line: $(cat "$SHIM/serena.content")"
+grep -qF -- "**Worktree**: \`$P1/.claude/worktrees/wt\`" "$SHIM/serena.content" || fail "T5: header must name the worktree: $(cat "$SHIM/serena.content")"
+grep -qF -- '**Branch**: wt' "$SHIM/serena.content" || fail "T5: header must name the branch"
+grep -qF -- "**Primary**: \`$P1\`" "$SHIM/serena.content" || fail "T5: header must name the primary checkout"
+grep -qF -- "**Resume**: EnterWorktree path=$P1/.claude/worktrees/wt before any file edit" "$SHIM/serena.content" || fail "T5: header must carry the resume instruction: $(cat "$SHIM/serena.content")"
+grep -qF -- "serena memories write test_label_wtheader $P1 --content" "$SHIM/serena.argv" || fail "T5: Serena project must stay the primary checkout: $(cat "$SHIM/serena.argv")"
+reset_logs
+run_script_in "$R1" test_label_plainheader "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T5: plain-repo run exited non-zero: $(cat "$SHIM/stderr")"
+grep -q '^\*\*Git\*\*: ' "$SHIM/serena.content" || fail "T5: plain repo header must carry the Git line"
+grep -q '^\*\*Worktree\*\*' "$SHIM/serena.content" && fail "T5: plain repo header must not carry worktree lines"
+grep -q '^\*\*Resume\*\*' "$SHIM/serena.content" && fail "T5: plain repo header must not carry a Resume line"
+[ "$(grep -c '^\*\*Git\*\*' "$SHIM/serena.content")" = 1 ] || fail "T5: Git line must appear exactly once: $(cat "$SHIM/serena.content")"
+
+reset_logs
+mkdir -p "$W1/.serena/memories" "$P1/.serena/memories"
+printf 'project: yml\n' > "$W1/.serena/project.yml"
+printf 'project: yml\n' > "$P1/.serena/project.yml"
+printf 'memory a\n' > "$W1/.serena/memories/a.md"
+printf 'memory b\n' > "$W1/.serena/memories/b.md"
+printf 'memory c from worktree\n' > "$W1/.serena/memories/c.md"
+printf 'memory b\n' > "$P1/.serena/memories/b.md"
+printf 'memory c from primary\n' > "$P1/.serena/memories/c.md"
+printf 'not markdown\n' > "$W1/.serena/memories/notes.txt"
+out=$(run_script_in "$W1" test_label_relocate "body=$BODY" 2>"$SHIM/stderr") || fail "T6: relocation run exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(cat "$P1/.serena/memories/a.md")" = "memory a" ] || fail "T6: a.md must be moved to the primary checkout"
+[ "$(cat "$P1/.serena/memories/b.md")" = "memory b" ] || fail "T6: identical b.md in primary must be untouched"
+[ "$(cat "$P1/.serena/memories/c.md")" = "memory c from primary" ] || fail "T6: differing c.md in primary must never be overwritten"
+[ "$(cat "$P1/.serena/memories/c__from_worktree_wt.md")" = "memory c from worktree" ] || fail "T6: differing worktree c.md must be kept under a worktree-suffixed name"
+for m in a b c; do [ ! -e "$W1/.serena/memories/$m.md" ] || fail "T6: $m.md must no longer exist in the worktree"; done
+[ -f "$W1/.serena/project.yml" ] || fail "T6: worktree project.yml must be left intact"
+[ -f "$W1/.serena/memories/notes.txt" ] || fail "T6: non-markdown files must be left alone"
+[ "$(grep -c 'worktree memory' "$SHIM/stderr")" = 3 ] || fail "T6: stderr must report one line per relocated file: $(cat "$SHIM/stderr")"
+echo "$out" | grep -qF -- 'Relocated worktree memories: moved 1, removed 1, renamed 1' || fail "T6: reload block must report the relocation counts: $out"
+rm -f "$W1/.serena/project.yml" "$W1/.serena/memories/notes.txt"
+reset_logs
+printf 'memory c from worktree, second round\n' > "$W1/.serena/memories/c.md"
+run_script_in "$W1" test_label_relocateagain "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: second relocation run exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(cat "$P1/.serena/memories/c__from_worktree_wt.md")" = "memory c from worktree" ] || fail "T6: an earlier relocated copy must never be overwritten"
+[ "$(cat "$P1/.serena/memories/c__from_worktree_wt_2.md")" = "memory c from worktree, second round" ] || fail "T6: a second differing copy must get an unused numbered name: $(ls "$P1/.serena/memories")"
+reset_logs
+R6="$SHIM/repo-t6"
+make_repo_with_worktree "$R6"
+W6="$R6/.claude/worktrees/wt"
+mkdir -p "$W6/.serena/memories"
+printf 'stranded\n' > "$W6/.serena/memories/s.md"
+run_script_in "$W6" test_label_noprimaryserena "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: run without a primary Serena project exited non-zero: $(cat "$SHIM/stderr")"
+[ -f "$W6/.serena/memories/s.md" ] || fail "T6: without a primary .serena/memories the worktree memory must stay in place"
+grep -q 'is not a Serena project; 1 worktree memor' "$SHIM/stderr" || fail "T6: missing primary Serena project must be warned: $(cat "$SHIM/stderr")"
+reset_logs
+mkdir -p "$R6/.serena"
+printf 'project: yml\n' > "$R6/.serena/project.yml"
+run_script_in "$W6" test_label_freshprimaryserena "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: run with a primary Serena project lacking memories/ exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(cat "$R6/.serena/memories/s.md")" = "stranded" ] || fail "T6: a primary Serena project without memories/ must get the directory created and the memory moved in: $(cat "$SHIM/stderr")"
+[ ! -e "$W6/.serena/memories/s.md" ] || fail "T6: the worktree copy must be gone after relocation into a fresh memories/ directory"
+
+reset_logs
+D7="$SHIM/notproj"
+mkdir -p "$D7"
+run_script_in "$R1" test_label_serenabad "body=$BODY" "serena=$D7" >/dev/null 2>"$SHIM/stderr" && fail "T7: serena= without .serena/project.yml must make the script exit non-zero"
+grep -qF -- "Error: serena=$D7 is not a Serena project" "$SHIM/stderr" || fail "T7: bad serena= must be reported: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T7"
+reset_logs
+run_script_in "$R1" test_label_serenaempty "body=$BODY" "serena=" >/dev/null 2>"$SHIM/stderr" && fail "T7: an empty serena= value must make the script exit non-zero"
+grep -qF -- 'Error: serena= is not a Serena project' "$SHIM/stderr" || fail "T7: empty serena= must be reported: $(cat "$SHIM/stderr")"
+assert_no_backend_argv "T7 (empty)"
+D7OK="$SHIM/serena proj"
+mkdir -p "$D7OK/.serena/memories"
+printf 'project: yml\n' > "$D7OK/.serena/project.yml"
+D7OK_PHYSICAL="$(cd "$D7OK" && pwd -P)"
+out=$(run_script_in "$R1" test_label_serenaok "body=$BODY" "serena=$D7OK" 2>"$SHIM/stderr") || fail "T7: valid serena= exited non-zero: $(cat "$SHIM/stderr")"
+grep -qF -- "serena memories write test_label_serenaok $D7OK_PHYSICAL --content" "$SHIM/serena.argv" || fail "T7: serena= must be passed as the Serena project by physical absolute path: $(cat "$SHIM/serena.argv")"
+echo "$out" | grep -qF -- "- Serena: $D7OK_PHYSICAL/.serena/memories/test_label_serenaok.md" || fail "T7: reload block must name the serena= memory file: $out"
+
+reset_logs
+printf 'project: yml\n' > "$W1/.serena/project.yml"
+run_script_in "$W1" test_label_diverge "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T8: divergence run exited non-zero: $(cat "$SHIM/stderr")"
+grep -qF -- "Warning: cwd $P1/.claude/worktrees/wt is itself a Serena project; this checkpoint is written to $P1" "$SHIM/stderr" || fail "T8: divergence between cwd and the chosen Serena project must be warned: $(cat "$SHIM/stderr")"
+grep -qF -- "pass serena=$P1/.claude/worktrees/wt" "$SHIM/stderr" || fail "T8: divergence warning must tell how to target the cwd project: $(cat "$SHIM/stderr")"
+reset_logs
+run_script_in "$W1" test_label_nodiverge "body=$BODY" "serena=$P1/.claude/worktrees/wt" >/dev/null 2>"$SHIM/stderr" || fail "T8: explicit serena= run exited non-zero: $(cat "$SHIM/stderr")"
+grep -q 'is itself a Serena project' "$SHIM/stderr" && fail "T8: no divergence warning when serena= names the cwd: $(cat "$SHIM/stderr")"
+rm -f "$W1/.serena/project.yml"
+
+reset_logs
+out=$(run_script_in "$W1" test_label_reloadlines "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr") || fail "T9: run exited non-zero: $(cat "$SHIM/stderr")"
+echo "$out" | grep -qF -- "- Serena: $P1/.serena/memories/test_label_reloadlines.md" || fail "T9: reload block must carry the absolute Serena path: $out"
+echo "$out" | grep -qF -- "- Basic-Memory: projects/repo-t1/Test_Label_Reloadlines (project: alpha, folder: projects/repo-t1)" || fail "T9: reload block must carry permalink, project and folder: $out"
+echo "$out" | grep -qF -- "- Plan: $PLAN" || fail "T9: reload block must carry the plan path: $out"
+echo "$out" | grep -qF -- "- Worktree: $P1/.claude/worktrees/wt (branch wt) — resume with EnterWorktree path=$P1/.claude/worktrees/wt" || fail "T9: reload block must carry the worktree line: $out"
+echo "$out" | grep -q -- "- Reload flag: $CLAUDE_CONFIG_DIR/plans/.pending-memory-restore-" || fail "T9: reload block must carry the reload flag path under the isolated config dir: $out"
+grep -qF -- "  Serena: $P1/.serena/memories/test_label_reloadlines.md" "$SHIM/stderr" || fail "T9: report_success must name the same Serena path: $(cat "$SHIM/stderr")"
+
+[ "$(count_real_flags)" = "$REAL_FLAGS_BEFORE" ] || fail "T10: test run leaked reload flags into $HOME/.claude/plans (before $REAL_FLAGS_BEFORE, after $(count_real_flags))"
+[ "$(ls "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] || fail "T10: the suite must have written its flags under the isolated CLAUDE_CONFIG_DIR"
 
 echo "PASS: write-checkpoint"
