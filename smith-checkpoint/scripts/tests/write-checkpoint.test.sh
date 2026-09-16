@@ -535,6 +535,7 @@ grep -q '^\*\*Resume\*\*' "$SHIM/serena.content" && fail "T5: plain repo header 
 reset_logs
 mkdir -p "$W1/.serena/memories" "$P1/.serena/memories"
 printf 'project: yml\n' > "$W1/.serena/project.yml"
+printf 'project: yml\n' > "$P1/.serena/project.yml"
 printf 'memory a\n' > "$W1/.serena/memories/a.md"
 printf 'memory b\n' > "$W1/.serena/memories/b.md"
 printf 'memory c from worktree\n' > "$W1/.serena/memories/c.md"
@@ -566,6 +567,12 @@ printf 'stranded\n' > "$W6/.serena/memories/s.md"
 run_script_in "$W6" test_label_noprimaryserena "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: run without a primary Serena project exited non-zero: $(cat "$SHIM/stderr")"
 [ -f "$W6/.serena/memories/s.md" ] || fail "T6: without a primary .serena/memories the worktree memory must stay in place"
 grep -q 'is not a Serena project; 1 worktree memor' "$SHIM/stderr" || fail "T6: missing primary Serena project must be warned: $(cat "$SHIM/stderr")"
+reset_logs
+mkdir -p "$R6/.serena"
+printf 'project: yml\n' > "$R6/.serena/project.yml"
+run_script_in "$W6" test_label_freshprimaryserena "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: run with a primary Serena project lacking memories/ exited non-zero: $(cat "$SHIM/stderr")"
+[ "$(cat "$R6/.serena/memories/s.md")" = "stranded" ] || fail "T6: a primary Serena project without memories/ must get the directory created and the memory moved in: $(cat "$SHIM/stderr")"
+[ ! -e "$W6/.serena/memories/s.md" ] || fail "T6: the worktree copy must be gone after relocation into a fresh memories/ directory"
 
 reset_logs
 D7="$SHIM/notproj"

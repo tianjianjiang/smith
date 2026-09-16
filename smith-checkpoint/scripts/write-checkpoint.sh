@@ -68,17 +68,19 @@ physical_path() {
     (cd "$1" 2>/dev/null && pwd -P)
 }
 
+inside_git_work_tree() {
+    command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
+}
+
 resolve_primary_checkout() {
-    command -v git &>/dev/null || return 0
-    git rev-parse --is-inside-work-tree &>/dev/null || return 0
+    inside_git_work_tree || return 0
     local common_dir
     common_dir=$(physical_path "$(git rev-parse --git-common-dir)") || return 0
     [[ -n "$common_dir" ]] && dirname "$common_dir"
 }
 
 resolve_worktree() {
-    command -v git &>/dev/null || return 0
-    git rev-parse --is-inside-work-tree &>/dev/null || return 0
+    inside_git_work_tree || return 0
     local git_dir common_dir
     git_dir=$(physical_path "$(git rev-parse --git-dir)") || return 0
     common_dir=$(physical_path "$(git rev-parse --git-common-dir)") || return 0
@@ -179,10 +181,11 @@ relocate_worktree_memories() {
         [[ -f "$file" ]] && files+=("$file")
     done
     (( ${#files[@]} > 0 )) || return 0
-    if [[ ! -d "$dest_dir" ]]; then
+    if [[ ! -f "$primary_checkout/.serena/project.yml" ]]; then
         echo "Warning: primary checkout ${primary_checkout} is not a Serena project; ${#files[@]} worktree memories left in place under ${source_dir}" >&2
         return 0
     fi
+    mkdir -p "$dest_dir"
     local name dest renamed compare_status
     for file in "${files[@]}"; do
         name=$(basename "$file")
@@ -216,7 +219,8 @@ relocate_worktree_memories() {
 }
 
 unused_worktree_copy_name() {
-    local dest_dir="$1" stem="$2" candidate="${2}.md" index=2
+    local dest_dir="$1" stem="$2" index=2
+    local candidate="${stem}.md"
     while [[ -e "$dest_dir/$candidate" ]]; do
         candidate="${stem}_${index}.md"
         index=$((index + 1))
@@ -537,6 +541,11 @@ Checkpoint written to both backends
 EOF
 }
 
+fail_basic_memory_write() {
+    echo "Error: Basic-Memory write failed" >&2
+    exit 1
+}
+
 require_readable_body() {
     local body_path="$1"
     if [[ -z "$body_path" || ! -f "$body_path" || ! -r "$body_path" ]]; then
@@ -587,19 +596,10 @@ main() {
 
     echo "Writing to Basic-Memory: ${bm_title}" >&2
     local bm_read_result bm_existing bm_result
-    bm_read_result=$(read_basic_memory_note_json "$bm_title" "$bm_project") || {
-        echo "Error: Basic-Memory write failed" >&2
-        exit 1
-    }
-    bm_existing=$(extract_basic_memory_content "$bm_read_result" "$bm_title") || {
-        echo "Error: Basic-Memory write failed" >&2
-        exit 1
-    }
+    bm_read_result=$(read_basic_memory_note_json "$bm_title" "$bm_project") || fail_basic_memory_write
+    bm_existing=$(extract_basic_memory_content "$bm_read_result" "$bm_title") || fail_basic_memory_write
     BM_FOLDER=$(resolve_basic_memory_folder "$bm_read_result" "$project")
-    if ! bm_result=$(write_to_basic_memory "$entry" "$bm_title" "$bm_existing" "$BM_FOLDER" "$bm_project"); then
-        echo "Error: Basic-Memory write failed" >&2
-        exit 1
-    fi
+    bm_result=$(write_to_basic_memory "$entry" "$bm_title" "$bm_existing" "$BM_FOLDER" "$bm_project") || fail_basic_memory_write
 
     local permalink
     if ! permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>&1); then

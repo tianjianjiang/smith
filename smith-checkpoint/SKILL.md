@@ -104,9 +104,10 @@ leaving it at the top.
    moved when the name is new there, deleted when byte-identical, kept under
    `<name>__from_worktree_<worktree>.md` (numbered `_2`, `_3`, … when that
    name is taken) when the two differ; nothing already in the primary
-   checkout is ever overwritten. When the primary checkout has no
-   `.serena/memories/` directory the files stay where they are and a warning
-   says so.
+   checkout is ever overwritten; a missing `.serena/memories/` directory in
+   the primary checkout is created. When the primary checkout has no
+   `.serena/project.yml` the files stay where they are and a warning says
+   so.
 2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
    a note titled from the label, type `guide`, tag `checkpoint`, in the
    project selected per Runtime prerequisites "Backend selection" below
