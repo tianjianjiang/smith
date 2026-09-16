@@ -87,7 +87,10 @@ it, never type it — for a commit add it as a `--trailer` only when non-empty (
 empty-safe array recipe is in README "Hooks"; a bare `--trailer "$(…)"` aborts the
 commit when the model is unknown), embed `$(…/attribution.sh)` in a gh PR body or a
 `gh pr review --comment --body …` body, or run it and paste its output into an MCP
-message (Slack/Jira). Details and registration in README "Hooks".
+message (Slack/Jira). Details and registration in README "Hooks". A draft shown
+to the user for approval (commit message, PR body, review comment, Slack text)
+carries the script's output as well: run `attribution.sh` before composing the
+draft and paste the printed line; never type the trailer into a draft.
 
 **Never add a `Signed-off-by:` trailer yourself** — only a human can certify the
 DCO, so the agent must not add one (a human may still add their own), and
