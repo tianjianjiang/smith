@@ -2,7 +2,7 @@
 name: smith-checkpoint
 description: Memory checkpoint
 metadata:
-  argument-hint: "[label] [plan=path] [body=path]"
+  argument-hint: "[label] [plan=path] [body=path] [serena=path]"
 ---
 
 # /smith-checkpoint — persist session state to both memories
@@ -12,6 +12,12 @@ Capture what would otherwise be lost across sessions. Arguments:
 - `plan=path`: plan file path (optional, provided by ctx-claude stop hook)
 - `body=path`: file holding the session body you drafted (see Procedure);
   without it the script records plan title, pending items and git state only
+- `serena=path`: directory of the Serena project to write to (optional;
+  resolved to an absolute path; must contain `.serena/project.yml`). Default
+  is the primary checkout; outside git and without `serena=` no project is
+  passed and the Serena CLI's own default applies. When the current directory is itself a Serena
+  project other than the chosen one, the script prints a divergence warning
+  with the `serena=` value that would target it
 
 Save the SAME facts to both backends, each in its own format; do not skip one.
 
@@ -87,9 +93,25 @@ leaving it at the top.
 
 1. **Serena** (`serena memories read` + `serena memories write`): a
    snake_case memory named after the label, written into the primary
-   checkout's project (works from a worktree).
+   checkout's project (works from a worktree), passed to the CLI as an
+   absolute path. A Serena project is never auto-created: the script checks
+   `serena=` for `.serena/project.yml` and exits before any write when it is
+   missing; the primary checkout is passed unchecked and the Serena CLI
+   itself refuses a directory without that file. Worktree-local memories
+   (`<worktree>/.serena/memories/*.md`, left behind by MCP `write_memory`
+   calls from a worktree session) are relocated into the primary checkout
+   (always the primary checkout, regardless of `serena=`) before the write:
+   moved when the name is new there, deleted when byte-identical, kept under
+   `<name>__from_worktree_<worktree>.md` (numbered `_2`, `_3`, … when that
+   name is taken) when the two differ; nothing already in the primary
+   checkout is ever overwritten. When the primary checkout has no
+   `.serena/memories/` directory the files stay where they are and a warning
+   says so.
 2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
-   a note titled from the label, type `guide`, tag `checkpoint`.
+   a note titled from the label, type `guide`, tag `checkpoint`, in the
+   project selected per Runtime prerequisites "Backend selection" below
+   (`--project <name>` on both calls when a project is configured and no
+   profile lock is active; under a lock both calls omit it).
    `--overwrite` is passed unconditionally — it is safe on both a first
    write (nothing to conflict with) and a re-checkpoint (the payload is
    already the full merged document, so there is nothing to lose). The
@@ -192,7 +214,11 @@ When invoked via `/smith-checkpoint` (no arguments required):
    title or Date/Plan/Session header):
    - Combine extracted facts (step 1) with rich context/reasoning
    - Add decisions (why, consequences), next steps with context
-   - List Serena memories and Basic-Memory notes written this session under Related
+   - List Serena memories and Basic-Memory notes written this session under
+     Related. From a worktree, name Serena memories by the location the
+     script prints on stderr after relocation (a memory written by MCP into
+     the worktree ends up in the primary checkout, possibly under a
+     `__from_worktree_` suffix)
    - Create file with Bash heredoc (Write tool requires Read first, even for new files):
      ```bash
      cat > "${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md" <<'EOF'
@@ -216,7 +242,18 @@ When invoked via `/smith-checkpoint` (no arguments required):
 7. The script (exit 0 on success):
    - Without `plan=`, falls back to the ctx-claude plan-state file for this
      session's cwd (same source the stop hook uses)
-   - Builds a dated entry (`## «timestamp»`, plan, session, body)
+   - Refuses to run while `BASIC_MEMORY_CONFIG_DIR` or `BASIC_MEMORY_HOME`
+     is set, or while `BASIC_MEMORY_MCP_PROJECT` names a different project
+     than the repository's `basicMemory.primaryProject` (see Runtime
+     prerequisites "Backend selection"); nothing is written in either case
+   - Relocates worktree-local Serena memories into the primary checkout
+     (see Targets and formats) before touching either backend
+   - Builds a dated entry: `## «timestamp»`, plan, session, `**Git**`
+     (branch, short SHA, dirty count) and, from a worktree, `**Worktree**`,
+     `**Branch**`, `**Primary**`, and `**Resume**: EnterWorktree
+     path=«worktree» before any file edit` — the resuming session reads
+     the switch instruction from the memory itself, the reload flag stays
+     reload-only
    - Adds plan path as first Related entry
    - Without `body=`, falls back to metadata only
    - Reads any existing memory/note under the label and prepends the new
@@ -231,7 +268,13 @@ When invoked via `/smith-checkpoint` (no arguments required):
      error is reported as a warning. Neither case fails the checkpoint —
      it only means auto-reload is unavailable for this checkpoint, not that
      the checkpoint itself failed
-   - Outputs success to stderr, Reload block to stdout
+   - Outputs success to stderr, Reload block to stdout. The Reload block
+     lists: the Serena memory file by absolute path (when a Serena project
+     was resolved; outside git without `serena=`, the label and "Serena
+     default project"), the Basic-Memory permalink
+     with its project and folder, the plan, the worktree line (with the
+     `EnterWorktree` step) when in a worktree, the relocation counts when
+     any memory was moved, removed or renamed, and the reload flag path
 
 8. If script exits non-zero, report stderr error.
 9. On success, output Reload block to user.
@@ -250,9 +293,32 @@ and reload degrades:
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled).
 - **`jq`** — `write-checkpoint.sh` shells out to it to parse the Basic-Memory
-  CLI's JSON output (note content on read, permalink on write); not
-  preinstalled on stock macOS. Its absence aborts the whole checkpoint
-  (Serena side included) with a clear error before either backend is touched.
+  CLI's JSON output (note content on read, permalink on write) and the
+  repository's `.claude/settings*.json`; not preinstalled on stock macOS.
+  Its absence aborts the whole checkpoint (Serena side included) with a
+  clear error before either backend is touched.
+- **Backend selection** — one Basic-Memory config
+  (`~/.basic-memory/config.json`) holds every project; the script never
+  chooses a config directory. The project comes from
+  `basicMemory.primaryProject` in the primary checkout's
+  `.claude/settings.local.json`, else `.claude/settings.json` (the key the
+  official Basic-Memory Claude Code plugin defines; the plugin itself is not
+  required); unset means the config's `default_project`. A profile launcher
+  that must confine every session to one project exports
+  `BASIC_MEMORY_MCP_PROJECT=<name>`, which Basic-Memory's own resolver
+  applies before any `--project` (MCP, CLI and background sync alike), so
+  the script passes no `--project` and reports the lock instead. Three
+  conditions abort before any backend call: `BASIC_MEMORY_CONFIG_DIR` or
+  `BASIC_MEMORY_HOME` set (retired variables; a stale value silently creates
+  or selects the wrong store), a lock that differs from the repository's
+  `primaryProject` (the repository is open in the wrong profile), and a
+  settings file that cannot be parsed or whose `primaryProject` is not a
+  string. The checkpoint memory goes to the resolved Serena project's
+  `.serena/memories/` (primary checkout, or `serena=`); worktree memories
+  are always relocated to the primary checkout. When the current directory
+  is itself a Serena project other than the resolved one, the script prints
+  a divergence warning with the `serena=` value to pass. Only `uvx` and
+  `jq` are required.
 - **Reload-flag hook** — the memory-restore directive is injected as context on
   the next `/clear` only if the `smith-mode-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
