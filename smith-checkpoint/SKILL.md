@@ -247,6 +247,11 @@ When invoked via `/smith-checkpoint` (no arguments required):
      is set, or while `BASIC_MEMORY_MCP_PROJECT` names a different project
      than the repository's `basicMemory.primaryProject` (see Runtime
      prerequisites "Backend selection"); nothing is written in either case
+     - A set `BASIC_MEMORY_CONFIG_DIR` / `BASIC_MEMORY_HOME` usually comes
+       from an unmigrated repo `.claude/settings.local.json` env block, an
+       unmigrated profile launcher script, a long-lived `claude daemon`
+       started before the migration (`claude daemon stop --any`), or a
+       stale shell export
    - Relocates worktree-local Serena memories into the primary checkout
      (see Targets and formats) before touching either backend
    - Builds a dated entry: `## «timestamp»`, plan, session, `**Git**`

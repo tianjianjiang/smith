@@ -94,7 +94,7 @@ reject_retired_store_variables() {
         [[ -n "${!var:-}" ]] || continue
         cat >&2 <<EOF
 Error: ${var}=${!var} is set; this variable is retired, Basic-Memory projects are selected by name (basicMemory.primaryProject in .claude/settings.local.json). Nothing was written.
-Likely sources: a repository .claude/settings.local.json env block not yet migrated, a profile launcher script not yet migrated, or a stale shell export (unset ${var} and retry).
+Likely sources: a repository .claude/settings.local.json env block not yet migrated, a profile launcher script not yet migrated, a long-lived claude daemon started before the migration (claude daemon stop --any), or a stale shell export (unset ${var} and retry).
 EOF
         exit 1
     done
