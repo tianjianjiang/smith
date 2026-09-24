@@ -381,7 +381,7 @@ every `gh stack` subcommand stay silent.
 using shared helpers from `smith-git/scripts/lib/git-command-tokenizer.mjs`)
 — PreToolUse guard (matcher `Bash`) that emits an **advisory** when a command
 invokes `find ... -L ...` or `rtk find ... -L ...`. Verified directly
-against the installed rtk 0.45.0: `rtk find` doesn't recognize `-L`, prints
+against rtk 0.45.0 (before the upstream fix): `rtk find` doesn't recognize `-L`, prints
 `rtk find: unknown flag '-L', ignored` to stderr, and exits 0 — but when
 `-L` precedes the search path (the idiomatic order, e.g. `-L . -type f`)
 it also drops that path and silently scans the current directory instead,
@@ -392,12 +392,11 @@ which forwards `-H`/`-L`/`-P` to native find (`src/cmds/system/find_cmd.rs:90`
 at v0.49.0); verified 2026-09-24 that v0.49.0 returns the symlinked file.
 The guard therefore reads `rtk --version` and stays silent at 0.46.0 or
 later, advising only on older or unparseable versions. Same bug class as
-github.com/rtk-ai/rtk#2821 (closed 2026-09-19 as fixed in v0.46.0) — an unrecognized flag is warned on stderr, but
-the broader/wrong query still runs at exit 0; that report's own repro used
-`-newermt`, not `-L`, but it's the identical code path (verified open via
-`gh api repos/rtk-ai/rtk/issues/2821` on 2026-08-27; no open upstream issue
-names `-L` specifically, so this cites the matching bug class rather than
-implying `-L` itself was reported). Points to `test -f`
+github.com/rtk-ai/rtk#2821 (closed 2026-09-19 as fixed in v0.46.0) —
+an unrecognized flag is warned on stderr, but the broader/wrong query
+still runs at exit 0; that report's own repro used `-newermt`, not `-L`,
+but it's the identical code path, and the `-L` case itself is covered by
+pull request 3603 above. Points to `test -f`
 for a plain existence check or `rtk proxy find ... -L ...` (per `RTK.md`,
 `rtk proxy <cmd>` executes the raw command "without filtering," i.e. real
 GNU/BSD find semantics, not rtk's own filtering) for unfiltered

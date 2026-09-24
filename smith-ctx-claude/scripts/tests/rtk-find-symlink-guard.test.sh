@@ -138,8 +138,9 @@ sibling_depth_payload=$("$NODE" -e "
 ")
 advises "an over-nested sibling segment does not blind detection of a plain find -L elsewhere in the same command" "$sibling_depth_payload"
 
-RTK_FAKE_VERSION=0.46.0 silent "rtk 0.46.0 forwards -L to native find" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}'
-RTK_FAKE_VERSION=0.49.0 silent "rtk 0.49.0 forwards -L to native find" '{"tool_name":"Bash","tool_input":{"command":"rtk find -L . -type f"}}'
-RTK_FAKE_VERSION=0.45.9 advises "rtk 0.45.9 still drops -L" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}'
-RTK_FAKE_VERSION=unknown advises "unparseable rtk version stays advisory" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}'
+(export RTK_FAKE_VERSION=0.46.0; silent "rtk 0.46.0 forwards -L to native find" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}')
+(export RTK_FAKE_VERSION=1.2.0; silent "rtk 1.2.0 major bump forwards -L to native find" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}')
+(export RTK_FAKE_VERSION=0.49.0; silent "rtk 0.49.0 forwards -L to native find" '{"tool_name":"Bash","tool_input":{"command":"rtk find -L . -type f"}}')
+(export RTK_FAKE_VERSION=0.45.9; advises "rtk 0.45.9 still drops -L" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}')
+(export RTK_FAKE_VERSION=unknown; advises "unparseable rtk version stays advisory" '{"tool_name":"Bash","tool_input":{"command":"find -L . -type f"}}')
 echo "PASS: rtk-find-symlink-guard"

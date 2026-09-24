@@ -111,8 +111,7 @@ function rtkFindDropsFollowSymlinksFlag() {
   try {
     const output = execFileSync("rtk", ["--version"], SUBPROCESS_OPTIONS);
     const match = RTK_VERSION.exec(output);
-    if (!match) return true;
-    return isBelowFirstFixedVersion(match.slice(1).map(Number));
+    return !match || isBelowFirstFixedVersion(match.slice(1).map(Number));
   } catch {
     return true;
   }
