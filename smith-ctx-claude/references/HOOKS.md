@@ -21,7 +21,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `skill-read-substitution-guard.mjs` | PreToolUse (`Read`) | Advisory: Read of a `SKILL.md` should be a Skill-tool invocation instead |
 | `skill-claim-lint.mjs` | Stop | Advisory: flags a claimed-but-not-invoked skill |
 | `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
-| `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround |
+| `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) |
 | `coderabbit-status-check.mjs` | PostToolUse (`Bash`) | Advisory: validate CodeRabbit `--agent` output before trusting it |
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
 | `stack-merge-guard.mjs` | PreToolUse (`Bash`) | Asks before `gh pr merge --delete-branch` orphans an open child PR |
@@ -1013,7 +1013,8 @@ then:
 19. **rtk-find-symlink-guard** — with rtk older than 0.46.0 installed, run `find -L . -type f`
     (or `rtk find -L . -type f`); confirm the advisory appears pointing to
     `test -f` / `rtk proxy find`. Confirm `rtk proxy find -L . -type f` and a
-    plain `find . -type f` (no `-L`) stay silent.
+    plain `find . -type f` (no `-L`) stay silent. With rtk 0.46.0 or later
+    installed, confirm `find -L . -type f` also stays silent.
 20. **subagent-contract-guard** — spawn a `general-purpose` subagent with a
     prompt that describes read-only investigation in your own words; confirm it
     is blocked and that the refusal contains the block to paste. Paste that
