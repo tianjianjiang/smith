@@ -88,6 +88,8 @@ function riskyInvocation(command) {
 }
 
 const RTK_GAIN_SUBCOMMAND = /^\s*gain\s/m;
+const RTK_VERSION = /\brtk (\d+)\.(\d+)\.(\d+)/;
+const FIRST_FIXED_VERSION = [0, 46, 0];
 
 function rtkInstalled() {
   try {
@@ -95,6 +97,23 @@ function rtkInstalled() {
     return RTK_GAIN_SUBCOMMAND.test(output);
   } catch {
     return false;
+  }
+}
+
+function isBelowFirstFixedVersion(version) {
+  for (let i = 0; i < FIRST_FIXED_VERSION.length; i++) {
+    if (version[i] !== FIRST_FIXED_VERSION[i]) return version[i] < FIRST_FIXED_VERSION[i];
+  }
+  return false;
+}
+
+function rtkFindDropsFollowSymlinksFlag() {
+  try {
+    const output = execFileSync("rtk", ["--version"], SUBPROCESS_OPTIONS);
+    const match = RTK_VERSION.exec(output);
+    return !match || isBelowFirstFixedVersion(match.slice(1).map(Number));
+  } catch {
+    return true;
   }
 }
 
@@ -106,12 +125,11 @@ function reminder(invocation) {
     "against rtk 0.45.0), but when -L precedes the search path it also " +
     "drops that path and silently scans the current directory instead — " +
     "not just a missed symlink subtree, results from the wrong place " +
-    "entirely. Same known-unfixed bug class as github.com/rtk-ai/rtk#2821 " +
-    "(unrecognized flag warned on stderr, but the broader/wrong query " +
-    "still runs at exit 0 — that report used -newermt, this is the same " +
-    "code path hit with -L). Use `test -f` for a plain existence check, " +
-    "or `rtk proxy find ... -L ...` for unfiltered native-find output " +
-    "with real GNU/BSD find semantics."
+    "entirely. Fixed upstream in rtk 0.46.0 (github.com/rtk-ai/rtk/pull/3603, " +
+    "which forwards -H/-L/-P to native find; closes the bug class of " +
+    "github.com/rtk-ai/rtk#2821) — upgrade rtk. Until then use `test -f` " +
+    "for a plain existence check, or `rtk proxy find ... -L ...` for " +
+    "unfiltered native-find output with real GNU/BSD find semantics."
   );
 }
 
@@ -132,6 +150,7 @@ function main() {
   }
   if (!invocation) return;
   if (!rtkInstalled()) return;
+  if (!rtkFindDropsFollowSymlinksFlag()) return;
 
   const message = reminder(invocation);
   process.stdout.write(
