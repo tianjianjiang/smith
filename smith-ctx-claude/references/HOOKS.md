@@ -386,8 +386,13 @@ against the installed rtk 0.45.0: `rtk find` doesn't recognize `-L`, prints
 `-L` precedes the search path (the idiomatic order, e.g. `-L . -type f`)
 it also drops that path and silently scans the current directory instead,
 so the result set isn't just missing a symlinked subtree, it can come from
-the wrong location entirely. Same known-unfixed bug class as
-github.com/rtk-ai/rtk#2821 — an unrecognized flag is warned on stderr, but
+the wrong location entirely. Fixed upstream in rtk 0.46.0 by
+https://github.com/rtk-ai/rtk/pull/3603 (commit d3f31dd, merged 2026-08-26),
+which forwards `-H`/`-L`/`-P` to native find (`src/cmds/system/find_cmd.rs:90`
+at v0.49.0); verified 2026-09-24 that v0.49.0 returns the symlinked file.
+The guard therefore reads `rtk --version` and stays silent at 0.46.0 or
+later, advising only on older or unparseable versions. Same bug class as
+github.com/rtk-ai/rtk#2821 (closed 2026-09-19 as fixed in v0.46.0) — an unrecognized flag is warned on stderr, but
 the broader/wrong query still runs at exit 0; that report's own repro used
 `-newermt`, not `-L`, but it's the identical code path (verified open via
 `gh api repos/rtk-ai/rtk/issues/2821` on 2026-08-27; no open upstream issue
@@ -1006,7 +1011,7 @@ then:
     **deny** the prompt (a real amend would otherwise rewrite the parent
     branch's commit). Make a real commit on `scratch/probe`, then run
     `git commit --amend --no-edit`; confirm it proceeds without prompting.
-19. **rtk-find-symlink-guard** — with rtk installed, run `find -L . -type f`
+19. **rtk-find-symlink-guard** — with rtk older than 0.46.0 installed, run `find -L . -type f`
     (or `rtk find -L . -type f`); confirm the advisory appears pointing to
     `test -f` / `rtk proxy find`. Confirm `rtk proxy find -L . -type f` and a
     plain `find . -type f` (no `-L`) stay silent.
