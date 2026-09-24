@@ -46,6 +46,44 @@ or branch in place) before retrying.
 - `remove` — deletes both. Refuses if uncommitted files or commits exist on the branch unless `discard_changes: true`.
 - Operates **only** on worktrees this session created via `EnterWorktree`. A worktree created manually with `git worktree add` is unaffected; use `EnterWorktree({path: ...})` to switch into it instead.
 
+## Gitignored Local Skills and `.worktreeinclude`
+
+A worktree holds tracked files only. Gitignored personal files in the
+primary checkout — `.claude/skills/*-local/` skills, `CLAUDE.local.md` —
+are absent.
+
+- Since v2.1.277 a worktree with **no** `.claude/skills` directory reads the
+  main checkout's project skills. A repo that **tracks** any skill gives every
+  worktree its own `.claude/skills`, and then "only that copy loads" — the
+  gitignored local skills silently disappear from the skill list.
+- Fix: list them in a `.worktreeinclude` at the primary checkout root
+  (`.gitignore` syntax; only paths that match AND are gitignored are copied):
+  ```text
+  .claude/skills/*-local/**
+  CLAUDE.local.md
+  ```
+  The docs apply it to every worktree Claude Code creates with git
+  (`--worktree`, subagent, desktop parallel sessions); tested 2026-09-24 on
+  v2.1.281 with `EnterWorktree` and `claude --worktree`.
+- Gitignore `.worktreeinclude` itself (global gitignore) — an untracked one
+  makes the checkout dirty, and `worktree-dirty-guard` then blocks every
+  `EnterWorktree`.
+- Copies, not symlinks: edit local skills in the primary checkout; changes
+  made to a worktree copy are lost when the worktree is removed.
+- A `WorktreeCreate` hook replaces default creation and skips
+  `.worktreeinclude`; copy the files in the hook script instead.
+- `CLAUDE.local.md` alternative that needs no copy: import a home-directory
+  file, `@~/.claude/«project»-instructions.md`. It is an external import:
+  the first one shows an approval dialog, and declining disables it for the
+  project without asking again, so the instructions silently stop loading.
+
+Sources (retrieved 2026-09-24): https://code.claude.com/docs/en/worktrees,
+https://code.claude.com/docs/en/hooks, https://code.claude.com/docs/en/memory;
+a dedicated local-skills directory was declined
+(https://github.com/anthropics/claude-code/issues/81110), and copying
+`.claude/` subdirectories is still open
+(https://github.com/anthropics/claude-code/issues/28041).
+
 ## The bg-isolation Guard
 
 Background sessions in repos without `worktree.bgIsolation: "none"` block the first `Edit`/`Write` against tracked files until the session is inside a worktree. The refusal message names `EnterWorktree` as the fix.
