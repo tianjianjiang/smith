@@ -68,7 +68,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `skill-read-substitution-guard` | PreToolUse (`Read`) | `smith-ctx-claude/scripts/skill-read-substitution-guard.mjs` | Advisory: Read a SKILL.md → invoke it via Skill instead | ctx-claude |
 | `skill-claim-lint` | Stop | `smith-ctx-claude/scripts/skill-claim-lint.mjs` | Advisory: flags a claimed-but-not-invoked skill | ctx-claude |
 | `gh-stack-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/gh-stack-guard.mjs` | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` | ctx-claude |
-| `rtk-find-symlink-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs` | Advisory: `find -L`/`rtk find -L` bug workaround | ctx-claude |
+| `rtk-find-symlink-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs` | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) | ctx-claude |
 | `post-merge-pull-reminder` | PostToolUse (`Bash`) | `smith-git/scripts/hooks/post-merge-pull-reminder.mjs` | Advisory: ff-only pull the default branch after merge | git |
 | `coderabbit-status-check` | PostToolUse (`Bash`) | `smith-ctx-claude/scripts/coderabbit-status-check.mjs` | Advisory: validate CodeRabbit `--agent` output | ctx-claude |
 | `exit-plan-mode-guard` | PreToolUse (`ExitPlanMode`) | `smith-ctx-claude/scripts/exit-plan-mode-guard.mjs` | Blocks `ExitPlanMode` without a prior elaboration turn | ctx-claude |
