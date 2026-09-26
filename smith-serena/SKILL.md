@@ -70,6 +70,15 @@ Claude Code with `--project-from-cwd` activates projects automatically from work
 3. `list_memories()` — Discover available context
 4. `read_memory()` — Load project context
 
+### Worktrees Share the Primary's Memories
+
+With `--project-from-cwd`, a session started inside a git worktree activates
+the worktree as its own project. The `link-worktree-memories` SessionStart
+hook links `<worktree>/.serena/memories` to `<primary>/.serena/memories`, so
+`list_memories`/`read_memory`/`write_memory` reach the primary checkout's
+memories (details: `references/HOOKS.md`). A non-empty worktree folder is left
+alone with a warning; move its memories to the primary first.
+
 ### Multi-Project / Global MCP
 
 Without `--project-from-cwd`, manual activation required.
