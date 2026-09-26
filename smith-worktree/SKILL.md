@@ -70,6 +70,10 @@ are absent.
   `EnterWorktree`.
 - Copies, not symlinks: edit local skills in the primary checkout; changes
   made to a worktree copy are lost when the worktree is removed.
+- Directory symlinks are NOT copied (probed 2026-09-26, v2.1.282), so
+  `.worktreeinclude` cannot share `.serena/memories`; the
+  `link-worktree-memories` SessionStart hook does that instead
+  (`smith-serena/references/HOOKS.md`).
 - A `WorktreeCreate` hook replaces default creation and skips
   `.worktreeinclude`; copy the files in the hook script instead.
 - `CLAUDE.local.md` alternative that needs no copy: import a home-directory

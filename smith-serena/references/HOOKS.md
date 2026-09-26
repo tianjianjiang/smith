@@ -1,6 +1,6 @@
 # Hooks Reference — smith-serena
 
-Detailed behavior for the guard hook whose script lives under
+Detailed behavior for the hooks whose scripts live under
 `smith-serena/scripts/`. See the repo root `README.md` "Hooks" section for
 the cross-skill summary table and registration overview.
 
@@ -9,6 +9,7 @@ the cross-skill summary table and registration overview.
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
 | `uv-tool-health-check.sh` | SessionStart (all sources) | Self-heals a broken `uv tool`-managed venv, reports what it did |
+| `link-worktree-memories.sh` | SessionStart (all sources) | Links a worktree's Serena memories folder to the primary checkout's, reports what it did |
 
 ## uv-tool-health-check
 
@@ -59,3 +60,50 @@ Test suite: `smith-serena/scripts/tests/uv-tool-health-check.test.sh` (5
 cases, using a fake `uv` on `PATH` to deterministically simulate healthy,
 broken-and-healed, broken-and-failed, non-monitored-tool-broken, and
 `uv`-not-installed states), run via `smith-serena/scripts/tests/run-all.sh`.
+
+## link-worktree-memories
+
+**link-worktree-memories** (`smith-serena/scripts/link-worktree-memories.sh`)
+— SessionStart hook (matcher `""`, all sources) that lets Serena memory tools
+in a linked git worktree reach the primary checkout's memories.
+
+**Problem it fixes**: Serena started with `--project-from-cwd` resolves the
+nearest `.serena/project.yml` or `.git`, so a session started inside a worktree
+activates the worktree as its own project, with its own empty
+`.serena/memories/`. A checkpoint that `/smith-checkpoint` wrote to
+`<primary>/.serena/memories` is then invisible to MCP `read_memory`
+(`FileNotFoundError`), and `write_memory` strands new memories in the worktree.
+There is no `activate_project` in that mode.
+
+**Mechanism**: replaces a missing or empty `<worktree>/.serena/memories` with a
+symlink to `<primary>/.serena/memories`. A worktree is detected by its
+`--git-dir` differing from its `--git-common-dir`; the primary is the first
+entry of `git worktree list --porcelain`, so worktrees outside the repository
+tree are covered too. The chain is kept: when the primary's `memories` is itself a
+symlink to a folder outside the repository, the worktree points at the
+primary's path, not at the resolved target. Serena 1.7.0 supports memories
+reached through a directory symlink: listing uses `os.walk(followlinks=True)`
+and its containment check is lexical (`serena/memories/memory_manager.py`).
+
+**Leaves alone**: the primary checkout, non-git directories, a primary without
+`.serena/memories`, a worktree folder that already resolves to the primary's
+(silent), an existing correct link (silent), a symlink to anywhere else, a
+regular file at that path, and a non-empty worktree folder. Those last three,
+and any failed `rmdir` or `ln`, print a warning to both the model
+(`additionalContext`) and the user (`systemMessage`); worktree-local memories
+must first move to the primary (`/smith-checkpoint` relocates them).
+
+**Why a SessionStart hook**: probed with Claude Code 2.1.282 on 2026-09-26:
+- `.worktreeinclude` copies regular files but skips directory symlinks, so it
+  cannot carry the link.
+- A `WorktreeCreate` hook would replace Claude Code's worktree creation
+  entirely.
+- A mid-session `EnterWorktree` keeps the Serena MCP server on its launch
+  project, so only a session that STARTS inside a worktree needs the fix, and
+  that is what SessionStart covers, whoever created the worktree.
+
+**Removal**: `git worktree remove` deletes the link, never the primary's files
+(covered by the test).
+
+**Tests**: `smith-serena/scripts/tests/link-worktree-memories.test.sh`, run by
+`tests/run-all.sh`.

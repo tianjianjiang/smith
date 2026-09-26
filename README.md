@@ -77,6 +77,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `attribution-model-stamp` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/attribution-model-stamp.sh` | Refreshes the model-id file for `Assisted-by:` trailers | ctx-claude |
 | `enforce-attribution` | PreToolUse (`Bash`) | `smith-gh-pr/scripts/enforce-attribution.sh` | Blocks a `gh pr create/edit/comment/review` missing the `Assisted-by:` trailer | gh-pr |
 | `uv-tool-health-check` | SessionStart (all sources) | `smith-serena/scripts/uv-tool-health-check.sh` | Self-heals a broken `uv tool`-managed venv (e.g. `serena-agent`) | serena |
+| `link-worktree-memories` | SessionStart (all sources) | `smith-serena/scripts/link-worktree-memories.sh` | Links a worktree's `.serena/memories` to the primary checkout's so Serena memory tools share them | serena |
 
 **Full detail, known limitations, the complete `settings.json` registration
 block, and the manual verification checklist** live with each hook's owning
@@ -86,7 +87,8 @@ skill, not here:
 - `smith-git/references/HOOKS.md` — `branch-guard`, `worktree-dirty-guard`,
   `branch-name-guard`, `commit-attribution-guard`, `post-merge-pull-reminder`
 - `smith-standards/references/HOOKS.md` — `inline-comment-lint`
-- `smith-serena/references/HOOKS.md` — `uv-tool-health-check`
+- `smith-serena/references/HOOKS.md` — `uv-tool-health-check`,
+  `link-worktree-memories`
 - `smith-gh-pr/README.md` — `enforce-attribution`
 
 `/smith-checkpoint`'s runtime prerequisites (Serena/Basic-Memory availability,
