@@ -95,9 +95,12 @@ One per subsystem/component, not per feature — it does not share
 the feature that happened to prompt an entry. Produced during Design-stage
 sessions (that's where design decisions get made — see `../SKILL.md`
 Stage 2), but shares `CLAUDE.md`'s durable, cross-cutting lifecycle rather
-than `spec.md`'s per-cycle one. Minimal MADR (Markdown Architectural Decision
-Records, a template for writing ADRs as Markdown files —
-https://adr.github.io/madr/) form:
+than `spec.md`'s per-cycle one. Entry fields follow MADR (Markdown
+Architectural Decision Records, a template for writing ADRs as Markdown
+files — https://adr.github.io/madr/): its minimal template plus decision
+drivers and pros and cons per option from its full template. The single
+file and the decision index are smith's own; sources are cited in
+`../SKILL.md`, in its section on the `design.md` ADR log. The template:
 
 ```
 # <Subsystem/component> — Design (ADR log)
@@ -107,7 +110,7 @@ https://adr.github.io/madr/) form:
 
 ## Decision index
 
-- ADR-001 — <title> — accepted — #adr-001
+- ADR-001 — <title> — #adr-001
 
 ## ADR-001: <title>
 

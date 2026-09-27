@@ -124,13 +124,31 @@ history doesn't give you for free is **curation**: a decision like "this
 subsystem uses Postgres, not DynamoDB, because X" can inform fifty later
 `spec.md`/`plan.md` cycles; leaving it embedded in whichever cycle first
 made that call means a future reader has to know which commit to search
-rather than reading one indexed log. Structure it as an ADR log in the
-minimal form of MADR (Markdown Architectural Decision Records, a template
-for writing ADRs as Markdown files — https://adr.github.io/madr/):
-context-and-problem → decision drivers → considered options → decision
-outcome → consequences, with a decision index at the top. When a decision
-changes, edit its entry and its index line so the log states the current
-decision; git history keeps the earlier wording.
+rather than reading one indexed log.
+
+Structure it as an ADR log, the practice Michael Nygard describes in
+"Documenting Architecture Decisions" (2011,
+https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
+Each entry's fields follow MADR (Markdown Architectural Decision Records,
+a template for writing ADRs as Markdown files —
+https://adr.github.io/madr/, templates at
+https://github.com/adr/madr/tree/4.0.0/template): context-and-problem,
+considered options, decision outcome and optional consequences from its
+minimal template, plus two optional elements of its full template,
+decision drivers and pros and cons per option. Keeping every entry in one
+file under a decision index is smith's own choice: Nygard and MADR each
+keep one file per decision.
+
+When a decision changes, edit its entry and its index line so the log
+states the current decision; git history keeps the earlier wording. This
+departs on purpose from ADR convention. Nygard keeps a reversed
+decision's record and marks it superseded. Amazon Web Services
+Prescriptive Guidance makes an accepted record immutable and has a new
+record supersede it ("ADR process",
+https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html).
+Nygard and Amazon Web Services each keep the earlier decision as a
+record beside the new one; for `design.md`, git history already keeps it.
+(All sources retrieved 2026-09-27.)
 
 **If nobody will maintain the index, skip `design.md` entirely** —
 `git log -- '**/spec.md'` is a legitimate, YAGNI-consistent decision
