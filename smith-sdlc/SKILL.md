@@ -139,7 +139,9 @@ decision drivers and pros and cons per option. MADR's optional marking
 does not carry over: a smith entry fills in every field, because the log
 exists to keep the reasons and entries are rare. Keeping every entry in
 one file under a decision index is smith's own choice: Nygard and MADR
-each keep one file per decision.
+each keep one file per decision. So is the entry heading, which carries
+only the number and leaves the title to a field of its own; MADR puts
+the title in the heading.
 
 When a decision changes, edit its entry and its index line so the log
 states the current decision; git history keeps the earlier wording. This

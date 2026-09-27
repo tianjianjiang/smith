@@ -99,9 +99,10 @@ than `spec.md`'s per-cycle one. Entry fields follow MADR (Markdown
 Architectural Decision Records, a template for writing ADRs as Markdown
 files — https://adr.github.io/madr/): its minimal template plus decision
 drivers and pros and cons per option from its full template. The single
-file and the decision index are smith's own; sources are cited in
-`../SKILL.md`, in its section on the `design.md` ADR log. Fill in every
-field of the template, including those MADR marks optional:
+file, the decision index and the number-only entry heading are smith's
+own; sources are cited in `../SKILL.md`, in its section on the
+`design.md` ADR log. Fill in every field of the template, including
+those MADR marks optional:
 
 ```
 # <Subsystem/component> — Design (ADR log)
@@ -111,9 +112,11 @@ field of the template, including those MADR marks optional:
 
 ## Decision index
 
-- ADR-001 — <title> — #adr-001
+- [ADR-001 — <title>](#adr-001)
 
-## ADR-001: <title>
+## ADR-001
+
+**Title**: <title>
 
 **Context and problem**: <what forced a decision>
 
@@ -129,7 +132,10 @@ field of the template, including those MADR marks optional:
 ```
 
 When a decision changes, edit its entry and its index line so the log
-states the current decision; git history keeps the earlier wording.
+states the current decision; git history keeps the earlier wording. The
+entry heading carries only the number, so the anchor GitHub generates
+for it is the number alone (`#adr-001` for the first entry) and the
+index link keeps working when the title is edited.
 
 ## plan.md template (Build stage; section headers verbatim, content genericized)
 
