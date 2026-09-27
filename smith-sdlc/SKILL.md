@@ -3,7 +3,7 @@ name: smith-sdlc
 description: AI-native software development lifecycle (SDLC) — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as an Easy Approach to Requirements Syntax plus Given-When-Then contract, smith addition), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md Architecture Decision Record log, smith addition), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
 license: MIT
 metadata:
-  version: "1.3.0"
+  version: "1.4.0"
   tags: ["sdlc", "intent", "spec", "design", "adr", "plan", "governance", "evals"]
 ---
 
@@ -111,7 +111,7 @@ only describing what gets committed together.
 Design decisions get *made* in this stage's session, which is why this
 lives here rather than under Build — but the log itself is not part of
 that per-stage co-commit: one `design.md` per subsystem/component, not per
-feature, appended to only when a decision made during a Design-stage
+feature, gaining an entry only when a decision made during a Design-stage
 session is significant enough to outlive the current change. Most
 sessions produce no ADR entry at all; the decision's rationale just lives
 in `spec.md` (or later, `plan.md`'s `Risks` section) and needs nothing
@@ -124,12 +124,35 @@ history doesn't give you for free is **curation**: a decision like "this
 subsystem uses Postgres, not DynamoDB, because X" can inform fifty later
 `spec.md`/`plan.md` cycles; leaving it embedded in whichever cycle first
 made that call means a future reader has to know which commit to search
-rather than reading one indexed log. Structure it as an append-only ADR
-log in the minimal form of MADR (Markdown Architectural Decision Records,
-a template for writing ADRs as Markdown files — https://adr.github.io/madr/):
-context-and-problem → decision drivers → considered options → decision
-outcome → consequences, with a decision index at the top; never edit a
-decided entry, append a new one that supersedes it.
+rather than reading one indexed log.
+
+Structure it as an ADR log, the practice Michael Nygard describes in
+"Documenting Architecture Decisions" (2011,
+https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
+Each entry's fields follow MADR (Markdown Architectural Decision Records,
+a template for writing ADRs as Markdown files —
+https://adr.github.io/madr/, templates at
+https://github.com/adr/madr/tree/4.0.0/template): context-and-problem,
+considered options, decision outcome and optional consequences from its
+minimal template, plus two optional elements of its full template,
+decision drivers and pros and cons per option. MADR's optional marking
+does not carry over: a smith entry fills in every field, because the log
+exists to keep the reasons and entries are rare. Keeping every entry in
+one file under a decision index is smith's own choice: Nygard and MADR
+each keep one file per decision. So is the entry heading, which carries
+only the number and leaves the title to a field of its own; MADR puts
+the title in the heading.
+
+When a decision changes, edit its entry and its index line so the log
+states the current decision; git history keeps the earlier wording. This
+departs on purpose from ADR convention. Nygard keeps a reversed
+decision's record and marks it superseded. Amazon Web Services
+Prescriptive Guidance makes an accepted record immutable and has a new
+record supersede it ("ADR process",
+https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html).
+Nygard and Amazon Web Services each keep the earlier decision as a
+record beside the new one; for `design.md`, git history already keeps it.
+(All sources retrieved 2026-09-27.)
 
 **If nobody will maintain the index, skip `design.md` entirely** —
 `git log -- '**/spec.md'` is a legitimate, YAGNI-consistent decision
