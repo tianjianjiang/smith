@@ -100,7 +100,8 @@ Architectural Decision Records, a template for writing ADRs as Markdown
 files — https://adr.github.io/madr/): its minimal template plus decision
 drivers and pros and cons per option from its full template. The single
 file and the decision index are smith's own; sources are cited in
-`../SKILL.md`, in its section on the `design.md` ADR log. The template:
+`../SKILL.md`, in its section on the `design.md` ADR log. Fill in every
+field of the template, including those MADR marks optional:
 
 ```
 # <Subsystem/component> — Design (ADR log)
