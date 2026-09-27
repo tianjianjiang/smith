@@ -97,7 +97,7 @@ sessions (that's where design decisions get made — see `../SKILL.md`
 Stage 2), but shares `CLAUDE.md`'s durable, cross-cutting lifecycle rather
 than `spec.md`'s per-cycle one. Minimal MADR (Markdown Architectural Decision
 Records, a template for writing ADRs as Markdown files —
-https://adr.github.io/madr/) form, append-only:
+https://adr.github.io/madr/) form:
 
 ```
 # <Subsystem/component> — Design (ADR log)
@@ -124,8 +124,8 @@ https://adr.github.io/madr/) form, append-only:
 **Consequences**: <what this makes easier or harder later>
 ```
 
-To reverse a decision, append a new ADR that supersedes it and mark the
-old entry's status `superseded` — never edit a decided ADR in place.
+When a decision changes, edit its entry and its index line so the log
+states the current decision; git history keeps the earlier wording.
 
 ## plan.md template (Build stage; section headers verbatim, content genericized)
 
