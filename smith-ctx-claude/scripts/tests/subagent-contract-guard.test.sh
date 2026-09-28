@@ -386,6 +386,13 @@ if ! payload Agent "$REPO" general-purpose "$TMP/reworded.txt" \
 fi
 grep -q 'subagent-contract-guard' "$TMP/out" \
   || fail "unreadable contract source: must emit a loud advisory, not stay silent"
+node -e 'const fs=require("node:fs");
+  const said=JSON.parse(fs.readFileSync(process.argv[1],"utf-8"))
+    .hookSpecificOutput.additionalContext;
+  for (const phrase of ["exemption array","canonical contract"]) {
+    if (!said.includes(phrase)) { console.error("missing: "+phrase); process.exit(1); }
+  }' "$TMP/out" 2>"$TMP/err" \
+  || fail "two advisories in one run must arrive as ONE JSON object holding both, got: $(cat "$TMP/out") $(cat "$TMP/err")"
 ledger | grep -q '"reason":"contract-source-unreadable"' \
   || fail "unreadable contract source: expected that reason in the ledger, got: $(ledger)"
 

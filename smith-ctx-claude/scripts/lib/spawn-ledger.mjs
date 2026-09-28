@@ -106,15 +106,11 @@ export function readLedger(scopeRoots, branch) {
       }
       const verdict = typeof entry.verdict === "string" ? entry.verdict : "";
       const accountedFor = CHECKED_VERDICTS.has(token(verdict));
-      if (accountedFor) {
-        if (!entry.branch || typeof entry.branch !== "string") {
-          unchecked += 1;
-          continue;
-        }
-        if (branch && entry.branch !== branch) {
-          continue;
-        }
-      }
+      const recordedBranch =
+        typeof entry.branch === "string" ? entry.branch : "";
+      const belongsToAnotherBranch =
+        branch && recordedBranch && recordedBranch !== branch;
+      if (accountedFor && belongsToAnotherBranch) continue;
       entries.push(entry);
     }
   }
@@ -183,6 +179,6 @@ export function verdictFor(ledger) {
   }
   return {
     verdict: "PASS",
-    detail: `${total} spawn(s) on this branch: ${summary}.`,
+    detail: `${total} spawn(s) visible from this branch: ${summary}.`,
   };
 }
