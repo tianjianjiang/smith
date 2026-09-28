@@ -289,8 +289,8 @@ function main() {
         `${CONTRACT_SOURCE}, so this spawn was NOT checked. Either that file ` +
         "is unreachable (repair the skills symlink), or its Contract template " +
         "section no longer extracts — a renamed heading, an indented or fenced " +
-        "block, a second blockquote in the section, or a clause added after " +
-        "the «placeholder» line. Paste the block by hand meanwhile. " +
+        "block, a second blockquote in the section, or wording that differs " +
+        "from the enforced constant. Paste the block by hand meanwhile. " +
         unclearableFailNote(scopeRoot),
     );
     return;

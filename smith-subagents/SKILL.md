@@ -99,9 +99,10 @@ an ordinary investigative prompt. A mid-line mention is safe.
 **Enforced deterministically, because documenting it did not hold.**
 `smith-ctx-claude/scripts/subagent-contract-guard.mjs` (PreToolUse, matcher
 `Agent|Task`) blocks a spawn whose prompt does not carry the block above, and
-prints that block in the refusal so pasting it is the cheapest way forward. It
-extracts the text from THIS section at run time rather than keeping a copy of
-its own, so it always enforces whatever the installed copy of this file says.
+prints that block in the refusal so pasting it is the cheapest way forward.
+What it prints is read from the installed copy of THIS section at run time;
+what it enforces is the constant `REQUIRED_CONTRACT` described below, and when
+the two differ it skips the read-only check and records the spawn as unchecked.
 Exempt are subagent types that bring their own definition: plugin-namespaced
 types (`plugin:agent`), and the built-in helpers named in
 `smith-ctx-claude/subagent-contract-config.json`. Being read-only is NOT the
