@@ -616,8 +616,23 @@ assert_external_memories_untouched() {
   assert_linked_memories_untouched "$scenario" "$primary" "$output"
   [ "$(cat "$external/memories/ext.md" 2>/dev/null)" = "memory external" ] || fail "T6 ($scenario): ext.md must stay in the directory outside the worktree: $(cat "$SHIM/stderr")"
   [ ! -e "$primary/.serena/memories/ext.md" ] || fail "T6 ($scenario): a memory from outside the worktree must not be moved into the primary checkout"
-  grep -q 'outside worktree .*1 memories left in place' "$SHIM/stderr" || fail "T6 ($scenario): the skipped relocation must be warned: $(cat "$SHIM/stderr")"
-  [ -s "$SHIM/serena.content" ] || fail "T6 ($scenario): the checkpoint must still be written"
+  external_physical="$(cd "$external/memories" && pwd -P)"
+  grep -qF -- "resolves to $external_physical, which is not the memories directory of worktree " "$SHIM/stderr" || fail "T6 ($scenario): the warning must name the resolved directory: $(cat "$SHIM/stderr")"
+  grep -qF -- "; 1 memories left in place, not relocated" "$SHIM/stderr" || fail "T6 ($scenario): the skipped relocation must be warned: $(cat "$SHIM/stderr")"
+  [ -s "$SHIM/serena.content" ] || fail "T6 ($scenario): the Serena checkpoint must still be written"
+  [ -s "$SHIM/bm.content" ] || fail "T6 ($scenario): the Basic-Memory checkpoint must still be written"
+}
+
+assert_relocation_refused() {
+  scenario="$1"; worktree="$2"
+  grep -q 'worktree memories left in place.*no backend was written' "$SHIM/stderr" || fail "T6 ($scenario): stderr must say nothing was relocated or written: $(cat "$SHIM/stderr")"
+  [ "$(cat "$worktree/.serena/memories/s.md")" = "stranded" ] || fail "T6 ($scenario): the memory must stay where it was"
+  assert_no_backend_argv "T6 ($scenario)"
+}
+
+make_primary_serena_project_without_memories() {
+  mkdir -p "$1/.serena"
+  printf 'project: yml\n' > "$1/.serena/project.yml"
 }
 
 make_external_serena_directory() {
@@ -649,19 +664,84 @@ out=$(run_script_in "$W6D" test_label_externalserena "body=$BODY" 2>"$SHIM/stder
 assert_external_memories_untouched "external .serena" "$R6D" "$E6D" "$out"
 
 reset_logs
+R6F="$SHIM/repo-t6-sibling-prefix"
+make_repo_with_worktree "$R6F"
+W6F="$R6F/.claude/worktrees/wt"
+make_primary_serena_project "$R6F"
+E6F="$R6F/.claude/worktrees/wt-sibling"
+make_external_serena_directory "$E6F"
+mkdir -p "$W6F/.serena"
+ln -s "$E6F/memories" "$W6F/.serena/memories"
+out=$(run_script_in "$W6F" test_label_siblingprefix "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (sibling prefix): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_external_memories_untouched "sibling prefix" "$R6F" "$E6F" "$out"
+
+reset_logs
+R6G="$SHIM/repo-t6-linked-inside-worktree"
+make_repo_with_worktree "$R6G"
+W6G="$R6G/.claude/worktrees/wt"
+make_primary_serena_project "$R6G"
+E6G="$W6G/docs"
+make_external_serena_directory "$E6G"
+mkdir -p "$W6G/.serena"
+ln -s "$E6G/memories" "$W6G/.serena/memories"
+out=$(run_script_in "$W6G" test_label_linkedinsideworktree "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked inside worktree): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_external_memories_untouched "linked inside worktree" "$R6G" "$E6G" "$out"
+
+reset_logs
 R6E="$SHIM/repo-t6-dangling-primary"
 make_repo_with_worktree "$R6E"
 W6E="$R6E/.claude/worktrees/wt"
-mkdir -p "$R6E/.serena" "$W6E/.serena/memories"
-printf 'project: yml\n' > "$R6E/.serena/project.yml"
+make_primary_serena_project_without_memories "$R6E"
+mkdir -p "$W6E/.serena/memories"
 ln -s "$SHIM/missing-t6e" "$R6E/.serena/memories"
 printf 'stranded\n' > "$W6E/.serena/memories/s.md"
 run_script_in "$W6E" test_label_danglingprimary "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T6 (dangling primary): a dangling primary memories link must make the script exit non-zero"
 grep -qF -- "$SHIM/missing-t6e" "$SHIM/stderr" || fail "T6 (dangling primary): stderr must name the missing link target: $(cat "$SHIM/stderr")"
-grep -q 'worktree memories left in place.*no backend was written' "$SHIM/stderr" || fail "T6 (dangling primary): stderr must say nothing was relocated or written: $(cat "$SHIM/stderr")"
-[ "$(cat "$W6E/.serena/memories/s.md")" = "stranded" ] || fail "T6 (dangling primary): the worktree memory must stay in place"
+assert_relocation_refused "dangling primary" "$W6E"
 [ -L "$R6E/.serena/memories" ] || fail "T6 (dangling primary): the primary link must be left for the user to repair"
-assert_no_backend_argv "T6 (dangling primary)"
+
+reset_logs
+R6H="$SHIM/repo-t6-dangling-primary-external-source"
+make_repo_with_worktree "$R6H"
+W6H="$R6H/.claude/worktrees/wt"
+make_primary_serena_project_without_memories "$R6H"
+ln -s "$SHIM/missing-t6h" "$R6H/.serena/memories"
+E6H="$SHIM/external-t6h"
+mkdir -p "$E6H/memories" "$W6H/.serena"
+printf 'stranded\n' > "$E6H/memories/s.md"
+ln -s "$E6H/memories" "$W6H/.serena/memories"
+run_script_in "$W6H" test_label_danglingprimaryexternal "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T6 (dangling primary, external source): a dangling primary memories link must stop the run even when the worktree memories are linked elsewhere"
+grep -qF -- "$SHIM/missing-t6h" "$SHIM/stderr" || fail "T6 (dangling primary, external source): stderr must name the missing link target: $(cat "$SHIM/stderr")"
+assert_relocation_refused "dangling primary, external source" "$W6H"
+
+reset_logs
+R6I="$SHIM/repo-t6-primary-memories-is-a-file"
+make_repo_with_worktree "$R6I"
+W6I="$R6I/.claude/worktrees/wt"
+make_primary_serena_project_without_memories "$R6I"
+printf 'not a directory\n' > "$R6I/.serena/memories"
+mkdir -p "$W6I/.serena/memories"
+printf 'stranded\n' > "$W6I/.serena/memories/s.md"
+P6I="$(cd "$R6I" && pwd -P)"
+run_script_in "$W6I" test_label_primarymemoriesfile "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T6 (primary memories is a file): a non-directory primary memories path must make the script exit non-zero"
+grep -qF -- "Error: $P6I/.serena/memories exists and is not a directory" "$SHIM/stderr" || fail "T6 (primary memories is a file): stderr must say what is in the way: $(cat "$SHIM/stderr")"
+assert_relocation_refused "primary memories is a file" "$W6I"
+
+reset_logs
+R6J="$SHIM/repo-t6-unwritable-primary"
+make_repo_with_worktree "$R6J"
+W6J="$R6J/.claude/worktrees/wt"
+make_primary_serena_project_without_memories "$R6J"
+mkdir -p "$W6J/.serena/memories"
+printf 'stranded\n' > "$W6J/.serena/memories/s.md"
+P6J="$(cd "$R6J" && pwd -P)"
+chmod 555 "$R6J/.serena"
+run_script_in "$W6J" test_label_unwritableprimary "body=$BODY" >/dev/null 2>"$SHIM/stderr"
+unwritable_status=$?
+chmod 755 "$R6J/.serena"
+[ "$unwritable_status" -ne 0 ] || fail "T6 (unwritable primary): a memories directory that cannot be created must make the script exit non-zero"
+grep -qF -- "Error: could not create $P6J/.serena/memories" "$SHIM/stderr" || fail "T6 (unwritable primary): stderr must name the directory: $(cat "$SHIM/stderr")"
+assert_relocation_refused "unwritable primary" "$W6J"
 
 reset_logs
 D7="$SHIM/notproj"
@@ -702,7 +782,7 @@ grep -qF -- "  Serena: $P1/.serena/memories/test_label_reloadlines.md" "$SHIM/st
 
 LEAKED_FLAGS=$(leaked_real_flags)
 [ -z "$LEAKED_FLAGS" ] || fail "T10: test run leaked reload flags recorded under $SHIM into $HOME/.claude/plans: $LEAKED_FLAGS"
-grep -qF -- "$SUITE_MARKER" "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* || fail "T10: the suite's flags must record a working directory under $SHIM, or the leak check above matches nothing"
 [ "$(ls "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] || fail "T10: the suite must have written its flags under the isolated CLAUDE_CONFIG_DIR"
+grep -qF -- "$SUITE_MARKER" "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* || fail "T10: the suite's flags must record a working directory under $SHIM, or the leak check above matches nothing"
 
 echo "PASS: write-checkpoint"

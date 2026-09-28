@@ -119,15 +119,24 @@ non-`.md` files, and shall skip everything with a warning when the primary
 checkout has no `.serena/project.yml`. While the worktree's
 `.serena/memories/` resolves to the same physical directory as the primary
 checkout's (a symlinked `memories/` or a symlinked `.serena/`), the system
-shall move, remove and rename nothing and print no relocation line. While
-the worktree's `.serena/memories/` resolves to a directory outside the
-worktree other than the primary checkout's, the system shall move, remove
-and rename nothing, print one warning naming the resolved directory, and
-still write the checkpoint. If the primary checkout's `.serena/memories` is
-a symbolic link whose target does not exist, or the directory cannot be
-created, the system shall exit 1 before any backend write, naming the path
-and stating that the worktree memories were left in place and no backend
-was written.
+shall move, remove and rename nothing and print no relocation line.
+
+The remaining rules apply only while the worktree's `.serena/memories/`
+contains `*.md` files and the primary checkout has `.serena/project.yml`;
+without either, the earlier rules return first. If the primary checkout's
+`.serena/memories` is a symbolic link whose target does not exist, exists
+without being a directory, or cannot be created, the system shall exit 1
+before any backend write, naming the path and stating that the worktree
+memories were left in place and no backend was written. The first two of
+these are checked before the worktree's own directory is examined, so they
+stop the run whatever that directory resolves to. While the worktree's
+`.serena/memories/` resolves to any directory other than
+`<worktree>/.serena/memories` itself and other than the primary checkout's
+(a link leading outside the worktree, or to another directory inside it),
+the system shall move, remove and rename nothing, print one warning naming
+the resolved directory, and still write the checkpoint. If that directory
+cannot be resolved to a physical path the system shall do the same, with a
+warning that says so instead of naming a directory.
 
 **GWT**:
 - Given worktree memories `a.md`, `b.md`, `c.md`; primary has `b.md`
@@ -153,18 +162,28 @@ was written.
   per-file relocation line, and the Reload block has no `Relocated worktree
   memories` line
 - Given the worktree's `.serena/memories` (or its whole `.serena`) is a
-  symlink to a directory outside the worktree that holds `ext.md`, and that
-  directory is not the primary's
+  symlink to a directory that holds `ext.md` and is neither the worktree's
+  own `.serena/memories` nor the primary's: one outside the worktree, one in
+  a sibling worktree whose name starts with this worktree's name, or one
+  elsewhere inside this worktree
 - When the script runs from the worktree
 - Then `ext.md` stays where it is, the primary gains no `ext.md`, stderr has
-  `outside worktree <abs>; 1 memories left in place, not relocated`, and
+  `resolves to <resolved-abs>, which is not the memories directory of
+  worktree <worktree-abs>; 1 memories left in place, not relocated`, and
   both backends are written
 - Given the primary's `.serena/memories` is a symlink to a missing directory
-  and the worktree holds `s.md`
+  and the worktree holds `s.md`, in its own directory or in one linked from
+  outside the worktree
 - When the script runs from the worktree
 - Then it exits 1, stderr names the missing target and ends with `no backend
-  was written.`, `s.md` stays in the worktree, the symlink stays, and no
+  was written.`, `s.md` stays where it was, the symlink stays, and no
   backend is called
+- Given the primary's `.serena/memories` is a regular file, or its `.serena`
+  directory is not writable, and the worktree holds `s.md`
+- When the script runs from the worktree
+- Then it exits 1, stderr has `exists and is not a directory` or `could not
+  create` with the path, ends with `no backend was written.`, `s.md` stays
+  in the worktree, and no backend is called
 
 ## §S5 serena-project-resolution
 
@@ -213,7 +232,7 @@ call; a failure before that call shall leave both backends untouched, and
 a Serena write failure shall never proceed to Basic-Memory.
 
 **GWT**:
-- Given any exit-1 condition in §S2, §S5
+- Given any exit-1 condition in §S2, §S4, §S5
 - When the script exits
 - Then no `serena_read.argv`, `serena.argv`, `bm_read.argv`, or `bm.argv`
   exists (existing `write-checkpoint.test.sh:141-143` invariant retained)
@@ -221,15 +240,18 @@ a Serena write failure shall never proceed to Basic-Memory.
 ## §S8 test-isolation
 
 **EARS**: The test suite shall export `CLAUDE_CONFIG_DIR` to a temporary
-directory before the first test and shall assert at its end that the
-number of `.pending-memory-restore-*` files under `$HOME/.claude/plans` is
-unchanged.
+directory before the first test and shall assert at its end that no
+`.pending-memory-restore-*` file under `$HOME/.claude/plans` records a
+working directory of this suite run, and that the suite's own flags do
+record one.
 
 **GWT**:
-- Given `n` flag files in `$HOME/.claude/plans` before the run
+- Given any number of flag files in `$HOME/.claude/plans`, changing or not
+  during the run
 - When the whole suite runs
-- Then `n` flag files remain and every flag the suite produced lives under
-  the temporary `CLAUDE_CONFIG_DIR`
+- Then none of them names the suite's temporary directory, and every flag
+  the suite produced lives under the temporary `CLAUDE_CONFIG_DIR` and names
+  it
 
 ## §S9 no-client-identifiers
 
