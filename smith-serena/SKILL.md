@@ -52,9 +52,9 @@ safe; the hazard is any path that is itself a file symlink.
 
 - Before a native write, if the target file may be a symlink, resolve it
   (`readlink -f` / write the real path) — do not write the link path.
-- Distinct from the worktree MCP write blind spot in
-  `@smith-worktree/SKILL.md`; that is about Serena writes hitting the
-  main checkout, not symlink replacement.
+- Distinct from Serena paths inside a worktree
+  (`@smith-worktree/SKILL.md`); that is about which checkout a Serena
+  path resolves to, not symlink replacement.
 
 ## Serena Activation Workflow
 
@@ -70,14 +70,16 @@ Claude Code with `--project-from-cwd` activates projects automatically from work
 3. `list_memories()` — Discover available context
 4. `read_memory()` — Load project context
 
-### Worktrees Share the Primary's Memories
+### Worktrees and Serena's Root
 
-With `--project-from-cwd`, a session started inside a git worktree activates
-the worktree as its own project. The `link-worktree-memories` SessionStart
-hook links `<worktree>/.serena/memories` to `<primary>/.serena/memories`, so
-`list_memories`/`read_memory`/`write_memory` reach the primary checkout's
-memories (details: `references/HOOKS.md`). A non-empty worktree folder is left
-alone with a warning; move its memories to the primary first.
+Hook details: `references/HOOKS.md`.
+
+- **Session started in a worktree**: Serena roots there;
+  `link-worktree-memories` links its `.serena/memories` to the primary's.
+- **`EnterWorktree` mid-session**: Serena stays rooted at the primary. Prefix
+  Serena paths and globs: `.claude/worktrees/«name»/src/app.ts`.
+  `worktree-path-guard` blocks one lacking it; an unreachable worktree
+  (e.g. gitignored) takes built-in `Edit`/`Write`.
 
 ### Multi-Project / Global MCP
 

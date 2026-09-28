@@ -921,6 +921,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         ]
       },
       {
+        "matcher": "mcp__(plugin_serena_)?serena__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-serena/scripts/worktree-path-guard.mjs\"" }
+        ]
+      },
+      {
         "matcher": "EnterWorktree",
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-git/scripts/hooks/worktree-dirty-guard.mjs\"" }
@@ -1145,6 +1151,14 @@ then:
     confirm it exits 2 and that the refusal does not print the string.
     Confirm `git commit -m "x"` and a `curl` with no personal data are not
     blocked by this hook.
+25. **worktree-path-guard** — launch the session inside a scratch repository
+    that has a commit and no `.gitignore` rule covering `.claude/worktrees/`
+    (with such a rule, read tools pass with a note and write tools are sent to
+    the built-in `Edit`/`Write`). `EnterWorktree`, then call Serena
+    `get_symbols_overview` with a path relative to the repository root;
+    confirm it is blocked and the message names the same path under
+    `.claude/worktrees/«name»/`. Re-issue with that path; confirm it proceeds.
+    Confirm `list_memories` is not blocked.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not
