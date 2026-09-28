@@ -82,8 +82,17 @@ function record(entry, scopeRoot) {
   }
 }
 
+const adviceToDeliver = [];
+
 function advise(message) {
-  process.stdout.write(
+  adviceToDeliver.push(message);
+}
+
+function deliverAdviceAsOneObject() {
+  if (!adviceToDeliver.length) return;
+  const message = adviceToDeliver.join(" ");
+  writeSync(
+    1,
     JSON.stringify({
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
@@ -93,6 +102,8 @@ function advise(message) {
     }) + "\n",
   );
 }
+
+process.on("exit", deliverAdviceAsOneObject);
 
 function unclearableFailNote(scopeRoot) {
   return (

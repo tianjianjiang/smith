@@ -48,6 +48,7 @@ expect "counts are reported" "contract-pasted=1"
 
 entry other-branch contract-pasted ""
 expect "another branch's CHECKED spawn is out of scope" "subagent-contract PASS"
+expect "another branch's CHECKED spawn is not counted here" "contract-pasted=1"
 
 entry other-branch unenforced ',"reason":"opt-out"'
 expect "an unchecked spawn is never filtered away by branch" \
@@ -90,6 +91,20 @@ entry "$BRANCH" contract-pasted ""
 entry "" unenforced ',"reason":"opt-out"'
 expect "an entry with a blank branch is not silently discarded" \
   "FAIL:unchecked-spawn(opt-out)"
+
+: > "$LEDGER"
+entry "$BRANCH" contract-pasted ""
+entry "" contract-pasted ""
+expect "a checked entry with a blank branch does not crash the report" \
+  "subagent-contract PASS"
+expect "a checked entry with a blank branch is counted, not dropped" \
+  "contract-pasted=2"
+
+: > "$LEDGER"
+entry "$BRANCH" contract-pasted ""
+printf '{"tool":"Agent","verdict":"exempt"}\n' >> "$LEDGER"
+expect "a checked entry with no branch field is counted, not dropped" \
+  "2 spawn(s)"
 
 : > "$LEDGER"
 printf 'garbage\n' >> "$LEDGER"
@@ -166,6 +181,10 @@ printf '{"branch":"","verdict":"unenforced","reason":"opt-out"}\n' > "$OUTSIDE_L
 out=$(node "$REPORT" "$OUTSIDE") || fail "non-repo report crashed"
 echo "$out" | grep -q "FAIL:unchecked-spawn(opt-out)" \
   || fail "outside a repository the reporter must still find its ledger, got: $out"
+printf '{"branch":"","verdict":"contract-pasted"}\n' > "$OUTSIDE_LEDGER"
+out=$(node "$REPORT" "$OUTSIDE") || fail "non-repo report of a checked spawn crashed"
+echo "$out" | grep -q "subagent-contract PASS" \
+  || fail "a checked spawn made outside a repository must pass, got: $out"
 rm -f "$OUTSIDE_LEDGER"
 
 SUBDIR="$REPO/sub/dir"

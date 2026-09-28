@@ -325,7 +325,12 @@ exists but cannot be read: a record that cannot be read cannot support a
 `PASS`. The branch tag narrows only the ACCOUNTED-FOR records: a record that
 cannot be shown to have been checked is never filtered away by branch, so no
 branch name, missing branch, or detached HEAD can hide one. Over-counting is
-the safe direction, and the verdict says so.
+the safe direction, and the verdict says so. An accounted-for record that
+carries no branch is counted on every branch as well.
+
+Every advisory the guard has for one spawn is written as a single JSON object.
+Claude Code treats two objects on stdout as a parse failure and would lose
+both (per https://code.claude.com/docs/en/hooks, retrieved 2026-09-28).
 
 Two limits worth knowing. The ledger is keyed by the checkout's path, so it
 outlives the checkout: delete a worktree and recreate one at the same path and
