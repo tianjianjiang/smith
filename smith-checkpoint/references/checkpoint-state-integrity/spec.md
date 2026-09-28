@@ -126,10 +126,12 @@ contains `*.md` files and the primary checkout has `.serena/project.yml`;
 without either, the earlier rules return first. If the primary checkout's
 `.serena/memories` is a symbolic link whose target does not exist or cannot
 be reached, if it exists without being a directory, or if it is absent and
-cannot be created, the system shall exit 1 before any backend write, naming the path and stating that the worktree
-memories were left in place and no backend was written. The first two of
-these are checked before the worktree's own directory is examined, so they
-stop the run whatever that directory resolves to. While the worktree's
+cannot be created, the system shall exit 1 before any backend write, naming
+the path and stating that the worktree memories were left in place and no
+backend was written. The first two of these are checked before the
+worktree's own directory is examined, so they stop the run whatever that
+directory resolves to; the third is reached only when the memories are the
+worktree's own. While the worktree's
 `.serena/memories/` resolves to any directory other than
 `<worktree>/.serena/memories` itself and other than the primary checkout's
 (a link leading outside the worktree, or to another directory inside it),
@@ -182,7 +184,7 @@ warning that says so instead of naming a directory.
 - Given the primary's `.serena/memories` is a symlink to a missing directory
   and the worktree's `.serena/memories` holds no `*.md` file
 - When the script runs from the worktree
-- Then it exits 0 and both backends are written
+- Then it exits 0, both backends are written, and the symlink stays
 - Given the primary's `.serena/memories` is a regular file, or its `.serena`
   directory is not writable, and the worktree holds `s.md`
 - When the script runs from the worktree

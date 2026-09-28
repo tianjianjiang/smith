@@ -612,13 +612,13 @@ assert_linked_memories_untouched "linked .serena" "$R6B" "$out"
 [ -L "$W6B/.serena" ] || fail "T6 (linked .serena): the worktree link must be left in place"
 
 assert_external_memories_untouched() {
-  scenario="$1"; primary="$2"; external="$3"; output="$4"
+  scenario="$1"; primary="$2"; external="$3"; output="$4"; worktree="$5"
   assert_linked_memories_untouched "$scenario" "$primary" "$output"
   [ "$(cat "$external/memories/ext.md" 2>/dev/null)" = "memory external" ] || fail "T6 ($scenario): ext.md must stay in the directory the link resolves to: $(cat "$SHIM/stderr")"
   [ ! -e "$primary/.serena/memories/ext.md" ] || fail "T6 ($scenario): a memory from a linked directory must not be moved into the primary checkout"
   external_physical="$(cd "$external/memories" && pwd -P)"
-  grep -qF -- "resolves to $external_physical, which is not the memories directory of worktree " "$SHIM/stderr" || fail "T6 ($scenario): the warning must name the resolved directory: $(cat "$SHIM/stderr")"
-  grep -qF -- "; 1 memories left in place, not relocated" "$SHIM/stderr" || fail "T6 ($scenario): the skipped relocation must be warned: $(cat "$SHIM/stderr")"
+  worktree_physical="$(cd "$worktree" && pwd -P)"
+  grep -qF -- "resolves to $external_physical, which is not the memories directory of worktree $worktree_physical; 1 memories left in place, not relocated" "$SHIM/stderr" || fail "T6 ($scenario): the warning must name the resolved directory and the worktree: $(cat "$SHIM/stderr")"
   [ -s "$SHIM/serena.content" ] || fail "T6 ($scenario): the Serena checkpoint must still be written"
   [ -s "$SHIM/bm.content" ] || fail "T6 ($scenario): the Basic-Memory checkpoint must still be written"
 }
@@ -655,7 +655,7 @@ make_external_serena_directory "$E6C"
 mkdir -p "$W6C/.serena"
 ln -s "$E6C/memories" "$W6C/.serena/memories"
 out=$(run_script_in "$W6C" test_label_externalmemories "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (external memories): run exited non-zero: $(cat "$SHIM/stderr")"
-assert_external_memories_untouched "external memories" "$R6C" "$E6C" "$out"
+assert_external_memories_untouched "external memories" "$R6C" "$E6C" "$out" "$W6C"
 
 reset_logs
 R6D="$SHIM/repo-t6-external-serena"
@@ -666,7 +666,7 @@ E6D="$SHIM/external-t6d"
 make_external_serena_directory "$E6D"
 ln -s "$E6D" "$W6D/.serena"
 out=$(run_script_in "$W6D" test_label_externalserena "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (external .serena): run exited non-zero: $(cat "$SHIM/stderr")"
-assert_external_memories_untouched "external .serena" "$R6D" "$E6D" "$out"
+assert_external_memories_untouched "external .serena" "$R6D" "$E6D" "$out" "$W6D"
 
 reset_logs
 R6F="$SHIM/repo-t6-sibling-prefix"
@@ -678,7 +678,7 @@ make_external_serena_directory "$E6F"
 mkdir -p "$W6F/.serena"
 ln -s "$E6F/memories" "$W6F/.serena/memories"
 out=$(run_script_in "$W6F" test_label_siblingprefix "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (sibling prefix): run exited non-zero: $(cat "$SHIM/stderr")"
-assert_external_memories_untouched "sibling prefix" "$R6F" "$E6F" "$out"
+assert_external_memories_untouched "sibling prefix" "$R6F" "$E6F" "$out" "$W6F"
 
 reset_logs
 R6G="$SHIM/repo-t6-linked-inside-worktree"
@@ -690,7 +690,7 @@ make_external_serena_directory "$E6G"
 mkdir -p "$W6G/.serena"
 ln -s "$E6G/memories" "$W6G/.serena/memories"
 out=$(run_script_in "$W6G" test_label_linkedinsideworktree "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked inside worktree): run exited non-zero: $(cat "$SHIM/stderr")"
-assert_external_memories_untouched "linked inside worktree" "$R6G" "$E6G" "$out"
+assert_external_memories_untouched "linked inside worktree" "$R6G" "$E6G" "$out" "$W6G"
 
 reset_logs
 R6E="$SHIM/repo-t6-dangling-primary"
@@ -717,6 +717,7 @@ ln -s "$E6H/memories" "$W6H/.serena/memories"
 run_script_in "$W6H" test_label_danglingprimaryexternal "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T6 (dangling primary, external source): a dangling primary memories link must stop the run even when the worktree memories are linked elsewhere"
 grep -qF -- "$SHIM/missing-t6h" "$SHIM/stderr" || fail "T6 (dangling primary, external source): stderr must name the missing link target: $(cat "$SHIM/stderr")"
 assert_relocation_refused "dangling primary, external source" "$W6H"
+[ -L "$R6H/.serena/memories" ] || fail "T6 (dangling primary, external source): the primary link must be left for the user to repair"
 
 reset_logs
 R6I="$SHIM/repo-t6-primary-memories-is-a-file"
