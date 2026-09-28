@@ -599,6 +599,7 @@ mkdir -p "$W6A/.serena"
 ln -s "$R6A/.serena/memories" "$W6A/.serena/memories"
 out=$(run_script_in "$W6A" test_label_linkedmemories "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked memories): run exited non-zero: $(cat "$SHIM/stderr")"
 assert_linked_memories_untouched "linked memories" "$R6A" "$out"
+grep -q 'not relocated' "$SHIM/stderr" && fail "T6 (linked memories): a shared memories directory must not be warned about: $(cat "$SHIM/stderr")"
 [ -L "$W6A/.serena/memories" ] || fail "T6 (linked memories): the worktree link must be left in place"
 
 reset_logs
@@ -609,6 +610,7 @@ make_primary_serena_project "$R6B"
 ln -s "$R6B/.serena" "$W6B/.serena"
 out=$(run_script_in "$W6B" test_label_linkedserena "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked .serena): run exited non-zero: $(cat "$SHIM/stderr")"
 assert_linked_memories_untouched "linked .serena" "$R6B" "$out"
+grep -q 'not relocated' "$SHIM/stderr" && fail "T6 (linked .serena): a shared memories directory must not be warned about: $(cat "$SHIM/stderr")"
 [ -L "$W6B/.serena" ] || fail "T6 (linked .serena): the worktree link must be left in place"
 
 assert_external_memories_untouched() {
@@ -618,7 +620,7 @@ assert_external_memories_untouched() {
   [ ! -e "$primary/.serena/memories/ext.md" ] || fail "T6 ($scenario): a memory from a linked directory must not be moved into the primary checkout"
   external_physical="$(cd "$external/memories" && pwd -P)"
   worktree_physical="$(cd "$worktree" && pwd -P)"
-  grep -qF -- "resolves to $external_physical, which is not the memories directory of worktree $worktree_physical; 1 memories left in place, not relocated" "$SHIM/stderr" || fail "T6 ($scenario): the warning must name the resolved directory and the worktree: $(cat "$SHIM/stderr")"
+  grep -qF -- "Warning: $worktree_physical/.serena/memories resolves to $external_physical, which is not the memories directory of worktree $worktree_physical; 1 memories left in place, not relocated" "$SHIM/stderr" || fail "T6 ($scenario): the warning must name the resolved directory and the worktree: $(cat "$SHIM/stderr")"
   [ -s "$SHIM/serena.content" ] || fail "T6 ($scenario): the Serena checkpoint must still be written"
   [ -s "$SHIM/bm.content" ] || fail "T6 ($scenario): the Basic-Memory checkpoint must still be written"
 }

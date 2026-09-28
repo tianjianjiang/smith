@@ -114,7 +114,8 @@ leaving it at the top.
    `.serena/memories` or at `.serena`, to a directory that is neither the
    worktree's own `.serena/memories` nor the primary checkout's (outside the
    worktree or elsewhere inside it), those files belong to that directory:
-   they stay there and a warning names it. When the worktree's
+   they stay there and, when the primary checkout has
+   `.serena/project.yml`, a warning names it. When the worktree's
    `.serena/memories` holds `*.md` files and the primary checkout's
    `.serena/memories` is a symbolic link to a directory that is missing or
    cannot be reached, or exists without being a directory, the script exits

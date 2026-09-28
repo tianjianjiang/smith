@@ -185,8 +185,9 @@ warning that says so instead of naming a directory.
   and the worktree's `.serena/memories` holds no `*.md` file
 - When the script runs from the worktree
 - Then it exits 0, both backends are written, and the symlink stays
-- Given the primary's `.serena/memories` is a regular file, or its `.serena`
-  directory is not writable, and the worktree holds `s.md`
+- Given the primary's `.serena/memories` is a regular file, or is absent
+  while its `.serena` directory is not writable, and the worktree holds
+  `s.md`
 - When the script runs from the worktree
 - Then it exits 1, stderr has `exists and is not a directory` or `could not
   create` with the path, ends with `no backend was written.`, `s.md` stays
