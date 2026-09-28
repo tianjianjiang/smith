@@ -119,7 +119,15 @@ non-`.md` files, and shall skip everything with a warning when the primary
 checkout has no `.serena/project.yml`. While the worktree's
 `.serena/memories/` resolves to the same physical directory as the primary
 checkout's (a symlinked `memories/` or a symlinked `.serena/`), the system
-shall move, remove and rename nothing and print no relocation line.
+shall move, remove and rename nothing and print no relocation line. While
+the worktree's `.serena/memories/` resolves to a directory outside the
+worktree other than the primary checkout's, the system shall move, remove
+and rename nothing, print one warning naming the resolved directory, and
+still write the checkpoint. If the primary checkout's `.serena/memories` is
+a symbolic link whose target does not exist, or the directory cannot be
+created, the system shall exit 1 before any backend write, naming the path
+and stating that the worktree memories were left in place and no backend
+was written.
 
 **GWT**:
 - Given worktree memories `a.md`, `b.md`, `c.md`; primary has `b.md`
@@ -144,6 +152,19 @@ shall move, remove and rename nothing and print no relocation line.
 - Then both files keep their bytes, the symlink stays, stderr has no
   per-file relocation line, and the Reload block has no `Relocated worktree
   memories` line
+- Given the worktree's `.serena/memories` (or its whole `.serena`) is a
+  symlink to a directory outside the worktree that holds `ext.md`, and that
+  directory is not the primary's
+- When the script runs from the worktree
+- Then `ext.md` stays where it is, the primary gains no `ext.md`, stderr has
+  `outside worktree <abs>; 1 memories left in place, not relocated`, and
+  both backends are written
+- Given the primary's `.serena/memories` is a symlink to a missing directory
+  and the worktree holds `s.md`
+- When the script runs from the worktree
+- Then it exits 1, stderr names the missing target and ends with `no backend
+  was written.`, `s.md` stays in the worktree, the symlink stays, and no
+  backend is called
 
 ## §S5 serena-project-resolution
 

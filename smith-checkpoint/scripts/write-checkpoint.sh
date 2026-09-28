@@ -182,11 +182,25 @@ relocate_worktree_memories() {
         [[ -f "$file" ]] && files+=("$file")
     done
     (( ${#files[@]} > 0 )) || return 0
+    local source_physical worktree_physical
+    source_physical=$(physical_path "$source_dir") || source_physical=""
+    worktree_physical=$(physical_path "$worktree") || worktree_physical=""
+    if [[ -z "$source_physical" || -z "$worktree_physical" || "$source_physical" != "$worktree_physical"/* ]]; then
+        echo "Warning: ${source_dir} resolves to ${source_physical:-an unreadable directory}, outside worktree ${worktree}; ${#files[@]} memories left in place, not relocated" >&2
+        return 0
+    fi
     if [[ ! -f "$primary_checkout/.serena/project.yml" ]]; then
         echo "Warning: primary checkout ${primary_checkout} is not a Serena project; ${#files[@]} worktree memories left in place under ${source_dir}" >&2
         return 0
     fi
-    mkdir -p "$dest_dir"
+    if [[ -L "$dest_dir" && ! -e "$dest_dir" ]]; then
+        echo "Error: ${dest_dir} is a symbolic link to $(readlink "$dest_dir"), which does not exist; ${#files[@]} worktree memories left in place under ${source_dir}; no backend was written." >&2
+        exit 1
+    fi
+    if ! mkdir -p "$dest_dir"; then
+        echo "Error: could not create ${dest_dir}; ${#files[@]} worktree memories left in place under ${source_dir}; no backend was written." >&2
+        exit 1
+    fi
     local name dest renamed compare_status
     for file in "${files[@]}"; do
         name=$(basename "$file")

@@ -9,8 +9,8 @@ fail() { echo "FAIL: $1"; exit 1; }
 unset BASIC_MEMORY_CONFIG_DIR BASIC_MEMORY_HOME BASIC_MEMORY_MCP_PROJECT
 export CLAUDE_CONFIG_DIR="$SHIM/claude-home"
 mkdir -p "$CLAUDE_CONFIG_DIR/plans"
-count_real_flags() { ls "$HOME/.claude/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' '; }
-REAL_FLAGS_BEFORE=$(count_real_flags)
+SUITE_MARKER="$(basename "$SHIM")"
+leaked_real_flags() { grep -lF -- "$SUITE_MARKER" "$HOME/.claude/plans"/.pending-memory-restore-* 2>/dev/null; }
 
 cat > "$SHIM/uvx" <<'EOF'
 #!/bin/sh
@@ -611,6 +611,58 @@ out=$(run_script_in "$W6B" test_label_linkedserena "body=$BODY" 2>"$SHIM/stderr"
 assert_linked_memories_untouched "linked .serena" "$R6B" "$out"
 [ -L "$W6B/.serena" ] || fail "T6 (linked .serena): the worktree link must be left in place"
 
+assert_external_memories_untouched() {
+  scenario="$1"; primary="$2"; external="$3"; output="$4"
+  assert_linked_memories_untouched "$scenario" "$primary" "$output"
+  [ "$(cat "$external/memories/ext.md" 2>/dev/null)" = "memory external" ] || fail "T6 ($scenario): ext.md must stay in the directory outside the worktree: $(cat "$SHIM/stderr")"
+  [ ! -e "$primary/.serena/memories/ext.md" ] || fail "T6 ($scenario): a memory from outside the worktree must not be moved into the primary checkout"
+  grep -q 'outside worktree .*1 memories left in place' "$SHIM/stderr" || fail "T6 ($scenario): the skipped relocation must be warned: $(cat "$SHIM/stderr")"
+  [ -s "$SHIM/serena.content" ] || fail "T6 ($scenario): the checkpoint must still be written"
+}
+
+make_external_serena_directory() {
+  mkdir -p "$1/memories"
+  printf 'memory external\n' > "$1/memories/ext.md"
+}
+
+reset_logs
+R6C="$SHIM/repo-t6-external-memories"
+make_repo_with_worktree "$R6C"
+W6C="$R6C/.claude/worktrees/wt"
+make_primary_serena_project "$R6C"
+E6C="$SHIM/external-t6c"
+make_external_serena_directory "$E6C"
+mkdir -p "$W6C/.serena"
+ln -s "$E6C/memories" "$W6C/.serena/memories"
+out=$(run_script_in "$W6C" test_label_externalmemories "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (external memories): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_external_memories_untouched "external memories" "$R6C" "$E6C" "$out"
+
+reset_logs
+R6D="$SHIM/repo-t6-external-serena"
+make_repo_with_worktree "$R6D"
+W6D="$R6D/.claude/worktrees/wt"
+make_primary_serena_project "$R6D"
+E6D="$SHIM/external-t6d"
+make_external_serena_directory "$E6D"
+ln -s "$E6D" "$W6D/.serena"
+out=$(run_script_in "$W6D" test_label_externalserena "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (external .serena): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_external_memories_untouched "external .serena" "$R6D" "$E6D" "$out"
+
+reset_logs
+R6E="$SHIM/repo-t6-dangling-primary"
+make_repo_with_worktree "$R6E"
+W6E="$R6E/.claude/worktrees/wt"
+mkdir -p "$R6E/.serena" "$W6E/.serena/memories"
+printf 'project: yml\n' > "$R6E/.serena/project.yml"
+ln -s "$SHIM/missing-t6e" "$R6E/.serena/memories"
+printf 'stranded\n' > "$W6E/.serena/memories/s.md"
+run_script_in "$W6E" test_label_danglingprimary "body=$BODY" >/dev/null 2>"$SHIM/stderr" && fail "T6 (dangling primary): a dangling primary memories link must make the script exit non-zero"
+grep -qF -- "$SHIM/missing-t6e" "$SHIM/stderr" || fail "T6 (dangling primary): stderr must name the missing link target: $(cat "$SHIM/stderr")"
+grep -q 'worktree memories left in place.*no backend was written' "$SHIM/stderr" || fail "T6 (dangling primary): stderr must say nothing was relocated or written: $(cat "$SHIM/stderr")"
+[ "$(cat "$W6E/.serena/memories/s.md")" = "stranded" ] || fail "T6 (dangling primary): the worktree memory must stay in place"
+[ -L "$R6E/.serena/memories" ] || fail "T6 (dangling primary): the primary link must be left for the user to repair"
+assert_no_backend_argv "T6 (dangling primary)"
+
 reset_logs
 D7="$SHIM/notproj"
 mkdir -p "$D7"
@@ -648,7 +700,9 @@ echo "$out" | grep -qF -- "- Worktree: $P1/.claude/worktrees/wt (branch wt) — 
 echo "$out" | grep -q -- "- Reload flag: $CLAUDE_CONFIG_DIR/plans/.pending-memory-restore-" || fail "T9: reload block must carry the reload flag path under the isolated config dir: $out"
 grep -qF -- "  Serena: $P1/.serena/memories/test_label_reloadlines.md" "$SHIM/stderr" || fail "T9: report_success must name the same Serena path: $(cat "$SHIM/stderr")"
 
-[ "$(count_real_flags)" = "$REAL_FLAGS_BEFORE" ] || fail "T10: test run leaked reload flags into $HOME/.claude/plans (before $REAL_FLAGS_BEFORE, after $(count_real_flags))"
+LEAKED_FLAGS=$(leaked_real_flags)
+[ -z "$LEAKED_FLAGS" ] || fail "T10: test run leaked reload flags recorded under $SHIM into $HOME/.claude/plans: $LEAKED_FLAGS"
+grep -qF -- "$SUITE_MARKER" "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* || fail "T10: the suite's flags must record a working directory under $SHIM, or the leak check above matches nothing"
 [ "$(ls "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] || fail "T10: the suite must have written its flags under the isolated CLAUDE_CONFIG_DIR"
 
 echo "PASS: write-checkpoint"
