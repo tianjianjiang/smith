@@ -116,7 +116,10 @@ one stderr line per file and a count line in the Reload block; it shall
 never overwrite any file in the primary checkout, shall exit 1 when a
 comparison itself fails, never touch `project.yml`, `cache/`, or
 non-`.md` files, and shall skip everything with a warning when the primary
-checkout has no `.serena/project.yml`.
+checkout has no `.serena/project.yml`. While the worktree's
+`.serena/memories/` resolves to the same physical directory as the primary
+checkout's (a symlinked `memories/` or a symlinked `.serena/`), the system
+shall move, remove and rename nothing and print no relocation line.
 
 **GWT**:
 - Given worktree memories `a.md`, `b.md`, `c.md`; primary has `b.md`
@@ -135,6 +138,12 @@ checkout has no `.serena/project.yml`.
   `.serena/memories/` directory
 - When the script runs
 - Then the directory is created and the worktree memories are moved into it
+- Given the primary holds `keep.md` and `other.md`, and the worktree's
+  `.serena/memories` (or its whole `.serena`) is a symlink to the primary's
+- When the script runs from the worktree
+- Then both files keep their bytes, the symlink stays, stderr has no
+  per-file relocation line, and the Reload block has no `Relocated worktree
+  memories` line
 
 ## §S5 serena-project-resolution
 
