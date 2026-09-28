@@ -138,11 +138,12 @@ internal to `git pull`) can update the primary checkout's default branch.
 Sync-After-Squash-Merge Protocol below. `/usr/bin/git …` also bypasses the
 rtk rewrite but is a workaround, not the fix.
 
-## Editing Inside a Worktree (MCP write blind spot)
+## Editing Inside a Worktree (Serena paths)
 
-The bg-isolation guard catches only built-in `Edit`/`Write` — NOT MCP file operations. Serena MCP writes (`replace_content`, `replace_symbol_body`, `insert_*`) target the MAIN repo checkout, not the worktree, because `activate_project` binds at session start and does not follow `EnterWorktree`. So Serena edits land silently in the wrong tree.
+The bg-isolation guard misses MCP writes. Serena fixes its root at server start (no `activate_project` in the `claude-code` context), so after `EnterWorktree` it still resolves paths against the PRIMARY checkout.
 
-- After `EnterWorktree`, use built-in `Edit`/`Write` with worktree ABSOLUTE paths for all writes; use Serena for reads / symbol lookup only.
+- Prefix Serena paths and globs with the worktree's path: `.claude/worktrees/«name»/src/app.ts`. The `worktree-path-guard` hook (`smith-serena/references/HOOKS.md`) blocks one lacking it.
+- Unreachable worktree (e.g. gitignored): built-in `Edit`/`Write`, ABSOLUTE paths.
 
 ## `worktree.baseRef` — `fresh` vs `head`
 

@@ -3,7 +3,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
   uv-tool-health-check \
-  link-worktree-memories
+  link-worktree-memories \
+  worktree-path-guard
 do
   bash "$HERE/$check.test.sh" || status=1
 done

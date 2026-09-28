@@ -27,7 +27,12 @@ import from this skill.
 **branch-guard** (`smith-git/scripts/hooks/branch-guard.mjs`) — PreToolUse
 guard that blocks file edits while a repo is on its default branch
 (`main`/`master`/`develop`): branch/worktree first. Per-repo opt-out: create
-`.claude/branch-guard.disabled` in that repo.
+`.claude/branch-guard.disabled` in that repo. A Serena `relative_path` is
+resolved against Serena's project root (`smith-git/scripts/lib/serena-root.mjs`,
+derived from `CLAUDE_PROJECT_DIR`), so after `EnterWorktree` an unprefixed
+Serena path, or a Serena call without a path, is checked against the branch of
+the checkout the session was launched in. The session cwd is used when that root cannot be
+determined. Tests: `smith-git/scripts/tests/branch-guard.test.sh`, run by hand.
 
 ## worktree-dirty-guard
 

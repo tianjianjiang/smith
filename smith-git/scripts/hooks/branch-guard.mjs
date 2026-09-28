@@ -16,26 +16,39 @@
 //
 // Per-repo opt-out: touch <repo>/.claude/branch-guard.disabled
 //
-// Known limit: Serena relative paths are resolved against the session cwd,
-// which may differ from Serena's active project root after EnterWorktree
-// (see @smith-worktree "MCP write blind spot") - the guard then checks the
-// cwd's repo, not Serena's: it allows the edit after EnterWorktree and could
-// false-block in the inverse mismatch. Serena calls without a usable path
-// (e.g. replace_in_files whole-project mode, where relative_path defaults to
-// "") are checked against the session cwd's repo, not allowed through.
+// Serena paths: a Serena relative_path is resolved against Serena's project
+// root (lib/serena-root.mjs), which stays at the launch checkout after
+// EnterWorktree, and against the session cwd only when that root cannot be
+// determined. Steering an unprefixed path into the worktree is the job of
+// smith-serena/scripts/worktree-path-guard.mjs. Serena calls without a usable
+// path (e.g. replace_in_files whole-project mode, where relative_path
+// defaults to "") are checked against the same base, not allowed through.
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { readHookInput, blockWithError, git } from "../lib/hook-utils.mjs";
+import {
+  SERENA_TOOL_PREFIX,
+  findSerenaProjectRoot,
+} from "../lib/serena-root.mjs";
 
 const PROTECTED_BRANCHES = ["main", "master", "develop"];
 const OPT_OUT_MARKER = join(".claude", "branch-guard.disabled");
+
+function relativePathBase(input) {
+  if (SERENA_TOOL_PREFIX.test(input.tool_name || "")) {
+    const serenaRoot = findSerenaProjectRoot(process.env.CLAUDE_PROJECT_DIR);
+    if (serenaRoot) return serenaRoot;
+  }
+  return input.cwd || "";
+}
 
 function targetPath(input) {
   const ti = input.tool_input || {};
   const raw = ti.file_path || ti.notebook_path || ti.relative_path || "";
   if (!raw || typeof raw !== "string") return "";
   if (isAbsolute(raw)) return raw;
-  return input.cwd ? resolve(input.cwd, raw) : "";
+  const base = relativePathBase(input);
+  return base ? resolve(base, raw) : "";
 }
 
 // Write may create files in not-yet-existing directories; git -C needs one
@@ -58,14 +71,11 @@ function main() {
   let dir = "";
   if (file) {
     dir = nearestExistingDir(file);
-  } else if (
-    /^mcp__(plugin_serena_)?serena__/.test(input.tool_name || "") &&
-    input.cwd
-  ) {
+  } else if (SERENA_TOOL_PREFIX.test(input.tool_name || "")) {
   
   
   
-    dir = input.cwd;
+    dir = relativePathBase(input);
   }
   if (!dir) return;
 

@@ -79,6 +79,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `enforce-attribution` | PreToolUse (`Bash`) | `smith-gh-pr/scripts/enforce-attribution.sh` | Blocks a `gh pr create/edit/comment/review` missing the `Assisted-by:` trailer | gh-pr |
 | `uv-tool-health-check` | SessionStart (all sources) | `smith-serena/scripts/uv-tool-health-check.sh` | Self-heals a broken `uv tool`-managed venv (e.g. `serena-agent`) | serena |
 | `link-worktree-memories` | SessionStart (all sources) | `smith-serena/scripts/link-worktree-memories.sh` | Links a worktree's `.serena/memories` to the primary checkout's so Serena memory tools share them | serena |
+| `worktree-path-guard` | PreToolUse (`mcp__(plugin_serena_)?serena__.*`) | `smith-serena/scripts/worktree-path-guard.mjs` | Blocks a Serena call whose path lands in the checkout Serena is rooted in while the session works in another, names the prefixed path | serena |
 
 **Full detail, known limitations, the complete `settings.json` registration
 block, and the manual verification checklist** live with each hook's owning
@@ -89,7 +90,7 @@ skill, not here:
   `branch-name-guard`, `commit-attribution-guard`, `post-merge-pull-reminder`
 - `smith-standards/references/HOOKS.md` — `inline-comment-lint`
 - `smith-serena/references/HOOKS.md` — `uv-tool-health-check`,
-  `link-worktree-memories`
+  `link-worktree-memories`, `worktree-path-guard`
 - `smith-gh-pr/README.md` — `enforce-attribution`
 
 `/smith-checkpoint`'s runtime prerequisites (Serena/Basic-Memory availability,
