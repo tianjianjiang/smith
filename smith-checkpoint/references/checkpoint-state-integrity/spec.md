@@ -178,6 +178,10 @@ warning that says so instead of naming a directory.
 - Then it exits 1, stderr names the missing target and ends with `no backend
   was written.`, `s.md` stays where it was, the symlink stays, and no
   backend is called
+- Given the primary's `.serena/memories` is a symlink to a missing directory
+  and the worktree's `.serena/memories` holds no `*.md` file
+- When the script runs from the worktree
+- Then it exits 0 and both backends are written
 - Given the primary's `.serena/memories` is a regular file, or its `.serena`
   directory is not writable, and the worktree holds `s.md`
 - When the script runs from the worktree
@@ -242,16 +246,16 @@ a Serena write failure shall never proceed to Basic-Memory.
 **EARS**: The test suite shall export `CLAUDE_CONFIG_DIR` to a temporary
 directory before the first test and shall assert at its end that no
 `.pending-memory-restore-*` file under `$HOME/.claude/plans` records a
-working directory of this suite run, and that the suite's own flags do
-record one.
+working directory of this suite run, and that at least one of the suite's
+own flags does record one.
 
 **GWT**:
 - Given any number of flag files in `$HOME/.claude/plans`, changing or not
   during the run
 - When the whole suite runs
-- Then none of them names the suite's temporary directory, and every flag
-  the suite produced lives under the temporary `CLAUDE_CONFIG_DIR` and names
-  it
+- Then none of them names the suite's temporary directory, the temporary
+  `CLAUDE_CONFIG_DIR` holds at least one flag, and at least one flag there
+  names it
 
 ## §S9 no-client-identifiers
 

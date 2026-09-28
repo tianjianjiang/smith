@@ -188,7 +188,7 @@ relocate_worktree_memories() {
     fi
     local unrelocated_outcome="${#files[@]} worktree memories left in place under ${source_dir}; no backend was written."
     if [[ -L "$dest_dir" && ! -e "$dest_dir" ]]; then
-        echo "Error: ${dest_dir} is a symbolic link to $(readlink "$dest_dir"), which does not exist; ${unrelocated_outcome}" >&2
+        echo "Error: ${dest_dir} is a symbolic link to $(readlink "$dest_dir"), which does not exist or cannot be reached; ${unrelocated_outcome}" >&2
         exit 1
     fi
     if [[ -e "$dest_dir" && ! -d "$dest_dir" ]]; then
@@ -196,12 +196,11 @@ relocate_worktree_memories() {
         exit 1
     fi
     local source_physical
-    source_physical=$(physical_path "$source_dir") || source_physical=""
-    if [[ -z "$source_physical" ]]; then
+    if ! source_physical=$(physical_path "$source_dir"); then
         echo "Warning: could not resolve ${source_dir} to a physical path; ${#files[@]} memories left in place, not relocated" >&2
         return 0
     fi
-    if [[ "$source_physical" != "$worktree/.serena/memories" ]]; then
+    if [[ "$source_physical" != "$source_dir" ]]; then
         echo "Warning: ${source_dir} resolves to ${source_physical}, which is not the memories directory of worktree ${worktree}; ${#files[@]} memories left in place, not relocated" >&2
         return 0
     fi
