@@ -28,6 +28,13 @@ grep -q 'describe it for the main thread instead of doing it' "$TMP/contract.txt
   || fail "extracted contract is missing the mutation-describe clause"
 grep -q 'do not summarize them away' "$TMP/contract.txt" \
   || fail "extracted contract is missing the exact-values clause"
+grep -q 'skip that service and say so in your report' "$TMP/contract.txt" \
+  || fail "extracted contract is missing the personal-data clause"
+
+node -e 'import(process.argv[1]).then((m) => {
+    process.stdout.write(m.PERSONAL_DATA_SENTENCE + "\n");
+  });' "$HERE/../lib/contract-template.mjs" > "$TMP/personal-data-clause.txt"
+[ -s "$TMP/personal-data-clause.txt" ] || fail "could not read the personal-data clause"
 
 payload() {
   node -e 'const fs=require("node:fs");
@@ -83,11 +90,33 @@ expect_allowed "paste with the emphasis casing flattened" contract-pasted \
 expect_allowed "contract preceded by the task's own preamble" contract-pasted \
   "$TMP/preambled.txt"
 
+with_sentence() { cat "$TMP/personal-data-clause.txt" >> "$1"; }
+expect_blocked_for_sentence() {
+  name="$1"; prompt_file="$2"; type="${3:-general-purpose}"
+  reset_ledger
+  payload Agent "$REPO" "$type" "$prompt_file" | node "$HOOK" >"$TMP/out" 2>"$TMP/err"
+  [ "$?" = 2 ] || fail "$name: expected exit 2 (blocked)"
+  grep -q 'does not carry the' "$TMP/err" \
+    || fail "$name: the refusal must say the sentence is missing"
+  grep -q 'skip that service and say so in your report' "$TMP/err" \
+    || fail "$name: the refusal must print the sentence to paste"
+  grep -q 'describe it for the main thread' "$TMP/err" \
+    && fail "$name: the refusal must not ask for the read-only contract"
+  ledger | grep -q '"verdict":"blocked"' \
+    || fail "$name: expected ledger verdict blocked, got: $(ledger)"
+}
+
 cat > "$TMP/reworded.txt" <<'EOF'
 Read-only investigation. Report findings only and do not edit, write, commit
 or push anything. Give me file:line facts with quoted evidence, not fixes.
 EOF
+cp "$TMP/reworded.txt" "$TMP/reworded-without-sentence.txt"
+with_sentence "$TMP/reworded.txt"
 expect_blocked "re-worded prose contract" "$TMP/reworded.txt"
+expect_blocked_for_sentence "prompt with neither contract nor sentence" \
+  "$TMP/reworded-without-sentence.txt"
+expect_blocked_for_sentence "a plugin-namespaced type is not excused the sentence" \
+  "$TMP/reworded-without-sentence.txt" "pr-review-toolkit:code-reviewer"
 
 grep -v 'describe it for the main thread' "$TMP/contract.txt" \
   | grep -v 'summarize them away' > "$TMP/two-clauses-dropped.txt"
@@ -102,12 +131,18 @@ cat > "$TMP/editor.txt" <<'EOF'
 EDITOR ROLE. You may change exactly one artifact: smith-ctx-claude/README.md.
 The only tool granted is Edit. Everything else stays read-only.
 EOF
+cp "$TMP/editor.txt" "$TMP/editor-without-clause.txt"
+cat "$TMP/personal-data-clause.txt" >> "$TMP/editor.txt"
 expect_allowed "declared editor role" editor-role "$TMP/editor.txt"
+
+expect_blocked_for_sentence "an editor role is not excused the sentence" \
+  "$TMP/editor-without-clause.txt"
 
 for opening in '**EDITOR ROLE**' '## EDITOR ROLE' '- EDITOR ROLE' \
   '1. EDITOR ROLE' '__EDITOR ROLE__'; do
   printf '%s: change only README.md, only via Edit.\n' "$opening" \
     > "$TMP/editor-markup.txt"
+  cat "$TMP/personal-data-clause.txt" >> "$TMP/editor-markup.txt"
   expect_allowed "editor declaration written as '$opening'" editor-role \
     "$TMP/editor-markup.txt"
 done
@@ -117,6 +152,7 @@ Investigate the guard. The documentation says:
 > EDITOR ROLE is how you declare a bounded editor spawn.
 Now go and report what it does.
 EOF
+with_sentence "$TMP/quoted-editor.txt"
 expect_blocked "quoting the documentation does not declare an editor role" \
   "$TMP/quoted-editor.txt"
 
@@ -124,12 +160,14 @@ cat > "$TMP/mentions-editor-role.txt" <<'EOF'
 Investigate the failing test. You are not in an editor role here, just report
 findings back to me with file:line evidence.
 EOF
+with_sentence "$TMP/mentions-editor-role.txt"
 expect_blocked "an incidental mention of an editor role is not a declaration" \
   "$TMP/mentions-editor-role.txt"
 
 cat > "$TMP/lowercase-editor.txt" <<'EOF'
 editor role. Change smith-ctx-claude/README.md only.
 EOF
+with_sentence "$TMP/lowercase-editor.txt"
 expect_blocked "the editor declaration is case-sensitive" \
   "$TMP/lowercase-editor.txt"
 
@@ -142,11 +180,13 @@ expect_allowed "exempt matching ignores case" exempt "$TMP/reworded.txt" \
 for opening in '*EDITOR ROLE*' '_EDITOR ROLE_'; do
   printf '%s: change only README.md, only via Edit.\n' "$opening" \
     > "$TMP/editor-markup.txt"
+  cat "$TMP/personal-data-clause.txt" >> "$TMP/editor-markup.txt"
   expect_allowed "editor declaration written as '$opening'" editor-role \
     "$TMP/editor-markup.txt"
 done
 printf '    EDITOR ROLE, quoted inside an indented code block.\n' \
   > "$TMP/editor-indented.txt"
+with_sentence "$TMP/editor-indented.txt"
 expect_blocked "a four-space indented mention is code, not a declaration" \
   "$TMP/editor-indented.txt"
 
@@ -161,6 +201,8 @@ touch "$REPO/.claude/subagent-contract-guard.disabled"
 expect_allowed "per-checkout opt-out" unenforced "$TMP/reworded.txt"
 grep -q 'append-only' "$TMP/out" \
   || fail "opt-out: must say the resulting preflight FAIL cannot be cleared"
+expect_blocked_for_sentence "the opt-out does not waive the sentence" \
+  "$TMP/reworded-without-sentence.txt"
 expect_allowed "the opt-out outranks an editor declaration" unenforced \
   "$TMP/editor.txt"
 expect_allowed "an exemption is non-applicability, not a waived check" exempt \

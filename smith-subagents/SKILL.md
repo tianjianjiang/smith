@@ -75,20 +75,26 @@ that mutate shared state or return plans instead of findings):
 > quoted evidence, not fixes or actions taken. If a step seems to need a
 > mutation, describe it for the main thread instead of doing it. Restate the
 > exact values you observed; do not summarize them away.
+> Never put the user's email address, name, or any other personal identifier
+> into a tool call, URL, header, or payload, and never read one from git
+> config or the environment. If a service requires one, skip that service and
+> say so in your report.
 
 After pasting the contract above, add task-specific conventions inline —
 subagents inherit no skills, AGENTS.md, or memory.
 
 For a bounded EDITOR role the contract inverts: name the ONE artifact it may
 change and the single tool granted, and state that everything else stays
-read-only. Open a line of such a prompt with the words `EDITOR ROLE`, in
+read-only. The closing personal-data sentence does not invert: paste it into
+every prompt, an editor's and an exempt type's included, or the guard blocks
+the spawn. Open a line of an editor prompt with the words `EDITOR ROLE`, in
 capitals: that is how the guard below is told this spawn is the inverted case
 rather than a missing contract. Leading list, heading or emphasis markup is
 fine; the words must begin the line, the match is case-sensitive, and a
-`>`-quoted line does not count. It is a DECLARATION, not a content check — any
-line beginning with those words claims the exemption, including one that goes
-on to disclaim it — so never paste an example of the declaration into an
-ordinary investigative prompt. A mid-line mention is safe.
+`>`-quoted line does not count. It is a DECLARATION, not a content check —
+any line beginning with those words claims the exemption, including one that
+goes on to disclaim it — so never paste an example of the declaration into
+an ordinary investigative prompt. A mid-line mention is safe.
 
 **Enforced deterministically, because documenting it did not hold.**
 `smith-ctx-claude/scripts/subagent-contract-guard.mjs` (PreToolUse, matcher
@@ -96,17 +102,25 @@ ordinary investigative prompt. A mid-line mention is safe.
 prints that block in the refusal so pasting it is the cheapest way forward. It
 extracts the text from THIS section at run time rather than keeping a copy of
 its own, so it always enforces whatever the installed copy of this file says.
-Exempt are subagents whose prompt the main thread never writes: plugin-namespaced
+Exempt are subagent types that bring their own definition: plugin-namespaced
 types (`plugin:agent`), and the built-in helpers named in
 `smith-ctx-claude/subagent-contract-config.json`. Being read-only is NOT the
 criterion and never was — `Explore` and `Plan` hold Bash and write-capable
-`mcp__` tools, and are not exempt.
+`mcp__` tools, and are not exempt. An exemption, like the editor declaration
+and the per-checkout opt-out, waives the read-only clauses only. The prompt
+passed in the spawn is still yours, so the personal-data sentence is required
+in every one. A second guard,
+`smith-ctx-claude/scripts/personal-data-guard.mjs`, blocks a tool call that
+spells out one of the user's protected strings; the rest of the sentence is
+instruction only. See `smith-ctx-claude/references/HOOKS.md`.
 
 **Editing this section is a code change.** The required contract text is
 hardcoded in `smith-ctx-claude/scripts/lib/contract-template.mjs` as
-`REQUIRED_CONTRACT`. Changing the blockquote above requires updating that
-constant in sync. The guard extracts the full blockquote for display in
-refusals, but enforces only against the hardcoded text.
+`REQUIRED_CONTRACT`, whose closing sentence is the separate constant
+`PERSONAL_DATA_SENTENCE` that every spawn is checked against. Changing the
+blockquote above requires updating those constants in sync. The guard
+extracts the full blockquote for display in refusals, but enforces only
+against the hardcoded text.
 `smith-ctx-claude/scripts/tests/subagent-contract-guard.test.sh` asserts the
 extracted blockquote still matches the enforced constant, so run it after any
 edit here; that assertion is the deliberate second copy, and it exists to make

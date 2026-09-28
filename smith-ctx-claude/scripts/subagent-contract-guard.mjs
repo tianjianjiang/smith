@@ -12,6 +12,7 @@ import {
 } from "./lib/spawn-ledger.mjs";
 import {
   CONTRACT_SOURCE,
+  PERSONAL_DATA_SENTENCE,
   canonicalContract,
   normalize,
   stripQuoteMarkers,
@@ -139,7 +140,7 @@ function blockAndExit(contract, subagentType) {
     [
       `Blocked: the '${subagentType || "unnamed"}' spawn does not carry the`,
       "canonical read-only subagent contract. A subagent inherits no skills,",
-      "AGENTS.md, or memory, so a re-worded contract silently drops the two",
+      "AGENTS.md, or memory, so a re-worded contract silently drops the",
       "clauses that exist nowhere but the template. Paste this block verbatim",
       "at the top of the prompt, then re-issue the spawn:",
       "",
@@ -147,10 +148,30 @@ function blockAndExit(contract, subagentType) {
       "",
       "Source: smith-subagents/SKILL.md, Contract template. For a bounded",
       "editor spawn, OPEN A LINE with EDITOR ROLE and name the ONE artifact it",
-      "may change plus the single tool granted; this guard then stands aside.",
+      "may change plus the single tool granted; the read-only clauses are then",
+      "waived, the closing personal-data sentence is not.",
       `Per-checkout opt-out: touch ${OPT_OUT_MARKER} in the checkout root, but`,
       "note it records every later spawn THAT WOULD HAVE BEEN CHECKED as",
       "unchecked, and FAILs this branch's /smith-preflight from then on.",
+    ].join("\n") + "\n",
+  );
+  process.exit(2);
+}
+
+function blockForMissingSentenceAndExit(subagentType) {
+  writeSync(
+    2,
+    [
+      `Blocked: the '${subagentType || "unnamed"}' spawn does not carry the`,
+      "personal-data sentence. Every subagent holds the user's identity in",
+      "its context, whatever its type and whatever else it is excused from:",
+      "an exempt type, an EDITOR ROLE declaration and the per-checkout",
+      "opt-out waive the read-only contract, never this sentence. Paste it",
+      "verbatim into the prompt, then re-issue the spawn:",
+      "",
+      PERSONAL_DATA_SENTENCE,
+      "",
+      "Source: smith-subagents/SKILL.md, Contract template.",
     ].join("\n") + "\n",
   );
   process.exit(2);
@@ -205,6 +226,14 @@ function main() {
     return;
   }
 
+  const carriesPersonalDataSentence = normalize(
+    stripQuoteMarkers(prompt),
+  ).includes(normalize(PERSONAL_DATA_SENTENCE));
+  if (!carriesPersonalDataSentence) {
+    record({ ...entry, verdict: "blocked" }, scopeRoot);
+    blockForMissingSentenceAndExit(subagentType);
+  }
+
   const exemption = isExempt(subagentType);
   if (exemption.exempt) {
     allow({ ...entry, verdict: "exempt" }, scopeRoot);
@@ -214,7 +243,7 @@ function main() {
     advise(
       `subagent-contract-guard: ${CONFIG_PATH} is missing or does not hold an ` +
         "exemption array, so NO name-based exemption applies and built-in " +
-        "helpers whose prompt you do not author will be blocked. Repair the " +
+        "helpers a command spawns for you will be blocked. Repair the " +
         "file if that is not what you meant.",
     );
   }

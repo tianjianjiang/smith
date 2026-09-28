@@ -64,7 +64,8 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `inline-comment-lint` | PreToolUse (`Edit\|Write\|NotebookEdit`) | `smith-standards/scripts/inline-comment-lint.mjs` | Advisory: flags inline comments | standards |
 | `coined-shorthand-lint` | PreToolUse (`Edit\|Write\|NotebookEdit`) | `smith-ctx-claude/scripts/coined-shorthand-lint.mjs` | Advisory: flags meaningless coined index codes | ctx-claude |
 | `review-orchestration-guard` | PreToolUse (`Agent\|Task`) | `smith-ctx-claude/scripts/review-orchestration-guard.mjs` | Advisory: prefer the toolkit orchestrator | ctx-claude |
-| `subagent-contract-guard` | PreToolUse (`Agent\|Task`) | `smith-ctx-claude/scripts/subagent-contract-guard.mjs` | Blocks a subagent spawn missing the read-only contract | ctx-claude |
+| `subagent-contract-guard` | PreToolUse (`Agent\|Task`) | `smith-ctx-claude/scripts/subagent-contract-guard.mjs` | Blocks a subagent spawn missing the read-only contract or its personal-data sentence | ctx-claude |
+| `personal-data-guard` | PreToolUse (`*`) | `smith-ctx-claude/scripts/personal-data-guard.mjs` | Blocks any tool call that carries the user's personal data | ctx-claude |
 | `skill-read-substitution-guard` | PreToolUse (`Read`) | `smith-ctx-claude/scripts/skill-read-substitution-guard.mjs` | Advisory: Read a SKILL.md → invoke it via Skill instead | ctx-claude |
 | `skill-claim-lint` | Stop | `smith-ctx-claude/scripts/skill-claim-lint.mjs` | Advisory: flags a claimed-but-not-invoked skill | ctx-claude |
 | `gh-stack-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/gh-stack-guard.mjs` | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` | ctx-claude |

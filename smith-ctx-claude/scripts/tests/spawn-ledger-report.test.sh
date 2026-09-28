@@ -143,6 +143,9 @@ spawn() {
     }));' "$REPO" "$1" | node "$GUARD" >/dev/null 2>&1
 }
 printf 'EDITOR ROLE. Only README.md may change, only via Edit.\n' > "$TMP/end-to-end.txt"
+node -e 'import(process.argv[1]).then((m) => {
+    process.stdout.write(m.PERSONAL_DATA_SENTENCE + "\n");
+  });' "$HERE/../lib/contract-template.mjs" >> "$TMP/end-to-end.txt"
 spawn "$TMP/end-to-end.txt" \
   || fail "end-to-end: the guard should have allowed a declared editor role"
 expect "end-to-end guard write is readable by the reporter" "subagent-contract PASS"
