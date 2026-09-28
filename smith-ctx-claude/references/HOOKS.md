@@ -17,7 +17,8 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `branch-rename-open-pr.mjs` | PreToolUse (`Bash`) | Blocks renaming a branch with an open PR |
 | `coined-shorthand-lint.mjs` | PreToolUse (`Edit\|Write\|NotebookEdit`) | Advisory: flags meaningless coined index codes |
 | `review-orchestration-guard.mjs` | PreToolUse (`Agent\|Task`) | Advisory: prefer the toolkit orchestrator |
-| `subagent-contract-guard.mjs` | PreToolUse (`Agent\|Task`) | Blocks a subagent spawn missing the read-only contract |
+| `subagent-contract-guard.mjs` | PreToolUse (`Agent\|Task`) | Blocks a subagent spawn missing the read-only contract or its personal-data sentence |
+| `personal-data-guard.mjs` | PreToolUse (`*`) | Blocks any tool call that carries the user's personal data |
 | `skill-read-substitution-guard.mjs` | PreToolUse (`Read`) | Advisory: Read of a `SKILL.md` should be a Skill-tool invocation instead |
 | `skill-claim-lint.mjs` | Stop | Advisory: flags a claimed-but-not-invoked skill |
 | `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
@@ -257,11 +258,11 @@ case and re-wrapping, and requires only the fixed sentences: the
 `«placeholder»` line is yours to replace.
 
 Exempt: plugin-namespaced subagent types (`plugin:agent`, e.g.
-`pr-review-toolkit:code-reviewer`), which ship their own definitions and whose
-prompts the main thread does not author, plus the types listed in
-`smith-ctx-claude/subagent-contract-config.json`, which holds the same kind of
-case — built-in helpers a command spawns for you, where there is no prompt of
-yours to paste into. That list is the only source; the guard carries no
+`pr-review-toolkit:code-reviewer`), which ship their own definitions, plus
+the types listed in `smith-ctx-claude/subagent-contract-config.json`, which
+holds the same kind of case — built-in helpers a command spawns for you. The
+read-only contract was not written for either. That list is the only source;
+the guard carries no
 hardcoded fallback, so emptying it removes every name-based exemption.
 Read-only-sounding built-ins are deliberately NOT on it: `Explore` and `Plan`
 are granted Bash and the write-capable `mcp__` tools, and `fork` inherits the
@@ -275,6 +276,17 @@ the exemption, so do not paste examples of the declaration into an ordinary
 prompt. A mid-line mention does not count, nor does a `>`-quoted line — quote
 markers are stripped for contract matching only, never for the declaration.
 
+The contract's closing personal-data sentence (`PERSONAL_DATA_SENTENCE` in
+`scripts/lib/contract-template.mjs`) is checked first and on its own, on every
+spawn that carries prompt text. The editor declaration, the exemptions and the
+per-checkout opt-out below waive the read-only clauses only, never this
+sentence: a spawn without it is blocked and recorded `blocked`, and the
+refusal prints the sentence to paste. Every subagent holds the user's identity
+in its context, and the prompt passed in the spawn is the main thread's even
+when the subagent's definition is not, so there is always somewhere to paste
+it. The sentence is an instruction: `personal-data-guard` backs only the part
+of it that a spelled-out string in a tool call can show.
+
 A payload with no `tool_input` keys at all is a malformed call and passes
 through untouched. One that carries fields but no usable `prompt` string is
 recorded as unchecked and names the fields it did see, because that is exactly
@@ -282,8 +294,8 @@ what an upstream rename of the payload's shape would look like. Per-checkout
 opt-out: `touch <checkout>/.claude/subagent-contract-guard.disabled`. It
 waives a check that WOULD have applied, so it outranks the editor declaration
 — a waived self-declaration is recorded `unenforced` — but not the exemptions,
-which are non-applicability rather than a bypass: there was never a prompt of
-yours to check. It does not rescue a spawn the guard blocks for want of a
+which are non-applicability rather than a bypass: the read-only contract was
+never meant for them. It does not rescue a spawn the guard blocks for want of a
 writable ledger; only a writable path, a different `CLAUDE_CONFIG_DIR`, or
 unregistering the hook does. A missing or malformed config file is not
 silently equivalent to an empty one: it removes every name-based exemption AND
@@ -331,8 +343,79 @@ verdict to `SKIP:no-ledger`, which is softer than the truth.
 
 When a spawn can be neither checked nor recorded, the guard blocks it rather
 than let it run with no trace anywhere. The one exception is the opt-out: that
-is your explicit instruction to stand down, so it fails open with an advisory
-instead.
+is your explicit instruction to stand down, so a spawn that carries the
+personal-data sentence fails open with an advisory instead.
+
+## personal-data-guard
+
+**personal-data-guard** (`smith-ctx-claude/scripts/personal-data-guard.mjs`)
+— PreToolUse guard (matcher `*`) that **blocks** a tool call whose input
+spells out one of the user's protected strings. It runs for the main thread
+and for every subagent alike: hooks from `settings.json` fire inside
+subagents (per https://code.claude.com/docs/en/hooks, retrieved 2026-09-27).
+
+Why it exists: on 2026-09-27 two research subagents each put the user's email
+address into the query string of a request to an open-access lookup service
+that requires an `email` parameter. The address came from the identity context
+every subagent is given; the instruction not to pass it on was prose, and
+prose did not hold.
+
+It is a guard against carelessness, not against intent. It catches an agent
+that writes the string down as it holds it, which is what happened. An agent
+set on sending the data can encode it, split it, or have a program read it,
+and no reading of tool input stops that.
+
+**The one rule.** The whole of `tool_input`, keys and values at any depth, is
+turned into text, percent-decoded once, lower-cased, and also read with `+` as
+a space. If that text contains a protected string the call is blocked. The
+match is plain containment.
+
+The line is WHO put the data there, not whether the call reaches the network.
+`git commit -m "fix"` passes: git attaches the identity from its own config
+and the tool input never holds it. `git commit --author="Name <address>"`
+typed by the agent is blocked.
+
+Protected strings are every value of git's `user.email` and `user.name` that
+git reads from the session's working directory, at any scope and not only the
+one that wins, and the strings in the
+`protectedIdentifiers` array of
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/personal-data-guard.json` (override the
+path with `SMITH_PERSONAL_DATA_GUARD_CONFIG`). Nothing personal lives in this
+repository. Each profile reads its own file, and the file is the user's to
+fill in.
+
+```json
+{ "protectedIdentifiers": ["«another address»", "«name»", "«phone»"] }
+```
+
+An entry shorter than four characters, or one that is part of the home
+directory path, is skipped: a surname that also appears in `/Users/«login»/`
+would otherwise block nearly every call. Each string is matched whole, so
+list every form you want protected; a given name alone does not match a full
+name.
+
+There is no override: no allowlist and no per-checkout opt-out marker, because
+a subagent could create the marker. The refusal never prints the matched
+string.
+
+On a call it lets through, the guard says so when the config file exists but
+cannot be used or lists something that is not a string, when git could not be
+read, when entries were skipped, when no protected string is in force, and
+when the guard itself failed. A missing config file, stdin that does not
+parse, and a payload without `tool_input` are silent.
+
+Not covered: anything that does not spell the string out in the tool input.
+That includes an encoded or split string, a command substitution such as
+`$(git config user.email)`, a program that reads the identity itself, and any
+read of the identity or of the config file. To keep an agent out of the config
+file, add `permissions.deny` rules for it in `settings.json`. Whether hooks
+fire for agents inside the `Workflow` tool is not documented, so treat that
+as unverified.
+
+Known false positive: an edit whose own text, old or new, contains a
+protected string.
+
+Cost: one `node` process and one `git config` read per tool call.
 
 ## skill-read-substitution-guard
 
@@ -893,6 +976,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-read-substitution-guard.mjs\"" }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/personal-data-guard.mjs\"" }
+        ]
       }
     ],
     "PostToolUse": [
@@ -1024,8 +1113,11 @@ then:
     in the same checkout and confirm it reports `subagent-contract PASS` naming
     the current branch and the spawn counts — the refused attempt counts as
     accounted for. Confirm a spawn whose prompt OPENS A LINE with `EDITOR ROLE`
-    proceeds, and that a `pr-review-toolkit:*` spawn is not blocked (step 11's
-    orchestration advisory still fires on it — that is a different hook).
+    and carries the personal-data sentence proceeds, that the same spawn
+    without the sentence is blocked, and that a `pr-review-toolkit:*` spawn
+    that carries the sentence is not blocked while one without it is (step
+    11's orchestration advisory still fires on it — that is a different
+    hook).
 21. **post-merge-pull-reminder** — merge a real pull request with
     `gh pr merge <PR> --squash`; confirm the advisory appears reminding you to
     fast-forward-only pull the default branch. Confirm `gh pr merge <PR> --auto`,
@@ -1046,6 +1138,13 @@ then:
     `pr edit`, `pr comment`, `pr review`) with no `Assisted-by:` trailer; confirm
     it blocks. Confirm a body containing the correct trailer is allowed, and
     that "on behalf of" in the body blocks even with a correct trailer present.
+24. **personal-data-guard** — yourself, not through an agent, pipe a payload
+    that carries a string you listed in `personal-data-guard.json` into the
+    hook, for example
+    `{"tool_name":"Bash","tool_input":{"command":"echo «listed string»"}}`;
+    confirm it exits 2 and that the refusal does not print the string.
+    Confirm `git commit -m "x"` and a `curl` with no personal data are not
+    blocked by this hook.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not

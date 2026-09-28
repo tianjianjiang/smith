@@ -14,12 +14,19 @@ export const CONTRACT_SOURCE = resolve(
 );
 export const CONTRACT_HEADING = "## Contract template";
 
+export const PERSONAL_DATA_SENTENCE =
+  "Never put the user's email address, name, or any other personal identifier " +
+  "into a tool call, URL, header, or payload, and never read one from git " +
+  "config or the environment. If a service requires one, skip that service and " +
+  "say so in your report.";
+
 export const REQUIRED_CONTRACT =
   "READ-ONLY investigation. Return FINDINGS ONLY — do NOT edit, write, commit, " +
   "push, or call any mutating / external-write tool. Report `file:line` facts and " +
   "quoted evidence, not fixes or actions taken. If a step seems to need a " +
   "mutation, describe it for the main thread instead of doing it. Restate the " +
-  "exact values you observed; do not summarize them away.";
+  "exact values you observed; do not summarize them away. " +
+  PERSONAL_DATA_SENTENCE;
 
 export function stripQuoteMarkers(text) {
   return text.replace(/^[ \t]*>[ \t]?/gm, "");

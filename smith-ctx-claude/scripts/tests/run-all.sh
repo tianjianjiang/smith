@@ -21,6 +21,7 @@ for check in \
   stack-merge-guard \
   rtk-find-symlink-guard \
   subagent-contract-guard \
+  personal-data-guard \
   spawn-ledger-report \
   post-merge-pull-reminder \
   coderabbit-status-check \
