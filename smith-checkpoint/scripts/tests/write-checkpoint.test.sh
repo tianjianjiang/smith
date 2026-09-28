@@ -574,6 +574,43 @@ run_script_in "$W6" test_label_freshprimaryserena "body=$BODY" >/dev/null 2>"$SH
 [ "$(cat "$R6/.serena/memories/s.md")" = "stranded" ] || fail "T6: a primary Serena project without memories/ must get the directory created and the memory moved in: $(cat "$SHIM/stderr")"
 [ ! -e "$W6/.serena/memories/s.md" ] || fail "T6: the worktree copy must be gone after relocation into a fresh memories/ directory"
 
+assert_linked_memories_untouched() {
+  scenario="$1"; primary="$2"; output="$3"
+  [ "$(cat "$primary/.serena/memories/keep.md" 2>/dev/null)" = "memory keep" ] || fail "T6 ($scenario): keep.md in the primary checkout must survive: $(cat "$SHIM/stderr")"
+  [ "$(cat "$primary/.serena/memories/other.md" 2>/dev/null)" = "memory other" ] || fail "T6 ($scenario): other.md in the primary checkout must survive: $(cat "$SHIM/stderr")"
+  grep -q 'worktree memory' "$SHIM/stderr" && fail "T6 ($scenario): no memory may be reported as relocated: $(cat "$SHIM/stderr")"
+  echo "$output" | grep -q 'Relocated worktree memories' && fail "T6 ($scenario): reload block must not report a relocation: $output"
+  return 0
+}
+
+make_primary_serena_project() {
+  mkdir -p "$1/.serena/memories"
+  printf 'project: yml\n' > "$1/.serena/project.yml"
+  printf 'memory keep\n' > "$1/.serena/memories/keep.md"
+  printf 'memory other\n' > "$1/.serena/memories/other.md"
+}
+
+reset_logs
+R6A="$SHIM/repo-t6-linked-memories"
+make_repo_with_worktree "$R6A"
+W6A="$R6A/.claude/worktrees/wt"
+make_primary_serena_project "$R6A"
+mkdir -p "$W6A/.serena"
+ln -s "$R6A/.serena/memories" "$W6A/.serena/memories"
+out=$(run_script_in "$W6A" test_label_linkedmemories "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked memories): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_linked_memories_untouched "linked memories" "$R6A" "$out"
+[ -L "$W6A/.serena/memories" ] || fail "T6 (linked memories): the worktree link must be left in place"
+
+reset_logs
+R6B="$SHIM/repo-t6-linked-serena"
+make_repo_with_worktree "$R6B"
+W6B="$R6B/.claude/worktrees/wt"
+make_primary_serena_project "$R6B"
+ln -s "$R6B/.serena" "$W6B/.serena"
+out=$(run_script_in "$W6B" test_label_linkedserena "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (linked .serena): run exited non-zero: $(cat "$SHIM/stderr")"
+assert_linked_memories_untouched "linked .serena" "$R6B" "$out"
+[ -L "$W6B/.serena" ] || fail "T6 (linked .serena): the worktree link must be left in place"
+
 reset_logs
 D7="$SHIM/notproj"
 mkdir -p "$D7"

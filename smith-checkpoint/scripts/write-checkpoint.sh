@@ -175,6 +175,7 @@ relocate_worktree_memories() {
     local worktree="$1" primary_checkout="$2"
     [[ -n "$worktree" && -n "$primary_checkout" && -d "$worktree/.serena/memories" ]] || return 0
     local source_dir="$worktree/.serena/memories" dest_dir="$primary_checkout/.serena/memories"
+    [[ "$source_dir" -ef "$dest_dir" ]] && return 0
     local -a files=()
     local file
     for file in "$source_dir"/*.md; do

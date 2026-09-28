@@ -107,7 +107,10 @@ leaving it at the top.
    checkout is ever overwritten; a missing `.serena/memories/` directory in
    the primary checkout is created. When the primary checkout has no
    `.serena/project.yml` the files stay where they are and a warning says
-   so.
+   so. When the worktree's `.serena/memories` resolves to the same directory
+   as the primary checkout's (the symlink made by the `link-worktree-memories`
+   hook, or a symlinked `.serena`), there is nothing to relocate and no file
+   is touched.
 2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
    a note titled from the label, type `guide`, tag `checkpoint`, in the
    project selected per Runtime prerequisites "Backend selection" below
