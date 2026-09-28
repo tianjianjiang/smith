@@ -231,12 +231,13 @@ only (a one-off targeted spawn is legitimate).
 — PreToolUse guard (matcher `Agent|Task`) that **blocks** a subagent spawn
 whose prompt does not carry the canonical read-only contract from
 `smith-subagents/SKILL.md` ("Contract template"), and prints that block in
-the refusal so pasting it is the cheapest way forward. It extracts the text
-from that section at run time rather than holding a copy of its own. What it
-reads is the INSTALLED copy — the path resolves next to the running script,
-so under the usual `~/.claude/skills` symlink that is the primary checkout,
-not the worktree you are sitting in. Editing the block on a branch changes
-nothing until it is merged and installed.
+the refusal so pasting it is the cheapest way forward. The text it prints is
+read from that section at run time; the text it enforces is the constant
+`REQUIRED_CONTRACT` in `smith-ctx-claude/scripts/lib/contract-template.mjs`.
+What it reads is the INSTALLED copy — the path resolves next to the running
+script, so under the usual `~/.claude/skills` symlink that is the primary
+checkout, not the worktree you are sitting in. Editing the block on a branch
+changes nothing until it is merged and installed.
 
 Why it blocks rather than advises: the rule was documented-only, and that
 failed every time it was measured. Most of the contract's clauses are also
@@ -254,8 +255,7 @@ same ground every time, and no further prose closes that.
 The prompt may carry the block either plain or still in the `>` blockquote
 form it has in `SKILL.md` — quote markers are stripped before matching, so the
 form you get by copying the source is the form that works. Matching ignores
-case and re-wrapping, and requires only the fixed sentences: the
-`«placeholder»` line is yours to replace.
+case and re-wrapping, and requires the whole block in one unbroken run.
 
 Exempt: plugin-namespaced subagent types (`plugin:agent`, e.g.
 `pr-review-toolkit:code-reviewer`), which ship their own definitions, plus
@@ -1134,29 +1134,29 @@ then:
     fast-forward-only pull the default branch. Confirm `gh pr merge <PR> --auto`,
     `gh pr merge <PR> --help`, and a non-merge command (`gh pr view <PR>`) stay
     silent.
-21. **coderabbit-status-check** — run `coderabbit review --agent` or
+22. **coderabbit-status-check** — run `coderabbit review --agent` or
     `cr review --agent`; confirm the advisory appears reminding you to check
     `"status":"review_completed"` and non-empty `reviewedFiles`. Confirm
     `coderabbit review` (no `--agent`), `coderabbit --help`, and
     `coderabbit auth status` stay silent.
-22. **commit-attribution-guard** — attempt `git commit -m "x"` with no
+23. **commit-attribution-guard** — attempt `git commit -m "x"` with no
     `Assisted-by:` trailer; confirm it blocks with the required-format
     guidance. Confirm a commit whose message includes a correct
     `Assisted-by: Claude:<model>` trailer (via `-m`, `-F`, or the
     `-m "$(cat <<'EOF' ...)"` heredoc form) is allowed, and that
     `git status`/`git log` stay silent.
-23. **enforce-attribution** — attempt `gh pr create --body "x"` (or `--body-file`,
+24. **enforce-attribution** — attempt `gh pr create --body "x"` (or `--body-file`,
     `pr edit`, `pr comment`, `pr review`) with no `Assisted-by:` trailer; confirm
     it blocks. Confirm a body containing the correct trailer is allowed, and
     that "on behalf of" in the body blocks even with a correct trailer present.
-24. **personal-data-guard** — yourself, not through an agent, pipe a payload
+25. **personal-data-guard** — yourself, not through an agent, pipe a payload
     that carries a string you listed in `personal-data-guard.json` into the
     hook, for example
     `{"tool_name":"Bash","tool_input":{"command":"echo «listed string»"}}`;
     confirm it exits 2 and that the refusal does not print the string.
     Confirm `git commit -m "x"` and a `curl` with no personal data are not
     blocked by this hook.
-25. **worktree-path-guard** — launch the session inside a scratch repository
+26. **worktree-path-guard** — launch the session inside a scratch repository
     that has a commit and no `.gitignore` rule covering `.claude/worktrees/`
     (with such a rule, read tools pass with a note and write tools are sent to
     the built-in `Edit`/`Write`). `EnterWorktree`, then call Serena
