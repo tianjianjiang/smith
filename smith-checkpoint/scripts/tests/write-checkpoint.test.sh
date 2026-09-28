@@ -759,6 +759,7 @@ mkdir -p "$W6K/.serena/memories"
 out=$(run_script_in "$W6K" test_label_danglingprimarynothingtorelocate "body=$BODY" 2>"$SHIM/stderr") || fail "T6 (dangling primary, nothing to relocate): a worktree without memories must not be stopped by the primary link: $(cat "$SHIM/stderr")"
 [ -s "$SHIM/serena.content" ] || fail "T6 (dangling primary, nothing to relocate): the Serena checkpoint must still be written"
 [ -s "$SHIM/bm.content" ] || fail "T6 (dangling primary, nothing to relocate): the Basic-Memory checkpoint must still be written"
+[ -L "$R6K/.serena/memories" ] || fail "T6 (dangling primary, nothing to relocate): the primary link must be left for the user to repair"
 
 reset_logs
 D7="$SHIM/notproj"

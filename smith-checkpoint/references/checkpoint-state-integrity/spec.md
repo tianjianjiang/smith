@@ -124,9 +124,9 @@ shall move, remove and rename nothing and print no relocation line.
 The remaining rules apply only while the worktree's `.serena/memories/`
 contains `*.md` files and the primary checkout has `.serena/project.yml`;
 without either, the earlier rules return first. If the primary checkout's
-`.serena/memories` is a symbolic link whose target does not exist, exists
-without being a directory, or cannot be created, the system shall exit 1
-before any backend write, naming the path and stating that the worktree
+`.serena/memories` is a symbolic link whose target does not exist or cannot
+be reached, if it exists without being a directory, or if it is absent and
+cannot be created, the system shall exit 1 before any backend write, naming the path and stating that the worktree
 memories were left in place and no backend was written. The first two of
 these are checked before the worktree's own directory is examined, so they
 stop the run whatever that directory resolves to. While the worktree's
@@ -161,11 +161,12 @@ warning that says so instead of naming a directory.
 - Then both files keep their bytes, the symlink stays, stderr has no
   per-file relocation line, and the Reload block has no `Relocated worktree
   memories` line
-- Given the worktree's `.serena/memories` (or its whole `.serena`) is a
-  symlink to a directory that holds `ext.md` and is neither the worktree's
-  own `.serena/memories` nor the primary's: one outside the worktree, one in
-  a sibling worktree whose name starts with this worktree's name, or one
-  elsewhere inside this worktree
+- Given the worktree's `.serena/memories` is a symlink to a directory that
+  holds `ext.md` and is neither the worktree's own `.serena/memories` nor
+  the primary's (one outside the worktree, one in a sibling directory whose
+  name starts with this worktree's name, or one elsewhere inside this
+  worktree), or the worktree's whole `.serena` is a symlink to a directory
+  outside the worktree
 - When the script runs from the worktree
 - Then `ext.md` stays where it is, the primary gains no `ext.md`, stderr has
   `resolves to <resolved-abs>, which is not the memories directory of
