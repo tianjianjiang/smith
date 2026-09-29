@@ -110,7 +110,19 @@ leaving it at the top.
    so. When the worktree's `.serena/memories` resolves to the same directory
    as the primary checkout's (the symlink made by the `link-worktree-memories`
    hook, or a symlinked `.serena`), there is nothing to relocate and no file
-   is touched.
+   is touched. When it holds `*.md` files and resolves, through a link at
+   `.serena/memories` or at `.serena`, to a directory that is neither the
+   worktree's own `.serena/memories` nor the primary checkout's (outside the
+   worktree or elsewhere inside it), those files belong to that directory:
+   they stay there and, when the primary checkout has
+   `.serena/project.yml`, a warning names it. When the worktree's
+   `.serena/memories` holds `*.md` files and the primary checkout's
+   `.serena/memories` is a symbolic link to a directory that is missing or
+   cannot be reached, or exists without being a directory, the script exits
+   before any backend write and leaves the memories in place, wherever the
+   worktree's directory resolves to. It exits the same way when the
+   memories are the worktree's own and the primary directory cannot be
+   created. Repair the path and rerun.
 2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
    a note titled from the label, type `guide`, tag `checkpoint`, in the
    project selected per Runtime prerequisites "Backend selection" below

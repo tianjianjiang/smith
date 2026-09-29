@@ -186,7 +186,28 @@ relocate_worktree_memories() {
         echo "Warning: primary checkout ${primary_checkout} is not a Serena project; ${#files[@]} worktree memories left in place under ${source_dir}" >&2
         return 0
     fi
-    mkdir -p "$dest_dir"
+    local unrelocated_outcome="${#files[@]} worktree memories left in place under ${source_dir}; no backend was written."
+    if [[ -L "$dest_dir" && ! -e "$dest_dir" ]]; then
+        echo "Error: ${dest_dir} is a symbolic link to $(readlink "$dest_dir"), which does not exist or cannot be reached; ${unrelocated_outcome}" >&2
+        exit 1
+    fi
+    if [[ -e "$dest_dir" && ! -d "$dest_dir" ]]; then
+        echo "Error: ${dest_dir} exists and is not a directory; ${unrelocated_outcome}" >&2
+        exit 1
+    fi
+    local source_physical
+    if ! source_physical=$(physical_path "$source_dir"); then
+        echo "Warning: could not resolve ${source_dir} to a physical path; ${#files[@]} memories left in place, not relocated" >&2
+        return 0
+    fi
+    if [[ "$source_physical" != "$source_dir" ]]; then
+        echo "Warning: ${source_dir} resolves to ${source_physical}, which is not the memories directory of worktree ${worktree}; ${#files[@]} memories left in place, not relocated" >&2
+        return 0
+    fi
+    if ! mkdir -p "$dest_dir"; then
+        echo "Error: could not create ${dest_dir}; ${unrelocated_outcome}" >&2
+        exit 1
+    fi
     local name dest renamed compare_status
     for file in "${files[@]}"; do
         name=$(basename "$file")

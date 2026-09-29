@@ -41,8 +41,9 @@ Modified:
 - `smith-checkpoint/scripts/tests/write-checkpoint.test.sh` (429 lines,
   34 scenarios):
   - top: `export CLAUDE_CONFIG_DIR="$SHIM/claude-home"`, `unset` the three
-    `BASIC_MEMORY_*` variables, record the `~/.claude/plans` flag count and
-    assert it unchanged before the final `PASS` line `:429` (§S8). The two
+    `BASIC_MEMORY_*` variables, and assert before the final `PASS` line
+    that no `~/.claude/plans` flag names the suite's temporary
+    directory (§S8). The two
     inline `CLAUDE_CONFIG_DIR="$CTX_HOME"` cases `:352-362` keep their value.
   - the shim `:9-94` already records argv; assertions on `--project` added.
   - new helper `make_repo_with_worktree` reusing the `git init` pattern
@@ -123,11 +124,11 @@ Test scenarios (shim environment; `$R` = fake repository,
 | T3 | `BASIC_MEMORY_MCP_PROJECT=elu`, no `primaryProject` | exit 0; no `--project` in `bm.argv`; Reload block `project: elu (locked by BASIC_MEMORY_MCP_PROJECT)` |
 | T4 | local `primaryProject smith`, shared `other` | `bm_read.argv` and `bm.argv` contain `--project smith`; no key at all → no `--project`, `project: (default)` |
 | T5 | worktree `$W`, body given | header has `**Git**`, `**Worktree**`, `**Branch**: wt`, `**Primary**`, `**Resume**: EnterWorktree path=$W …`; `serena.argv` project = `$R`; plain repository → `**Git**` only |
-| T6 | `$W/.serena/memories/{a,b,c}.md`; primary has identical `b`, different `c` | primary: a, b, c unchanged, `c__from_worktree_wt.md`; worktree memories empty of a/b/c; `project.yml` intact; 3 stderr lines; Reload `moved 1, removed 1, renamed 1`; primary without `.serena/memories/` → warning, nothing moved; `$W/.serena/memories` or `$W/.serena` symlinked to the primary's → primary files unchanged, symlink kept, no relocation line |
+| T6 | `$W/.serena/memories/{a,b,c}.md`; primary has identical `b`, different `c` | primary: a, b, c unchanged, `c__from_worktree_wt.md`; worktree memories empty of a/b/c; `project.yml` intact; 3 stderr lines; Reload `moved 1, removed 1, renamed 1`; primary without `.serena/project.yml` → warning, nothing moved; primary with `project.yml` but without `.serena/memories/` → directory created, memory moved; `$W/.serena/memories` or `$W/.serena` symlinked to the primary's → primary files unchanged, symlink kept, no relocation line; `$W/.serena/memories` linked to a directory outside the worktree, in a sibling directory whose name starts with the worktree's, or elsewhere inside `$W`, and `$W/.serena` linked outside the worktree → its files stay, warning names the resolved directory, both backends written; primary `.serena/memories` a symlink to a missing directory, with the worktree memories in place or linked from outside → exit 1, memory stays, no backend called; the same missing directory with no `*.md` in the worktree → exit 0, both backends written; primary `.serena/memories` a regular file, or absent with primary `.serena` not writable → exit 1, memory stays, no backend called |
 | T7 | `serena=$D` without `project.yml` / with | exit 1 before argv / `serena.argv` contains `$D`, Reload `Serena: $D/.serena/memories/<label>.md` |
 | T8 | `$PWD/.serena/project.yml` exists, primary ≠ `$PWD` | divergence warning names both; with `serena=$PWD` no warning |
 | T9 | success from `$W` | Reload lines: `- Serena: $R/.serena/memories/<label>.md`, `- Basic-Memory: <permalink> (project: smith, folder: …)`, `- Worktree: $W (branch wt) — resume with EnterWorktree path=$W`, `- Reload flag: <path>` |
-| T10 | whole file | `~/.claude/plans` flag count unchanged; all suite flags under `$SHIM/claude-home/plans` |
+| T10 | whole file | no flag under `~/.claude/plans` names the suite's temporary directory; `$SHIM/claude-home/plans` holds at least one flag, and at least one names it |
 
 ## Risks
 
