@@ -11,8 +11,8 @@ embedded data (a subagent prompt, an assembled system message)
 
 **Scope note:** this file is about XML tags in *runtime prompts*, not
 SKILL.md bodies. SKILL.md bodies use plain Markdown — see
-`@smith-skills/SKILL.md`'s "Markdown Structure" section. Verified
-2026-07-11: Anthropic's own SKILL.md-authoring examples and OpenAI's
+`@smith-skills/SKILL.md`'s "Markdown Structure" section.
+Anthropic's own SKILL.md-authoring examples and OpenAI's
 current (GPT-5.5/5.6) model guidance both use plain Markdown for
 agent-instruction-file bodies; only Gemini treats XML and Markdown as
 equally valid. XML content-tags remain the right tool for the narrower
@@ -35,7 +35,7 @@ placeholder-style tags (`<type>`, `<scope>`).
 
 These are NOT tags Anthropic's docs prescribe — Anthropic's own XML-tag
 guidance only demonstrates content-type tags like `<instructions>`,
-`<context>`, `<example>`, `<document>` (verified 2026-07-11: no
+`<context>`, `<example>`, `<document>` (no
 prohibition/anti-pattern tag appears anywhere in their prompt-engineering
 docs). Smith uses these by analogy, which is still valid per Anthropic's
 "use consistent, descriptive tag names" guidance — just don't present them
@@ -66,8 +66,8 @@ positive phrasing, group it under a plain `<hard_limits>` tag rather than
 
 ## GPT-5.x Tags
 
-Verified tag-by-tag against OpenAI's official cookbook guides on
-2026-07-11. Each guide version has its own vocabulary — they are separate
+Checked tag-by-tag against OpenAI's official cookbook guides.
+Each guide version has its own vocabulary — they are separate
 documents, not one evolving taxonomy:
 
 **GPT-5 guide** (original): `context_gathering`, `persistence`,
@@ -100,7 +100,7 @@ with no stated principle either way.
 
 ## Gemini Tags
 
-Verified 2026-07-11 against `ai.google.dev/gemini-api/docs/prompting-strategies`
+Checked against `ai.google.dev/gemini-api/docs/prompting-strategies`
 (Gemini's general, model-family-wide prompting guide — Gemini 3 and 3.5's own
 dedicated best-practices pages don't cover tag format at all).
 
@@ -116,7 +116,7 @@ Treat these as community convention, not verified official guidance:
 
 Google's own page states XML tags and Markdown headings are "equally
 effective... choose one format and use it consistently" — no preference
-either way. Gemini 3.5 (released 2026-05-19) has no dedicated tag guidance
+either way. Gemini 3.5 has no dedicated tag guidance
 of its own; it defers to the same general page.
 
 ## Harmony Format (gpt-oss-120b)

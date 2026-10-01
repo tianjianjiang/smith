@@ -8,14 +8,14 @@ description: Claude Code auto mode classifier
 **Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
 **Load if:** An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`, OR a "safeguards flagged this message ... Switched to" model-fallback banner appeared
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
-**Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode (verified 2026-05-21)
+**Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode
 
 ## CRITICAL: Denial Handling
 
 - After a classifier denial, change something material before retrying — the classifier rejected the action for a reason, and a silent identical retry just exhausts the fallback budget (3 consecutive blocks → auto mode pauses; 20 total → auto mode pauses for the session)
 - Stay within the same risk category after a denial — e.g. a denied `git push` should not be escalated to `git push --force`, nor a denied `git restore` to `rm -rf`; the classifier flags broader categories than the literal command
 - Treat a user-stated boundary ("don't push", "wait until I review") as re-read from the transcript on each check, not as a persisted rule — context compaction (`/clear`, summarization) can drop it, so for a hard guarantee recommend the user add a `permissions.deny` rule instead of relying on the chat boundary
-- Keep the classifier engaged through to task completion — switching to `bypassPermissions` mid-task to get past a denial disables permission prompts and protected-path safety checks broadly, not just the one denial in question. A few narrow exceptions still prompt even in this mode (explicit `ask` rules, the `rm -rf /`/`rm -rf ~` circuit breaker, MCP tools marked `requiresUserInteraction`) — that isn't a reason to treat the switch as safe; it remains an emergency escape, not a routine unblock (https://code.claude.com/docs/en/permission-modes#skip-all-checks-with-bypasspermissions-mode, retrieved 2026-07-12)
+- Keep the classifier engaged through to task completion — switching to `bypassPermissions` mid-task to get past a denial disables permission prompts and protected-path safety checks broadly, not just the one denial in question. A few narrow exceptions still prompt even in this mode (explicit `ask` rules, the `rm -rf /`/`rm -rf ~` circuit breaker, MCP tools marked `requiresUserInteraction`) — that isn't a reason to treat the switch as safe; it remains an emergency escape, not a routine unblock (https://code.claude.com/docs/en/permission-modes#skip-all-checks-with-bypasspermissions-mode)
 
 After a classifier denial the agent MUST:
 
@@ -161,10 +161,10 @@ reason, and no auto-mode counter involved.
   ("this and later turns are from «fallback model»"), because the user
   otherwise cannot tell which model wrote what, and `Assisted-by:` trailers
   follow the model that actually ran.
-- **Do not retry the flagged command shape.** Known false positive
-  (2026-09-11): a per-branch cascade of `git checkout --detach <sha> && git
+- **Do not retry the flagged command shape.** Known false positive:
+  a per-branch cascade of `git checkout --detach <sha> && git
   rebase --onto ...` followed by `git push --force-with-lease=<branch>:<sha>
-  origin <sha>:refs/heads/<branch>` reads as history tampering and was flagged
+  origin <sha>:refs/heads/<branch>` reads as history tampering and can be flagged
   `[cyber]`. The prevention is upstream of the classifier: `gh stack sync`
   never emits that shape (`@smith-gh-pr` Stacked PRs; `gh-stack-guard` asks
   before the hand-rolled form).

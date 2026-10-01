@@ -46,7 +46,7 @@ an atomic temp-file + rename. Through a **directory** symlink (e.g.
 `~/.claude/skills` → the smith repo) the rename lands in the resolved
 dir, so the link and the real file are fine. But a **file-level**
 symlink is silently **replaced by a regular file** — the link breaks and
-the original diverges (Claude Code issue #40857, confirmed). smith
+the original diverges (a confirmed Claude Code defect, `references/SOURCES.md`). smith
 `SKILL.md` files are plain files, so editing them via either path is
 safe; the hazard is any path that is itself a file symlink.
 

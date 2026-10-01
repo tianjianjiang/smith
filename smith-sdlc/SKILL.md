@@ -10,9 +10,9 @@ metadata:
 # AI-Native Software Development Lifecycle
 
 Source: Anthropic, ["The AI-Native SDLC playbook"](https://claude.com/blog/the-ai-native-sdlc-playbook)
-(published 2026-08-21, retrieved 2026-09-08) and the companion
+and the companion
 ["AI-Native SDLC Playbook" course](https://academy.claude.com/courses/ai-native-sdlc-playbook)
-on Claude Academy (retrieved 2026-09-10); related posts
+on Claude Academy; related posts
 ["How Anthropic secures its AI-native software development lifecycle"](https://claude.com/blog/how-anthropic-secures-its-ai-native-software-development-lifecycle)
 and ["Claude on call: How Claude Tag serves as Anthropic's first responder for CI/CD failures"](https://claude.com/blog/ai-ci-cd-on-call).
 Full per-stage detail (exact prompts, file templates, governance/measurement
@@ -152,7 +152,6 @@ record supersede it ("ADR process",
 https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html).
 Nygard and Amazon Web Services each keep the earlier decision as a
 record beside the new one; for `design.md`, git history already keeps it.
-(All sources retrieved 2026-09-27.)
 
 **If nobody will maintain the index, skip `design.md` entirely** —
 `git log -- '**/spec.md'` is a legitimate, YAGNI-consistent decision

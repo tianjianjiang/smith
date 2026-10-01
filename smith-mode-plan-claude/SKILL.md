@@ -56,8 +56,6 @@ ExitPlanMode rejection has three scenarios -- handle each differently:
    - Preemptive flag from inject-plan.sh ensures plan auto-reload in next session
    - No agent action needed (agent doesn't see this -- session already ended)
 
-[#20397]: https://github.com/anthropics/claude-code/issues/20397
-
 ## Related
 
 - `@smith-mode-plan/SKILL.md` - Portable plan tracking protocol

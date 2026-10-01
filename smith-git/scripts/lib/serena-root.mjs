@@ -28,6 +28,19 @@ import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { git } from "./hook-utils.mjs";
 
 export const SERENA_TOOL_PREFIX = /^mcp__(plugin_serena_)?serena__/;
+export const SERENA_WRITE_TOOLS = new Set([
+  "replace_content",
+  "replace_symbol_body",
+  "replace_in_files",
+  "insert_after_symbol",
+  "insert_before_symbol",
+  "safe_delete_symbol",
+  "rename_symbol",
+  "create_text_file",
+  "delete_lines",
+  "replace_lines",
+  "insert_at_line",
+]);
 
 function isFile(path) {
   try {

@@ -24,6 +24,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
 | `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) |
 | `coderabbit-status-check.mjs` | PostToolUse (`Bash`) | Advisory: validate CodeRabbit `--agent` output before trusting it |
+| `skill-lint.mjs --hook` | PostToolUse (`Edit\|Write\|mcp__(plugin_serena_)?serena__.*`) | After a write to a `SKILL.md`: reports broken frontmatter, an unclosed fence or point-in-time content for the agent to fix |
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
 | `stack-merge-guard.mjs` | PreToolUse (`Bash`) | Asks before `gh pr merge --delete-branch` orphans an open child PR |
 | `amend-shared-commit-guard.mjs` | PreToolUse (`Bash`) | Asks before `git commit --amend` rewrites a parent branch's tip |
@@ -213,6 +214,69 @@ matching `[A-Z][0-9]{1,2}` (e.g. `T1`, `S5`) — the internal index codes
 not flagged; genuinely-standard tokens go in
 `smith-ctx-claude/coined-shorthand-config.json`'s allowlist. Advisory only,
 never blocks (a script cannot tell a meaningless code from a meaningful one).
+
+## skill-lint
+
+**skill-lint** (`smith-ctx-claude/scripts/skill-lint.mjs`) checks skill files
+against the rule that a `SKILL.md` holds no point-in-time content (decision
+ADR-004 in `smith-ctx-claude/references/design.md`). It runs two ways:
+
+- As a command, `node smith-ctx-claude/scripts/skill-lint.mjs [file ...]`
+  lints the given files or, when none is given, the `SKILL.md` of the
+  repository root and of each directory directly under it (`--root
+  <directory>`, given alone, names another root). It prints one
+  `path:line: rule: text` line per finding, then a summary line with the
+  number of files checked and of findings. It exits non-zero on any finding
+  and when it found no skill file to check. The test runner calls it this
+  way, so the suite fails while a skill file in the checkout breaks a rule.
+- As a hook, `skill-lint.mjs --hook` is a PostToolUse guard (matcher
+  `Edit|Write|mcp__(plugin_serena_)?serena__.*`). The write has already happened;
+  the hook lints the written `SKILL.md` and answers `decision: "block"` with
+  the findings, which the agent then has to fix; a failure to list or read what was
+  written is answered with a block as well. It acts on `Edit`, `Write`
+  and Serena's writing tools only, so reading a skill file never triggers
+  it. A relative path is resolved against the session's working directory
+  for `Edit` and `Write` and against Serena's project root for a Serena
+  tool (the session's working directory when that root cannot be found). Serena's `replace_in_files`, which names a directory or nothing,
+  has every `SKILL.md` in that directory and one level below it linted.
+  Other files, documents under `references/` included, are never linted.
+  Input that does not parse and a path that no longer exists give no
+  answer. Not covered: a skill file more than one level below the
+  directory `replace_in_files` names, a file it selects by glob alone, and
+  a write through a path whose last segment is not exactly `SKILL.md`.
+
+Registered user-globally, the hook applies to a `SKILL.md` of any
+repository or plugin on the machine, the `name` equals directory rule
+included.
+
+Rules, each reported under its name:
+
+- `frontmatter`: the file opens with a `---` block that closes, its `name`
+  equals the directory name, and its `description` is not empty. Only
+  top-level keys are read, as plain or quoted text on the key's line or as
+  text on the indented lines below it, not as full YAML.
+- `fence`: a code fence that is never closed, which would hide every line
+  after it from the other rules.
+- `unreadable`: the file could not be read.
+- `date`: a calendar date or a year and month written with hyphens, as
+  `YYYY-MM-DD` and `YYYY-MM`.
+- `reference`: a pull-request or issue number written with its word or in
+  brackets, a cross-repository `owner/repo#number`, a `pull/` or `issues/`
+  URL path, the word commit followed by a hash, or a ticket key of two to ten
+  capital letters, a hyphen and two or more digits (`ADR`, `ISO`, `UTF`,
+  `SHA`, `RFC` and `GPT` are not ticket prefixes). A bare `#123` or a bare hash is not
+  matched.
+- `status`: wording tied to work in progress ("as of", "awaiting review",
+  "not yet merged").
+- `history`: wording that recounts an incident or how a rule came about
+  ("a prior version of this file", "incident history", a leading
+  "Correction:").
+
+Fenced code blocks, inline code spans and `«placeholder»` text are skipped,
+so a date format given as an example passes. Every content rule matches a
+fixed list of patterns; a date, a reference or an account written another
+way is left to review. A line gets one finding, named after the first rule
+it breaks.
 
 ## review-orchestration-guard
 
@@ -1001,6 +1065,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         "hooks": [
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-git/scripts/hooks/post-merge-pull-reminder.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/coderabbit-status-check.mjs\"" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|mcp__(plugin_serena_)?serena__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-lint.mjs\" --hook" }
         ]
       }
     ],
