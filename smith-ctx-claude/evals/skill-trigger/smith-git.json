@@ -1,0 +1,27 @@
+{
+  "skill": "smith-git",
+  "should_trigger": [
+    "Move src/helpers/date_utils.py to src/common/dates.py — I don't want to lose the blame history.",
+    "commit what's staged",
+    "I rebased feat/report-export onto the latest main and now push is rejected as non-fast-forward. Get the remote branch updated.",
+    "Quick typo fix in README.md, please. I'm on main right now.",
+    "I need to hotfix production while I'm halfway through the importer feature with a dirty tree. Set me up so I can do both without stashing.",
+    "git status --short shows a pile of ?? entries under data/cache/. Those are all ignored files, right? Delete data/cache/*.json.",
+    "I ran rm on reports/*.csv and git status now shows ' D reports/baseline.csv'. Can I get it back? What about the other files that were there?",
+    "The commit was blocked by a hook complaining the message is missing a trailer. The message was 'fix: handle empty payload'. What does it want?",
+    "Creating the branch 'my_new_stuff' got rejected by a hook. Why, and what should it be called for a bug fix to the session timeout?",
+    "Merge feat/audit-log into the integration branch and keep a visible merge commit so the feature's history stays grouped. Also there are a few stale worktrees lying around from merged branches — tidy those up."
+  ],
+  "should_not_trigger": [
+    "Open a pull request for this branch and write the description.",
+    "Reply to the two unresolved review threads on PR 64 with the fix commit.",
+    "What does worktree.baseRef do, and should background sessions in Claude Code use fresh or head?",
+    "Write a .gitignore for a Nuxt 3 project that uses pnpm.",
+    "Set up Git LFS for the *.psd files under design/ and migrate the existing ones.",
+    "Our submodule vendor/proto is pinned to an old commit. Update it to the latest tag and explain how teammates pull the change.",
+    "The actions/checkout step only fetches one commit, so `git describe` fails in CI. Fix the workflow.",
+    "After the squash merge, my worktree's branch shows 12 commits ahead of main even though everything landed. How do I sync it from inside the Claude Code worktree session?",
+    "Is this file name OK: src/components/UserProfile_card.vue? What's the convention?",
+    "Register a PreToolUse hook in settings.json that runs my script on every Bash call — show me the exact JSON shape."
+  ]
+}

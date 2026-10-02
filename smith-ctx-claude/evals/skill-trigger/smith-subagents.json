@@ -1,0 +1,27 @@
+{
+  "skill": "smith-subagents",
+  "should_trigger": [
+    "Fan out three agents in parallel to find every caller of `legacy_charge()` across services/billing, services/orders and the cron jobs, then tell me what they found before we change anything.",
+    "spawn an agent to dig through the auth middleware and figure out where the session token gets dropped. i only want file:line facts back, no edits",
+    "I want to delegate the rename of `UserDTO` to `UserRecord` in src/models/user.ts to a helper agent while you keep going on the migration. What tools should it get and how do you word its prompt?",
+    "The background agent I kicked off twenty minutes ago shows as idle with a summary that says \"no issues found\". Can we take that as the review being clean and merge?",
+    "The Agent tool call was just blocked with a message saying the prompt does not carry the required contract block. What do I need to put in the spawn prompt to get past that?",
+    "A helper agent came back saying the PR title is still 'wip: cache layer' and suggested a new body. Go ahead and update the PR description from its summary.",
+    "Kick off a reviewer agent, a locator agent and a second agent that tries to refute my claim that the retry loop in worker/queue.py is the cause of the duplicate emails. Run them at the same time if possible.",
+    "the agent you delegated the null-check fix to returned a tidy diff for parser/tokenize.go. before I accept it, how do we know the change actually runs on the input that crashed?",
+    "I'm about to edit the blockquote that every investigative agent prompt has to include. Which script and which test need to change along with it so the guard and the text don't drift?",
+    "Two of the three review agents say the race in cache/evict.rs is low severity and one says it is a data-loss bug. Just go with the majority and downgrade it, right?"
+  ],
+  "should_not_trigger": [
+    "Run four agents in parallel, each one refactoring a different package under packages/, and make sure their file edits can't clobber each other in the working copy.",
+    "Set up a loop that keeps iterating on the failing build until `make test` is green, with a completion promise so it knows when to stop.",
+    "Write the system prompt for our customer-support triage agent. It needs a role, the escalation policy and three few-shot examples of good replies.",
+    "Schedule a cloud agent to run the dependency audit every Monday at 09:00 and post the result in the repo.",
+    "Add a new agent definition file under .claude/agents/ for a database-migration reviewer; I need the frontmatter fields and where the tools list goes.",
+    "Auto mode keeps refusing my `terraform apply` with a classifier message. Why does it block that and how do I describe the action so it is allowed?",
+    "context is at 58 percent after all that log reading. what should we keep before I clear the session?",
+    "Run the multi-round local review on this branch until the reviewers converge, then tell me what is left before I open the PR.",
+    "Investigate why checkout latency doubled last week: pull together the incident channel, the tracker tickets and the recent merges into one brief.",
+    "Our orchestration service spawns worker processes with `child_process.fork` and some never exit. Find where the parent fails to reap them in src/pool/manager.ts."
+  ]
+}

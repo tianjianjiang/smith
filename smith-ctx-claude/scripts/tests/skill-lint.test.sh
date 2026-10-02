@@ -16,7 +16,7 @@ raw_skill() {
 skill_fixture() {
   directory="$1"
   shift
-  raw_skill "$directory" '---' "name: $(basename "$directory")" 'description: A fixture skill' '---' '' '# Fixture' '' "$@"
+  raw_skill "$directory" '---' "name: $(basename "$directory")" 'description: A fixture skill. Use when testing the lint.' '---' '' '# Fixture' '' "$@"
 }
 reports() {
   out=$(node "$LINT" "$TMPD/$1/SKILL.md") && fail "$1: expected a non-zero exit"
@@ -91,26 +91,42 @@ reports date-after-code-span date
 
 raw_skill no-frontmatter '# No frontmatter'
 reports no-frontmatter frontmatter
-raw_skill wrong-name '---' 'name: other-name' 'description: A fixture' '---'
+raw_skill wrong-name '---' 'name: other-name' 'description: A fixture skill. Use when testing the lint.' '---'
 reports wrong-name frontmatter
+printf '%s' "$out" | grep -q 'name must be wrong-name' || fail "wrong-name: expected the name finding, got: $out"
 raw_skill no-description '---' 'name: no-description' 'description:' '---'
 reports no-description frontmatter
 raw_skill empty-quoted-description '---' 'name: empty-quoted-description' 'description: ""' '---'
 reports empty-quoted-description frontmatter
 raw_skill unclosed-frontmatter '---' 'name: unclosed-frontmatter' 'description: A fixture'
 reports unclosed-frontmatter frontmatter
-raw_skill quoted-name '---' 'name: "quoted-name"' "description: 'A fixture'" '---'
+raw_skill quoted-name '---' 'name: "quoted-name"' "description: 'A fixture. Use when testing the lint.'" '---'
 passes quoted-name
 raw_skill empty-block-description '---' 'name: empty-block-description' 'description: >' '---'
 reports empty-block-description frontmatter
-raw_skill block-description '---' 'name: block-description' 'description: >' '  A fixture skill' '---'
+raw_skill block-description '---' 'name: block-description' 'description: >' '  A fixture skill.' '  Use when testing the lint.' '---'
 passes block-description
+raw_skill block-with-blank-line '---' 'name: block-with-blank-line' 'description: |' '  A fixture skill.' '' '  Use when testing the lint.' '---'
+passes block-with-blank-line
+raw_skill wrapped-clause '---' 'name: wrapped-clause' 'description: >' '  A fixture skill. Use' '  when testing the lint.' '---'
+passes wrapped-clause
+raw_skill continued-plain-value '---' 'name: continued-plain-value' 'description: A fixture skill.' '  Use when testing the lint.' '---'
+passes continued-plain-value
+raw_skill no-when-to-use '---' 'name: no-when-to-use' 'description: A fixture skill' '---'
+reports no-when-to-use frontmatter
+printf '%s' "$out" | grep -q 'does not say when to use the skill' || fail "no-when-to-use: expected the when-to-use finding, got: $out"
+raw_skill block-without-when-to-use '---' 'name: block-without-when-to-use' 'description: >' '  A fixture skill.' 'metadata:' '  note: Use when testing the lint.' '---'
+reports block-without-when-to-use frontmatter
+for clause in 'Use before any push.' 'Use first in every session.' 'Use for every task.' 'Always active. Use whenever output is written.'; do
+  raw_skill other-clause '---' 'name: other-clause' "description: A fixture skill. $clause" '---'
+  passes other-clause
+done
 mkdir -p "$TMPD/windows-line-endings"
-printf '%s\r\n' '---' 'name: windows-line-endings' 'description: A fixture skill' '---' '' '# Fixture' > "$TMPD/windows-line-endings/SKILL.md"
+printf '%s\r\n' '---' 'name: windows-line-endings' 'description: A fixture skill. Use when testing the lint.' '---' '' '# Fixture' > "$TMPD/windows-line-endings/SKILL.md"
 passes windows-line-endings
-raw_skill nested-name '---' 'name: nested-name' 'description: A fixture skill' 'metadata:' '  name: another-name' '---'
+raw_skill nested-name '---' 'name: nested-name' 'description: A fixture skill. Use when testing the lint.' 'metadata:' '  name: another-name' '---'
 passes nested-name
-raw_skill description-on-next-line '---' 'name: description-on-next-line' 'description:' '  A fixture skill' '---'
+raw_skill description-on-next-line '---' 'name: description-on-next-line' 'description:' '  A fixture skill. Use when testing the lint.' '---'
 passes description-on-next-line
 out=$(cd "$TMPD/clean" && node "$LINT" SKILL.md) || fail "a relative path must take its directory's name, got: $out"
 if [ "$(id -u)" = 0 ]; then

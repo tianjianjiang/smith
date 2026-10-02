@@ -1,0 +1,27 @@
+{
+  "skill": "smith-postmortem",
+  "should_trigger": [
+    "Yesterday's outage of the billing service is resolved. Draft the incident review document in docs/incidents/ from the chat export in incident-notes.txt and the deploy log.",
+    "The draft review says 'the on-call engineer forgot to run the migration and the release manager approved it anyway'. Rewrite the root cause section so it does not read like finger-pointing.",
+    "we had a 12 minute blip on the search API, about 2% of requests errored, third time this month. is that worth a formal write-up or do we just move on?",
+    "Build the event timeline for the database failover incident from alerts.json and the pager history: when it was detected and how, what the responders did, when service was restored and how that was verified.",
+    "the incident was resolved Monday night. our incident commander is on leave until next week. when do we hold the review meeting and who has to be in the room?",
+    "Run a five whys on why the certificate expiry took down the API gateway and nobody was alerted. Write it into the analysis section of the incident report.",
+    "The follow-ups at the bottom of docs/incidents/queue-backlog.md are just a bullet list: 'improve monitoring', 'be more careful with deploys'. Turn them into something we can actually track.",
+    "Which sections does our incident report need, and in what order? I have summary, timeline and fixes so far for the cache stampede outage.",
+    "Sort the contributing factors of the failed region failover into a cause-and-effect breakdown: people, process, technology, environment. Input is the responder notes in notes/failover.md.",
+    "The review of the payment outage is written. What has to happen with it now: who gets it, where does it live, and what else needs updating as a result?"
+  ],
+  "should_not_trigger": [
+    "The checkout endpoint is returning 500s right now. Look at the logs in logs/api-2.log and find what is failing.",
+    "Roll back the deploy of the notification service to the previous image tag and confirm the error rate drops.",
+    "Write the status update for the incident channel: the search service is degraded, mitigation is in progress, next update in 30 minutes.",
+    "do a retro on this coding session: which of my instructions did you ignore and what should go into CLAUDE.md so it does not happen again",
+    "I think the memory leak is in the connection pool. Design an experiment that could prove me wrong before we change anything.",
+    "Create a bug ticket for the intermittent timeout in the export job with reproduction steps and acceptance criteria.",
+    "Write a runbook for rotating the database credentials of the billing service, step by step, with a verification command after each step.",
+    "add an alert rule that pages on-call when the p99 latency of the gateway exceeds 2 seconds for five minutes",
+    "Am I falling for confirmation bias here? I blamed the cache for the last three slowdowns and I am about to blame it again. Check my reasoning.",
+    "Summarize last sprint for the team retrospective: what shipped, what slipped, and the velocity trend from the tracker export in sprint-42.csv."
+  ]
+}

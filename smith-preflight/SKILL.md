@@ -1,6 +1,6 @@
 ---
 name: smith-preflight
-description: Pre-ship gate
+description: Pre-ship gate with a GO or NO-GO verdict. Use when the user runs /smith-preflight, before any push or pull request, and as the first step of /smith-ship.
 allowed-tools: Bash(git *), Bash(gh *), Bash(command -v *), Bash(node *), Read, Grep
 ---
 

@@ -1,0 +1,23 @@
+{"skill": "smith-ralph", "should_trigger": [
+"Start a ralph loop that keeps working on the failing tests in tests/test_parser.py until they all pass. Set it up with a proper completion promise and an iteration cap.",
+"/ralph-loop \"fix the flaky upload test\" - what flags should I pass so it can't run forever, and how do I word the done condition?",
+"I'm in a ralph loop at iteration 9 and context is at 52%. What do I need to save right now so the loop can pick up after I clear?",
+"Phase 2 of plans/migrate-auth.md is all checked off in the ralph run. Do the phase handoff: commit, save state, and tell me what to reload with for phase 3.",
+"I just ran /clear in the middle of the iterative loop on the search indexer. Restore where we were from memory and continue with the next iteration.",
+"The plan in plans/refactor-billing.md has six sequential phases and will take way more than 20 iterations. Should I run it as a single self-feeding loop, have a parent hand each task to fresh workers, or use agent teams? Then start it.",
+"ralph team on plans/docs-audit.md. The tasks are independent so run them in parallel; tell me what needs to be in settings.json first.",
+"ralph orchestrate plans/api-v2.md - parent stays light, one worker per task.",
+"Use an iterative loop to find the root cause of the intermittent 502s from the gateway: one hypothesis per iteration, record what was ruled out, and stop when the root cause is found.",
+"Something regressed between iteration 4 and iteration 11 of last night's ralph run on the importer. How were the iterations committed and how do I find the one that broke it?"
+], "should_not_trigger": [
+"Check the deploy status every 5 minutes and tell me when the rollout finishes.",
+"Schedule a cloud agent to run the dependency audit every Monday at 9am.",
+"Context is at 58% in this session and I'm not running any loop. Summarize what to keep before /clear.",
+"Spawn two subagents in parallel to grep the frontend and backend for uses of the deprecated flag, and tell me what each must return.",
+"Write a plan for the auth migration and break it into phases with checkboxes; don't execute anything yet.",
+"Save a checkpoint of this session's decisions to memory so I can resume tomorrow.",
+"Add a retry loop with exponential backoff around the fetch call in sync/client.ts, max 5 attempts.",
+"Use git bisect to find which commit on main broke the build; the last good tag is v1.4.0.",
+"The tests in tests/test_cart.py are failing. Do it TDD style: write the missing test for the empty cart first, then make it pass.",
+"Write a Serena memory describing the module layout of the billing service for future sessions."
+]}

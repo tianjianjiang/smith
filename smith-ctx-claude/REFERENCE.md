@@ -2,7 +2,7 @@
 
 <metadata>
 
-- **Load if**: Configuring hooks, permission modes, agents, model routing, or
+- **Read when**: Configuring hooks, permission modes, agents, model routing, or
   plugins in Claude Code. Read on demand — NOT auto-loaded with
   `smith-ctx-claude/SKILL.md`.
 - **Parent**: `@smith-ctx-claude/SKILL.md` (context-management core)
@@ -442,121 +442,121 @@ documentation and router-trigger design.
 
 ### Context Management
 
-**smith-ctx**: Universal context-management foundation — proactive context-level checks and reset recommendations. Use when context usage grows high, when deciding whether to /clear or /compact, or when choosing what to retain across a context reset.
+**smith-ctx**: Universal context-management foundation. Always active. Use when context usage grows, when deciding how much of a file or directory to read, or when choosing what to keep or discard across a context reset.
 
-**smith-ctx-claude**: Claude Code context management with /clear, /compact mechanics, stop hook enforcement at 60%, JSONL state recall, tool-output hygiene, and system reminders. Reference dumps (hooks, permission modes, agent features, model routing) live in companion REFERENCE.md. Use when operating in Claude Code IDE or when context exceeds 50%.
+**smith-ctx-claude**: Claude Code context management. Use when context passes the warning threshold in Claude Code, a context hook fires, or choosing between /clear and /compact.
 
-**smith-ctx-cursor**: Cursor context management with /summarize command, @ mentions for file inclusion, and @codebase discovery. Use when operating in Cursor IDE or when context exceeds 60%. Activate for context optimization in Cursor sessions.
+**smith-ctx-cursor**: Cursor context management. Use when working in Cursor and context grows large, or choosing how to pull files into a Cursor chat.
 
-**smith-ctx-kiro**: Kiro-specific context management with terminal limitations, Serena MCP as mandatory tool, and file operation workarounds. Use when operating in Kiro IDE. LOAD FIRST in all Kiro sessions - critical platform constraints that prevent hangs and failures.
+**smith-ctx-kiro**: Kiro platform constraints. Use first in every Kiro session, and when running terminal commands or file operations in Kiro.
 
 ### Git & GitHub
 
-**smith-git**: Git workflow gotchas and non-obvious practices. Use when performing Git commits, merges, branch management, rebasing, or raw `git worktree` commands. Covers GPG signing, atomic commits, raw worktree patterns, and safety flags. For the Claude Code worktree tools (EnterWorktree/ExitWorktree) see smith-worktree.
+**smith-git**: Git workflow gotchas. Use when committing, branching, merging, rebasing, pushing or running raw git worktree commands.
 
-**smith-gh-pr**: GitHub PR workflows including creation, review cycles, merge strategies, stacked PRs (creation, merge order, rebase after parent merges, squash handling), posting review findings, and confirming a CodeRabbit review actually ran. Use when creating PRs, stacked PRs, or dependent PRs, replying to review comments, running or interpreting a CodeRabbit review (GitHub App or `coderabbit` command line), merging branches, or fetching PR threads. Covers rebase decision trees and AI-generated descriptions. For the stacked shipping pipeline see smith-ship (stacked mode).
+**smith-gh-pr**: GitHub pull request workflows. Use when creating, updating, reviewing or merging a pull request (PR), replying to review comments, or working on stacked PRs.
 
-**smith-gh-cli**: GitHub CLI gotchas and best practices. Use when executing gh commands. Covers token efficiency, pagination limits, and common pitfalls.
+**smith-gh-cli**: GitHub CLI (gh) gotchas. Use when running any gh command or querying GitHub from the terminal.
 
-**smith-worktree**: Claude Code worktree TOOLS — EnterWorktree/ExitWorktree, the bgIsolation guard, worktree.baseRef, the branch-naming gotcha, and the squash-merge sync protocol. Use when invoking EnterWorktree/ExitWorktree, hitting the bgIsolation guard, or cleaning up after a worktree-based PR merge. For raw `git worktree` commands see smith-git.
+**smith-worktree**: Claude Code worktree tools (EnterWorktree, ExitWorktree). Use when entering or leaving a worktree, when an isolation guard refuses an edit or a git command, or cleaning up after a merge.
 
 ### Core Principles
 
-**smith-principles**: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Use when starting any development task, evaluating implementation approaches, or reviewing code quality. Always active as foundation for all development decisions.
+**smith-principles**: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Always active. Use when starting a development task, choosing an approach, or reviewing code quality.
 
-**smith-standards**: Universal coding standards for emoji usage, comments, acronym expansion, datetime formatting, and file conventions. Use when writing code, logs, documentation, or any text output. Always active as universal rules for all development.
+**smith-standards**: Universal coding standards. Always active. Use when writing code, logs, documentation, commit or pull-request text, or any other output.
 
-**smith-guidance**: Core agent steering with HHH framework (Helpful, Honest, Harmless), exploration-before-implementation workflow, scoped-edit discipline, and anti-sycophancy rules. Use when guiding AI agent behavior, handling disagreements, or establishing interaction patterns. Always active for all agent interactions.
+**smith-guidance**: Core agent steering. Always active. Use for every task, especially before an external write, a disagreement with the user, or a decision request.
 
 ### Development Workflows
 
-**smith-dev**: Development workflow standards and code quality requirements. Use when starting ANY task that will modify repo files (implement, fix, add, refactor, harden), initializing projects, running quality checks, or managing agent tasks. Covers branch-first setup, pre-commit checks, task decomposition, and script organization patterns.
+**smith-dev**: Development workflow standards and quality gates. Use when starting any task that modifies repository files (implement, fix, add, refactor) or running quality checks.
 
-**smith-ship**: Ship pipeline — review a worktree change to convergence, then atomic commit, push, PR, address review, squash-merge, ff-only sync, cleanup. Invoke with /smith-ship for a single change, or /smith-ship stack to split multi-part work into atomic stacked branches and ship them as stacked PRs.
+**smith-ship**: Ship pipeline from review to merge. Use when the user runs /smith-ship or asks to ship, land or merge a finished change.
 
-**smith-review**: Multi-round local review loop — review the current worktree change with all relevant smith review skills plus Claude Code review tools (/code-review, /review-pr, CodeRabbit, code-simplifier), iterating until convergence, without shipping. Invoke with /smith-review.
+**smith-review**: Multi-round local review loop. Use when the user runs /smith-review or asks to review local changes before a push.
 
-**smith-preflight**: Pre-ship gate — check the current change against the smith invariants (branch-first, secret-scan, pr-ownership, external-write, verify-before-assert, suggestions, subagent-contract) and report PASS, FAIL, SKIP or N/A (not applicable) per check with a GO or NO-GO verdict. Invoke with /smith-preflight; /smith-ship runs it as step 0 and will not push on NO-GO.
+**smith-preflight**: Pre-ship gate with a GO or NO-GO verdict. Use when the user runs /smith-preflight, before any push or pull request, and as the first step of /smith-ship.
 
 ### Planning & Analysis
 
-**smith-mode-plan**: Plan tracking protocol (portable). Progress tracking with checkboxes, iteration workflow, completion/blocker signals. Use when executing multi-step plans, tracking task progress, or working from plan files. IMPORTANT - Always update the plan file after completing tasks.
+**smith-mode-plan**: Plan mode and plan tracking protocol. ALWAYS load before writing, resuming or updating a plan file. Use when asked for a plan, continuing from a plan file, or logging plan progress.
 
-**smith-mode-plan-claude**: ExitPlanMode UI pattern for Claude Code plan mode — explain-first rule and rejection handling. For context/state/hooks see @smith-ctx-claude, for checkpoint see @smith-checkpoint, for Ralph see @smith-ralph.
+**smith-mode-plan-claude**: ExitPlanMode pattern for Claude Code. Use when about to call ExitPlanMode, or after the user rejects a plan.
 
-**smith-sdlc**: AI-native software development lifecycle (SDLC) artifact chain (Anthropic playbook) — intent.md, spec.md (a normative contract in EARS, the Easy Approach to Requirements Syntax, paired with Given-When-Then acceptance scenarios; Design stage), plan.md (Build stage, via @smith-mode-plan-claude), evals-on-agent-config, and the Maintain-stage control-band/scan/on-call loop; plus an optional design.md ADR (Architecture Decision Record) log, produced during Design-stage sessions but durable and per-subsystem (not per-feature) like CLAUDE.md, not per-cycle like spec.md. Use when scoping a feature end-to-end or setting up a repo's SDLC artifact conventions.
+**smith-sdlc**: AI-native software development lifecycle (SDLC) artifacts: intent.md, spec.md, plan.md, a per-subsystem design.md decision log, control-band maintenance. Use when scoping a new feature end to end, setting up a repository's SDLC artifacts or a decision log, or asked about the AI-native SDLC playbook.
 
-**smith-recon**: Guided multi-source investigation — asks which sources to sweep (jsonl history, memories, Notion, Slack, Jira, Drive, GitHub) for a topic, reads them bounded and cross-verified, and returns an evidence-linked brief. Invoke with /smith-recon.
+**smith-recon**: Guided multi-source investigation. Use when the user runs /smith-recon, asks to resume or reconstruct an earlier work thread, or asks what is known about a topic across sources.
 
-**smith-analysis**: Reasoning frameworks and problem decomposition techniques. Use when planning implementation, evaluating arguments, estimating scope, decomposing complex tasks, or applying first principles thinking.
+**smith-analysis**: Reasoning frameworks and problem decomposition. Use when planning an implementation, estimating scope, breaking down a complex task, or assessing risk.
 
-**smith-dialectic**: Socratic interview that stress-tests a plan against project docs and code, one question at a time. Use when user says "grill my plan", "challenge this", "stress-test", or wants to reach shared understanding before implementing.
+**smith-dialectic**: Socratic interview that stress-tests a plan. Use when the user asks to grill, challenge, interrogate or stress-test a plan, to play devil's advocate, or wants shared understanding before implementing.
 
 ### Language-Specific
 
-**smith-python**: Python development with uv, pytest, ruff, and type hints. Use when writing Python code, running tests, managing Python packages, or working with virtual environments. Covers import organization, type hints, pytest patterns, and environment variables.
+**smith-python**: Python development with uv, pytest and ruff. Use when writing or running Python code, managing packages with uv or Poetry, or running pytest.
 
-**smith-typescript**: TypeScript development standards for frontend and backend projects. Use when working with TypeScript, configuring path aliases, setting up test runners (Vitest/Jest), or organizing test files. Covers Vite alias configuration and type checking.
+**smith-typescript**: TypeScript development standards. Use when working with TypeScript, or configuring path aliases or a test runner.
 
-**smith-nuxt**: Nuxt 3 development patterns including auto-import stubbing for tests, environment variable conventions, and middleware testing. Use when working with Nuxt projects, testing Nuxt components/middleware, or configuring Nuxt environment variables.
+**smith-nuxt**: Nuxt 3 development patterns. Use when working in a Nuxt project, testing Nuxt components, or configuring Nuxt runtime config.
 
-**smith-playwright**: Playwright testing patterns including proactive failure monitoring, artifact inspection, and root cause classification. Use when running Playwright tests or analyzing Playwright test results.
+**smith-playwright**: Playwright testing patterns. Use when running Playwright tests or analysing their failures, screenshots or reports.
 
 ### AI & Prompts
 
-**smith-prompts**: Prompt engineering standards for AI interactions with cache optimization. Use when writing AI prompts, optimizing context usage, or structuring AGENTS.md files. Covers prompt caching, token efficiency, and progressive disclosure patterns.
+**smith-prompts**: Prompt engineering standards. Use when writing or revising a prompt, system prompt or agent instruction file, or optimizing token and cache usage.
 
-**smith-subagents**: Subagent spawning and return discipline — read-only by default, return findings not actions, treat every return as a claim to verify, reconcile against live state before mutating shared artifacts. Use when spawning Task/Agent subagents, delegating investigation, orchestrating parallel agents, or when a subagent will read or modify shared state (PRs, issues, files, remotes).
+**smith-subagents**: Subagent spawning and return discipline. Use when about to spawn an Agent or Task subagent, delegate an investigation, or act on a subagent's report.
 
-**smith-ralph**: Ralph Loop integration patterns for iterative AI development. Use when starting Ralph loops, managing iterations, or recovering from context resets. Covers TDD, debugging, context management, and memory persistence.
+**smith-ralph**: Ralph Loop patterns. Use when starting /ralph-loop, managing its iterations, or recovering a loop after a context reset.
 
-**smith-validation**: Hypothesis testing, adversarial verification of findings, root cause analysis, and debugging techniques. Use when debugging, investigating any question whose answer you will report as fact, verifying whether a claim or finding is true, red-teaming a conclusion, testing hypotheses, validating solutions, proving correctness, or performing root cause analysis on failures.
+**smith-validation**: Hypothesis testing and root cause analysis. Use when debugging, when a bug or test failure is reported, or when verifying a claim before reporting it as fact.
 
-**smith-automation**: Claude Code scheduling primitives — /loop (interval, dynamic, bare), CronCreate/List/Delete, ScheduleWakeup, Monitor, and /schedule (Routines), with a decision matrix and provider/session-scope caveats. Use when setting up a recurring or scheduled task, polling for external state, self-pacing iterations, or the user mentions /loop, /schedule, cron, ScheduleWakeup, or Monitor.
+**smith-automation**: Claude Code scheduling primitives (/loop, cron, ScheduleWakeup, Monitor, /schedule). Use when setting up a recurring or scheduled task, polling, or a reminder.
 
 ### Documentation & Style
 
-**smith-skills**: Agent skills authoring guide for AGENTS.md and SKILL.md files. Use when creating or editing agent instructions, rules, or documentation. Covers progressive disclosure, rule loading, Markdown structure, and token budget guidelines.
+**smith-skills**: Authoring guide for agent skills. Use when creating or editing a SKILL.md, AGENTS.md, CLAUDE.md or other agent instruction file.
 
-**smith-style**: File naming, path standards, and conventional commits. Use when naming files, creating branches, writing commit messages, or setting up new projects. Covers underscore vs hyphen conventions, commit format, and branch naming patterns.
+**smith-style**: Naming and path standards. Use when naming a file or branch, or writing a commit message.
 
-**smith-xml**: XML tag standards for runtime prompts that mix instructions with embedded data (subagent prompts, assembled system messages). Use when constructing such a prompt, NOT when authoring a SKILL.md body — see smith-skills for that. Covers tag conventions for Claude, GPT-5.x, Gemini, and Harmony, with source-credibility notes verified 2026-07-11.
+**smith-xml**: XML tag standards for runtime prompts. Use when constructing a prompt that mixes instructions with embedded data, such as a subagent prompt.
 
-**smith-placeholder**: Placeholder syntax standard — guillemets «token» in every context. Use when writing prompts, documentation, usage strings, or any content with user-substitutable values.
+**smith-placeholder**: Placeholder syntax standard («token»). Use when writing prompts, documentation, templates or examples with a value the reader must substitute.
 
-**smith-design**: SOLID principles and architecture design patterns. Use when starting new features, refactoring code, conducting architecture reviews, or applying object-oriented design principles.
+**smith-design**: Architecture and type design principles. Use when designing or reviewing an architecture, refactoring a module or class, or reviewing the design of a type.
 
 ### Tools & Integration
 
-**smith-tools**: Tool configurations for IDEs, MCP integrations, and development tools. Use when configuring IDE settings, MCP tools, or pytest. Covers conditional tool activation, configuration hierarchy, and synchronization patterns.
+**smith-tools**: Tool configuration standards. Use when configuring an IDE, an MCP server, a plugin marketplace or pytest.
 
-**smith-ide**: IDE path variable mappings for VS Code, Cursor, Kiro, and JetBrains. Use when writing or editing IDE config files or using path variables. Covers variable translation between conceptual and IDE-specific syntax.
+**smith-ide**: IDE path variable mappings. Use when editing IDE config files (.vscode/, .kiro/, .cursor/) or translating path variables between IDEs.
 
-**smith-serena**: Serena MCP integration for file I/O, semantic code editing, and persistent memory. ALWAYS use Serena for file operations and language server features when available. Proactively sync memories at phase/todo/session boundaries.
+**smith-serena**: Serena MCP integration. ALWAYS load before any Serena tool call or memory write. Use when a prompt mentions Serena, and at phase and session boundaries to sync memories.
 
-**smith-mcp-browser**: Browser MCP plugin reliability for chrome-devtools-mcp and @playwright/mcp. Take each server's own default browser — both resolve to Chrome's stable channel — and set no browser override at all; launching Vivaldi/Brave/Arc/Opera/Edge is forbidden, though attaching to an already-running one over the Chrome DevTools Protocol (CDP) is the documented escape hatch. Use when invoking chrome-devtools-mcp or Playwright MCP tools, editing .mcp.json / settings.json, triaging browser MCP launch failures, or when a site needs an interactive login the user must complete.
+**smith-mcp-browser**: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when a browser launch fails, or when a site needs a user login.
 
-**smith-slack**: Slack message/reply drafting discipline — a hard pre-send checklist (draft-not-send, attribution footnote, evidence URLs, no formatting, confirm-before-send). Use when drafting or replying in Slack, invoking any slack_send_message* / slack_* MCP tool, or running a /slack:* command.
+**smith-slack**: Slack drafting discipline (draft, never send). Use when drafting or replying to a Slack message, calling any slack_* MCP tool, or running a /slack command.
 
 ### Testing & Quality
 
-**smith-tests**: Testing standards and TDD workflow. Use when writing tests, running test suites, implementing TDD, or organizing test files. Covers unit vs integration test separation, pytest patterns, and test-driven development methodology.
+**smith-tests**: Testing standards and test-driven development (TDD). Use when writing or running tests, fixing a bug with a failing test first, or organizing test files.
 
-**smith-postmortem**: Incident postmortem methodology and templates. Use when conducting incident postmortems, writing postmortem reports, establishing postmortem processes, or performing post-incident analysis.
+**smith-postmortem**: Incident postmortem methodology and templates. Use when conducting a postmortem, writing an incident report, or analysing an outage.
 
-**smith-clarity**: Cognitive trap detection and logic fallacy identification. Use when making decisions, evaluating approaches, risk assessment, or detecting faulty reasoning in arguments.
+**smith-clarity**: Cognitive trap and logical fallacy detection. Use when making or reviewing a decision, comparing approaches, or checking an argument for faulty reasoning.
 
 ### System & Configuration
 
-**smith-settings**: Claude Code settings files — which config lives where (user / project / project-local / managed, and their precedence) plus a runnable convention-validator hook recipe that blocks actions violating repo rules. Use when editing settings.json or .claude config, deciding which scope a key belongs in, or building a hook that enforces a convention (commit/branch/file rules). For hooks internals see smith-ctx-claude; for permissions/auto-mode see smith-ctx-claude-mode-auto.
+**smith-settings**: Claude Code settings files and scopes. Use when editing settings.json or .claude config, choosing the scope for a key, or building a hook that enforces a convention.
 
-**smith-ctx-claude-mode-auto**: Claude Code auto mode classifier — what gets blocked, how to recover from a denial without silently retrying, and where to configure trusted infrastructure. Use when the agent invokes a classifier-sensitive action (push, deploy, external-content duplication), when a prior turn ended in "auto mode classifier" denial, or when the user mentions auto mode / `defaultMode` / `hard_deny`.
+**smith-ctx-claude-mode-auto**: Claude Code auto mode classifier. Use when an auto-mode denial appeared, before a classifier-sensitive action (force push, production deploy), or when the user mentions auto mode.
 
-**smith-checkpoint**: Memory checkpoint — save the current session's durable state into both memory systems (Serena memory, Basic-Memory note) in their required formats. Invoke with /smith-checkpoint.
+**smith-checkpoint**: Memory checkpoint to Serena and Basic-Memory. Use when the user runs /smith-checkpoint, asks to save or hand off session state, and before recommending /clear.
 
-**smith-tickets**: Ticket creation by convention — create Jira issues/sub-tasks in Job Story form, Japanese description, under the correct parent Epic, after reading the relevant context. Invoke with /smith-tickets.
+**smith-tickets**: Ticket creation by convention. Use when the user runs /smith-tickets or asks to create, file, split or draft tickets, issues, stories or sub-tasks.
 
-**smith-research**: Proactive research protocol for version queries, APIs, and best practices. Use when answering questions about library versions, API documentation, or technology assessments. Covers research triggers, source citation, and confidence indicators.
+**smith-research**: Proactive research protocol. Use when a question involves library or tool versions, API or CLI behaviour, or current best practices, and before recommending an external dependency.
 
 **local-guard-secret**: Local-only leak guard for the PUBLIC smith repo — scan staged diff, commit message, branch name, and PR title against the gitignored denylist of internal tokens (Jira keys, codenames, internal services) before any commit/push. Use when committing/pushing in the smith repo, editing a SKILL.md/AGENTS.md, writing a commit message or PR title, or when the user mentions a leak, a Jira key, or internal project names.
 

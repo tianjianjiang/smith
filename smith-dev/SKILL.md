@@ -1,13 +1,11 @@
 ---
 name: smith-dev
-description: Development workflow standards and code quality
+description: Development workflow standards and quality gates. Use when starting any task that modifies repository files (implement, fix, add, refactor) or running quality checks.
 ---
 
 # Development Workflow Standards
 
 **Scope:** Development workflow standards and code quality requirements
-**Load if:** Starting any task that modifies repo files (implement, fix, add,
-refactor, harden) or initializing a new project
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 This document defines development workflow standards and code quality requirements.

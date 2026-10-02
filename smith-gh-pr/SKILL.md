@@ -1,11 +1,10 @@
 ---
 name: smith-gh-pr
-description: GitHub PR workflows
+description: GitHub pull request workflows. Use when creating, updating, reviewing or merging a pull request (PR), replying to review comments, or working on stacked PRs.
 ---
 
 # GitHub PR Workflows
 
-**Load if:** Creating PRs, replying to review comments, fetching PR threads, merging
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-git/SKILL.md`
 
 ## CRITICAL

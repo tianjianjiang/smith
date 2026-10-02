@@ -1,12 +1,11 @@
 ---
 name: smith-dialectic
-description: Socratic interview that stress-tests a plan
+description: Socratic interview that stress-tests a plan. Use when the user asks to grill, challenge, interrogate or stress-test a plan, to play devil's advocate, or wants shared understanding before implementing.
 ---
 
 # Socratic Plan Interview
 
 **Scope:** Relentless Socratic questioning of user's plan against project docs and code
-**Load if:** User requests plan challenge, stress-test, dialectic, or "grill"
 **Prerequisites:** @smith-guidance/SKILL.md (Questioning Techniques, Anti-Sycophancy)
 **Based on:** [mattpocock/skills grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md)
 

@@ -1,11 +1,10 @@
 ---
 name: smith-research
-description: Proactive research protocol
+description: Proactive research protocol. Use when a question involves library or tool versions, API or CLI behaviour, or current best practices, and before recommending an external dependency.
 ---
 
 # Proactive Research Protocol
 
-**Load if:** Queries about versions, APIs, libraries, best practices
 **Prerequisites:** @smith-guidance/SKILL.md
 
 ## CRITICAL: Mandatory Research Triggers

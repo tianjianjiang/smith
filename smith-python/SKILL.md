@@ -1,11 +1,10 @@
 ---
 name: smith-python
-description: Python development
+description: Python development with uv, pytest and ruff. Use when writing or running Python code, managing packages with uv or Poetry, or running pytest.
 ---
 
 # Python Development Standards
 
-**Load if:** Python code, pytest, virtual env
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 ## CRITICAL

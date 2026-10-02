@@ -1,0 +1,23 @@
+{"skill": "smith-prompts", "should_trigger": [
+"Our system prompt in prompts/support_agent.py puts today's date and the user's last five tickets at the very top, then 3k tokens of policy text. Cache hit rate is around 10%. Reorder it so the prefix actually gets cached.",
+"the tools array in agent/client.ts is built from a Set so the order changes between requests. is that hurting prompt cache hits? fix it if so",
+"Write the system prompt for a triage bot that classifies incoming bug reports. Lay it out so the fixed rules are cacheable and the per-request report goes last.",
+"Restructure our AGENTS.md so the stable rules sit above a cache breakpoint and the frequently edited code examples sit below it.",
+"I need the model to return an invoice extraction as JSON with vendor, line items and totals. Design the schema: which fields are required, how deep the nesting should be, and add descriptions where the field is not obvious.",
+"We call three different LLM providers from llm/router.py and each needs to return the same structured result. What mechanism should each one use to guarantee schema-conforming output, and where do we need retries?",
+"The extraction schema in schemas/contract.json nests five levels deep and the model keeps dropping inner fields. Flatten it and mark which fields are optional.",
+"This prompt template loads the entire 4,000-line API reference on every call. Redesign it so only metadata is loaded up front and the full details come in when a section is actually needed.",
+"where should i put cache breakpoints in a 6k-token prompt that has rules, tool definitions, project docs, then the conversation? and how long does a block need to be to be cacheable?",
+"Our eval harness prompt has a big Markdown table of rules in the static section plus a 'last updated' timestamp in the header. Clean it up for token efficiency and cache stability."
+], "should_not_trigger": [
+"Wrap the examples and the document in my runtime prompt in XML tags and tell me what tag names to use.",
+"Write the SKILL.md frontmatter description for a new skill about database migrations so it triggers reliably.",
+"Context is at 55% in this Claude Code session. What should I keep before I run /clear?",
+"Spawn a subagent to search the repo for every caller of send_invoice and write its prompt with the return format you need.",
+"Add a Redis cache in front of the pricing endpoint with a 60 second TTL and cache-busting on price updates.",
+"My template uses {{user_name}} in some places and <USER_NAME> in others. Which placeholder syntax should I standardize on in the docs?",
+"Validate the incoming webhook payload against a JSON Schema in the Express handler and return 422 with the failing paths.",
+"Is the claim in this prompt-tuning writeup sound? They changed the prompt and the temperature at the same time and credit the prompt for the accuracy gain.",
+"Set up a scheduled job that re-runs our prompt regression suite every night at 02:00.",
+"Generate TypeScript types from the OpenAPI spec in api/openapi.yaml and wire them into the fetch client."
+]}

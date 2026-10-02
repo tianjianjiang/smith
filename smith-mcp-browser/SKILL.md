@@ -1,12 +1,11 @@
 ---
 name: smith-mcp-browser
-description: Browser MCP plugin reliability
+description: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when a browser launch fails, or when a site needs a user login.
 ---
 
 # Browser MCP Plugin Reliability
 
 **Scope:** chrome-devtools-mcp (`mcp__plugin_chrome-devtools-mcp_chrome-devtools__*`) and Playwright MCP (`mcp__plugin_playwright_playwright__*`)
-**Load if:** About to call any browser MCP tool, editing `.mcp.json` / `~/.claude/settings.json` for these plugins, or triaging a browser-launch failure
 **Prerequisites:** `@smith-tools/SKILL.md`
 
 ## CRITICAL: Browser Selection

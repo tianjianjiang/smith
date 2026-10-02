@@ -1,0 +1,27 @@
+{
+  "skill": "smith-xml",
+  "should_trigger": [
+    "I'm assembling the system message for our summarisation worker in prompts/build.py. It concatenates the rules, the retrieved documents and the user request. Wrap each part in tags so the model can tell instructions from data.",
+    "which tags should I use to separate the task, background info and few-shot examples in a prompt that has to work on Claude, GPT and Gemini alike?",
+    "This prompt template has a `<forbidden>` block listing five things the model must never do. Is that the right way to express prohibitions in a runtime prompt, or should it be structured differently?",
+    "The prompt I'm sending to a helper agent has sections tagged `<type>`, `<scope>` and `<stuff_to_know>`. Clean up the tag names.",
+    "We're porting our tagged prompt from a GPT-5.2-era template to the current GPT model. It uses `<output_verbosity_spec>` and `<user_updates_spec>`. Do those tags still apply?",
+    "For a Gemini prompt, are `<rules>` and `<planning_process>` officially documented tags, or should I stick to something else? I want to note the source in the template comments.",
+    "The bullets inside my `<required>` block show up as literal dashes and asterisks when the prompt file is rendered as Markdown. What's wrong with the formatting?",
+    "In this assembled prompt, should the retry policy explanation go in the mandatory-rules block or in the background block? The model keeps treating background notes as hard rules.",
+    "We run an open-weight model that uses the Harmony response format. Can I keep my `<instructions>` and `<context>` tags inside the `<|start|>` / `<|message|>` tokens in the prompt builder?",
+    "My few-shot section puts the good and the bad sample answers together inside one `<examples>` tag, with slots written as `<customer_name>`. Restructure it for the runtime prompt."
+  ],
+  "should_not_trigger": [
+    "Rewrite the body of our deploy skill file: it currently wraps every section in XML-style tags and I want it in the normal structure for skill files.",
+    "Parse the SOAP response in clients/tax_service.py with lxml and pull out every `<LineItem>` element, handling the default namespace correctly.",
+    "The prompt for the classification step is too vague and the model over-explains. Tighten the wording, add a role and decide whether it needs chain-of-thought.",
+    "In docs/api-guide.md, what syntax should I use for a fill-in value in the curl examples, like the account id the reader has to substitute?",
+    "Our sitemap.xml fails validation with `Element 'lastmod': not a valid value of the atomic type`. Fix the generator in scripts/sitemap.ts.",
+    "Add an `<available_tools>` section to the pom.xml? No wait, I mean add the shade plugin to pom.xml so the jar bundles its dependencies.",
+    "Write the spawn prompt for a read-only investigator agent that looks for the source of the memory leak; what must the prompt contain so the spawn isn't blocked?",
+    "JSX error in components/Banner.tsx: `Adjacent JSX elements must be wrapped in an enclosing tag`. Fix it without adding an extra div to the DOM.",
+    "Make the model return strict JSON matching schemas/ticket.json instead of free text. Should I use structured outputs or a tool definition for that?",
+    "Convert the Android layout res/layout/activity_main.xml from nested LinearLayouts to a single ConstraintLayout."
+  ]
+}

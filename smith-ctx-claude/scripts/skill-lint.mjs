@@ -19,8 +19,8 @@ const PLACEHOLDER = /«[^»]*»/g;
 const QUOTED_VALUE = /^(["'])(.*)\1$/;
 const BLOCK_SCALAR_MARKER = /^[>|][+-]?$/;
 const INDENTED_LINE = /^\s/;
-const INDENTED_TEXT = /^\s+\S/;
 const NON_TICKET_PREFIXES = "ADR|ISO|UTF|SHA|RFC|GPT";
+const WHEN_TO_USE = /\buse (?:when|whenever|before|first|for)\b/i;
 
 const CONTENT_RULES = [
   {
@@ -71,6 +71,15 @@ function unquoted(value) {
   return quoted ? quoted[2] : value;
 }
 
+function indentedTextBelow(frontmatter, index) {
+  const below = frontmatter.slice(index + 1);
+  const end = below.findIndex((line) => line.trim() !== "" && !INDENTED_LINE.test(line));
+  return (end === -1 ? below : below.slice(0, end))
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 function frontmatterFindings(lines, skillDirectoryName) {
   if (lines[0] !== "---") return [frontmatterFinding("file does not open with ---")];
   const closing = lines.indexOf("---", 1);
@@ -81,17 +90,23 @@ function frontmatterFindings(lines, skillDirectoryName) {
     const separator = line.indexOf(":");
     if (separator <= 0 || INDENTED_LINE.test(line)) return;
     const value = unquoted(line.slice(separator + 1).trim());
-    const lineBelow = frontmatter[index + 1] || "";
-    const textIsBelow = value === "" || BLOCK_SCALAR_MARKER.test(value);
-    const textBelow = INDENTED_TEXT.test(lineBelow) ? lineBelow.trim() : "";
-    fields.set(line.slice(0, separator).trim(), textIsBelow ? textBelow : value);
+    const textBelow = indentedTextBelow(frontmatter, index);
+    const fieldValue = BLOCK_SCALAR_MARKER.test(value)
+      ? textBelow
+      : [value, textBelow].filter(Boolean).join(" ");
+    fields.set(line.slice(0, separator).trim(), fieldValue);
   });
   const findings = [];
   if (fields.get("name") !== skillDirectoryName) {
     findings.push(frontmatterFinding(`name must be ${skillDirectoryName}`));
   }
-  if (!fields.get("description")) {
+  const description = fields.get("description");
+  if (!description) {
     findings.push(frontmatterFinding("description is missing or empty"));
+  } else if (!WHEN_TO_USE.test(description)) {
+    findings.push(
+      frontmatterFinding('description does not say when to use the skill ("Use when …")'),
+    );
   }
   return findings;
 }
@@ -225,10 +240,11 @@ function runAsHook() {
   const findings = hookFindings(input);
   if (findings.length === 0) return;
   const reason =
-    "skill-lint: a skill file opens with valid frontmatter, closes every code fence, and " +
-    "holds no calendar date, work status, incident or history account, and no " +
-    "pull-request, issue, commit or ticket reference. Keep the rule and the URL or path " +
-    "of its source; move the rest to a document under references/.\n" +
+    "skill-lint: a skill file opens with valid frontmatter whose description says when to " +
+    "use the skill, closes every code fence, and holds no calendar date, work status, " +
+    "incident or history account, and no pull-request, issue, commit or ticket reference. " +
+    "Keep the rule and the URL or path of its source; move the rest to a document under " +
+    "references/.\n" +
     findings.join("\n");
   process.stdout.write(JSON.stringify({ decision: "block", reason }) + "\n");
 }

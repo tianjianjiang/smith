@@ -1,0 +1,23 @@
+{"skill": "smith-recon", "should_trigger": [
+"Resume my work thread on the rate limiter rewrite: pull the tracker issue, any open stacked PRs, the design doc and chat mentions, then brief me on where I left off.",
+"I've been away for two weeks. Gather everything about the search relevance regression from wherever it was discussed - tickets, chat, PRs, my notes - and give me a brief with links for every claim.",
+"what do we actually know about why the nightly export job was moved to the new scheduler? dig through the sources and reconcile them, flag anything that contradicts",
+"Investigate the history of the decision to drop the v1 webhooks API. I'm not sure which places it was discussed in, so check with me on which sources to sweep before you start.",
+"Hydrate context on the tenant isolation work before we start today. Past session transcripts and the memory notes probably have most of it, but ask me what else to include.",
+"Put together an evidence-linked brief on the state of the payments reconciliation project. Keep it cheap: no big fleet of subagents, a handful of targeted reads per source.",
+"Sweep my old conversation logs for every time the embedding cache bug came up and tell me how many sessions mention it out of how many scanned, then cross-check against the ticket and the PR.",
+"The wiki page and the chat thread disagree about who owns the ingestion pipeline alerts. Look across the tracker, docs and chat, work out which is right, and mark what you could not verify.",
+"brief me on the onboarding flow redesign from tickets + docs + the repo. say explicitly which sources you skipped and why",
+"I need a multi-source rundown on the flaky deploy problem: what the issue tracker says, what the PRs changed, what was said in chat. Try to break each finding before you report it."
+], "should_not_trigger": [
+"What's the latest version of the redis client on npm and did the connection API change in the last major?",
+"Find where the retry policy is defined in this repo and list the callers.",
+"Write the postmortem for Tuesday's outage with a timeline and action items; I'll paste the facts.",
+"Save a checkpoint of the current session to memory before I clear context.",
+"Search the chat workspace for the message where someone posted the staging database URL last week.",
+"Create a ticket for the pagination bug following our ticket conventions.",
+"Summarize the unresolved review threads on PR 231 and tell me which ones are from the bot reviewer.",
+"Here's my hypothesis for the memory leak: the listener is never removed. Design an experiment that could falsify it.",
+"Should we use a message queue or a cron job for the invoice emails? Give me a recommendation with trade-offs.",
+"Draft a reply in the incident thread saying the fix is deployed and what we verified."
+]}

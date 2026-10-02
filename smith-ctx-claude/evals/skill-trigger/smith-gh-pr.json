@@ -1,0 +1,27 @@
+{
+  "skill": "smith-gh-pr",
+  "should_trigger": [
+    "Open a pull request for feat/bulk-upload against main.",
+    "The review bot left 14 comments on PR 318 including a bunch of nitpicks. Go through all of them, fix what makes sense, and respond on each thread.",
+    "A human reviewer asked on PR 205 why I kept the retry wrapper in client.py. Answer them.",
+    "I'm reviewing PR 96 for a teammate. Line 57 of utils/slug.py should use casefold() instead of lower() — post that as a review comment.",
+    "PR 140 is approved and CI is green. merge it and clean up afterwards",
+    "I have three PRs chained: schema -> api -> ui. The schema one is approved. Merge it without breaking the two on top.",
+    "PR 512 is 9 commits behind its base and has no conflicts. Update it.",
+    "Should I run the cloud deep review on this 2,000-line auth rewrite before merging, or is the normal /review enough? What does it cost?",
+    "I'm about to close my laptop. Can the review comments and CI failures on PR 77 get fixed automatically while I'm away? The repo has a workflow that runs terraform apply when someone comments on a PR.",
+    "gh stack view says this branch is 'not part of a stack' in this worktree, but the PR page shows it in a stack of four. I need to rebase the stack."
+  ],
+  "should_not_trigger": [
+    "Which reviewer can actually approve changes under services/payments/ according to CODEOWNERS?",
+    "Run a multi-round review of my uncommitted local changes with every review tool we have, before anything is pushed.",
+    "Sign the last commit with my GPG key; it was committed unsigned.",
+    "File a bug ticket for the pagination off-by-one, with reproduction steps.",
+    "Draft a Slack message to the team channel announcing that the importer PR is ready for review.",
+    "The CI job 'integration' in .github/workflows/test.yml times out after 6 hours. Find out why and fix the workflow.",
+    "Create a worktree for the hotfix branch so I don't disturb my current checkout.",
+    "Use git bisect to find which commit broke the date parser test.",
+    "Write the changelog entry and release notes for version 2.4.0 from the commits since the last tag.",
+    "Cherry-pick commit a1b2c3d from the release branch onto my feature branch and resolve the conflict in settings.py."
+  ]
+}

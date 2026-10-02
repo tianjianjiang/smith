@@ -1,0 +1,27 @@
+{
+  "skill": "smith-worktree",
+  "should_trigger": [
+    "Claude Code just refused my Edit in a background session and told me to enter a worktree first. I only need to change one line in README.md. Can you get around it?",
+    "Start an isolated worktree for the pagination refactor. I have two unpushed commits on local main that the work needs to build on.",
+    "`gh pr merge 412 --squash --delete-branch` printed `fatal: 'main' is already used by worktree at ...` and exited 1. Did the merge go through, and what do I clean up now?",
+    "after the squash merge `git branch -d feat/retry-backoff` says the branch is not fully merged. is it safe to delete?",
+    "Inside this Claude Code worktree session every git command is refused with 'cannot be shown not to be git', even plain `git status`. I have a command-rewriting proxy hook installed. How do I fix this properly?",
+    "My gitignored personal skills under .claude/skills/ and my CLAUDE.local.md vanish whenever Claude Code creates a worktree for this repo. How do I get them to show up there?",
+    "EnterWorktree keeps getting blocked because the checkout is dirty, but `git status` only shows the untracked `.worktreeinclude` file I just added.",
+    "For this one repo I want background sessions in Claude Code to edit the working copy in place so I can evaluate changes directly. Where do I set that, repo or user level?",
+    "I'm done with the spike in the Claude Code worktree and don't want to keep any of it. Leave the worktree and throw the branch away; there are a couple of uncommitted files in it.",
+    "You created the worktree with the built-in tool and the branch came out as `worktree-fix-login`. Get it ready to push, then stage the changes; note that `.env` and `node_modules` in there are symlinks."
+  ],
+  "should_not_trigger": [
+    "Rebase my feature branch onto the latest main and resolve the conflict in package-lock.json, then force-push safely.",
+    "Explain how `git worktree add` differs from cloning the repo twice, and when `git worktree prune` is needed. No agent tooling involved, just plain git.",
+    "My stacked PRs are out of order after the bottom one merged. Retarget the remaining ones and update their bases.",
+    "Spin up three helper agents to read through the logging, metrics and tracing packages and report where the correlation id gets lost. Read-only is fine.",
+    "Add a permission rule to .claude/settings.json so `pnpm test` and `pnpm lint` never prompt, and register a Stop hook that prints the context usage.",
+    "What should I name the branch for the work on the audit-log export, and what's the commit message format?",
+    "git says `fatal: not a git repository` inside the docker build stage. The Dockerfile copies only src/ before running the version script. Fix the build.",
+    "Clean up all my local branches whose upstream is gone. There are about thirty of them from old pull requests.",
+    "Serena's `find_symbol` returns nothing for `InvoiceService` although the class exists in src/billing/invoice.ts. Is the project onboarded correctly?",
+    "Push this branch and open a pull request against develop with the usual description template."
+  ]
+}

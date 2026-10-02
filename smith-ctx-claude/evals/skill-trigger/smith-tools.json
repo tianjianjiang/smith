@@ -1,0 +1,27 @@
+{
+  "skill": "smith-tools",
+  "should_trigger": [
+    "`claude mcp add docs-server --transport stdio npx -y docs-mcp` fails with a flag conflict. What's the right way to write that command?",
+    "add the database MCP server so the whole team gets it when they clone the repo, not just me",
+    "One of my MCP servers keeps returning error -32000 on every call. What does that code mean and how do I recover?",
+    "My MCP server takes about 15 seconds to boot and Claude Code gives up on it at startup. Also its tool results get cut off with a warning about output size. Which settings control those?",
+    "In .mcp.json I reference `${CLAUDE_PROJECT_DIR}/tools/server.py` as the command argument and the server fails to start with a path error. Why isn't the variable expanding?",
+    "I want to publish our internal lint-and-review plugin through our own marketplace repo. Lay out the marketplace.json and plugin.json I need, and tell me how versioning affects when users get updates.",
+    "A colleague sent me a third-party plugin from a repo I've never heard of. What should I look at before I enable it?",
+    "WebFetch returned an empty body for the single-page docs site, and for another URL it just handed me back a redirect link instead of content. What's going on and what do I do next?",
+    "Set up the workspace settings for this repo so the editor config is the same whether someone opens it in VS Code, Cursor or Kiro. Where does each one keep its settings file?",
+    "should I be pulling library docs through the documentation MCP for every import in this file? half of them are stdlib and the rest are already used all over the codebase"
+  ],
+  "should_not_trigger": [
+    "Add a PreToolUse hook to ~/.claude/settings.json that blocks `rm -rf` in Bash commands, and allow `npm test` without a permission prompt.",
+    "The browser MCP keeps attaching to the wrong Chrome profile and the page snapshot comes back stale after navigation. How do I make it reliable?",
+    "In Cursor the rule file uses `${workspaceFolder}` but the same path in Kiro needs a different variable. What's the mapping between the two?",
+    "Use Serena to rename the `fetchUser` symbol across the repo and save a memory about the new naming convention.",
+    "Build me a small MCP server in TypeScript that exposes a `search_orders` tool backed by our orders API.",
+    "Write a new skill for our deploy procedure: what goes in the frontmatter and how long can the body be?",
+    "Configure ruff and mypy in pyproject.toml for the ingestion package, with line length 100 and strict optional checks.",
+    "Kiro summarised my session at 80 percent and lost the plan. How do I persist it across sessions on that platform?",
+    "Rebind ctrl+s in Claude Code to submit the prompt and add a chord for toggling plan mode.",
+    "The tool-calling loop in our agent sends the wrong JSON schema for the `lookup_customer` tool and the model never calls it. Fix the tool definition in agent/tools.py."
+  ]
+}

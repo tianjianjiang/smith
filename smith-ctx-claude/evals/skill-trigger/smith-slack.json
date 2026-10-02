@@ -1,0 +1,23 @@
+{"skill": "smith-slack", "should_trigger": [
+"Draft a Slack message to the platform channel announcing that the migration PR is ready for review. Link the PR and the tracking issue.",
+"reply in the slack thread where the infra lead asked about the retry storm; say the fix is merged and point to the PR",
+"Tell the data team on Slack that the nightly export moved to 02:00 and mention the two on-call engineers so they actually get pinged.",
+"Here's my Slack draft, it has **bold** headings, a code block and markdown [links](url). Clean it up so it reads right in Slack before I post it.",
+"Just DM the release manager on Slack that the build is green, no need for a channel post.",
+"Write a follow-up in Slack about the cache incident. I'm not sure whether it should go in the existing thread or as a new top-level post in the channel.",
+"Someone in the backend channel asked why the p95 latency regressed. Read the thread, pull the relevant PR and dashboard notes, and prepare an answer that quotes their question.",
+"send a slack update to the team channel: staging deploy done, three PRs merged, one issue still open",
+"The draft you made opens with 'Thanks for the quick review and for flagging this!' and repeats what the thread already says. Tighten it into something a colleague would actually write.",
+"Use the Slack MCP tools to post a summary of today's eval results in the project channel, with links to each trace and the results page."
+], "should_not_trigger": [
+"Scaffold a new Slack app with the Slack CLI using the Bolt for Python template and run it locally.",
+"Build a Block Kit modal with a date picker and a multi-select for the incident form; validate the JSON.",
+"which Slack Web API method lists channel members and what scopes does it need? I'm getting missing_scope",
+"Add a step to .github/workflows/deploy.yml that calls our Slack incoming webhook when the deploy job fails.",
+"Write the PR description for the retry-budget change and reply to the reviewer's comment on line 88.",
+"Create a ticket for the flaky export job, following the repo's ticket conventions.",
+"Draft an email to the vendor's support desk about the expired TLS certificate on their sandbox endpoint.",
+"Our bot in services/notifier/slack_client.py gets rate limited with HTTP 429. Add Retry-After handling and a unit test.",
+"Write up the incident from Tuesday as a postmortem document with timeline and action items.",
+"Write the commit message for the staged change and include the AI attribution trailer in the right format."
+]}

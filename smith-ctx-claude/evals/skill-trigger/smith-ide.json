@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ide",
+  "should_trigger": [
+    "Add a Python debug entry to .vscode/launch.json that runs src/billing/main.py. The cwd and the PYTHONPATH must point at the workspace root without hardcoding /Users/me/code/billing.",
+    "our README says scripts live under $WORKSPACE_ROOT/tools. what do I write for that in a PyCharm run configuration so it works on every teammate's machine?",
+    "port .vscode/tasks.json to JetBrains run configurations under .idea/runConfigurations/. the tasks use ${workspaceFolder} and ${userHome} all over, translate those properly",
+    "In .kiro/settings/mcp.json the server command is /Users/dev/projects/api/scripts/start-mcp.sh. Replace the absolute path with the right variable so the config is portable across checkouts.",
+    "This is a multi-root workspace with folders named frontend and backend. In .vscode/settings.json, python.defaultInterpreterPath has to point at the backend folder's .venv, but ${workspaceFolder} resolves to the wrong root. Fix it.",
+    "docs/setup.md currently tells people to set the path to ${workspaceFolder}/config, which only makes sense in VS Code. Rewrite that section so it is editor-neutral and add a short table showing what to type in VS Code and in IntelliJ.",
+    "need the repo root (four levels above the workspace folder in our monorepo) inside .vscode/settings.json for the eslint working directory. how do I reference it without an absolute path",
+    "The token for the local package registry is pasted in plain text in .vscode/settings.json under terminal.integrated.env.osx. Change it to read from an environment variable using the editor's substitution syntax.",
+    "We have half the team on Cursor and half on PyCharm. I want one way of pointing both at the shared lint config in the home directory; write the settings entry for each editor and tell me which approach survives both.",
+    "what's the JetBrains equivalent of ${userHome} and where in the IDE settings do I define a custom path macro for the monorepo root?"
+  ],
+  "should_not_trigger": [
+    "Rename src/utils/HelperFunctions.ts and the tests folder to match our file naming convention, and tell me whether directories should be kebab-case or snake_case.",
+    "add editor.formatOnSave and a 100 column ruler to .vscode/settings.json for the python files",
+    "In Cursor my chat context keeps filling up halfway through a refactor. What is the threshold where I should summarize, and what should I keep?",
+    "Configure ruff and pyright in pyproject.toml so that the editor and the pre-commit hook report the same errors.",
+    "the serena MCP server in .kiro/settings/mcp.json fails to start with 'spawn uvx ENOENT'. figure out why the server will not launch",
+    "Write a bash script scripts/bootstrap.sh that resolves the repository root with git rev-parse and exports it as REPO_ROOT for the other scripts.",
+    "Add a permissions allow entry for npm test in the project .claude/settings.json and explain the difference to settings.local.json.",
+    "kiro's terminal hangs whenever you run echo with double quotes. generate the fixture file some other way",
+    "In docs/cli.md, the usage line shows deploy.sh <env> [region]. Rewrite the argument markers so they follow our documentation standard for substitutable values.",
+    "tsconfig.json paths: map @billing/* to packages/billing/src/* and make vitest resolve the same alias"
+  ]
+}

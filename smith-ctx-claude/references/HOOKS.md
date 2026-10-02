@@ -24,7 +24,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
 | `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) |
 | `coderabbit-status-check.mjs` | PostToolUse (`Bash`) | Advisory: validate CodeRabbit `--agent` output before trusting it |
-| `skill-lint.mjs --hook` | PostToolUse (`Edit\|Write\|mcp__(plugin_serena_)?serena__.*`) | After a write to a `SKILL.md`: reports broken frontmatter, an unclosed fence or point-in-time content for the agent to fix |
+| `skill-lint.mjs --hook` | PostToolUse (`Edit\|Write\|mcp__(plugin_serena_)?serena__.*`) | After a write to a `SKILL.md`: reports broken frontmatter, a description with no when-to-use clause, an unclosed fence or point-in-time content for the agent to fix |
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
 | `stack-merge-guard.mjs` | PreToolUse (`Bash`) | Asks before `gh pr merge --delete-branch` orphans an open child PR |
 | `amend-shared-commit-guard.mjs` | PreToolUse (`Bash`) | Asks before `git commit --amend` rewrites a parent branch's tip |
@@ -219,7 +219,10 @@ never blocks (a script cannot tell a meaningless code from a meaningful one).
 
 **skill-lint** (`smith-ctx-claude/scripts/skill-lint.mjs`) checks skill files
 against the rule that a `SKILL.md` holds no point-in-time content (decision
-ADR-004 in `smith-ctx-claude/references/design.md`). It runs two ways:
+ADR-004 in `smith-ctx-claude/references/design.md`) and the rule that its
+frontmatter `description` says when to use the skill (decision ADR-003): a
+description passes when it holds "use when", "use whenever", "use before",
+"use first" or "use for", in any letter case. It runs two ways:
 
 - As a command, `node smith-ctx-claude/scripts/skill-lint.mjs [file ...]`
   lints the given files or, when none is given, the `SKILL.md` of the

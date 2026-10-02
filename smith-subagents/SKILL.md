@@ -1,15 +1,12 @@
 ---
 name: smith-subagents
-description: Subagent spawning and return discipline
+description: Subagent spawning and return discipline. Use when about to spawn an Agent or Task subagent, delegate an investigation, or act on a subagent's report.
 ---
 
 # Subagent Discipline
 
 **Scope:** Spawning, scoping, and consuming Task/Agent subagents and
 workflow orchestration; what tools to grant and how to trust returns
-**Load if:** About to spawn a subagent, delegate investigation, orchestrate
-parallel agents, OR a subagent will read/modify shared state (PR, issue,
-file, remote)
 **Prerequisites:** @smith-guidance/SKILL.md (delegation + in-band progress),
 @smith-ctx/SKILL.md (context isolation)
 

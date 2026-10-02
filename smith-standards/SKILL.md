@@ -1,12 +1,11 @@
 ---
 name: smith-standards
-description: Universal coding standards
+description: Universal coding standards. Always active. Use when writing code, logs, documentation, commit or pull-request text, or any other output.
 ---
 
 # Universal Coding Standards
 
 **Scope:** Universal coding standards (emoji, comments, acronyms, datetime)
-**Load if:** Always active (universal rules for all development)
 **Prerequisites:** @smith-principles/SKILL.md
 
 ## Universal Code Standards

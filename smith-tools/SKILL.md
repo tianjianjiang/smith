@@ -1,12 +1,11 @@
 ---
 name: smith-tools
-description: Tool configurations
+description: Tool configuration standards. Use when configuring an IDE, an MCP server, a plugin marketplace or pytest.
 ---
 
 # Tool Configurations
 
 **Scope:** Configuration standards for development tools, IDEs, and MCP integrations
-**Load if:** Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR configuring MCP tools
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 ## CRITICAL: Tool Configuration

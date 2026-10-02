@@ -1,12 +1,11 @@
 ---
 name: smith-ctx-kiro
-description: Kiro-specific context management
+description: Kiro platform constraints. Use first in every Kiro session, and when running terminal commands or file operations in Kiro.
 ---
 
 # Kiro Context Management
 
 **Scope:** Kiro-specific context management, terminal limitations, tool preferences
-**Load if:** Using Kiro IDE (ALWAYS load first in Kiro sessions)
 **Prerequisites:** None (this file loads before other rules)
 
 ## CRITICAL: Terminal Limitations

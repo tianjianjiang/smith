@@ -1,6 +1,6 @@
 ---
 name: smith-mode-plan-claude
-description: ExitPlanMode UI pattern
+description: ExitPlanMode pattern for Claude Code. Use when about to call ExitPlanMode, or after the user rejects a plan.
 license: MIT
 metadata:
   author: claude-code-user
@@ -16,7 +16,6 @@ means independent of Claude Code, see `@smith-mode-plan/SKILL.md` "What Plan Mod
 Is (Platform-Neutral)". For context management, auto-resume, and hooks, see
 `@smith-ctx-claude/SKILL.md`.
 
-**Load if:** Using ExitPlanMode in Claude Code plan mode
 **Prerequisites:** `@smith-mode-plan/SKILL.md`, `@smith-ctx-claude/SKILL.md`
 
 ## Explain Before ExitPlanMode

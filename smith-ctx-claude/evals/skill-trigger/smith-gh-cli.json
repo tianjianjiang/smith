@@ -1,0 +1,27 @@
+{
+  "skill": "smith-gh-cli",
+  "should_trigger": [
+    "We have both the GitHub MCP server and gh installed. Which should you use to pull the list of open pull requests for this repo, and why?",
+    "the github mcp call for review comments on PR 412 came back truncated at 25k tokens. get me the rest",
+    "Who is the GitHub user behind the commits authored with the address ops-bot@corp.example in this repo? I need the login to @-mention them.",
+    "I want to request a review on my change to infra/terraform/network.tf from the engineer who wrote most of that file. Will their approval actually satisfy the required-review rule?",
+    "Create a work-in-progress pull request from this branch with gh; I'm not ready for review yet.",
+    "`gh: command not found` when you tried to list issues. What now?",
+    "In the PR description, reference issue 88 so it closes automatically on merge, and mention issue 91 without closing it.",
+    "List the files changed in pull request 230 through the GitHub tools without blowing up the context window — it touches a few hundred files.",
+    "Open a PR with gh for the branch fix/timeout-handling. Make sure it shows up under my assigned PRs.",
+    "Search GitHub for repositories implementing a Raft library in Rust via the MCP search tool, keeping the output as small as possible."
+  ],
+  "should_not_trigger": [
+    "Reply to the reviewer's inline comment on line 42 of handlers.go saying it's fixed, and reference the commit.",
+    "Merge the three stacked pull requests for the importer rewrite from the bottom up.",
+    "Rebase my feature branch onto the latest main and force-push it safely.",
+    "Our GitHub Actions workflow .github/workflows/ci.yml fails at the cache step with 'Cache not found for input keys'. Fix the YAML.",
+    "What should I call the branch for a bug fix to the login redirect?",
+    "File a ticket for the flaky upload test following our ticket conventions.",
+    "aws cli returns paginated results for `aws s3api list-objects-v2`; how do I get every key in one command?",
+    "Write the summary section of the PR body for this diff — what changed and why.",
+    "Edit .github/workflows/release.yml so the publish step reads the registry token from the repository secrets instead of the hardcoded value.",
+    "Poll PR 77 every five minutes and address new review comments as they arrive."
+  ]
+}

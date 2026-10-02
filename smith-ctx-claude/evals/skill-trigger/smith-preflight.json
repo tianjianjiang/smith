@@ -1,0 +1,23 @@
+{"skill": "smith-preflight", "should_trigger": [
+"Before I push this branch, run the read-only go/no-go gate over the change and give me the one-line verdict. Don't fix anything, just tell me whether shipping is allowed.",
+"am i clear to ship? check every invariant and print PASS/FAIL/SKIP/N-A per check, then GO or NO-GO",
+"HEAD is detached after that bisect and I have two modified files in src/billing/. Run the pre-ship checks and tell me whether the branch check passes in this state.",
+"The origin default branch here is release/v2 and I'm on a local branch called v2. Do the ship gate and tell me if that counts as sitting on a protected branch.",
+"Run the pre-push gate. Note we're inside a git worktree and the pre-commit secret scanner exited 0 with no output, so I don't trust it; I need actual evidence that the staged, unstaged and untracked files plus the commits already on the branch were scanned.",
+"gate check please. gh pr view says 'no pull requests found for branch fix/retry-backoff' - does that fail the PR author check or is it a skip?",
+"Do the ship readiness check. gh auth status errors with 'unknown flag: --json' on this machine because gh is old; I want to know how the PR ownership check should be reported.",
+"I just ran /clear and resumed. Run the shipping gate anyway and be explicit about which attested checks you can no longer evidence from this session versus which ones you found proof for in PR comments or commits.",
+"Run the go/no-go gate and include the subagent spawn ledger result. I spawned three agents on this branch earlier and want to know if any of them went through unchecked.",
+"Check whether this change is allowed to ship: did every Slack draft and PR comment I had you write get an explicit yes, were the review findings posted with suggestion blocks, and is the branch okay? Report only, no commits."
+], "should_not_trigger": [
+"Review my current diff until it converges, running every review tool each round and giving me the receipt of which ones ran.",
+"Ship it: branch off main, commit, push, open the PR and merge once the checks are green.",
+"I accidentally committed straight to main. How do I move the last two commits onto a new feature branch without losing them?",
+"Set up a pre-commit hook in .githooks/ that blocks commits containing AWS-style access keys, and point core.hooksPath at it.",
+"gh auth status says I'm not logged into any hosts. Walk me through gh auth login with a fine-grained token.",
+"Post these three review findings on PR 412 as inline comments with committable suggestion blocks.",
+"Write the contract block I should paste into the prompt when I spawn a read-only explorer subagent for the payments module.",
+"CI is red on the lint job for my branch. Pull the failing log with gh run view and fix the ruff errors.",
+"Before merging PR 88, confirm I'm the author and squash-merge it, then fast-forward main locally.",
+"Draft a Slack message to the platform channel announcing that the billing service release is going out this afternoon."
+]}

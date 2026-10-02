@@ -1,13 +1,11 @@
 ---
 name: smith-validation
-description: Hypothesis testing
+description: Hypothesis testing and root cause analysis. Use when debugging, when a bug or test failure is reported, or when verifying a claim before reporting it as fact.
 ---
 
 # Verification Techniques
 
 **Scope:** Hypothesis testing, root cause analysis, and adversarial verification of findings
-**Load if:** Bug reported, test failure, proving correctness, root cause
-analysis, OR any investigation whose findings will be reported as fact
 **Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Based on PDSA's Study phase (Deming) and Popper's Falsification - understanding WHY something works or doesn't, not just IF it works.

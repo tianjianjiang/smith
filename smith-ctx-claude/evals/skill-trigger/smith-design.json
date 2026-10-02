@@ -1,0 +1,27 @@
+{
+  "skill": "smith-design",
+  "should_trigger": [
+    "We're adding a notifications feature (email, SMS, push) to the order service. Before writing code, sketch the module and class structure so adding a fourth channel later doesn't mean editing the existing ones.",
+    "OrderManager in src/orders/manager.py is 1,400 lines and handles validation, pricing, persistence and emailing. Refactor it into sensible pieces.",
+    "Review the architecture of the ingestion package (src/ingest/) and tell me where the boundaries are wrong.",
+    "ReadOnlyRepository extends Repository but throws NotImplementedError from save() and delete(). Callers keep blowing up at runtime. How should this hierarchy be shaped instead?",
+    "our IStorage interface has 14 methods and the in-memory cache implementation stubs out 9 of them. fix the design",
+    "The report generator instantiates PostgresClient directly inside generate(), so I can't swap in the warehouse client or a fake in tests. Restructure it.",
+    "Every time we add an export format we add another elif branch in export_report() in exporters.py. There are seven now. Redesign this so new formats plug in.",
+    "Review the Money type design in src/billing/money.ts — I care about whether it can ever hold an invalid state.",
+    "Starting a new plugin system for the CLI. Propose the core abstractions and which module owns what before I start implementing.",
+    "architecture review pls: the api layer imports straight from the sqlalchemy models and the models import the api's pydantic schemas back. what's the right dependency direction?"
+  ],
+  "should_not_trigger": [
+    "Break down why checkout latency doubled after last week's release; I need a structured list of candidate causes before we dig in.",
+    "What should I name the new files in src/services/? Half the directory is camelCase and half is kebab-case.",
+    "Poke holes in my plan to move the monolith to event sourcing. Ask me questions one at a time until we agree it holds up.",
+    "Add type hints to utils/parsing.py and make mypy --strict pass.",
+    "Set up the spec and plan documents for the new search feature, and start a decision record log for the search subsystem.",
+    "In our Nuxt 3 app, should this data fetch live in a composable or in the page's setup? It's used by two pages.",
+    "Write unit tests for the PaymentGateway interface using a fake implementation.",
+    "Design a system prompt for the support triage agent, including the tool descriptions.",
+    "Is this function violating DRY? The same three lines are in validate_user and validate_admin. Quick yes/no and a one-line fix.",
+    "Write the root-cause section of the incident writeup for Tuesday's queue backlog outage."
+  ]
+}

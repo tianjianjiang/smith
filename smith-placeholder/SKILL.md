@@ -1,12 +1,11 @@
 ---
 name: smith-placeholder
-description: Placeholder syntax standard
+description: Placeholder syntax standard («token»). Use when writing prompts, documentation, templates or examples with a value the reader must substitute.
 ---
 
 # Placeholder Syntax Standards
 
 **Scope:** Placeholder syntax for documentation, prompts, and usage strings
-**Load if:** Writing prompts, documentation, or pattern descriptions
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 A placeholder marks where a reader substitutes a value. The delimiter must not

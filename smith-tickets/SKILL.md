@@ -1,6 +1,6 @@
 ---
 name: smith-tickets
-description: Ticket creation by convention
+description: Ticket creation by convention. Use when the user runs /smith-tickets or asks to create, file, split or draft tickets, issues, stories or sub-tasks.
 metadata:
   argument-hint: "[work to ticket]"
 ---

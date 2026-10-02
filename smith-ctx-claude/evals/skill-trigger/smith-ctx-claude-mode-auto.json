@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ctx-claude-mode-auto",
+  "should_trigger": [
+    "Your last command came back with 'Permission for this action was denied by the Claude Code auto mode classifier'. It was the push to the release branch. What now?",
+    "that's the second time the classifier has blocked you trying to delete the old build artifacts, first with rm and now with find -delete. stop and give me real choices",
+    "I want Claude Code to stop prompting me for every action by default. I put \"defaultMode\": \"auto\" under permissions in the repo's .claude/settings.json and nothing changed. Why?",
+    "Earlier I said 'don't push until I've reviewed'. We've since summarised the conversation. Is that instruction still enforced in auto mode, and how do I make it stick for real?",
+    "just switch to bypassPermissions for a minute to get past the block on the migration command and then switch back",
+    "In auto mode I'm prompted every time I force-with-lease my own feature branch and every time I remove my own worktree. Write the allow rules for my user settings so those stop, without opening up other people's branches.",
+    "Explain the difference between hard_deny, soft_deny and allow under autoMode in ~/.claude/settings.json, the order they apply in, and how I keep the built-in rules while adding my own trusted bucket to the environment list.",
+    "A banner just appeared: the model's safeguards flagged this message and the session switched to another model. It happened right after the detached-checkout rebase and raw-SHA push sequence. What happened and what should you do next?",
+    "Next step in the task is applying the database migration to production and granting the deploy role write access to the bucket. Auto mode is on. Go ahead.",
+    "My subagent definition sets permissionMode: acceptEdits in its frontmatter, but under auto mode it still gets blocked writing to .mcp.json. Why, and should you be editing ~/.claude/settings.json yourself from this project session?"
+  ],
+  "should_not_trigger": [
+    "git push was rejected: 'Updates were rejected because the tip of your current branch is behind'. Rebase onto the remote and push again safely.",
+    "Add a PreToolUse hook to .claude/settings.json that blocks edits while the repo is on its default branch.",
+    "In Claude Code, what is the difference between plan mode and acceptEdits mode, and how do I cycle between them?",
+    "The branch protection on main rejects my merge because a required status check is missing. Fix the workflow so the check reports.",
+    "Our intent classifier in src/nlp/router.py denies too many legitimate requests; retrain it with the new labelled set and report precision and recall.",
+    "Claude Code keeps asking permission for `npm test` and `ls`. Scan my recent transcripts and build a read-only allowlist for the project settings.",
+    "The API returned stop_reason 'refusal' for a user message in our chatbot backend. Add handling so the app shows a fallback reply.",
+    "squash-merge the stacked pull requests bottom-up and retarget the remaining ones",
+    "Claude Code context is at 60% and the stop hook says I must clear. What do I save first?",
+    "Our Kubernetes admission controller is denying the new deployment because of a missing resource limit. Update the manifest in deploy/api.yaml."
+  ]
+}

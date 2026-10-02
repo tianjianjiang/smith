@@ -1,0 +1,27 @@
+{
+  "skill": "smith-guidance",
+  "should_trigger": [
+    "Fix the off-by-one in paginate() in api/pagination.py. That file is a mess, by the way — old dead helpers everywhere.",
+    "make the export faster",
+    "I'm going to store session tokens in localStorage, it's simpler. Just implement it, I don't need a debate.",
+    "The plan looks good, approved. Go ahead and build it.",
+    "You can reach the production config bucket with the credentials on this machine, so just update the feature flag file there to turn on the new checkout.",
+    "Post a comment on the upstream issue explaining our workaround, and send the summary to the team channel too.",
+    "How long will each of these two approaches take — rewriting the parser versus patching the regex? Give me numbers.",
+    "You said the audit of the 400 log files found nothing, but you only opened about 30 of them. Is that finished or not?",
+    "Run the dependency upgrade across all twelve service branches. This will run in the background while I'm in meetings, so I'll only read your messages afterwards.",
+    "The schema validator tool failed, then your fallback script failed too. What's your next move? Also, earlier you said the new CLI flag is supported in the version we run — where did that come from?"
+  ],
+  "should_not_trigger": [
+    "Grill me on my plan for the queue migration, one question at a time, until we agree it holds.",
+    "What's the context usage right now, and should I reset the session?",
+    "Should this new file be named userService.ts or user-service.ts?",
+    "What placeholder syntax should I use in the prompt template for the variable parts — curly braces or something else?",
+    "Write a pytest fixture that spins up a temporary SQLite database for each test.",
+    "Brief a subagent to sweep the logs directory for timeout errors: what should the prompt contain and what should it return?",
+    "State a hypothesis for why the cache hit rate dropped and design the experiment that would falsify it.",
+    "Which cognitive bias am I falling for if I keep the current vendor only because we've already spent six months integrating it?",
+    "Fill in the timeline and contributing-factors sections of the postmortem for last night's failed deploy.",
+    "Wrap the examples in my system prompt in XML tags — which tag names and nesting are recommended?"
+  ]
+}

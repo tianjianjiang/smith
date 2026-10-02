@@ -1,0 +1,27 @@
+{
+  "skill": "smith-dev",
+  "should_trigger": [
+    "Implement rate limiting on the /v1/search endpoint in the API gateway. I'm currently sitting on main with a clean tree.",
+    "rename the config key max_retry to max_retries everywhere in the repo, there are ~80 files",
+    "I wrote debug_scripts/compare_embeddings.py last month and three teammates now use it weekly. Where should it live and what's the process to move it?",
+    "Initialize a new project: a Python backend plus a Vue frontend in one repo. Set up dependency management and decide which lock files get committed.",
+    "This is a big one: migrate the billing service from REST to gRPC. Lay out the task list you'll track as you work and then start.",
+    "Give me a command I can paste to install jq and ripgrep on my Mac, then loop over $SERVICES (space-separated list) in my zsh shell and run the health check for each.",
+    "httpx and the LLM client library are flooding our logs with DEBUG lines in production. Set sensible log levels for the app and for third-party libraries.",
+    "You added the PostToolUse formatter hook script under scripts/hooks/ yesterday but nothing runs when I edit a file. What's left to do?",
+    "The fix for the null pointer in invoice_export.py is done. Get it ready to commit.",
+    "I ran `make smoke` and it printed 'cc smoke.sh -o smoke' style nonsense and produced a binary called smoke in the repo root. There's a smoke.sh next to the Makefile. What happened and how should I run it?"
+  ],
+  "should_not_trigger": [
+    "Write pytest tests for parse_invoice() using the red-green-refactor cycle; start with the failing test for empty input.",
+    "What's the correct commit message format for a breaking change to the public API? I want the type and scope right.",
+    "Draft the pull request description for the branch feat/bulk-upload — summary and dependencies.",
+    "GPG signing fails with 'gpg: signing failed: Inappropriate ioctl for device' when I commit. Fix my setup.",
+    "Explain what this traceback means: 'RecursionError: maximum recursion depth exceeded while calling a Python object' in serializers.py line 88.",
+    "Turn on strict mode in tsconfig.json and tell me which compiler options that implies.",
+    "Show me the JSON I need in ~/.claude/settings.json to allow `pnpm test` without a permission prompt.",
+    "Enter plan mode and write a plan file for the search migration; I want progress tracked in the plan as you go.",
+    "Our Playwright login test is flaky on CI because of a race with the cookie banner. Make the locator wait properly.",
+    "Should the pagination helper be a class or a couple of functions? Give me the SOLID argument for each."
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle (SDLC) — intent.md/spec.md/plan.md per-feature artifact chain (spec.md as an Easy Approach to Requirements Syntax plus Given-When-Then contract, smith addition), plus durable cross-cutting knowledge (CLAUDE.md, skills, an optional per-subsystem design.md Architecture Decision Record log, smith addition), hooks/evals as governance, control-band maintenance loop. Use when scoping a new feature end-to-end, setting up a repo's SDLC artifacts, or asked about Anthropic's AI-native SDLC playbook.
+description: AI-native software development lifecycle (SDLC) artifacts: intent.md, spec.md, plan.md, a per-subsystem design.md decision log, control-band maintenance. Use when scoping a new feature end to end, setting up a repository's SDLC artifacts or a decision log, or asked about the AI-native SDLC playbook.
 license: MIT
 metadata:
   version: "1.4.0"
@@ -21,9 +21,6 @@ per play) lives in `references/PLAYBOOK.md`; this file is the map.
 **Scope:** The six-stage artifact loop (Plan, Design, Build, Test, Deploy,
 Maintain) that replaces the traditional phase-and-sign-off SDLC once code
 generation is no longer the bottleneck.
-**Load if:** Scoping a feature end-to-end, setting up a repo's SDLC
-artifact conventions, asked about the AI-native SDLC / agentic SDLC, or
-deciding where `intent.md`/`spec.md`/`plan.md` should live.
 **Prerequisites:** @smith-guidance/SKILL.md
 
 ## The Core Shift

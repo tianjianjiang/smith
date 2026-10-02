@@ -1,0 +1,27 @@
+{
+  "skill": "smith-placeholder",
+  "should_trigger": [
+    "Add a Usage section to scripts/rotate-keys.sh's README entry. It takes an environment name and, if you want, a region.",
+    "docs/onboarding.md has lines like `cd ~/code/<your-project>/config` and `git checkout -b feat/{description}`. Make the fill-in-the-blank parts consistent with our docs convention.",
+    "write a reusable prompt template for the release-notes subagent. it needs slots for the version number, the previous tag and the list of merged pull requests",
+    "In the test naming guide I want to show the general shape of a test function name, something like test_ACTION_when_CONDITION. How should the variable parts be marked so nobody copies them literally?",
+    "The docs page for the plugin installer shows `install [plugin]@[marketplace]` and readers think both parts can be left out. Fix the notation and make it clear that both are mandatory.",
+    "how do I type those angle-quote characters we use for fill-in values on a mac keyboard? and on my linux box with a compose key",
+    "I am writing the setup guide and need a snippet that exports the API key. Do I write export API_KEY=\"YOUR_API_KEY\" or use our substitution marker there? Same question for the branch-name example right below it.",
+    "The error message template in docs/errors.md reads 'Could not find <file> in <directory>' and the markdown renderer swallows both words as HTML tags. Fix all occurrences in that file.",
+    "Document the memory key pattern we use for loop state: the word ralph, then the task name, then state, joined by underscores. One line in docs/conventions.md.",
+    "review the new contributing guide for how it marks values the reader has to replace. I saw curly braces, square brackets and ALL_CAPS mixed in the same page"
+  ],
+  "should_not_trigger": [
+    "Wrap the instructions and the examples in the system prompt at prompts/triage.md in proper XML tags so the model can tell them apart.",
+    "Fill the Jinja template templates/invoice_email.html.j2 with the customer name and the due date, and add a default filter for the missing company field.",
+    "the login form's input placeholder text says 'Enter you email'. fix the typo in components/LoginForm.vue and make the placeholder color pass contrast",
+    "Replace the lorem ipsum and the grey placeholder images on the landing page with the real copy from content/home.yaml.",
+    "Write a Python f-string that formats the report header with the service name padded to 20 characters and the timestamp in ISO 8601.",
+    "Our branch names are a mess. What is the naming pattern for a feature branch and a hotfix branch, and what about file names for the scripts?",
+    "stub out the payment gateway client with a placeholder implementation that returns a fixed response until the real integration lands",
+    "Expand every abbreviation in docs/architecture.md on first use and remove the decorative emoji from the headings.",
+    "Add argparse to tools/export.py with a required positional output path and an optional --format flag that defaults to csv.",
+    "Improve this prompt for the code review agent: it is too vague about what counts as a blocking finding and it has no examples."
+  ]
+}

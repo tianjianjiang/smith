@@ -1,0 +1,27 @@
+{
+  "skill": "smith-checkpoint",
+  "should_trigger": [
+    "I'm about to close the laptop for the weekend. Save where we are on the OAuth refactor so a fresh session on Monday can pick it up: decisions, file:line anchors, the open pull request, and what's next, in both memory stores.",
+    "We already saved state for this export-pipeline work twice this week. Save it again now, and make sure it lands in the same memory and note as before instead of creating a third similarly named one.",
+    "The state-saving script exited non-zero complaining that BASIC_MEMORY_HOME is set and wrote nothing. Why does it refuse, where might that variable be coming from, and how do I get the save through?",
+    "I'm in a git worktree and wrote a couple of Serena memories from here earlier via MCP. When you persist the session now, what happens to those worktree-local memory files, and what name do I use to find them afterwards?",
+    "draft the session summary body for the save: keep it short but don't drop any decision, commit SHA or follow-up. what sections does it need and what should be left out because git already records it?",
+    "The stop hook says context is critical and handed me a label and a plan path. Write the durable facts to a body file and run the save with those arguments, then print the reload block.",
+    "Serena write succeeded but the note write to the other memory backend failed halfway. If I just rerun the save, will I get a duplicate entry? What's the safe way to retry?",
+    "persist this session to memory but target the Serena project in ../platform-docs instead of this checkout. it printed a divergence warning last time",
+    "The save aborted with 'jq: command not found' before touching either backend. What does the script need installed, and which project will the note go to once it runs?",
+    "After the last save and /clear, nothing was restored automatically in the new Claude Code session. Which hooks have to be registered for the reload to fire, and how do I resume by hand from the reload block?"
+  ],
+  "should_not_trigger": [
+    "Commit what we have as a WIP commit on this branch so nothing is lost, message 'wip: half-done pagination'.",
+    "Use Serena to rename the symbol `fetchInvoices` to `listInvoices` across the repo and show me the references it touched.",
+    "remember that the staging database password rotates on the first of each month. just a quick note for later",
+    "Claude Code says context is at 45%. Should I use 'Summarize from here' or /compact, and what's the difference?",
+    "Add a training checkpoint callback to train.py that saves model weights every 500 steps and keeps only the best three by validation loss.",
+    "Update the plan file to tick off the two steps we finished and add a new step for the cache invalidation work.",
+    "resume the investigation into the flaky uploader from last week: sweep the memories, recent commits and open pull requests and tell me where it stood",
+    "Add a rule to CLAUDE.md so every session in this repo knows to run tests with `uv run pytest`.",
+    "git stash my changes with a unique tag, switch to main to check something, then restore them by SHA",
+    "Our Postgres WAL checkpoints are causing latency spikes every five minutes. Tune checkpoint_timeout and max_wal_size in the config for the reporting database."
+  ]
+}

@@ -28,6 +28,7 @@ for check in \
   tool-output-hygiene \
   correction-census \
   skill-lint \
+  skill-trigger-eval \
   on-session-compact
 do
   bash "$HERE/$check.test.sh" || status=1

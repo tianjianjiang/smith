@@ -1,11 +1,10 @@
 ---
 name: smith-playwright
-description: Playwright testing patterns
+description: Playwright testing patterns. Use when running Playwright tests or analysing their failures, screenshots or reports.
 ---
 
 # Playwright Testing Standards
 
-**Load if:** Running Playwright tests, analyzing test results
 **Prerequisites:** `@smith-tests/SKILL.md`
 
 ## CRITICAL: Proactive Failure Monitoring

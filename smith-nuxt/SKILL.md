@@ -1,12 +1,11 @@
 ---
 name: smith-nuxt
-description: Nuxt 3 development patterns
+description: Nuxt 3 development patterns. Use when working in a Nuxt project, testing Nuxt components, or configuring Nuxt runtime config.
 ---
 
 # Nuxt Development Standards
 
 **Scope:** Nuxt 3 specific patterns
-**Load if:** Working with Nuxt projects
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-typescript/SKILL.md`
 
 ## CRITICAL: Auto-Import Stubbing

@@ -72,7 +72,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `rtk-find-symlink-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs` | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) | ctx-claude |
 | `post-merge-pull-reminder` | PostToolUse (`Bash`) | `smith-git/scripts/hooks/post-merge-pull-reminder.mjs` | Advisory: ff-only pull the default branch after merge | git |
 | `coderabbit-status-check` | PostToolUse (`Bash`) | `smith-ctx-claude/scripts/coderabbit-status-check.mjs` | Advisory: validate CodeRabbit `--agent` output | ctx-claude |
-| `skill-lint` | PostToolUse (`Edit\|Write\|mcp__(plugin_serena_)?serena__.*`) | `smith-ctx-claude/scripts/skill-lint.mjs --hook` | After a write to a `SKILL.md`: reports broken frontmatter, an unclosed fence or point-in-time content | ctx-claude |
+| `skill-lint` | PostToolUse (`Edit\|Write\|mcp__(plugin_serena_)?serena__.*`) | `smith-ctx-claude/scripts/skill-lint.mjs --hook` | After a write to a `SKILL.md`: reports broken frontmatter, a description with no when-to-use clause, an unclosed fence or point-in-time content | ctx-claude |
 | `exit-plan-mode-guard` | PreToolUse (`ExitPlanMode`) | `smith-ctx-claude/scripts/exit-plan-mode-guard.mjs` | Blocks `ExitPlanMode` without a prior elaboration turn | ctx-claude |
 | `stack-merge-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/stack-merge-guard.mjs` | Asks before deleting a branch with an open child PR | ctx-claude |
 | `amend-shared-commit-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/amend-shared-commit-guard.mjs` | Asks before amending a commit shared with another branch | ctx-claude |
@@ -135,12 +135,12 @@ case where XML tags still apply (runtime prompts, not SKILL.md bodies):
 ```yaml
 ---
 name: skill-name        # Must match directory name
-description: ...        # When to use this skill
+description: ...        # What the skill is, then "Use when ..."
 ---
 
 # Skill Title
 
-**Load if:** Conditions for activation
+**Scope:** What the skill covers
 **Prerequisites:** Dependencies
 
 ## Section Title

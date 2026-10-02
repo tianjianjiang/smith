@@ -1,0 +1,23 @@
+{"skill": "smith-research", "should_trigger": [
+"what's the latest stable version of fastapi and is it safe to bump from 0.110?",
+"How do I use the new streaming API in the httpx client? Show me a current example, not something from two major versions ago.",
+"What's the recommended way to do server-side data fetching in Next.js this year? Our app still uses the pages router.",
+"Should I use uv or Poetry for a new Python service? I want a recommendation grounded in where both tools are today, with sources.",
+"I want the agent to authenticate to our internal MCP server with OAuth using the device flow. Set that up in .mcp.json.",
+"After upgrading, the build fails with \"TypeError: createRoot is not a function\". package.json has react at ^17 and react-dom at ^18. Is this a version incompatibility?",
+"My code imports a library called polars-ds that I've never used. Explain what the query_similar call in features/match.py does and whether the arguments are right.",
+"This article explains the trick I need but it's behind the paywall on medium.com and the fetch returns 403. Get me the content: https://medium.com/@someauthor/zero-downtime-migrations",
+"Does the gh CLI have a flag to output auth status as JSON, and from which version? I want to rely on it in a script.",
+"Write a short note for docs/upgrade.md on what changed in pytest 8 for fixture teardown, with citations and the retrieval date for each source."
+], "should_not_trigger": [
+"Explain the difference between a mutex and a semaphore.",
+"What's your opinion: is our module layout in src/ too deeply nested?",
+"Pull together everything from the tracker, chat and my notes about the caching project and brief me on where I left off.",
+"I think the timeout is caused by the connection pool being exhausted. Design a test that would disprove that.",
+"The release notes I pasted below say v3 removed the sync client. Based on that text, list which of our call sites in api/ need changing.",
+"Configure the fetch MCP server in my editor settings; it isn't showing up in the tool list.",
+"Find every place in this repo where we pin a dependency version and list them by file.",
+"Use the browser tool to open our staging site and screenshot the login page.",
+"Break down the problem of slow checkout into independent sub-problems with a decision tree.",
+"Add a citation section to our internal design doc template with fields for author and title."
+]}

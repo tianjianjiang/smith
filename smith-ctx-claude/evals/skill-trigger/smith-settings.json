@@ -1,0 +1,23 @@
+{"skill": "smith-settings", "should_trigger": [
+"I want the whole team to get the same Claude Code model and env vars for this repo, but my own API base URL should stay private. Which settings file does each go in?",
+"I set permissions.defaultMode to \"auto\" in .claude/settings.json of the project and Claude Code still asks me for everything. why is it ignored?",
+"Our org pushes a managed policy for Claude Code. If I set the same key in .claude/settings.local.json, which value wins? Give me the full precedence order.",
+"Add a Claude Code hook to this repo that rejects any `git commit` while the checkout is on main, master or develop. It should be committed so every teammate gets it.",
+"my Claude Code hook command is \"${CLAUDE_PROJECT_DIR}/.claude/hooks/check.sh\" and it breaks when the repo path has a space. do I need args?",
+"I removed a key from .claude/settings.local.json expecting it to unset the value, but Claude Code still uses the one from ~/.claude/settings.json. Is that how the merge works?",
+"Write a Claude Code PreToolUse validator that blocks `git checkout -b` when the new branch name doesn't match our type/description pattern. Narrow it so it only runs for that command.",
+"There's a token sitting in the committed .claude/settings.json under env. Move it somewhere it won't ship to teammates and tell me what else in that file is personal.",
+"How can I audit or block changes to Claude Code settings files during a session? I heard there is a hook event with matchers per settings scope.",
+"I want to try a different set of Claude Code settings for one run only, without touching any file on disk. Is there a command-line way and how does it layer on the others?"
+], "should_not_trigger": [
+"List every Claude Code hook event and what JSON each handler receives on stdin; I need the full reference for PostToolUse and Stop.",
+"Claude Code auto mode keeps blocking `terraform plan`. How do I tune the classifier allow list and what does $defaults expand to?",
+"rebind ctrl+s to submit in Claude Code and add a chord for opening the transcript",
+"Change editor.formatOnSave and the Python interpreter path in .vscode/settings.json for this workspace.",
+"Set up a recurring Claude Code job that checks the deploy status every 10 minutes until it goes green.",
+"What's the difference between plan mode and acceptEdits permission mode in Claude Code, and how do I switch between them mid-session?",
+"Our pre-commit config runs ruff and mypy but skips the frontend. Add eslint to .pre-commit-config.yaml.",
+"Map ${workspaceFolder} in my launch.json to the equivalent variable in the other IDE the team uses.",
+"configure the status line in Claude Code to show the current git branch and model name",
+"The app reads settings from config/settings.toml and env vars. Add a precedence rule so env vars override the file, with tests in tests/test_config.py."
+]}

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ctx-claude",
+  "should_trigger": [
+    "Claude Code statusline shows 47% context. I'm mid-way through the pagination refactor. What do you recommend right now, and how do I compress only the recent part of the conversation?",
+    "should i just run /compact here in claude code? we have a lot of file:line references and half-made decisions i don't want to lose",
+    "I'm going to /clear this Claude Code session. Walk through everything that must happen before I do, and what I should expect to be restored afterwards.",
+    "The Claude Code stop hook just blocked with a message that context is at 61% and I must checkpoint and clear. There's an active plan with pending items. What are the steps, in order?",
+    "A system-reminder block just showed up in the Claude Code transcript saying a background task finished and another listing available skills. Did I send those? How should you treat them?",
+    "Since I installed the terse-output plugin, your commit messages and pull request descriptions in Claude Code have become clipped fragments. Fix that, and also explain why the file you wrote from the sandboxed execute tool isn't on disk.",
+    "You're about to ask me to choose between three migration strategies with the question popup in Claude Code. Last time the trade-offs were in the message above the popup and I never saw them. Do it properly this time, and don't bundle the naming decision into the same question.",
+    "/insights  (you spent ten tool calls last time searching the plugin cache to prove this command exists. don't)",
+    "Where should a hard 'never push to the default branch' guardrail live for Claude Code: in the project CLAUDE.md or in a skill file? And the long Python packaging guidelines?",
+    "That grep you ran in Claude Code returned eight thousand lines into the conversation. How should noisy output like that be handled for the rest of this session?"
+  ],
+  "should_not_trigger": [
+    "Claude Code auto mode denied `git push --force` with a classifier message. What do I do now?",
+    "In Cursor the chat is at 65% context. Should I run /summarize now or wait for the automatic one?",
+    "Add `Bash(npm run *)` to the allow list in the project .claude/settings.json and explain the precedence between project and user settings files.",
+    "In Claude Code, use EnterWorktree to start a new worktree for the hotfix; the checkout has uncommitted changes, what happens to them?",
+    "Run /loop 5m to watch the canary deploy from this Claude Code session.",
+    "After I approve the plan with ExitPlanMode in Claude Code, which approval option should I pick so edits are auto-accepted?",
+    "Write a new skill file for our Terraform conventions: what goes in the frontmatter and how long may the body be?",
+    "Spawn a Claude Code subagent to trawl the CI logs; what must its brief include and what should it return?",
+    "The Messages API call in our backend hits the context window limit on long transcripts. Add token counting and truncate the oldest turns.",
+    "Kiro summarised my session automatically at 80%. How do I recover the file list?"
+  ]
+}

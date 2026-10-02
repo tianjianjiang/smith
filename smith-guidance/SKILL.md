@@ -1,11 +1,10 @@
 ---
 name: smith-guidance
-description: Core agent steering
+description: Core agent steering. Always active. Use for every task, especially before an external write, a disagreement with the user, or a decision request.
 ---
 
 # Core Agent Steering
 
-**Load if:** Always active (core agent behavior)
 **Prerequisites:** @smith-principles/SKILL.md
 
 ## Exploration Before Implementation

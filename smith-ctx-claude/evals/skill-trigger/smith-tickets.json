@@ -1,0 +1,27 @@
+{
+  "skill": "smith-tickets",
+  "should_trigger": [
+    "Break the export-to-CSV work into Jira tickets. It covers the API endpoint, the background job and the download button.",
+    "file a ticket for the pagination bug on the audit log page",
+    "We agreed in the design review to split the notification service rewrite into pieces that each map to one pull request. Draft the issues for the tracker and show me the list before creating anything.",
+    "Create a story for adding rate limiting to the public API and put it under whichever epic fits best. I don't remember the epic's name.",
+    "I need a sub-task under the existing story for the schema migration, plus two sibling tasks for the backfill and the cleanup. Make sure they hang off the right parents.",
+    "Write the description for a new tracker issue about slow dashboard loads. Our team writes issue bodies in Japanese but keeps titles in English.",
+    "turn the TODO list at the bottom of docs/search-relevance-plan.md into tracker issues, one per item, assigned to whoever owns the search service",
+    "You created five issues for the billing cleanup earlier. Check that each one ended up with the right parent and the right body format, and fix any that didn't.",
+    "This draft issue says 'Implement Redis cache in OrderService.get()'. Rewrite it so it describes the situation and the outcome the user wants instead of the implementation.",
+    "The list you proposed had four tickets and I approved those. I now also want one for the docs update. Go ahead and add it."
+  ],
+  "should_not_trigger": [
+    "Open a GitHub issue on the upstream repo for the `gh api --paginate` bug, with a minimal repro and the version output.",
+    "Move the login-timeout ticket to In Review and add a comment saying the fix is on the staging branch.",
+    "Search the tracker for anything open about the PDF export and summarize who is working on what.",
+    "Write the PR description for this branch and link it to the ticket for the cache layer.",
+    "Draft a Slack message to the infra channel explaining why the ticket for the certificate rotation is blocked.",
+    "What branch name and commit message format should I use for the work on the ticket about audit logging?",
+    "Generate a status report of this sprint's tickets grouped by assignee and publish it to the wiki.",
+    "Read through the meeting notes page from Thursday's planning call and tell me which decisions were made about the search rollout.",
+    "Our support desk app issues ticket numbers with a race condition: two requests can get the same number. Fix `next_ticket_number()` in tickets/sequence.py.",
+    "Write the incident postmortem for last night's outage, including the timeline and the follow-up actions."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-mcp-browser",
+  "should_trigger": [
+    "open http://localhost:3000/dashboard with the chrome devtools MCP tools and tell me what errors are in the console",
+    "The chrome-devtools MCP server dies on startup with 'TimeoutError: async initializeServer: Timeout 180000ms exceeded'. The stderr above it mentions /Applications/Vivaldi.app/Contents/MacOS/Vivaldi. What is wrong and how do I fix it?",
+    "Add the Playwright MCP server to this project's .mcp.json. I mostly browse with Edge so set it up to use that.",
+    "before we start the UI debugging session, check my Claude Code MCP setup for anything that forces a particular browser on the devtools or playwright servers. I have registrations in a few different places and I do not remember which",
+    "Use the browser MCP to pull the open items from the admin console of the staging billing service. It will hit the single sign-on page first.",
+    "I get tired of logging in to the internal wiki every time the browser MCP starts a new run. Which of the two browser servers should I use so the login sticks, and what breaks if two Claude Code sessions run at once?",
+    "I need the MCP browser to use my existing Vivaldi profile because the cookies for the vendor portal are in there. Set that up.",
+    "claude mcp list shows a chrome-devtools entry with --channel=beta but I cannot find it in ~/.claude/settings.json or in the project .mcp.json. where is it coming from and how do I get rid of it",
+    "Why do I see both mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page and mcp__chrome-devtools-cft__navigate_page in the tool list? Which one is actually going to launch, and with what flags?",
+    "here is my password for the staging admin, just type it into the login form with the playwright MCP and carry on with the checkout test: hunter2-staging"
+  ],
+  "should_not_trigger": [
+    "npx playwright test tests/checkout.spec.ts exited with code 1 and three tests failed. Go through test-results/ and tell me why.",
+    "the serena MCP server is not responding after I switched branches. restart it and check that the project is activated",
+    "Write a Playwright test for the login form in tests/auth.spec.ts using getByRole locators and a storageState fixture.",
+    "Add a GitHub MCP server to .mcp.json with the token read from an environment variable instead of pasted in the file.",
+    "Bump @playwright/test to the latest minor in package.json, run npx playwright install chromium, and make sure the CI cache key in the workflow still matches.",
+    "Our headless Chrome in CI crashes with 'No usable sandbox'. Fix the puppeteer launch options in scripts/render-pdf.js.",
+    "allow all the mcp__plugin_playwright_playwright__ tools in .claude/settings.json so I stop getting permission prompts",
+    "The largest contentful paint on the product page is 4.2 seconds on mobile. Find out which resource is the bottleneck and propose fixes.",
+    "write a small MCP server in TypeScript that exposes one tool, get_invoice_status, over stdio and register it for this project",
+    "My Nuxt app sets a session cookie with SameSite=Lax and the embedded checkout iframe loses it. Explain why and change server/middleware/session.ts."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-validation",
+  "should_trigger": [
+    "Login fails intermittently in production, maybe one request in fifty. Don't guess a fix; work out what's actually causing it.",
+    "ruff is failing on `F841 local variable 'resp' is assigned to but never used` in sync/client.py. just add a noqa so CI goes green",
+    "The integration job times out at 60s on `test_bulk_import`. Bump it to 180s in the workflow file.",
+    "Users report `KeyError: 'currency'` from the invoice endpoint. The stack trace points at serializers/invoice.py line 88, and there's already a `normalize_currency()` helper, so just call that there.",
+    "The nightly export worked on the release from three weeks ago and is broken on main, about a hundred commits later. Find the commit that broke it.",
+    "You said the cache isn't the cause because grep for `cache.invalidate` in the logs returned nothing. How sure are you that the search itself was working?",
+    "Before I send this to the platform team: you concluded that the duplicate webhooks come from the load balancer retrying. Try to prove that wrong first, and give me the evidence for each claim with something I can re-run.",
+    "The benchmark came back 40% slower than the baseline we recorded last month, which seems to overturn our decision to keep the batch size at 64. Write up what we found.",
+    "Your status note says there are 12 open items left on the migration. Is that number current or carried over from yesterday's checkpoint?",
+    "We keep getting logged out after about ten minutes. Last time someone just extended the session lifetime and it came back. Get to the actual underlying cause this time."
+  ],
+  "should_not_trigger": [
+    "Write the postmortem for Tuesday's checkout outage: timeline, contributing factors and action items, in the blameless template.",
+    "Add zod validation to the request body of POST /api/orders so a missing `customerId` returns a 400 with a field-level message.",
+    "Before we adopt the new vector database, research what its docs and issue tracker say about multi-tenant index limits and cite the sources.",
+    "Poke holes in my plan to move the monolith's auth module into its own service. Interview me until the weak assumptions come out.",
+    "Add pytest coverage for utils/dates.py; put the file in the right place under tests/unit and run it with uv.",
+    "Break down the problem of reducing our cloud bill into non-overlapping categories and tell me which ones to look at first.",
+    "Run the full multi-reviewer pass on this branch and keep going until no new findings come back.",
+    "Validate that config/pipelines.yaml matches the JSON schema in schemas/pipeline.json and list every violation.",
+    "I think I'm anchoring on the first explanation I heard for the churn spike. Which reasoning traps should I watch for when reading the cohort data?",
+    "Pull together everything we know about the search relevance regression from the tracker, the chat channel and the recent merges into a single brief."
+  ]
+}

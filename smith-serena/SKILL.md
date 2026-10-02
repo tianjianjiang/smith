@@ -1,11 +1,10 @@
 ---
 name: smith-serena
-description: Serena MCP integration
+description: Serena MCP integration. ALWAYS load before any Serena tool call or memory write. Use when a prompt mentions Serena, and at phase and session boundaries to sync memories.
 ---
 
 # Serena MCP Integration
 
-**Load if:** Serena MCP available, file operations needed, symbol-level editing
 **Prerequisites:** None (standalone reference)
 
 ## CRITICAL: Serena-First Principle

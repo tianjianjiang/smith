@@ -1,12 +1,11 @@
 ---
 name: smith-clarity
-description: Cognitive trap detection and logic fallacy
+description: Cognitive trap and logical fallacy detection. Use when making or reviewing a decision, comparing approaches, or checking an argument for faulty reasoning.
 ---
 
 # Thinking Clarity
 
 **Scope:** Guarding against cognitive traps and logical fallacies in decision-making
-**Load if:** Making decisions, evaluating approaches, risk assessment, detecting faulty reasoning
 **Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Defensive thinking techniques - avoiding errors rather than constructing solutions.
