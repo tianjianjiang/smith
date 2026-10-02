@@ -34,16 +34,27 @@ New, in this repository:
   in both files; each record names the commit or the hash of the listing
   it measured, the model, and the hash of its prompt
   (§covering-skill-loaded-before-acting).
-- `smith-ctx-claude/scripts/lib/skills-invoked.mjs`: the transcript scan now
-  inside `skill-claim-lint.mjs`, extracted so two hooks share it.
+- `smith-ctx-claude/scripts/lib/skills-invoked.mjs` and its test: the
+  transcript scan that was inside `skill-claim-lint.mjs`, extracted so the
+  gate, the router and the claim lint share it. A skill counts as loaded
+  in the session when the main thread called the Skill tool for it and
+  the call did not fail, or the harness delivered its body after a slash
+  command, anywhere in the
+  transcript; the skills the entry file always loads count as well. One
+  transcript file is one session: a `/clear` starts a new file.
+- `smith-ctx-claude/scripts/lib/gh-command.mjs`: the reading of a `gh`
+  command's subcommand, moved out of `external-write-guard.mjs` so the
+  gate shares it.
 - `smith-ctx-claude/scripts/skill-load-gate.mjs`, its table
   `smith-ctx-claude/skill-gate.json`, and its test: before a governed action
   runs, refuses it when the governing skill has not been loaded in the
   session (§covering-skill-loaded-before-acting). Governed actions: commit,
-  push, pull-request create, review and comment, a message draft to another
+  push, pull-request create, edit, review and comment, a message draft to another
   person, a ticket write, a subagent spawn, a web fetch or search, a write
   to a `SKILL.md`, leaving plan mode. Command parsing reuses
-  `smith-git/scripts/lib/git-command-tokenizer.mjs`.
+  `smith-git/scripts/lib/git-command-tokenizer.mjs`. A tool call inside a
+  subagent is let through: the transcript the hook is given is the main
+  session's, and the spawn itself is governed.
 - `smith-ctx-claude/scripts/turn-end-gate.mjs` and its test: a command
   hook that runs when a turn is about to end and refuses a last message
   that asks the owner whether the agent should check or verify something
@@ -118,10 +129,18 @@ Modified, in this repository:
 - `smith-ctx-claude/scripts/skill-router.mjs` and `skill-triggers.json`:
   the router acts only on prompts the owner typed, does not suggest a skill
   already loaded, loses its single-common-word patterns, and tells the
-  agent to load with the Skill tool only. It gains a test.
+  agent to load with the Skill tool only. It gains a test. The hook is
+  given the prompt text and nothing about who sent it, so "typed by the
+  owner" is every prompt that does not open as a task notification or as
+  a message from another session; a scheduled wakeup has no marker and
+  still passes.
 - `smith-ctx-claude/scripts/skill-claim-lint.mjs`: uses the shared scan and
-  refuses a last message that claims a skill it did not load.
-- `smith-skills/SKILL.md`, `AGENTS.md`: one loading instruction; the
+  refuses a last message that claims a skill of this repository not
+  loaded in the session, unless the turn is already continuing after a
+  refusal; when no unloaded claimed name is a skill of this repository,
+  the unloaded names get an advisory.
+- `smith-skills/SKILL.md` (`AGENTS.md` already says it): one loading
+  instruction, the Skill tool; in both files, the
   placement principle above; the standing rule that a correction made a
   second time becomes a hook, a judged statement or an evaluation.
 - `smith-ctx-claude/scripts/tests/run-all.sh`,
@@ -131,8 +150,8 @@ Outside this repository:
 
 - The personal profile's `settings.json`: registers the new hooks, with a
   dated backup beside the file. The harness refuses an agent's edit of
-  this file as self-modification, so the owner applies it. Its `env`
-  block is also to set `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` (ADR-003 of
+  this file as self-modification unless the owner authorises it. Its `env`
+  block sets `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` (ADR-003 of
   `design.md`; measurement under Risks below). A
   new rule file states that primary sources are read as raw text.
 - The two other profiles: no change until the owner has accepted the exact
@@ -207,9 +226,12 @@ each of those waits for the owner's yes.
   first clause of §owner-item-carries-its-context. Both stay with review
   and with the text of `smith-guidance/SKILL.md`; the recount of loose-end
   corrections shows whether that is enough.
-- Text a gate feeds back is matched by the router as if it were a request.
-  The router change (owner-typed prompts only) removes that path and ships
-  before the gates are registered.
+- Text that is not the owner's is matched by the router as if it were a
+  request: in the sessions of this repository, 270 of 617 router events
+  followed a task notification (179) or a message from another session
+  (91), and none followed text fed back by a hook. The router change
+  (owner-typed prompts only) removes that path and ships before the gates
+  are registered.
 - A hook that exits with an ordinary error, times out, or is registered
   under a mistyped path fails open without notice. Every new hook has a
   test, and the health check reports dead registrations at session start.
@@ -237,7 +259,7 @@ each of those waits for the owner's yes.
     18,000, all 48 at 20,000. At 20,000 the default model keeps all 48 as
     well. The value has the same effect from the `env` block of a settings
     file (`--settings «file»`, measured at 16,000 and 20,000).
-  So the personal profile is to set 20000, which the owner adds. That is half the listing: the
+  So the personal profile sets 20000. That is half the listing: the
   descriptions of unused plugin skills are still dropped, and the default
   model loads less than under its own default. Measure again when skills
   are added or descriptions grow.

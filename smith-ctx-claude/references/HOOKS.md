@@ -10,7 +10,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
-| `skill-router.mjs` | UserPromptSubmit | Advisory: surfaces candidate skills per prompt |
+| `skill-router.mjs` | UserPromptSubmit | Advisory: on a prompt the owner typed, surfaces candidate skills that are not loaded yet |
 | `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates human-facing writes to an `ask` prompt |
 | `askuserquestion-arity.mjs` | PreToolUse (`AskUserQuestion`) | Blocks a multi-question call |
 | `volatile-artifact-guard.mjs` | Stop / SubagentStop / SessionEnd | Advisory: lists files written under volatile paths |
@@ -20,7 +20,8 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `subagent-contract-guard.mjs` | PreToolUse (`Agent\|Task`) | Blocks a subagent spawn missing the read-only contract or its personal-data sentence |
 | `personal-data-guard.mjs` | PreToolUse (`*`) | Blocks any tool call that carries the user's personal data |
 | `skill-read-substitution-guard.mjs` | PreToolUse (`Read`) | Advisory: Read of a `SKILL.md` should be a Skill-tool invocation instead |
-| `skill-claim-lint.mjs` | Stop | Advisory: flags a claimed-but-not-invoked skill |
+| `skill-claim-lint.mjs` | Stop | Blocks, once, the end of a turn whose last message claims a skill of this repository that is not loaded in the session; advisory when every unloaded claimed name is some other name |
+| `skill-load-gate.mjs` | PreToolUse (`Bash\|Edit\|Write\|Agent\|Task\|WebFetch\|WebSearch\|ExitPlanMode\|mcp__.*`) | Blocks a governed action while the skill that governs it is not loaded in the session |
 | `gh-stack-guard.mjs` | PreToolUse (`Bash`) | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` |
 | `rtk-find-symlink-guard.mjs` | PreToolUse (`Bash`) | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) |
 | `coderabbit-status-check.mjs` | PostToolUse (`Bash`) | Advisory: validate CodeRabbit `--agent` output before trusting it |
@@ -34,7 +35,27 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 
 **skill-router** (`smith-ctx-claude/scripts/skill-router.mjs`) — advisory
 UserPromptSubmit router that surfaces candidate smith skills per prompt from
-`skill-triggers.json`.
+`skill-triggers.json`. It is a hint; `skill-load-gate` is the enforcement.
+
+- **Owner-typed prompts only.** The event also fires for a background
+  task's notification and for a message from another session. The hook
+  input carries only the prompt text, so the router stays silent when the
+  text opens with `<task-notification` or `Another Claude session`.
+- **No skill that is already loaded.** It scans `transcript_path` with
+  `scripts/lib/skills-invoked.mjs` and drops every skill loaded in the
+  session or listed under `alwaysLoaded` in `skill-gate.json`, as well as
+  a skill the prompt itself names. A rule's `note` is still emitted when
+  all of its skills are dropped. With a transcript it cannot read it
+  treats no skill as loaded.
+- **No everyday word that is common outside the skill's subject.** Words
+  such as `fix`, `merge`, `commit`, `improve` or `denied` on their own
+  match no rule. A single word stays when it names a tool or is a term
+  of the skill's subject (`rebase`, `investigate`, `grill`, `slack`).
+- The footer says to load with the Skill tool and no longer offers
+  reading the `SKILL.md`.
+
+**Known limitation**: the prompt of a scheduled wakeup or a loop tick has
+no marker in its text, so the router treats it as owner-typed.
 
 ## external-write-guard
 
@@ -501,10 +522,120 @@ to quote or edit it. Advisory only.
 ## skill-claim-lint
 
 **skill-claim-lint** (`smith-ctx-claude/scripts/skill-claim-lint.mjs`) — Stop
-guard that streams the transcript and emits an **advisory** when the turn's
-message says `using @X` for a skill that was not actually invoked via the Skill
-tool that turn (mentioning or reading a skill is not using it). The read-time
-companion to `skill-read-substitution-guard`. Advisory only, never blocks.
+guard that **blocks** the end of a turn whose last message says `using @X`
+for a skill of this repository that is not loaded in the session
+(mentioning or reading a skill is not using it). It reads every name of a
+grouped claim (`using @X, @Y`, also with a reason after each name, `using
+@X (why), @Y (why)`; a name inside a reason is not a claim), a plugin skill by its whole name
+(`@plugin:skill`). The refusal names only the skills of this
+repository; when no unloaded claimed name is such a skill, the unloaded
+names (a plugin skill, a placeholder) get an advisory instead, and `@scope/package` is not read as a claim at all, nor is a
+claim inside a code span, a code block or quotation marks (double or
+single, straight or curly), nor one negated by the words before it (`not
+using`, `not currently using`, `no longer using`, `without using`; `not
+only using` is still a claim). A skill name alone in a code span after
+`using` (``using `@smith-git` ``) is still read as a claim.
+"Loaded in the session" is what `scripts/lib/skills-invoked.mjs` returns:
+a Skill tool call by the main thread whose result is not an error, or a
+skill body the harness delivered (after a slash command or a Skill call),
+anywhere in the transcript, plus the skills listed under `alwaysLoaded` in
+`skill-gate.json`. When `stop_hook_active` is true the turn is already
+continuing after a refusal and the hook stays silent, so it refuses a
+claim once and cannot loop. A transcript it cannot read lets the turn
+end; with a `skill-gate.json` it cannot read, a claim of an always-loaded
+skill is refused once.
+
+## skill-load-gate
+
+**skill-load-gate** (`smith-ctx-claude/scripts/skill-load-gate.mjs`) —
+PreToolUse guard that **denies** a governed action while the skill that
+governs it is not loaded in the session. The table is
+`smith-ctx-claude/skill-gate.json`: one rule per governed action, naming
+its skill and how to recognise it.
+
+- A `tool` rule is a regular expression on the tool name; with `path`, the
+  tool's target file (`file_path` or `relative_path`) must match as well.
+- A `command` rule matches a Bash command segment by program and
+  subcommand, after `unwrappedCommandSegments` of
+  `smith-git/scripts/lib/git-command-tokenizer.mjs` has split the command
+  and removed wrappers such as `sh -c`, `sudo` and `env`; with `argument`,
+  one token of the segment must match as well. The program is found at
+  the start of a simple command, after shell keywords and command prefixes
+  (`if git push`, `then git push`, `timeout 60 git push`, `rtk git push`,
+  `>/dev/null git push`, `TOKEN=$(gh auth token) gh pr create`, and a
+  wrapper after one of these, as in `then env X=1 git commit` or
+  `{ command git push; }`),
+  inside a command or process substitution (`out=$(git push)`, `<(git
+  push)`), also one inside the string of `sh -c` or `eval`, and with a
+  redirection attached to a word (`git push>/dev/null`).
+- Governed actions: `git commit` and `git push` (`smith-git`); `gh pr
+  create` (alias `new`), `gh pr edit`, `gh pr review`, `gh pr comment`,
+  `gh issue comment` and a `gh api` call on a comments or reviews path
+  (`smith-gh-pr`); a Slack message, draft or scheduled message
+  (`smith-slack`); the Jira issue create and edit tools and `gh issue
+  create` (alias `new`) and `gh issue edit` (`smith-tickets`); a subagent spawn
+  (`smith-subagents`); `WebFetch` and `WebSearch` (`smith-research`); a
+  write to a `SKILL.md` with `Edit`, `Write` or one of Serena's
+  single-file write tools, the file name matched without regard to case
+  (`smith-skills`); `ExitPlanMode` (`smith-mode-plan-claude`).
+- A command wrapped too deeply for the tokenizer to unwrap gets an `ask`,
+  as the other Bash guards do.
+- The refusal names the action and the skill and says to load it with the
+  Skill tool and run the action again.
+
+**Known limitations**: the gate reads a command with patterns, not with a
+shell parser. It covers the ordinary ways of writing a governed action; a
+form not listed above as recognised is not governed, and the list below
+names the ones that were found. A tool call inside a subagent is let through,
+because the hook input then carries `agent_id` while `transcript_path` is
+the main session's, which says nothing about what the subagent loaded; the
+spawn itself is governed. The transcript is written with a delay, so a
+Skill call and its governed action sent in the same message can be
+refused once; the action passes when sent again. A transcript or table
+that cannot be read lets the action through. `gh api` on a comments or
+reviews path is governed for reads too. A skill loaded before a
+compaction still counts as loaded. The command is read with a stack of
+contexts (parentheses, `$(…)`, `<(…)`, `>(…)`, zsh's `=(…)`, `${…}`,
+backticks, double and single quotes, with backslash escapes and `$'…'`).
+Bash and zsh disagree on an apostrophe in `${…}` inside double quotes
+or a here-document body (bash reads it as a quote, zsh as a letter), so
+the command is scanned under both readings and refused if either finds a
+governed action; the text of a `${…}` is left out of the words around
+it, and only its substitutions are scanned;
+the body of each subshell and command substitution is scanned on its own
+and is left out of the text around it, where an emptied word keeps its
+place (a backtick body is unescaped first, so nested backticks are read),
+and the string of `sh -c` or `eval` is scanned again whether it is in
+single or double quotes, after other options, a flag cluster holding `c`
+(`-lc`, `-cx`) or `--`. In a command context, the body of a here-document (a `<<`,
+not a here-string `<<<`; its delimiter is the whole word without quotes
+or backslashes; the body runs from the next line to the delimiter line,
+and a document whose delimiter line never comes is not set aside) and a
+comment (a `#` that starts a word, so not one right after an escaped
+character or the end of a substitution, to the end of its line) are set aside
+before the scan, so neither hides the commands after it nor is read as a
+command. The shell still runs a `$(…)` or backtick substitution in the
+body of a document whose delimiter has no quote or backslash, so each one
+there is scanned on its own; the rest of that body stays text. Not governed: the lines between an arithmetic shift by a
+variable name (`$((x<<EOF))`) and a later line equal to that name, which
+are read as a here-document body, a `case` arm inside a `$(…)` that is
+an argument of another command or sits in double quotes (the pattern's
+`)` ends that context early, so the arm is read as an argument or as
+text), a `SKILL.md`
+written through Bash or Serena's `replace_in_files`, a GraphQL
+mutation through `gh api graphql`, a pull request or issue created,
+edited or closed through `gh api` or `gh pr close --comment`, a command
+run by the Monitor tool, `gh pr merge`, a shell or `gh` alias,
+a subcommand held in a variable (`git $action`), a program, a prefix
+word or its value held in a variable or a `${…}` (`$x git push`,
+`${SUDO:+sudo} git push`, `timeout $T git push`), a shell function, the
+arm of a one-line `case`, a prefix that takes an option value (`timeout
+-s KILL 60 git push`), a command a shell reads
+from its input (`echo 'git push' | sh`), a prefix word the gate does not
+know, and the Jira comment, transition and generic write tools. Of
+those, `external-write-guard` asks before `transitionJiraIssue` and
+`addCommentToJiraIssue` only; it does not match
+`addOrEditJiraIssueComment` or `executeWrite`.
 
 ## gh-stack-guard
 
@@ -682,9 +813,7 @@ transcript shape rather than an array that never occurs.
 The window resets to "not found" on: a genuine new top-level user
 message (real human input, not an `isMeta` system-reminder injection,
 not a `tool_result` continuation, via the shared `isGenuineNewUserTurn`
-helper — `skill-claim-lint.mjs` has its own inline version of this same
-check but does not import the helper and lacks the `isMeta` exclusion,
-so the two do not currently behave identically); or a prior `ExitPlanMode`
+helper); or a prior `ExitPlanMode`
 tool-call attempt, so a rejected attempt always requires fresh
 elaboration before the retry rather than carrying the original stale
 elaboration through. The docs warn `transcript_path` "may not yet
@@ -757,13 +886,7 @@ explained," not a semantic one — a long but low-content message (e.g. a
 wall of pasted code) satisfies it, the threshold itself is untuned, and
 the scan does not check that the elaboration is topically about the plan
 actually being submitted (any qualifying prior turn's text since the
-last reset point counts). `skill-claim-lint.mjs` has the same
-turn-boundary duplication this guard used to have and has not been
-migrated to the shared lib — tracked as a follow-up, not attempted here
-(same "migrate later, don't retrofit silently" precedent as
-`branch-name-guard`'s Known Limitation in `smith-git/references/HOOKS.md`,
-which flags the analogous un-migrated duplication in
-`branch-rename-open-pr.mjs`/`gh-stack-guard.mjs`).
+last reset point counts).
 `readTranscriptTurns`/`readTranscriptEvents` scan the transcript from the
 start on every `ExitPlanMode` call rather than backward from EOF —
 accepted as a low-priority inefficiency given how rarely `ExitPlanMode`
@@ -1056,6 +1179,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
         ]
       },
       {
+        "matcher": "Bash|Edit|Write|Agent|Task|WebFetch|WebSearch|ExitPlanMode|mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/skill-load-gate.mjs\"" }
+        ]
+      },
+      {
         "matcher": "*",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/personal-data-guard.mjs\"" }
@@ -1110,9 +1239,10 @@ don't assume registration worked just because the JSON parses). Hook
 definitions load at session start, so start a new `claude` session first,
 then:
 
-1. **skill-router** — send a prompt that matches a known trigger (e.g.
-   mention "git commit"); confirm a skill-router advisory listing candidate
-   skills appears.
+1. **skill-router** — in a new session, send a prompt that matches a known
+   trigger (e.g. mention "pull request"); confirm a skill-router advisory
+   listing candidate skills appears. Load one of them with the Skill tool
+   and send the prompt again; confirm that skill is no longer listed.
 2. **branch-guard** — on a repo's default branch, attempt an `Edit`/`Write`;
    confirm Claude Code blocks it citing branch-guard. Then create a
    branch/worktree and confirm the same edit proceeds normally.
@@ -1153,8 +1283,11 @@ then:
     confirm the advisory points you to `/review-pr` / `/smith-review`.
 12. **skill-read-substitution-guard** — Read a `SKILL.md` under a skills root;
     confirm the advisory points you to the Skill tool.
-13. **skill-claim-lint** — end a turn whose message says `using @some-skill`
-    without invoking it via the Skill tool; confirm the advisory appears.
+13. **skill-claim-lint** — end a turn whose message says `using
+    @smith-clarity` without loading that skill with the Skill tool; confirm
+    the turn is refused once and continues. The hook does not refuse the
+    continued turn a second time. A claim of a name that is no skill of
+    this repository gets an advisory and no refusal.
 14. **gh-stack-guard** — with the `gh stack` extension installed,
     run `gh pr create --base <a-non-default-branch>`; confirm the advisory points
     you to `gh stack`. Then run `git rebase --onto x y` as a Bash tool call;
@@ -1237,6 +1370,11 @@ then:
     confirm it is blocked and the message names the same path under
     `.claude/worktrees/«name»/`. Re-issue with that path; confirm it proceeds.
     Confirm `list_memories` is not blocked.
+27. **skill-load-gate** — in a new session that has loaded no skill, run
+    `git commit --allow-empty -m probe` on a scratch branch; confirm it is
+    refused and the refusal names `@smith-git`. Load `smith-git` with the
+    Skill tool and run it again; confirm this hook no longer refuses it.
+    Confirm `git status` is never refused.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not

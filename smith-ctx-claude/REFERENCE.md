@@ -386,26 +386,26 @@ skill via the Skill tool:
   Playwright → `@smith-playwright/SKILL.md` + `@smith-mcp-browser/SKILL.md`
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
-  Dev-initiation verbs (implement/develop/fix/add feature/modify/improve/harden/refactor …) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
+  Dev-initiation phrases (add a feature/option/flag/command/skill/test/support, new feature, make a change, start the task/work/implementation) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
 **Plan**: "execute/load/run/implement the plan", "plan mode" → `@smith-mode-plan/SKILL.md` + `@smith-mode-plan-claude/SKILL.md` (one rule, both skills)
 **SDLC (software development lifecycle)**: `intent.md`/`spec.md`/`design.md`, AI-native or agentic software development lifecycle, the SDLC playbook, an ADR (Architecture Decision Record), Given-When-Then acceptance scenarios, or EARS (Easy Approach to Requirements Syntax) followed by one of `syntax`/`notation`/`form(s)`/`format`/`requirement(s)` — bare `EARS` deliberately does not trigger, because the router matches case-insensitively and would fire on the English word "ears" → `@smith-sdlc/SKILL.md`
-**Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `Monitor`, polling for external state → `@smith-automation/SKILL.md`
-**Subagents**: spawning Task/Agent subagents, delegating investigation, parallel orchestration, OR a subagent touching shared state (PR/issue/file/remote) → `@smith-subagents/SKILL.md`
-**Git/GitHub**: Commits/branches → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
+**Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `cron`, "poll for", "every N minutes/hours" → `@smith-automation/SKILL.md`
+**Subagents**: "subagent"/"sub-agent", "parallel agents", "fan out" (the spawn itself is enforced by `skill-load-gate`) → `@smith-subagents/SKILL.md`
+**Git/GitHub**: `git commit`/`git stash`, rebase, cherry-pick, branch naming (the commit and the push are enforced by `skill-load-gate`) → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
   Worktrees (raw git) → `@smith-git/SKILL.md`,
   Worktrees (Claude Code tools: EnterWorktree/ExitWorktree, bgIsolation, squash-merge sync) → `@smith-worktree/SKILL.md`,
-  PRs/reviews/`gh pr*` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`,
+  "pull request"/"PR", "code review", `gh pr` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`,
   Reviewing or approving a PR/diff/change (`/smith-review`, `/review-pr`) → `@smith-review/SKILL.md` + `@smith-gh-pr/SKILL.md` (router also emits the suggestion-block note below),
   Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md` (router also emits: a mechanical fix MUST carry the block, not prose describing the edit)
   Running or interpreting a CodeRabbit review, GitHub App or `coderabbit` command line → `@smith-gh-pr/SKILL.md` + `@smith-review/SKILL.md` (router also emits: a review that did not run looks identical to a clean one — check status, not the finding count)
-**Claude Code**: Hooks/permissions/agents/model routing → `@smith-ctx-claude/SKILL.md` + `@smith-settings/SKILL.md`,
+**Claude Code**: Claude Code hooks (hook event/matcher/script, `PreToolUse`, `Stop hook` …) → `@smith-ctx-claude/SKILL.md` + `@smith-settings/SKILL.md`,
   MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-validation/SKILL.md`,
-  Auto-mode classifier denial OR classifier-sensitive action (e.g. force-push, push to main, prod deploy, IAM grant, external-content duplication, sandbox network call) → `@smith-ctx-claude-mode-auto/SKILL.md`,
-  Permission denial wording ("denied", "denial", "blocked by auto-mode/classifier") → `@smith-ctx-claude-mode-auto/SKILL.md` (router also emits: do not silently retry a denied action)
+  "auto-mode", `hard_deny`, "force push" → `@smith-ctx-claude-mode-auto/SKILL.md`,
+  Permission denial wording ("permission denied", "denied by the classifier/auto-mode/hook", "blocked by auto-mode/classifier") → `@smith-ctx-claude-mode-auto/SKILL.md` (router also emits: do not silently retry a denied action)
 **Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md` + `@smith-ctx-claude/SKILL.md`
 **Skill authoring**: `SKILL.md`, `AGENTS.md`, progressive disclosure, "write a skill" → `@smith-skills/SKILL.md`
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-validation/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
-**Reasoning**: Analysis → `@smith-analysis/SKILL.md`, Design → `@smith-design/SKILL.md`, Debug → `@smith-validation/SKILL.md`,
+**Reasoning**: Analysis → `@smith-analysis/SKILL.md` (no router rule), "design pattern"/"SOLID principles"/"software architecture"/"architecture review or decision" → `@smith-design/SKILL.md`, "root cause"/"repro"/"bug fix"/"stack trace" → `@smith-validation/SKILL.md`,
   Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md` + `@smith-validation/SKILL.md`,
   Investigation / adversarial verification ("investigate X", "verify whether/that/if", "is this true", "prove me wrong", red-team, null hypothesis, refute, disprove, fact-check, falsify) → `@smith-validation/SKILL.md` + `@smith-clarity/SKILL.md` (router also emits: try to disprove a finding before reporting it, carry a durable locator for every claim, and add a separate skeptic when it contradicts a rule or drives an external write, which reporting it is not)
 **Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`

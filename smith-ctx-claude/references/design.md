@@ -229,14 +229,12 @@ if:**` line in the body; `skill-lint.mjs` reports a description without a
 when-to-use clause, and a rewritten description is kept only where
 `skill-trigger-eval.mjs compare` passes for its skill: the trigger count
 did not fall and the near-miss count did not rise. The personal
-profile is to set `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` in the `env`
+profile sets `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` in the `env`
 block of its `settings.json`: the smallest measured budget at which a
 session on a model with a small context window keeps every smith
 description, and lower than the default budget of the default model. The
 listing stays over that budget, so the harness keeps dropping the
 descriptions of the skills invoked least, and no plugin skill is hidden.
-The harness refuses an agent's edit of that file, so the setting is in
-force only once the owner has added it.
 The router acts on owner-typed prompts only and never
 suggests a loaded skill.
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
+import { GH_GLOBAL_VALUE_FLAGS, nonFlagTokensAfterGh } from "./lib/gh-command.mjs";
 
 const PUBLIC_EXTERNAL_WRITE_PATTERNS = [
   /mcp__plugin_atlassian_atlassian__(createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue|addWorklogToJiraIssue|createIssueLink|createConfluencePage|updateConfluencePage|createConfluenceFooterComment|createConfluenceInlineComment)$/,
@@ -8,7 +9,6 @@ const PUBLIC_EXTERNAL_WRITE_PATTERNS = [
   /mcp__plugin_slack_slack__slack_schedule_message$/,
 ];
 
-const GH_GLOBAL_VALUE_FLAGS = new Set(["-R", "--repo", "--hostname"]);
 const GH_API_METHOD_FLAGS = new Set(["-X", "--method"]);
 const GH_API_IMPLICIT_POST_FLAGS = new Set([
   "-f",
@@ -86,20 +86,6 @@ function hasReviewSubmitFlag(tokens) {
     const chars = [...token.slice(1)];
     return chars.every(isReviewFlagChar) && chars.some((char) => GH_REVIEW_SUBMIT_CHARS.has(char));
   });
-}
-
-function nonFlagTokensAfterGh(tokens) {
-  const result = [];
-  for (let index = 1; index < tokens.length; index += 1) {
-    const token = tokens[index];
-    if (GH_GLOBAL_VALUE_FLAGS.has(token)) {
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("-")) continue;
-    result.push(token);
-  }
-  return result;
 }
 
 function ghApiEndpointAndMethod(rest) {

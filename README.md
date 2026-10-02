@@ -52,7 +52,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 
 | Hook | Event (matcher) | Script | Blocks / Advisory | Detail |
 |---|---|---|---|---|
-| `skill-router` | UserPromptSubmit | `smith-ctx-claude/scripts/skill-router.mjs` | Advisory: surfaces candidate skills per prompt | ctx-claude |
+| `skill-router` | UserPromptSubmit | `smith-ctx-claude/scripts/skill-router.mjs` | Advisory: on a prompt the owner typed, surfaces candidate skills that are not loaded yet | ctx-claude |
 | `branch-guard` | PreToolUse (`Edit\|Write\|NotebookEdit`+) | `smith-git/scripts/hooks/branch-guard.mjs` | Blocks edits on the default branch | git |
 | `worktree-dirty-guard` | PreToolUse (`EnterWorktree`) | `smith-git/scripts/hooks/worktree-dirty-guard.mjs` | Blocks entering a worktree with uncommitted changes | git |
 | `external-write-guard` | PreToolUse (`mcp__.*`, `Bash`) | `smith-ctx-claude/scripts/external-write-guard.mjs` | Escalates human-facing writes to `ask` | ctx-claude |
@@ -67,7 +67,8 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `subagent-contract-guard` | PreToolUse (`Agent\|Task`) | `smith-ctx-claude/scripts/subagent-contract-guard.mjs` | Blocks a subagent spawn missing the read-only contract or its personal-data sentence | ctx-claude |
 | `personal-data-guard` | PreToolUse (`*`) | `smith-ctx-claude/scripts/personal-data-guard.mjs` | Blocks any tool call that carries the user's personal data | ctx-claude |
 | `skill-read-substitution-guard` | PreToolUse (`Read`) | `smith-ctx-claude/scripts/skill-read-substitution-guard.mjs` | Advisory: Read a SKILL.md → invoke it via Skill instead | ctx-claude |
-| `skill-claim-lint` | Stop | `smith-ctx-claude/scripts/skill-claim-lint.mjs` | Advisory: flags a claimed-but-not-invoked skill | ctx-claude |
+| `skill-claim-lint` | Stop | `smith-ctx-claude/scripts/skill-claim-lint.mjs` | Blocks, once, the end of a turn whose last message claims a skill of this repository that is not loaded in the session | ctx-claude |
+| `skill-load-gate` | PreToolUse (`Bash\|Edit\|Write\|Agent\|Task\|WebFetch\|WebSearch\|ExitPlanMode\|mcp__.*`) | `smith-ctx-claude/scripts/skill-load-gate.mjs` | Blocks a governed action (commit, push, pull-request create, edit, review or comment, GitHub issue comment, `gh api` call on a comments or reviews path, Slack message, draft or scheduled message, Jira issue create or edit, GitHub issue create or edit, subagent spawn, web fetch or search, `SKILL.md` write, leaving plan mode) while its skill is not loaded | ctx-claude |
 | `gh-stack-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/gh-stack-guard.mjs` | Asks before a hand-rolled stack rebase (`git rebase --onto`, raw-SHA force-push, `.git/gh-stack` edit); advisory on `gh pr create --base` | ctx-claude |
 | `rtk-find-symlink-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs` | Advisory: `find -L`/`rtk find -L` bug workaround (rtk < 0.46.0) | ctx-claude |
 | `post-merge-pull-reminder` | PostToolUse (`Bash`) | `smith-git/scripts/hooks/post-merge-pull-reminder.mjs` | Advisory: ff-only pull the default branch after merge | git |

@@ -118,6 +118,7 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
 
 - Claude Code does not execute skill-loading instructions written in
   CLAUDE.md / AGENTS.md; skills load when invoked through the Skill tool.
+  Reading the `SKILL.md` does not load it.
   Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
 - Auto-triggering is description/shape-match in the MAIN thread only.
   Task/Workflow subagents do NOT auto-load skills or AGENTS.md — pass the
