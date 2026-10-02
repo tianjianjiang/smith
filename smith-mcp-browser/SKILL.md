@@ -25,10 +25,8 @@ description: Browser MCP plugin reliability
 ## MCP Configuration Locations (Pre-flight Scope)
 
 A browser override can live in any of four files, or in a plugin that
-registers the server (see below). The
-2026-05-21 recurrence was a pair of `*-cft` registrations in `~/.claude.json`
-that the previous (settings.json + .mcp.json only) preflight rule never
-mentioned. Check all four:
+registers the server (see below). Registrations in `~/.claude.json` are
+the easiest to miss. Check all four:
 
 | # | Location | Set by | How to inspect |
 | --- | --- | --- | --- |
@@ -94,12 +92,12 @@ channel, which upstream officially supports. `claude mcp list` confirms the
 configured arguments, which is what an absent override means; it does not
 show which browser was installed, selected, or actually launched. To
 establish that, inspect the running browser process or the server's own
-startup output — and keep the distinction, since assuming a recipe describes
-the running system is the error this whole skill was corrected for.
+startup output — and keep the distinction: a recipe says what should run, not what
+does.
 
 Source: https://github.com/ChromeDevTools/chrome-devtools-mcp (README:
 "officially supports Google Chrome and Chrome for Testing only"; `--channel`
-"default is the stable channel version"; retrieved 2026-07-12).
+"default is the stable channel version").
 
 ## Recipe: Playwright MCP (default)
 
@@ -119,7 +117,7 @@ Chromium is NOT that default.
 
 Sources: https://github.com/microsoft/playwright-mcp (`--browser` is "browser or
 chrome channel to use") and https://playwright.dev/mcp/configuration/options
-(value `chrome` — "Google Chrome (default)") — both retrieved 2026-08-04.
+(value `chrome` — "Google Chrome (default)").
 
 ## Interactive Login: Hand Off, Don't Guess
 
@@ -170,7 +168,7 @@ default `false`; `--isolated` "creates a temporary user-data-dir that is
 automatically cleaned up after the browser is closed") and
 https://github.com/microsoft/playwright-mcp ("run browser in headless mode,
 headed by default"; persistent profile stores login state and "can only be
-used by one browser instance at a time") — both retrieved 2026-07-27.
+used by one browser instance at a time").
 
 ## Escape Hatch: Vivaldi via `--browserUrl` (advanced)
 
@@ -191,16 +189,11 @@ Upstream calls this "may work but not guaranteed" (chrome-devtools-mcp README: *
 
 ## Why This Rule Exists
 
-Incident history (2026-04 → 2026-05): Vivaldi launches via `--executablePath` repeatedly failed CDP handshake — profile contamination, GCM registration errors, 180s timeout. Upstream does not guarantee non-Chrome Chromium, and that alone is why the override is forbidden — the rule stands on what upstream supports, not on any one machine's browser policy.
+Upstream does not guarantee non-Chrome Chromium, and that alone is why the override is forbidden — the rule stands on what upstream supports, not on any one machine's browser policy. A Vivaldi launch via `--executablePath` can fail the CDP handshake (profile contamination, GCM registration errors, a 180s timeout).
 
-Correction: this skill previously mandated Chrome for Testing and called
-consumer Chrome unacceptable, while the recipes above set no `--channel` and
-therefore resolved to stable Chrome all along. Chrome for Testing is not
-installed here and no registration selects it. The same class of error ran
-through the Playwright half: the skill called that server's default "bundled
-Chromium" when upstream documents the default as Google Chrome. Both servers
-land on the same stable-channel Chrome, and the rule now matches what the
-recipes actually do.
+Both servers land on the same stable-channel Chrome. The chrome-devtools-mcp
+recipes above set no `--channel`, and Playwright MCP's default is Google
+Chrome, not a bundled Chromium. Chrome for Testing is not required.
 
 Known gap, deliberately not closed here: a browser can also be selected by a
 Playwright MCP environment variable (`PLAYWRIGHT_MCP_BROWSER`,

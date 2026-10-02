@@ -127,9 +127,9 @@ condition matches, never check a later bullet once an earlier one has:
   scopes it to each host's active account, so a stale secondary account
   doesn't fail this check; and it reports only that field, never the
   token/scope detail plain `gh auth status` would print into the Live
-  State block. Requires gh ≥ 2.81.0 for `--json` support (cli/cli#11544,
-  first shipped in the v2.81.0 release notes) — an older gh's `unknown
-  flag` error also reads as `FAIL` here.
+  State block. Requires gh ≥ 2.81.0 for `--json` support (source in
+  `references/SOURCES.md`) — an older gh's `unknown flag` error also reads
+  as `FAIL` here.
 - An author line reading `no pull requests found for branch ...` →
   `SKIP`. `gh pr view` writes it to stderr and exits non-zero, so it
   arrives looking like an error; reading it as one would fail every

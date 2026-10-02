@@ -11,7 +11,7 @@ hook recipe. NOT a hooks or permissions deep-dive — those live elsewhere.
 key belongs in, OR building a hook that enforces a repo convention.
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (hooks + permission-mode
 deep-dive), `@smith-ctx-claude-mode-auto/SKILL.md` (permissions, `$defaults`, classifier)
-**Authoritative source:** [Claude Code settings](https://code.claude.com/docs/en/settings), [hooks](https://code.claude.com/docs/en/hooks) (verified 2026-06-25)
+**Authoritative source:** [Claude Code settings](https://code.claude.com/docs/en/settings), [hooks](https://code.claude.com/docs/en/hooks)
 
 ## CRITICAL: One Key, One Scope
 

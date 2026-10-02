@@ -8,14 +8,14 @@ description: Claude Code worktree TOOLS
 **Scope:** `EnterWorktree`, `ExitWorktree`, `worktree.baseRef`, `worktree.bgIsolation` settings, the background-session isolation guard, and the squash-merge sync protocol
 **Load if:** The bg-isolation guard refused an edit, OR `EnterWorktree` failed, OR the agent is planning a multi-file change that warrants isolation, OR the user mentions worktrees / `bgIsolation` / `baseRef`, OR cleaning up after a worktree-based PR merge
 **Prerequisites:** `@smith-git/SKILL.md` (git worktree fundamentals), `@smith-gh-pr/SKILL.md` (PR flow context)
-**Authoritative sources:** https://code.claude.com/docs/en/changelog (worktree.baseRef v2.1.133, bgIsolation v2.1.143; verified 2026-05-21); https://code.claude.com/docs/en/worktrees "How Claude Code enforces isolation" (verified 2026-09-07 on v2.1.263)
+**Authoritative sources:** https://code.claude.com/docs/en/changelog (worktree.baseRef v2.1.133, bgIsolation v2.1.143); https://code.claude.com/docs/en/worktrees "How Claude Code enforces isolation"
 
 ## CRITICAL: Worktree Discipline
 
 - Use `EnterWorktree` / `ExitWorktree` instead of raw Bash `git worktree add`/`git worktree remove` — the Claude Code tools track per-session ownership; raw Bash leaves orphans the harness can't clean up.
 - Keep the bg-isolation guard enabled rather than disabling it transiently for "one edit" — the guard exists because parallel background jobs share the working copy and clobber each other.
 - Scope `worktree.bgIsolation: "none"` to the repo's `.claude/settings.json` (not the user-global level `~/.claude/settings.json`) when the user has indicated this repo prefers in-place edits.
-- After `gh pr merge --delete-branch` from inside a worktree session, sync local main manually (see Sync-After-Squash-Merge below). On gh older than 2.99.0 the command exits non-zero with `fatal: 'main' is already used by worktree at ...` even though the merge itself succeeded; gh 2.99.0+ skips the local cleanup with a warning instead (cli/cli#14007, fixes cli/cli#3442). Always confirm with `gh pr view «n» --json state` rather than trusting the exit code.
+- After `gh pr merge --delete-branch` from inside a worktree session, sync local main manually (see Sync-After-Squash-Merge below). On gh older than 2.99.0 the command exits non-zero with `fatal: 'main' is already used by worktree at ...` even though the merge itself succeeded; gh 2.99.0+ skips the local cleanup with a warning instead (`references/SOURCES.md`). Always confirm with `gh pr view «n» --json state` rather than trusting the exit code.
 - Every `git` command inside a worktree session passes Claude Code's built-in isolation guard (see Built-in Isolation Guard below). Run git plainly — no launcher in front of it, no `git -C «primary-checkout»`, no chained `cd`.
 - For multi-file edits in a background session, the bg-isolation guard will refuse the first `Edit` and tell the agent to `EnterWorktree`. Comply on the first refusal — do not try alternative edit paths.
 - After a squash-merge of a worktree branch, the local copy of that feature branch is an **orphan** (its commit is not in main's history under the same SHA). `git branch -d` will refuse it with "not fully merged"; use `git branch -D` (force) once the squash commit is confirmed on main.
@@ -63,14 +63,14 @@ are absent.
   CLAUDE.local.md
   ```
   The docs apply it to every worktree Claude Code creates with git
-  (`--worktree`, subagent, desktop parallel sessions); tested 2026-09-24 on
-  v2.1.281 with `EnterWorktree` and `claude --worktree`.
+  (`--worktree`, subagent, desktop parallel sessions); `EnterWorktree`
+  honours it as well (test record in `references/SOURCES.md`).
 - Gitignore `.worktreeinclude` itself (global gitignore) — an untracked one
   makes the checkout dirty, and `worktree-dirty-guard` then blocks every
   `EnterWorktree`.
 - Copies, not symlinks: edit local skills in the primary checkout; changes
   made to a worktree copy are lost when the worktree is removed.
-- Directory symlinks are NOT copied (probed 2026-09-26, v2.1.282), so
+- Directory symlinks are NOT copied, so
   `.worktreeinclude` cannot share `.serena/memories`; the
   `link-worktree-memories` SessionStart hook does that instead
   (`smith-serena/references/HOOKS.md`).
@@ -81,12 +81,11 @@ are absent.
   the first one shows an approval dialog, and declining disables it for the
   project without asking again, so the instructions silently stop loading.
 
-Sources (retrieved 2026-09-24): https://code.claude.com/docs/en/worktrees,
+Sources: https://code.claude.com/docs/en/worktrees,
 https://code.claude.com/docs/en/hooks, https://code.claude.com/docs/en/memory;
-a dedicated local-skills directory was declined
-(https://github.com/anthropics/claude-code/issues/81110), and copying
-`.claude/` subdirectories is still open
-(https://github.com/anthropics/claude-code/issues/28041).
+upstream requests and test records in `references/SOURCES.md`. Claude Code
+has no dedicated local-skills directory, and without `.worktreeinclude` it
+copies no gitignored `.claude/` subdirectory into a worktree.
 
 ## The bg-isolation Guard
 
@@ -101,8 +100,8 @@ Two correct responses:
 
 While a session is inside a worktree, Claude Code itself (not a smith hook)
 applies four checks to every Bash command
-(https://code.claude.com/docs/en/worktrees#how-claude-code-enforces-isolation,
-retrieved 2026-09-07): file edits targeting the main checkout; a command
+(https://code.claude.com/docs/en/worktrees#how-claude-code-enforces-isolation):
+file edits targeting the main checkout; a command
 working directory that resolves to the main checkout; git redirected into the
 main checkout via `git -C`, `--git-dir`, `GIT_DIR`, `GIT_WORK_TREE`, or a
 `cd`; and **command shape** — any command whose text cannot prove that the git
@@ -113,8 +112,8 @@ worktree … cannot be shown not to be git"*.
 **The rtk collision.** The `rtk hook claude` PreToolUse hook rewrites
 `git …` into `rtk git …`. A launcher with git among its operands is exactly
 the shape the guard cannot verify, so every git command in a worktree session
-is refused, including `rtk proxy git …` (upstream report:
-https://github.com/rtk-ai/rtk/issues/3864). Fix once, in rtk's config
+is refused, including `rtk proxy git …` (upstream report in
+`references/SOURCES.md`). Fix once, in rtk's config
 (`~/Library/Application Support/rtk/config.toml` on macOS,
 `~/.config/rtk/config.toml` elsewhere):
 
@@ -123,11 +122,10 @@ https://github.com/rtk-ai/rtk/issues/3864). Fix once, in rtk's config
 exclude_commands = ["git"]
 ```
 
-Verified 2026-09-07 with `rtk hook check`: `git status`, `git -C /x status`
+Check with `rtk hook check`: `git status`, `git -C /x status`
 and `git push -u origin main` all return `No rewrite`; `gh`, `ls` and the
-rest are still rewritten. The bare `"git"` prefix is not affected by
-https://github.com/rtk-ai/rtk/issues/3838 (multi-word prefixes miss the
-`git -C` form). Cost: rtk no longer compresses git output.
+rest are still rewritten. Keep the bare `"git"` prefix: multi-word
+prefixes miss the `git -C` form. Cost: rtk no longer compresses git output.
 
 **What the guard means for the post-merge sync.** From inside a worktree,
 neither `git -C «primary-checkout» pull` (guard) nor

@@ -68,7 +68,7 @@ docs: update deployment guide
 Smith policy: every commit, PR body, PR review comment, and Slack message
 produced with AI assistance ends with an `Assisted-by:` trailer naming the agent
 and model. The trailer format follows the Linux kernel coding-assistants policy
-(https://docs.kernel.org/process/coding-assistants.html, retrieved 2026-07-16),
+(https://docs.kernel.org/process/coding-assistants.html),
 which mandates it for commits; extending it to PR bodies, review comments, and
 Slack is a Smith convention.
 
@@ -114,7 +114,7 @@ presence.
 ## Branch Names
 
 **Pattern**: `type/description` — the Conventional Branch specification
-(https://conventionalbranch.org/, retrieved 2026-08-24), adopted verbatim
+(https://conventionalbranch.org/), adopted verbatim
 instead of a smith-invented hyphen/underscore split.
 
 - `description` is one or more lowercase-and-digit segments joined by a
@@ -137,20 +137,15 @@ instead of a smith-invented hyphen/underscore split.
 **Examples**: `feat/user-authentication`, `fix/plan-claude-model-detection`,
 `docs/gh-pr-attribution-wording`.
 
-**Why not encode scope hierarchy in the branch name.** The previous
-two-separator convention (hyphen = hierarchy, underscore = single concept)
-was retired after two real, independent misapplications of its own
-documented examples — the examples themselves didn't follow one derivable
-rule (`gh-pr-attribution_wording`'s `attribution` sits on the hyphen side
-despite its own annotation calling it part of the description), because
-branch names in this repo's history were chosen by feel and rationalized
-afterward, not generated from an algorithm. Checking why that scope
-information seemed to matter surfaced the real answer: it doesn't, to any
-tooling that exists. release-please (https://github.com/googleapis/
-release-please, retrieved 2026-08-24) — the standard tool for automating
-versions/changelogs from Conventional Commits, should this repo ever adopt
-it — parses only commit messages on the default branch; it never reads
-branch names. Scope belongs in the commit's `type(scope): description`
+**Why not encode scope hierarchy in the branch name.** A two-separator
+convention (hyphen = hierarchy, underscore = single concept) leaves the
+choice between the two to judgement, so names get chosen by feel and
+rationalized afterward instead of generated from an algorithm. The scope information also matters
+to no tooling that exists. release-please
+(https://github.com/googleapis/release-please) — the standard tool for
+automating versions/changelogs from Conventional Commits, should this repo
+ever adopt it — parses only commit messages on the default branch; it never
+reads branch names. Scope belongs in the commit's `type(scope): description`
 header, where release-please-class tooling actually looks; the branch name
 only needs to be unambiguous and human-readable, which a single separator
 already guarantees.
@@ -167,9 +162,9 @@ name was not explicitly given by the user, still confirm it with them before
 the first push — the hook checks *format*, not *what the user actually wanted
 named*.
 
-Pre-2026-08-24 branch names used the retired two-separator convention
-(visible in old PR history) — this section governs branches created from
-now on; do not rename already-merged branches to match retroactively.
+Older branch names follow the two-separator convention described above.
+This section governs new branches; do not rename already-merged branches
+to match retroactively.
 
 ## External Communication Standards
 

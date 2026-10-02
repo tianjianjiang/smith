@@ -54,7 +54,9 @@ internal-file exemption.
 - Name any referenced work in full on first use — book, paper, dataset, tool,
   experiment variant, internal document — with a one-line gloss and a locator
   (URL, file path, issue reference, or author and year), so a reader can
-  follow the sentence without looking it up.
+  follow the sentence without looking it up. In a skill file the locator is
+  a URL or a file path only: no date and no issue, pull-request, commit or
+  ticket reference.
 - Replace internal index codes (`M1`, `S5`, `C-6`), names coined for this work
   whenever they were coined, and codes borrowed from another document's table
   with a descriptive name — quote the row's content, not its index code.

@@ -153,7 +153,7 @@ See `@smith-ralph/SKILL.md` for full commit patterns.
 
 ## Git Enforcement Hooks
 
-**smith-git owns all git operation enforcement hooks** (as of 2026-08-30). These PreToolUse hooks enforce git-level rules deterministically via Claude Code's hook system.
+**smith-git owns all git operation enforcement hooks**. These PreToolUse hooks enforce git-level rules deterministically via Claude Code's hook system.
 
 **Available hooks** (`smith-git/scripts/hooks/`):
 

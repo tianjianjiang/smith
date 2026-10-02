@@ -30,16 +30,15 @@ description: Core agent steering
   not license silence (see Anti-Sycophancy below)
 
 Source: https://google.github.io/eng-practices/review/developer/small-cls.html
-("Separate Out Refactorings," retrieved 2026-07-11) — refactorings belong in a
+("Separate Out Refactorings") — refactorings belong in a
 separate CL from feature/bugfix changes, except small cleanups like variable
 renames; related review research recommends keeping reviews to roughly
 200-400 LOC, with defect-discovery diminishing beyond that review size
-(https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/,
-retrieved 2026-07-11).
+(https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/).
 
 ## Communication Standards
 
-- Cite sources with URLs when available, e.g.: "Per docs: https://example.com (retrieved 2025-01-15)", "Defined in auth.ts:67"
+- Cite sources with URLs when available, e.g.: "Per docs: https://example.com (retrieved «YYYY-MM-DD»)", "Defined in auth.ts:67". A skill file is the exception: it carries the URL or path only, without the date
 - When you have browsing or external-research capability and it is relevant, research current best practices before recommending approaches; prefer the latest info with the strongest evidence
 - If you cannot access current sources (e.g. browsing disabled), say so explicitly and base recommendations on existing knowledge only
 - Name things by their recorded identifiers (variant labels, filenames,

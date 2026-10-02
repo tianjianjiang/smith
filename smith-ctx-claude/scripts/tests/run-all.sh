@@ -27,6 +27,7 @@ for check in \
   coderabbit-status-check \
   tool-output-hygiene \
   correction-census \
+  skill-lint \
   on-session-compact
 do
   bash "$HERE/$check.test.sh" || status=1

@@ -175,8 +175,8 @@ checked is recorded as such and fails that check rather than passing quietly.
   optional: it reads the tree from when it started.
 - Before mutating a shared artifact a subagent reported on, RE-READ its current
   state and merge — never overwrite from the subagent's snapshot.
-- Incident this guards against: a subagent overwrote a PR title from a stale
-  read, discarding an intervening change. Reconcile first, then write.
+- A write from a stale read discards any intervening change (a PR title
+  edited meanwhile, for example). Reconcile first, then write.
 
 ## Related
 

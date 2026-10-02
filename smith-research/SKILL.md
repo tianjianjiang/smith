@@ -43,6 +43,9 @@ description: Proactive research protocol
 - Date of retrieval
 - Version referenced
 
+Exception: a skill file carries the source's URL or path only, without
+the date.
+
 **Format:**
 ```text
 "React 19 introduced `feature_name` [1]"

@@ -46,7 +46,7 @@ A theory is scientific only if it can be proven false:
 **Anti-pattern**: Only running tests you expect to pass
 **Good practice**: Actively try to break your own code
 
-**Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check. (Triggered 2026-06: proposed two Slack-MCP OAuth setups as if they'd work; both failed; a 30-second search would have found the closed-as-not-planned regression that made the whole route impossible.)
+**Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check.
 
 ## Adversarial Verification of Findings
 
@@ -74,7 +74,8 @@ be wrong about in front of whoever asked.
   it. No skeptic available? Record "not run" and why, then conclude — never
   promote it silently.
 - **Locator per claim.** Every claim carries a durable locator: a URL,
-  `file:line`, commit, ticket, or a command whose output can be re-run —
+  `file:line`, commit, ticket, or a command whose output can be re-run (in a
+  skill file a URL or a path only) —
   format per `@smith-research` Source Citation (external), `@smith-ctx`
   Information Retention (in-repo), `@smith-recon` (multi-source briefs). No
   locator means the claim is labelled unsourced, never asserted, and an
@@ -85,8 +86,8 @@ be wrong about in front of whoever asked.
   Closure).
 
 Source: Anthropic, "A harness for every task: dynamic workflows in Claude Code"
-(https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code,
-retrieved 2026-07-28) — "For each spawned agent, run a separate spawned agent
+(https://claude.com/blog/a-harness-for-every-task-dynamic-workflows-in-claude-code)
+— "For each spawned agent, run a separate spawned agent
 to adversarially verify its output against a rubric or criteria", one of six
 workflow patterns it lists. The post separately names self-preferential bias
 ("Claude's tendency to prefer its own results or findings, especially when
@@ -164,7 +165,7 @@ unconditional, not fired by suspicion.
 3. **Put the fix on the branch the real input hits** — confirm by re-running
    the repro that it now passes.
 
-**The test-masking trap** (2026-06): a fix placed in a branch the real
+**The test-masking trap**: a fix placed in a branch the real
 input never enters, paired with a unit test that *mocks an input* to force that
 branch → green test, live bug. The test fit the fix instead of reproducing the
 bug. Guard both ends: `@smith-tests/SKILL.md` (never mock the branch/unit under

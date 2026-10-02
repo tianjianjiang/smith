@@ -105,7 +105,7 @@ the stack) and `@smith-worktree`.
   and opened on one explicit yes (batched consent).
 - **Phases 5-7 are stack-wide, not per unit** — address review across the
   stack, then merge bottom-up with retarget-before-merge and manual parent
-  branch deletion per `@smith-gh-pr` Stacked PRs (cli/cli#1168); cascade
+  branch deletion per `@smith-gh-pr` Stacked PRs; cascade
   rebases; ff-only sync once per merge.
 - **Report per branch** — verify the stack scope (no omissions) and state
   status per branch in-band.

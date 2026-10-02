@@ -56,24 +56,12 @@ import {
 } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import {
   SERENA_TOOL_PREFIX,
+  SERENA_WRITE_TOOLS,
   canonicalPath,
   isInside,
   resolveCheckoutMismatch,
 } from "../../smith-git/scripts/lib/serena-root.mjs";
 
-const WRITE_TOOLS = new Set([
-  "replace_content",
-  "replace_symbol_body",
-  "replace_in_files",
-  "insert_after_symbol",
-  "insert_before_symbol",
-  "safe_delete_symbol",
-  "rename_symbol",
-  "create_text_file",
-  "delete_lines",
-  "replace_lines",
-  "insert_at_line",
-]);
 const WHOLE_PROJECT_WHEN_PATH_EMPTY = new Set([
   "find_symbol",
   "replace_in_files",
@@ -135,7 +123,7 @@ function main() {
   const situation = `session works in checkout ${sessionTop}, but Serena is rooted at ${root}`;
 
   if (!reachable) {
-    if (WRITE_TOOLS.has(tool)) {
+    if (SERENA_WRITE_TOOLS.has(tool)) {
       blockWithError(
         `Blocked: ${situation} and cannot reliably reach that checkout (it lies outside Serena's root or a .gitignore file covers it). Use the built-in Edit/Write with absolute paths inside ${sessionTop}.`,
       );

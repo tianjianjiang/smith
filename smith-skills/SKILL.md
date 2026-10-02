@@ -19,9 +19,7 @@ Skills and rules follow 3-tier loading to minimize token usage:
 **Section ordering**: put the rules an agent must never miss near the top of
 the file, and checklists/action items near the bottom. Treat this as
 practical placement hygiene, not a claim about a specific attention
-mechanism — a prior version of this file labeled sections "(Primacy Zone)"
-and "(Recency Zone)" as if that maps to a documented Anthropic effect.
-Verified 2026-07-11: it doesn't. Anthropic's context-engineering and
+mechanism. Anthropic's context-engineering and
 prompt-engineering docs never mention primacy/recency, and state that
 "exact formatting matters less as models get more capable."
 
@@ -138,7 +136,7 @@ lists — not an XML tag skeleton (no `<required>`/`<forbidden>`/`<context>`/
 `<metadata>`/`<related>`). This matches Anthropic's own SKILL.md-authoring
 examples and OpenAI's current (GPT-5.5/5.6) model-guidance format; only
 Gemini's docs treat XML and Markdown as equally valid, so Markdown is the
-safer cross-platform default. (Verified 2026-07-11 against
+safer cross-platform default. (Checked against
 platform.claude.com's Skill authoring best-practices page and OpenAI's
 GPT-5.5 model guidance — see `@smith-xml/SKILL.md` for the narrower case
 where XML content-tags are still the right tool: runtime prompts that mix
@@ -153,7 +151,7 @@ instructions with embedded data, e.g. subagent prompts.)
   bullet list — "Only commit when the user explicitly asks" carries the
   same rule as "Never commit unless asked" without asking the reader to
   parse a negation. This is Anthropic's own documented guidance ("tell
-  Claude what to do instead of what not to do"), verified 2026-07-11.
+  Claude what to do instead of what not to do").
 - Reserve a `## Hard Limits` section for the residual with no natural
   affirmative phrasing (secrets, force-push, irreversible deletes). Keep
   it short — if bullets keep accumulating there, some of them probably do

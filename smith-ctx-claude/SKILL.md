@@ -119,9 +119,10 @@ Flag-based auto-reload mechanism for plan and state restoration after `/clear`:
 
 **Flag file location:** `~/.claude/plans/.pending-reload-«session-hash»`
 
-**Known upstream bugs (mitigated by preemptive flag creation):**
-- Plan mode "clear context and auto-accept" may not fire PostToolUse:ExitPlanMode ([#20397](https://github.com/anthropics/claude-code/issues/20397))
-- Plan mode "clear context" may not fire SessionStart:clear ([#20900](https://github.com/anthropics/claude-code/issues/20900))
+**Known upstream bugs (mitigated by preemptive flag creation; issue links in
+`references/SOURCES.md`):**
+- Plan mode "clear context and auto-accept" may not fire PostToolUse:ExitPlanMode
+- Plan mode "clear context" may not fire SessionStart:clear
 
 ## System Reminders (Auto-Injected Context)
 
