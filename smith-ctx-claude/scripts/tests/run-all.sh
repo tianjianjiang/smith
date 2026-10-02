@@ -26,6 +26,7 @@ for check in \
   post-merge-pull-reminder \
   coderabbit-status-check \
   tool-output-hygiene \
+  correction-census \
   on-session-compact
 do
   bash "$HERE/$check.test.sh" || status=1
