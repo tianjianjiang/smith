@@ -194,6 +194,14 @@ covers the task until the owner names it.
   https://code.claude.com/docs/en/skills.md: "The budget scales at 1% of
   the model's context window. When the listing overflows, Claude Code
   drops descriptions starting with the skills you invoke least".
+- Measured after the descriptions merged, the harness does drop by use. On
+  the default model every smith description survives. On a model with a
+  small context window the default budget is spent on the skill names and
+  the built-in descriptions, and every smith description is dropped. A
+  fixed budget well below the size of the full listing keeps every smith
+  description on both and still drops those of plugin skills that are not
+  used. `instruction-enforcement/plan.md`, under Risks, has the figures
+  and how they were measured.
 - A hook cannot load a skill.
   https://code.claude.com/docs/en/hooks-guide.md, "Limitations": command
   hooks "can't trigger `/` commands or tool calls."
@@ -220,22 +228,27 @@ phrase and one use-when sentence that does not list the sections of the body, wi
 if:**` line in the body; `skill-lint.mjs` reports a description without a
 when-to-use clause, and a rewritten description is kept only where
 `skill-trigger-eval.mjs compare` passes for its skill: the trigger count
-did not fall and the near-miss count did not rise. No
-listing-budget setting is changed and no plugin skill is hidden: the
-harness drops the descriptions of the least-invoked skills first, so the
-listing does not have to fit. Which smith descriptions a session drops is
-measured after the merge, on the default model and on a model with a
-200,000-token window, and a budget or plugin change is considered only if
-any are dropped. The router acts on owner-typed prompts only and never
+did not fall and the near-miss count did not rise. The personal
+profile is to set `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` in the `env`
+block of its `settings.json`: the smallest measured budget at which a
+session on a model with a small context window keeps every smith
+description, and lower than the default budget of the default model. The
+listing stays over that budget, so the harness keeps dropping the
+descriptions of the skills invoked least, and no plugin skill is hidden.
+The harness refuses an agent's edit of that file, so the setting is in
+force only once the owner has added it.
+The router acts on owner-typed prompts only and never
 suggests a loaded skill.
 
 **Consequences**: A task with no governed action still depends on the
 description and the router; the recount under ADR-005 shows whether that
 holds. The table is one more thing to keep in step with the skills. The
 descriptions take more of the listing than before. The listing stays over
-its budget, so some descriptions are dropped in every session; until the
-measurement after the merge it is not known
-whether a smith description is among them. A description must
+its budget, so the descriptions of little-used skills are dropped in every
+session. The budget covers the skill names, the built-in descriptions and
+the descriptions used most, in that order; when skills are added or
+descriptions grow it has to be measured again, or a smith description is
+dropped without notice. A description must
 not make its only condition depend on something the session may lack;
 the description of `smith-serena` names conditions that hold without that
 server: a prompt that mentions Serena, and phase and session boundaries.

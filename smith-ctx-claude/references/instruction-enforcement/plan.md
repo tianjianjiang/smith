@@ -131,8 +131,9 @@ Outside this repository:
 
 - The personal profile's `settings.json`: registers the new hooks, with a
   dated backup beside the file. The harness refuses an agent's edit of
-  this file as self-modification, so the owner applies it. No
-  listing-budget setting is part of this plan (ADR-003 of `design.md`). A
+  this file as self-modification, so the owner applies it. Its `env`
+  block is also to set `SLASH_COMMAND_TOOL_CHAR_BUDGET` to `20000` (ADR-003 of
+  `design.md`; measurement under Risks below). A
   new rule file states that primary sources are read as raw text.
 - The two other profiles: no change until the owner has accepted the exact
   difference for each.
@@ -166,10 +167,10 @@ each of those waits for the owner's yes.
    gains its rule that a description says when to use the skill here, when
    the files satisfy it. The rules that told authors to write a `**Load
    if:**` line (`smith-skills/SKILL.md`, `smith-prompts/SKILL.md`,
-   `README.md`) change in the same step. After this step merges, a session
+   `README.md`) change in the same step. After this step merged, a session
    on the default model and one on a model with a 200,000-token window
-   each quote the description they see for every smith skill, and the
-   dropped ones are counted.
+   each quoted the description they saw for every smith skill, and the
+   dropped ones were counted; the result is under Risks.
 4. `skills-invoked.mjs`, `skill-load-gate.mjs`, the router changes and the
    `skill-claim-lint.mjs` change, with tests.
 5. `turn-end-gate.mjs`, `turn-end-judge.prompt.md` and the
@@ -221,11 +222,25 @@ each of those waits for the owner's yes.
   the router, and the recount shows whether that is enough.
 - Descriptions use the skill listing's budget, and descriptions that do
   not fit are dropped silently, those of the least-invoked skills first.
-  The listing was over the default budget before the change and stays over
-  it at any description length, so the descriptions are kept short and the
-  count of dropped smith descriptions is measured after step 3 merges; a
-  budget setting or hiding plugin skills is considered only if any are
-  dropped.
+  The listing of the personal profile (138 skills, 40,651 characters) is
+  over the default budget at any description length. Measured on
+  2026-10-02 after step 3 merged, in unsaved headless sessions asked to
+  quote the description they see for every smith skill, the answers
+  compared with the skill files by script (the default budgets are the
+  ones each session printed in its debug log):
+  - Default model, default budget 30,000: all 48 smith descriptions kept.
+  - Model with a 200,000-token window, default budget 8,000: none kept; a
+    second prompt found 11 of the 138 skills with a description, all
+    built in.
+  - The same model with `SLASH_COMMAND_TOOL_CHAR_BUDGET` set: 18 of 48
+    kept at 12,000 (the most used ones), 31 at 14,000, 44 at 16,000, 47 at
+    18,000, all 48 at 20,000. At 20,000 the default model keeps all 48 as
+    well. The value has the same effect from the `env` block of a settings
+    file (`--settings «file»`, measured at 16,000 and 20,000).
+  So the personal profile is to set 20000, which the owner adds. That is half the listing: the
+  descriptions of unused plugin skills are still dropped, and the default
+  model loads less than under its own default. Measure again when skills
+  are added or descriptions grow.
 - The trigger rates are measured on one model, in a session that lists
   only the 48 skills and the built-in ones. One run per prompt moved a
   description that had not changed by one prompt in ten; 13 skills are run
