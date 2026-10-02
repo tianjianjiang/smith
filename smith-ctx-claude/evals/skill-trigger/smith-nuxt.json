@@ -1,0 +1,27 @@
+{
+  "skill": "smith-nuxt",
+  "should_trigger": [
+    "Write a vitest unit test for server/middleware/auth.ts in our Nuxt 3 app. It should cover the 401 path when the session cookie is missing.",
+    "vitest fails with 'ReferenceError: defineEventHandler is not defined' at server/api/health.get.ts:1 as soon as the test file imports the handler. Fix the test.",
+    "I set globalThis.createError at the top of tests/rateLimit.test.ts, above the import of ../server/middleware/rateLimit, and it still throws 'createError is not defined'. the stub is clearly on an earlier line. why?",
+    "Our Nuxt app needs the database connection string and the payment provider secret at runtime. Add them to nuxt.config.ts runtimeConfig and tell me what the variables in .env must be called.",
+    "the browser bundle of the nuxt 3 storefront can't see API_BASE_URL from .env, useRuntimeConfig().public.apiBase is an empty string in production. sort it out",
+    "In tests/server/session.test.ts someone wrote vi.mock('h3', ...) to fake defineEventHandler and the mock never takes effect for server/utils/session.ts. Rewrite the test setup so it works.",
+    "Review the .env.example of the Nuxt project: NUXT_PUBLIC_STRIPE_SECRET, NUXT_PUBLIC_API_BASE, NUXT_DATABASE_URL. Anything wrong with how these are named?",
+    "add a unit test for composables/useCart.ts. it calls useState, which blows up outside the nuxt runtime",
+    "We are moving the deploy of the Nuxt 3 admin app to containers. List the environment variables the container needs so that runtimeConfig.apiSecret and runtimeConfig.public.sentryDsn are overridden at start, without rebuilding.",
+    "Convert the static import of ../server/middleware/cors in tests/cors.test.ts into whatever is needed so that my stubs for the Nuxt server helpers are in place before the module body runs."
+  ],
+  "should_not_trigger": [
+    "Tighten the types in packages/shared/src/money.ts: replace the any in parseAmount with a discriminated union and enable noUncheckedIndexedAccess.",
+    "The Playwright run against the storefront failed 4 of 31 tests after the header component was reworked. Go through the failure artifacts and classify each one.",
+    "write vitest tests for src/lib/slugify.ts in the plain TypeScript utilities package, table-driven, one assertion per case",
+    "In our Next.js app the variable NEXT_PUBLIC_ANALYTICS_ID is undefined in the client bundle on the preview deployment. Find out why.",
+    "Should the test for the invoice total come before the implementation? Walk me through the red-green-refactor order for this change.",
+    "Vue 3 component components/PriceTag.vue re-renders on every keystroke in the parent form. Find the reactive dependency that causes it.",
+    "add a .env.example to the Python billing worker and load it with pydantic-settings, failing fast when DATABASE_URL is missing",
+    "Use the browser MCP to open the Nuxt dev server on port 3000 and tell me which network requests fail on the checkout page.",
+    "Set up ESLint flat config with the Vue plugin and Prettier for the monorepo, and wire it into the pre-commit hook.",
+    "vi.mock('../db/client') is hoisted above my const fixtures in tests/orders.test.ts for the Express API and now the factory references an uninitialised variable. Explain the usual way around that."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-mode-plan",
+  "should_trigger": [
+    "Don't touch any code yet. Look through the payments module and come back with a written plan for moving it off the legacy queue: files that change, order of work, tests, risks. I will approve before you edit anything.",
+    "continue with docs/plans/migrate-auth.md, pick up wherever the last session stopped",
+    "You finished the schema migration and the API endpoints for the export feature. Record that in the plan file before moving on to the next step.",
+    "Turn this list of seven refactoring steps into a plan file at plans/refactor-notifications.md that a later session can resume from without me re-explaining where we are.",
+    "a plan got loaded automatically when this session started, plans/rate-limiter.md. is that still something to work on or is it already done?",
+    "Step 4 of the plan needs a decision on whether we keep the old webhook format. You cannot decide that on your own. How should you surface it and what do you write in the plan?",
+    "all the tasks in plans/search-reindex.md look ticked. wrap it up properly",
+    "Add a progress log to plans/cache-rollout.md. I want to see per work session what was completed, which files changed, and when.",
+    "What exactly is the agent allowed to do while it is in the planning stage versus after I approve? I use two different coding agents and want the same expectation for both.",
+    "work through the remaining unchecked items in PLAN.md one at a time, and make sure the file reflects reality after each one so that a fresh session could take over"
+  ],
+  "should_not_trigger": [
+    "In Claude Code, the ExitPlanMode call got rejected with no feedback and it says 'Re-entering Plan Mode'. What now?",
+    "Scope the new audit-log feature end to end: write intent.md and spec.md with Given-When-Then acceptance criteria before any planning happens.",
+    "Start a ralph loop on the flaky importer tests with a completion promise and a maximum of 20 iterations.",
+    "context is at 55%, save the state of this investigation to memory so I can /clear and come back",
+    "Break the reporting epic into tickets with acceptance criteria and estimates as t-shirt sizes.",
+    "Interrogate my plan for sharding the orders table. Ask me hard questions one at a time until the weak points are obvious.",
+    "plan the sprint: pull the open issues labelled backend from GitHub and group them by milestone",
+    "Decompose the latency problem in the search service into independent hypotheses and tell me which to test first.",
+    "Add a TODO.md to the repo root with a markdown checklist of the release steps for version 2.4 and link it from the README.",
+    "My exit-plan-mode-guard hook blocks the approval dialog in Claude Code even though I explained the plan. Why does the hook think I did not?"
+  ]
+}

@@ -1,0 +1,23 @@
+{"skill": "smith-python", "should_trigger": [
+"Add a function to ingest/loader.py that reads a directory of PDFs and returns the parsed documents, with a test for it in tests/test_loader.py.",
+"pytest passes when I run .venv/bin/python -m pytest locally but half the tests fail with KeyError: 'DATABASE_URL'. The repo has a poetry.lock and a .env file. What's the right way to run them?",
+"tests/test_billing.py is a unittest.TestCase class with setUp and eight test methods. Convert it to how we write tests in this repo.",
+"ruff is flagging F841 'local variable result is assigned to but never used' in jobs/sync.py and E501 in a few places. Clean those up.",
+"The logging in worker/consumer.py does logger.info('processed %s rows for tenant %s' % (n, tenant)). Switch the module to proper structured logging.",
+"Create a config module for the notification service that reads SMTP_HOST, SMTP_PORT and API_KEY from the environment and .env, with sensible defaults and validation.",
+"The tokenizer library ignores TOKENIZERS_PARALLELISM even though I set os.environ in main.py. Imports are at the top and the assignment is below them. Fix it.",
+"add httpx as a dependency and remove requests. repo has a uv.lock",
+"scripts/report.py has imports inside three functions and uses from .helpers import fmt. Tidy the imports and sort them into the usual groups.",
+"Refactor summarize() in llm/summarizer.py into smaller functions. It currently passes reasoning_effort='high' and a specific model name; I only want the structure changed."
+], "should_not_trigger": [
+"Add strict null checks to the TypeScript API client in web/src/api.ts and fix the resulting compile errors.",
+"Explain the red-green-refactor cycle and when I should write an integration test instead of a unit test.",
+"Write a Playwright test that logs in and checks the dashboard renders the usage chart.",
+"Which is the latest stable release of pydantic and did v2 change how validators are declared?",
+"Use the Serena MCP tools to find every reference to the Invoice symbol across the repo.",
+"Our Python service leaks memory in production. Write the postmortem with timeline, impact and action items.",
+"Rename the files under src/Utils/ to follow the repo's naming convention; some are CamelCase.py and some have hyphens.",
+"Commit the changes in api/ with a conventional commit message and push the branch.",
+"Design the class structure for a plugin-based ETL pipeline: which pattern fits, strategy or template method?",
+"Configure the MCP fetch server in my editor settings so the agent can pull documentation pages."
+]}

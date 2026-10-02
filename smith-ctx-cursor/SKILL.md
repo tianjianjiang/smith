@@ -1,11 +1,10 @@
 ---
 name: smith-ctx-cursor
-description: Cursor context management
+description: Cursor context management. Use when working in Cursor and context grows large, or choosing how to pull files into a Cursor chat.
 ---
 
 # Cursor Context Management
 
-**Load if:** Using Cursor, context >60%
 **Prerequisites:** @smith-ctx/SKILL.md
 
 ## CRITICAL: Context Commands

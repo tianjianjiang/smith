@@ -1,12 +1,11 @@
 ---
 name: smith-automation
-description: Claude Code scheduling primitives
+description: Claude Code scheduling primitives (/loop, cron, ScheduleWakeup, Monitor, /schedule). Use when setting up a recurring or scheduled task, polling, or a reminder.
 ---
 
 # Claude Code Scheduling & Automation
 
 **Scope:** `/loop` (three forms), the underlying session-scoped `Cron*` tools, `ScheduleWakeup` (Claude-internal in dynamic `/loop`), `Monitor` (live event stream), and `/schedule` (Routines on claude.ai)
-**Load if:** The user invokes `/loop` or `/schedule`, OR the agent needs to poll for a state change, watch a long-running process, set a one-time reminder, or wait for external work the harness cannot notify about
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (session model)
 **Authoritative sources:** https://code.claude.com/docs/en/scheduled-tasks, https://code.claude.com/docs/en/tools-reference (Monitor + ScheduleWakeup); https://code.claude.com/docs/en/routines
 

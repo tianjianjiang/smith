@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ctx-kiro",
+  "should_trigger": [
+    "I'm in Kiro. Generate a .env.example for the billing service by echoing each KEY=\"value\" line into the file from the terminal.",
+    "kiro terminal just froze again after you ran that cat <<EOF block to write deploy.yaml. what should you do differently to create that file?",
+    "Working in Kiro: strReplace keeps failing on src/config/routes.ts with a 'multiple matches' error because the same block appears twice. Update only the second occurrence of the retry config.",
+    "New Kiro session on the inventory repo. Before we touch anything, get the Serena project set up and pull in whatever context was saved last time.",
+    "we're at about 70% context in this Kiro chat and I still have three files to migrate. what do you do now so we don't lose the state?",
+    "Do I still need to keep our rules under .kiro/steering/, or can Kiro pick up the agent instructions from somewhere at the workspace root? We're on a recent Kiro version.",
+    "In Kiro: commit the staged changes in the payments module. Last time the agent ran plain git commit, an editor opened and the whole session hung.",
+    "kiro: show me the last 40 commits touching src/auth/ — last attempt just sat there at a (END) prompt forever",
+    "Kiro's readFile only gave you the first part of services/order_processor.py (it's about 3,000 lines). I need you to find where apply_discount is defined and who calls it.",
+    "In this Kiro workspace, run the lint, then the unit tests, then the build for the frontend package. Earlier you chained them in one line and the second command never returned."
+  ],
+  "should_not_trigger": [
+    "In Cursor, the chat is getting long and slow. Summarize what we've done on the checkout refactor so I can start a new chat.",
+    "Claude Code says context is at 55%. Should I /clear now or keep going until the test suite is green?",
+    "My bash deploy script uses a heredoc to write an nginx config and the variables inside aren't expanding. Here's the snippet from scripts/deploy.sh — why?",
+    "powerlevel10k makes my iTerm prompt take two seconds to render in large git repos. How do I speed up the prompt?",
+    "Using Serena from Claude Code: which memory name should I use for a checkpoint of today's work on the search indexer, and where do those memories live on disk?",
+    "Write an AGENTS.md for this monorepo that explains the package layout and the test commands. We use it with several different coding agents.",
+    "In VS Code tasks.json, what variable gives me the workspace root so I can pass it to the lint task? ${workspaceFolder} doesn't seem to resolve in our multi-root setup.",
+    "git commit keeps opening nano on my laptop. How do I make vim the default editor globally?",
+    "Cursor's edit tool applied my change twice in utils/date.ts and now there are duplicate functions. Clean the file up.",
+    "Write a Python script that generates fixtures/users.json with 500 fake users for the load test."
+  ]
+}

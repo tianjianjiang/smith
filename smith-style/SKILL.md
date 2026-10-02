@@ -1,11 +1,10 @@
 ---
 name: smith-style
-description: File naming
+description: Naming and path standards. Use when naming a file or branch, or writing a commit message.
 ---
 
 # File Naming & Path Standards
 
-**Load if:** Git operations, PR workflows, new project setup
 **Prerequisites:** @smith-principles/SKILL.md
 
 ## CRITICAL: Naming Separators

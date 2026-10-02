@@ -1,0 +1,27 @@
+{
+  "skill": "smith-typescript",
+  "should_trigger": [
+    "vitest fails with `Failed to resolve import \"~/utils/format\"` in utils/__tests__/format.spec.ts, but `vite build` is fine. Fix it.",
+    "jest can't find modules imported with `@/services/api` in our TypeScript backend. the app itself compiles",
+    "Add unit tests for src/lib/currency.ts. Where should the spec file go and what should it be called in this TypeScript project?",
+    "Half our tests are named `*.test.ts` in a top-level tests/ folder and the other half are `*.spec.ts` next to the code. Tidy this up into one convention for the TypeScript packages.",
+    "`tsc --noEmit` passes on my machine but the CI type-check step fails on the same commit with errors in .vue files. Make my local type check match what CI runs.",
+    "I installed the TypeScript language-server plugin for Claude Code from the official marketplace and go-to-definition never returns anything. Is it me or the plugin, and what can I use meanwhile?",
+    "Find every reference to the `OrderSummary` interface across this TypeScript monorepo. Can you use language-server features for that in Claude Code rather than grep?",
+    "Set up vitest for this new Vite + TypeScript package from scratch, including whatever is needed so the import aliases from vite.config.ts work in tests.",
+    "Which type-check command should I run before pushing in this TypeScript project: plain `tsc`, or the one the framework CLI provides?",
+    "new ts service, adding the first test for src/handlers/webhook.ts. set up the folder and the runner config so imports like `@/config` resolve"
+  ],
+  "should_not_trigger": [
+    "In our Nuxt 3 app `useFetch` in pages/orders/[id].vue runs twice on navigation and the second call has no auth cookie. Fix the data fetching.",
+    "The Playwright spec e2e/login.spec.ts fails in CI with a strict-mode violation on `getByText('Sign in')`. Make the locator robust.",
+    "Add type hints and a pyright config to the Python ingestion package, and fix the `reportOptionalMemberAccess` errors in loader.py.",
+    "Should the `PaymentGateway` abstraction in src/payments/ be an interface with adapters or one class with a strategy parameter? Sketch both designs.",
+    "Rename src/Utils/HTTPClient.ts and its folder so they follow our file naming convention, and tell me what the convention says about acronyms.",
+    "Write a generic `DeepPartial<T>` type that also handles arrays and readonly tuples, and explain why the naive recursive version breaks on functions.",
+    "eslint reports `@typescript-eslint/no-explicit-any` in 40 files. Add disable comments so the lint step passes for the release.",
+    "Bump TypeScript from 5.4 to 5.6 across the monorepo and open one pull request per package.",
+    "Our TypeScript tests for the retry helper pass, but I think they mock the very function they claim to test. Review whether the tests in retry.spec.ts prove anything.",
+    "Convert scripts/build.js to an ES module and replace the `require` calls; it should keep running under Node 20 without a build step."
+  ]
+}

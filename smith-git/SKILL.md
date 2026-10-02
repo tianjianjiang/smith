@@ -1,11 +1,10 @@
 ---
 name: smith-git
-description: Git workflow gotchas and non-obvious practices
+description: Git workflow gotchas. Use when committing, branching, merging, rebasing, pushing or running raw git worktree commands.
 ---
 
 # Git Workflow Gotchas
 
-**Load if:** Git commits, merges, branch management
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 ## CRITICAL

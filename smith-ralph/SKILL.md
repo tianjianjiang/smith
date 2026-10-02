@@ -1,11 +1,10 @@
 ---
 name: smith-ralph
-description: Ralph Loop integration patterns
+description: Ralph Loop patterns. Use when starting /ralph-loop, managing its iterations, or recovering a loop after a context reset.
 ---
 
 # Ralph Loop Integration
 
-**Load if:** Starting `/ralph-loop`, managing iterations, recovering from context reset
 **Prerequisites:** @smith-ctx/SKILL.md, `@smith-git/SKILL.md`, `@smith-serena/SKILL.md`
 
 ## CRITICAL: Ralph Fundamentals

@@ -1,0 +1,23 @@
+{"skill": "smith-principles", "should_trigger": [
+"Add CSV export to the reports page. There's already an export_to_xlsx in reports/exporters.py that does most of the row formatting, so check what can be reused before writing anything new.",
+"I need retry logic for the webhook sender. I was thinking a pluggable strategy registry with backoff policies loaded from config, but maybe that's overkill for one caller. Pick the simplest thing that works.",
+"should i add a plugin system to the cli now in case we need third-party commands later? nobody has asked for it yet",
+"UserManager in app/users.py handles auth, sends the welcome emails, and writes the audit log. Split it so each class has only one reason to change.",
+"Every time we add a payment provider we edit the giant if/elif in checkout.py. Restructure it so a new provider can be added without modifying the existing function.",
+"ReadOnlyRepository inherits from Repository but raises NotImplementedError on save() and delete(). Callers that take a Repository blow up. Fix the hierarchy so the subtype is safely substitutable.",
+"The Storage interface has 14 methods and the in-memory test fake has to stub 11 of them. Break it into smaller role-specific interfaces.",
+"OrderService constructs a concrete PostgresClient inside __init__, which makes it impossible to test without a database. Make it depend on an abstraction instead.",
+"Categorize the error codes in errors.ts into groups for the docs page. The groups need to cover every code and no code should land in two groups.",
+"The same 12-line date parsing block is copy-pasted in ingest.py, backfill.py and report.py. I'm about to add a fourth use in sync.py; do this properly."
+], "should_not_trigger": [
+"Remove all the inline comments from utils/dates.py and rename things so the code explains itself.",
+"What should I name the file for the new invoice parser module, and should the directory be kebab-case or snake_case?",
+"Write a root cause analysis for last night's queue outage using 5 Whys and a timeline.",
+"Convert the timestamps in the audit log writer to ISO 8601 with the local timezone offset.",
+"Add type hints to every function in services/pricing.py and switch the relative imports to absolute ones.",
+"Write pytest tests for the discount calculator following red-green-refactor.",
+"My plan is to migrate the monolith to event sourcing. Interview me with hard questions and poke holes in the plan before I commit to it.",
+"Which fallacy is this argument committing: 'the deploy went out Tuesday and errors rose Wednesday, so the deploy caused it'?",
+"There are emoji in our log messages in worker.py. Strip the decorative ones and keep the arrows.",
+"Expand the abbreviations in docs/architecture.md on first use so someone new to the repo can read it."
+]}

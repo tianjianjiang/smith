@@ -1,11 +1,10 @@
 ---
 name: smith-ctx-claude
-description: Claude Code context management
+description: Claude Code context management. Use when context passes the warning threshold in Claude Code, a context hook fires, or choosing between /clear and /compact.
 ---
 
 # Claude Code Context Management
 
-**Load if:** Using Claude Code, context >50%
 **Prerequisites:** @smith-ctx/SKILL.md
 **Companion (Layer 3, read on demand):** `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.
 

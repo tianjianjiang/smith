@@ -1,6 +1,6 @@
 ---
 name: smith-mode-plan
-description: Plan mode definition and plan tracking protocol . Progress tracking
+description: Plan mode and plan tracking protocol. ALWAYS load before writing, resuming or updating a plan file. Use when asked for a plan, continuing from a plan file, or logging plan progress.
 license: MIT
 metadata:
   version: "1.0.0"
@@ -11,7 +11,6 @@ metadata:
 
 Portable protocol for tracking plan progress across iterations. Platform-agnostic — works with any AI agent that can read/write files.
 
-**Load if:** Entering plan mode, executing plans, tracking multi-step tasks
 **Prerequisites:** @smith-ctx/SKILL.md
 
 ## What Plan Mode Is (Platform-Neutral)

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-tests",
+  "should_trigger": [
+    "Add tests for the new `apply_discount()` in pricing/rules/discount.py. Where should the test file live and how should it be laid out?",
+    "we're adding a rate limiter to api/middleware/throttle.py. do it test-first please",
+    "`parse_invoice()` returns an empty list for PDFs with two-column tables. Fix it, and make sure there is a regression test that actually fails before your change.",
+    "Running `pytest -m \"not integration\"` gives me `import file mismatch` errors for test_client.py in two folders. How should I be invoking the unit tests in this repo instead?",
+    "I finished the refactor of storage/s3_client.py. Anything else you need to run before you call it done?",
+    "This unit test patches `OrderValidator.validate` and then asserts that `OrderValidator.validate` was called. Is that a useful test? It's in tests/unit/orders/test_validator.py.",
+    "Write a test that hits the real Postgres container for the repository layer in db/repositories/account.py. How do I mark it so it stays out of the fast suite?",
+    "the suite keeps posting experiment traces to our tracking backend every time it runs locally. where do I turn that off for tests, and how should the env file for tests be set up?",
+    "Check if the tests on this branch are thorough enough for the new refund flow, and rank the gaps by how critical they are.",
+    "Move tests/test_everything.py into a sensible structure. Right now it mixes mocked tests and ones that call the live search API."
+  ],
+  "should_not_trigger": [
+    "The Playwright run for the checkout page fails on `page.getByRole('button', { name: 'Pay' })` with a timeout only in CI. Figure out why the locator is flaky.",
+    "vitest can't resolve `~/composables/useCart` in components/__tests__/Cart.spec.ts even though the app builds fine. Fix the test runner config.",
+    "pytest prints hundreds of DEBUG lines from the HTTP library on every run. Set the log level in pytest.ini and pyproject.toml so the output is readable.",
+    "`test_token_refresh` fails about one run in ten on main. Come up with a few competing explanations and a way to rule each one out before changing anything.",
+    "Add type hints to the public functions in src/users/service.py and fix whatever the type checker then reports.",
+    "Build an eval set for our retrieval prompt: 50 questions with expected citations, plus a scorer that reports precision per category.",
+    "Run the pre-ship checklist on this branch and tell me whether it is ready to push.",
+    "The mutation testing job in CI has been timing out since last Tuesday. Bump the timeout to 30 minutes in .github/workflows/mutation.yml.",
+    "Load test the search endpoint with k6 at 200 requests per second and tell me where p95 latency breaks down.",
+    "A/B test results for the new onboarding flow are in results/onboarding.csv. Is the lift in activation statistically significant?"
+  ]
+}

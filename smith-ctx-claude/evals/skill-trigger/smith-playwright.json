@@ -1,0 +1,27 @@
+{
+  "skill": "smith-playwright",
+  "should_trigger": [
+    "run npx playwright test and tell me how it went",
+    "The end-to-end suite just finished: 3 failed, 41 passed. Failures are in tests/e2e/checkout.spec.ts. Look at test-results/ and tell me what actually broke, not just that it is red.",
+    "Playwright says 'Timeout 5000ms exceeded waiting for locator(.submit-btn)' in tests/e2e/signup.spec.ts after yesterday's form component rewrite. Is that a real regression or a stale test?",
+    "The Playwright HTML report is being served on localhost:9323. Read it through the browser tools and give me the assertion message for every failed test.",
+    "e2e run on my machine: every single spec fails at the first page.goto with net::ERR_CONNECTION_REFUSED at http://localhost:3000. work out what kind of failure this is before touching any test",
+    "tests/e2e/notifications.spec.ts passes locally and fails roughly one run in five in CI on the line that expects the toast after the streaming response finishes. Diagnose it.",
+    "Kick off the playwright suite for the admin app in the background while you refactor the table component, and do not wait for me to ask how it went.",
+    "After the API team changed the shape of the events stream, half the dashboard e2e specs fail on expect(rows).toHaveCount(10). Go through the screenshots and page snapshots in the per-test folders and sort the failures by cause.",
+    "the order-history specs only fail when they run after the cart specs, never alone. playwright, workers=1. what category of problem is this and what evidence backs it",
+    "You told me 'the Playwright tests failed'. That is useless. Redo the report for the last run properly."
+  ],
+  "should_not_trigger": [
+    "Add the Playwright MCP server to .mcp.json and make sure it launches the right browser.",
+    "The browser MCP fails to start and stderr shows a profile path containing VivaldiDirectMatchIcons. Fix the server configuration.",
+    "pytest tests/unit/test_ledger.py fails with an AssertionError on the rounding case. find the bug in ledger.py",
+    "Write the failing test first for the new discount rule, then the implementation. Which test level should it live at, unit or end-to-end?",
+    "vitest reports 'defineEventHandler is not defined' for the Nuxt server middleware test. Fix the test setup.",
+    "Use the browser to log in to the staging admin console and take a screenshot of the user list page for the bug report.",
+    "upgrade @playwright/test from 1.44 to the latest version in package.json and regenerate the lockfile",
+    "Our Cypress suite takes 25 minutes. Propose how to shard it across four CI runners in the GitHub Actions workflow.",
+    "Write a Playwright script, not a test, that scrapes the pricing table from our public docs page and writes it to prices.csv.",
+    "The checkout endpoint returns 500 in production since the 14:00 deploy. Form hypotheses and tell me how to falsify each one."
+  ]
+}

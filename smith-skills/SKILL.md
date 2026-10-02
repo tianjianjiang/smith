@@ -1,12 +1,11 @@
 ---
 name: smith-skills
-description: Agent skills authoring guide
+description: Authoring guide for agent skills. Use when creating or editing a SKILL.md, AGENTS.md, CLAUDE.md or other agent instruction file.
 ---
 
 # Agent Skills Authoring Guide
 
 **Scope:** Writing AGENTS.md, SKILL.md, and steering files
-**Load if:** Creating or editing agent instructions, rules, or documentation
 **Based on:** [agentskills.io](https://agentskills.io) standards
 
 ## Progressive Disclosure Philosophy
@@ -37,8 +36,11 @@ prompt-engineering docs never mention primacy/recency, and state that
 
 - Use bullet lists over tables for ALL content (instructions AND reference
   data) — LLMs parse bullet lists more reliably than tables
-- Put a metadata line (Scope/Load if/Prerequisites) at the file start for
-  early loading
+- Put a metadata line (Scope/Prerequisites) at the file start for early
+  loading
+- State when to use a skill in its frontmatter `description`, never in the
+  body: the body is not read until the skill has triggered, so a loading
+  condition written there arrives too late to trigger anything
 - Keep lines under 80 characters for better parsing
 - Keep nested lists to 2 levels or fewer
 - Use code blocks with language hints for all code examples
@@ -72,14 +74,19 @@ any operator's session — never depend on the author's machine:
     `smith-guidance`). Use a PRECISE technical term, not a casual one
     (`smith-dialectic`, not `smith-grill`); match the terse body of
     existing names (`ctx`, `git`, `plan`, `validation`).
-  - `description`: max 1024 chars, starts with noun phrase,
-    ends with trigger conditions ("Use when...")
+  - `description`: max 1024 chars, starts with a noun phrase saying what
+    the skill is, then states every condition for using it ("Use when...").
+    Put the key use case first: Claude Code caps each listing entry at
+    1,536 characters and drops whole descriptions, least-invoked skills
+    first, once the listing exceeds its budget
+    (https://code.claude.com/docs/en/skills.md). `skill-lint.mjs` reports a
+    description without a when-to-use clause
 - YAML frontmatter (optional fields — include only when publishing externally):
   - `version`: semver (for published/shared skills)
   - `license`: SPDX identifier
   - `compatibility`: minimum tool version
 - Body structure (plain Markdown — see Markdown Structure below):
-  - Metadata line: Scope, Load if, Prerequisites
+  - Metadata line: Scope, Prerequisites
   - Critical rules near the top
   - Middle: context, examples, reference details
   - Related links, then a final checklist near the bottom
@@ -89,8 +96,10 @@ any operator's session — never depend on the author's machine:
 
 **SKILL.md frontmatter dual-spec**: a SKILL.md legitimately carries BOTH the
 agentskills.io YAML frontmatter (`name`/`description`, for discovery/registry)
-AND a smith metadata line (Scope/Load if/Prerequisites) in the body. They are
-complementary — never strip one in favor of the other.
+AND a smith metadata line (Scope/Prerequisites) in the body. They are
+complementary — never strip one in favor of the other. The loading condition
+is the exception: it lives in `description` only, with no `Load if` line in
+the body to drift from it.
 
 **Steering files** (.md):
 - Metadata line at start
@@ -203,7 +212,8 @@ instructions with embedded data, e.g. subagent prompts.)
 4. Add context thresholds
 
 **When creating skill files:**
-1. Add a metadata line with the Load if condition
+1. Say when to use the skill in the frontmatter `description`, and add a
+   metadata line (Scope/Prerequisites) to the body
 2. Put critical rules near the top
 3. Put a checklist/action items near the bottom
 4. Add a Related section with cross-references

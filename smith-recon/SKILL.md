@@ -1,6 +1,6 @@
 ---
 name: smith-recon
-description: Guided multi-source investigation
+description: Guided multi-source investigation. Use when the user runs /smith-recon, asks to resume or reconstruct an earlier work thread, or asks what is known about a topic across sources.
 argument-hint: [topic or question]
 ---
 

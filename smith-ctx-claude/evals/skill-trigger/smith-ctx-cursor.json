@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ctx-cursor",
+  "should_trigger": [
+    "Cursor's context indicator shows about 65% in this chat and we're only halfway through the token-refresh work. What should I do before it summarizes on its own?",
+    "cursor just auto-summarized the chat and now you seem to have forgotten which files we were editing. how do we get back on track?",
+    "In Cursor, I asked with @codebase about src/billing/invoice_engine.ts, which is around 900 lines, and your answer ignored the bottom half of the file. What went wrong and how should I reference it?",
+    "I'm about to have you implement the rate limiter in Cursor. Which files should I pull into the chat first and how, the middleware and its test, or the whole auth/ directory?",
+    "Create a .cursorrules for this project: NestJS, PostgreSQL, Jest. What belongs in it and what should stay in my personal global rules instead?",
+    "we just finished the schema phase and are moving on to the API handlers. good moment to compact the cursor chat? tell me what to run and what to re-add afterwards",
+    "I ran /summarize in Cursor. Check the summary: does it still have the task goal, the file locations, the design decisions and the next steps?",
+    "In Cursor, find where authentication middleware is implemented across the repo, then load the full files so you can change the token expiry logic with complete context.",
+    "Can you run /summarize yourself in this Cursor chat, or do I need to do it?",
+    "for cursor: i have a 180-line helper, a 400-line service and a 1,200-line controller to work on. which of these can i leave to codebase search and which do i have to mention explicitly?"
+  ],
+  "should_not_trigger": [
+    "Claude Code is at 55% context. Should I use 'Summarize from here' or /clear?",
+    "Kiro summarized automatically at 80% and I lost the spec context. How do I restore it there?",
+    "Implement cursor-based pagination for GET /orders in src/api/orders.ts, replacing the offset/limit parameters.",
+    "In Cursor's settings, map ${workspaceFolder} so my launch configuration finds the Python interpreter in .venv.",
+    "The Cursor browser extension MCP keeps dropping its connection when I ask you to click through the checkout page. Make it reliable.",
+    "Write an AGENTS.md for this repo that works across coding agents, and tell me which tools read it natively.",
+    "Fix the text cursor jumping to the end of the input in src/components/SearchBox.vue whenever the value is reformatted.",
+    "The database cursor in scripts/backfill.py is never closed and the job leaks connections. Wrap it in a context manager.",
+    "Summarize the changes in the last ten commits on this branch into release notes.",
+    "Give me the general rule, independent of any editor, for what to keep and what to drop when a long agent session has to be reset."
+  ]
+}

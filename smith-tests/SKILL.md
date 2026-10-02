@@ -1,11 +1,10 @@
 ---
 name: smith-tests
-description: Testing standards and TDD workflow
+description: Testing standards and test-driven development (TDD). Use when writing or running tests, fixing a bug with a failing test first, or organizing test files.
 ---
 
 # Testing Standards
 
-**Load if:** Writing tests, running test suites, TDD
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-python/SKILL.md`
 
 ## CRITICAL

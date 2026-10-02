@@ -1,11 +1,10 @@
 ---
 name: smith-gh-cli
-description: GitHub CLI gotchas and best practices
+description: GitHub CLI (gh) gotchas. Use when running any gh command or querying GitHub from the terminal.
 ---
 
 # GitHub CLI Best Practices
 
-**Load if:** Using GitHub CLI commands
 **Prerequisites:** `@smith-git/SKILL.md`, `@smith-gh-pr/SKILL.md`
 
 ## CRITICAL: Avoid GitHub MCP

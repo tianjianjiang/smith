@@ -1,0 +1,23 @@
+{"skill": "smith-standards", "should_trigger": [
+"The log lines in worker/sync.py are full of check marks, rockets and warning signs. Clean up the logging and error messages.",
+"this function in src/pricing/discount.ts is hard to follow, add comments explaining each step",
+"Add a created_at field to the audit record in audit/logger.py and write it out as a timestamp string. Right now it uses a naive utcnow().",
+"Write the design note for the ingestion rework in docs/ingestion.md. In my notes I call the stages P1 to P4 and the ground-truth set 'GT'; readers outside the team will see this doc.",
+"I need a one-off script to dump row counts for every table in the reporting database. Put it wherever makes sense.",
+"git diff says 'No newline at end of file' for six of the YAML files you generated, and two others end with three blank lines. Fix them.",
+"Summarize the evaluation results in a table for the ticket: columns for the baseline, the reranker variant and the 'fixed' variant, using the short labels from my notebook.",
+"add a Mermaid flowchart of the request path to the architecture doc; node labels need to be short because the diagram is narrow",
+"The CLI prints 'Done at 03/04/25 5:12' when a job finishes. Make the timestamp unambiguous in both the Python CLI and the JavaScript dashboard.",
+"Before I commit: go over the new module in services/export/ and tidy it up, there are explanatory comments on nearly every line and big gaps of blank lines between blocks."
+], "should_not_trigger": [
+"Should the test file be called test_parser_tokens.py or test-parser-tokens.py, and what about the JSON fixtures?",
+"There are three near-identical validation functions in forms/validators.py. Is it worth merging them now or is that premature?",
+"Add type hints to every public function in src/geo/ and switch the project from pip to uv.",
+"what's the right placeholder syntax for the variables in our prompt templates?",
+"Write the commit message for this change; subject under 72 characters, conventional format.",
+"The date picker component in components/BookingForm.vue lets users select past dates. Disable them and add a Playwright test.",
+"Configure ruff and prettier in the repo: line length 100, import sorting on, and wire both into the pre-commit config.",
+"Write unit tests for parse_duration() covering '90s', '1h30m' and invalid input, following our test layout.",
+"Enable strict mode in tsconfig.json and fix the resulting noImplicitAny errors in src/api/.",
+"The cron job for the billing service fires an hour late after the daylight-saving change. Find out why the scheduler computes the wrong next-run time."
+]}

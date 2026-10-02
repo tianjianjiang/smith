@@ -1,0 +1,27 @@
+{
+  "skill": "smith-ctx",
+  "should_trigger": [
+    "this conversation is getting long. how full is your context window, and at what point should we reset?",
+    "I switch between three coding agents during the week. Give me the warning and critical context percentages for each and what the reset or compaction action is on each one.",
+    "I need to understand how request authentication flows through services/gateway/, which has about 300 files. Don't read the whole directory; work out the cheapest way to get there.",
+    "you already read src/config/loader.py twice in this session. stop re-reading whole files and tell me how you'll approach the next three lookups",
+    "We're about to reset the conversation. Tell me exactly what you will carry over and what you will throw away, and give me the recommendation in your standard one-line format.",
+    "Serena is connected in this workspace. For the rename in the 2,000-line src/legacy/orders.py, which tools will you use for reading and for the replacement, and why not the built-in file read and string replace?",
+    "The iterative fix loop has run 40 rounds and context is near the critical mark, and there's no Serena server in this workspace. Where do you persist loop state before the reset so we can recover?",
+    "summarise what you learned from that 4,000-line test log in a form that won't bloat the session; point to locations rather than pasting",
+    "Map every caller of `send_receipt` across the monorepo. This will be a noisy search; keep the main thread lean while you do it.",
+    "Before I reset the session, prepare the handover: task requirements, file paths with line numbers, the design decisions we made, and the remaining todos."
+  ],
+  "should_not_trigger": [
+    "In Claude Code, the stop hook blocked me at 60% and mentioned a pending-reload flag file. Explain how the flag gets created and which hook scripts read it.",
+    "In Cursor, what's the difference between @codebase and an @ mention of a specific file for an 800-line module?",
+    "Kiro auto-summarized my session and lost the file list. How do I restore the working state there?",
+    "Our React app re-renders the whole tree when the theme context changes. Split ThemeContext in src/providers/ so consumers only subscribe to what they use.",
+    "Write the session's decisions and open follow-ups to both memory backends under the existing label for this work.",
+    "The model call in src/llm/summarize.py fails with 'prompt is too long: 215000 tokens > 200000 maximum'. Add chunking so long documents are summarised in pieces.",
+    "Set up Serena for this repository: run onboarding and create the project config.",
+    "pass a request-scoped context.Context through the handlers in internal/api so cancellations propagate to the database calls",
+    "Spawn a subagent to review the migration scripts. What should the brief contain and what should it hand back?",
+    "Add prompt caching to our API client so the long system prompt isn't billed in full on every request."
+  ]
+}

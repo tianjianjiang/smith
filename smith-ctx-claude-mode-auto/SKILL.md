@@ -1,12 +1,11 @@
 ---
 name: smith-ctx-claude-mode-auto
-description: Claude Code auto mode classifier
+description: Claude Code auto mode classifier. Use when an auto-mode denial appeared, before a classifier-sensitive action (force push, production deploy), or when the user mentions auto mode.
 ---
 
 # Auto Mode Classifier — Denial Recovery
 
 **Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
-**Load if:** An auto-mode classifier denial appeared in the prior turn, OR the agent is about to invoke a classifier-sensitive action (force push, push to `main`, production deploy, external-content duplication, sandbox network call), OR the user mentions auto mode / `hard_deny` / `defaultMode`, OR a "safeguards flagged this message ... Switched to" model-fallback banner appeared
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
 **Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode
 

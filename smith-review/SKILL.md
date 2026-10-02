@@ -1,6 +1,6 @@
 ---
 name: smith-review
-description: Multi-round local review loop
+description: Multi-round local review loop. Use when the user runs /smith-review or asks to review local changes before a push.
 argument-hint: [optional focus area]
 allowed-tools: Bash(git *), Bash(gh *)
 ---

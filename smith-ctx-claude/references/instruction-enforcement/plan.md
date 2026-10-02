@@ -21,6 +21,19 @@ New, in this repository:
   skill, and the absence of calendar dates, work status, incident accounts,
   and pull-request, issue, commit and ticket references
   (§skill-file-holds-no-point-in-time-content).
+- `smith-ctx-claude/scripts/skill-trigger-eval.mjs` and its test, with the
+  prompt sets under `smith-ctx-claude/evals/skill-trigger/` (one file per
+  skill, ten prompts that should trigger it and ten near misses that should
+  not): runs each prompt through a headless session that lists only the 48
+  skills, from their frontmatter at a git ref or in the working tree, and
+  the built-in ones, and
+  records which skills the session loads before the end of the first
+  message that calls another tool; `compare` prints the counts per skill for
+  two runs and exits non-zero when a skill's trigger count fell, when its
+  near-miss count rose, or when a skill's prompt runs did not all complete
+  in both files; each record names the commit or the hash of the listing
+  it measured, the model, and the hash of its prompt
+  (§covering-skill-loaded-before-acting).
 - `smith-ctx-claude/scripts/lib/skills-invoked.mjs`: the transcript scan now
   inside `skill-claim-lint.mjs`, extracted so two hooks share it.
 - `smith-ctx-claude/scripts/skill-load-gate.mjs`, its table
@@ -117,7 +130,9 @@ Modified, in this repository:
 Outside this repository:
 
 - The personal profile's `settings.json`: registers the new hooks, with a
-  dated backup beside the file. A
+  dated backup beside the file. The harness refuses an agent's edit of
+  this file as self-modification, so the owner applies it. No
+  listing-budget setting is part of this plan (ADR-003 of `design.md`). A
   new rule file states that primary sources are read as raw text.
 - The two other profiles: no change until the owner has accepted the exact
   difference for each.
@@ -135,9 +150,9 @@ tracked in the task list and the plan file. Where a condition is not met,
 each of those waits for the owner's yes.
 
 1. `correction-census.mjs` with its test, and `design.md` with its five
-   entries. The census comes first because every count in `design.md` is
-   its output; no figure enters `design.md` without a command that
-   reproduces it or a source in which the quoted passage was found. Later
+   entries. The census comes first because every count this plan
+   rests on is its output; `design.md` records reasons and no figures, and
+   names the command or the source that gives each one. Later
    steps cite the entries of `design.md`.
 2. `skill-lint.mjs` with tests, the removal of the lines it reports, and the
    citation and locator rule changes. The lint runs in the test runner from
@@ -146,9 +161,15 @@ each of those waits for the owner's yes.
 3. Descriptions for the 48 skills, restored from the commit before the
    compression and brought up to date. Before and after, each skill is run
    against about twenty should-trigger and should-not-trigger prompts; a new
-   description is kept only where the trigger rate does not fall. The lint
+   description is kept only where `compare` passes for its skill: the
+   trigger count did not fall and the near-miss count did not rise. The lint
    gains its rule that a description says when to use the skill here, when
-   the files satisfy it.
+   the files satisfy it. The rules that told authors to write a `**Load
+   if:**` line (`smith-skills/SKILL.md`, `smith-prompts/SKILL.md`,
+   `README.md`) change in the same step. After this step merges, a session
+   on the default model and one on a model with a 200,000-token window
+   each quote the description they see for every smith skill, and the
+   dropped ones are counted.
 4. `skills-invoked.mjs`, `skill-load-gate.mjs`, the router changes and the
    `skill-claim-lint.mjs` change, with tests.
 5. `turn-end-gate.mjs`, `turn-end-judge.prompt.md` and the
@@ -198,9 +219,24 @@ each of those waits for the owner's yes.
   carry §covering-skill-loaded-before-acting; the gate does. For a
   task with no governed action the requirement rests on the description and
   the router, and the recount shows whether that is enough.
-- Longer descriptions use the skill listing's budget, and descriptions that
-  do not fit are dropped silently. The total is measured against the budget
-  before step 3 merges.
+- Descriptions use the skill listing's budget, and descriptions that do
+  not fit are dropped silently, those of the least-invoked skills first.
+  The listing was over the default budget before the change and stays over
+  it at any description length, so the descriptions are kept short and the
+  count of dropped smith descriptions is measured after step 3 merges; a
+  budget setting or hiding plugin skills is considered only if any are
+  dropped.
+- The trigger rates are measured on one model, in a session that lists
+  only the 48 skills and the built-in ones. One run per prompt moved a
+  description that had not changed by one prompt in ten; 13 skills are run
+  three times on both sides and the other 35 once, because three runs of
+  every prompt exhausted the subscription's usage window. A fall of any
+  size counts as a fall: the description is revised and every prompt is
+  measured again, since a changed description changes the listing every
+  session sees. The measuring session raises the listing budget so that no
+  description is dropped; it compares wording, not what the harness drops
+  in a real session, and it does not save its sessions, so they never
+  enter the recount.
 - The lint can refuse legitimate text: a date format given as an example, a
   placeholder. Placeholders and format patterns are allowed, and the 48
   files must pass before the write-time check is registered.
@@ -241,7 +277,9 @@ each of those waits for the owner's yes.
   and, for each driver, a URL with a quoted passage or a command with its
   output.
 - §outcome-is-counted-the-way-the-baseline-was: `correction-census.mjs`
-  produces the baseline (30 messages in 20 sessions for the loose-end
+  produces the baseline (1,490 owner-typed messages, 1,068 of them
+  distinct, in 303 sessions, 95 typed while a turn was running; 30
+  messages in 20 sessions for the loose-end
   correction, 130 in 84 for naming an unloaded skill, 11 in 10 for
   point-in-time content in a skill) and, after the period, the recount
   with the same command and a `--since` argument.

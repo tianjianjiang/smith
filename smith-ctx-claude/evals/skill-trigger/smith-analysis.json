@@ -1,0 +1,27 @@
+{
+  "skill": "smith-analysis",
+  "should_trigger": [
+    "Before we start the migration of the billing service from the monolith to its own deployment, imagine it is three months from now and the migration has failed badly. List the most likely reasons, group them, and fold the top risks into docs/migration-plan.md.",
+    "roughly how many rows will the audit_events table hold after a year? we have no metrics yet, only that there are ~40 internal users and each page load writes a few events. give me an order-of-magnitude number with the assumptions spelled out",
+    "The nightly export pipeline takes 6 hours end to end: extract, transform, validate, upload. Work out which stage is the actual bottleneck and what to squeeze out of it before we buy bigger machines, then what to look at next once it moves.",
+    "we see three symptoms on the checkout service: p99 latency spikes at the top of the hour, connection pool exhaustion warnings, and retries doubling in the queue consumer. trace these back with if-then cause and effect to one common root cause and check it explains all three",
+    "I need a number for the sprint board: how long will porting the 14 cron scripts in ops/cron/ to the new job runner take? Give me a best case, a typical case and a realistic worst case and combine them into one expected figure.",
+    "Everyone assumes we need a message queue between the uploader and the thumbnailer. Strip that back: what do we actually know must be true about this workload, and what design falls out if we rebuild from only those facts?",
+    "break this down for me before writing any code: 'make search in the admin panel feel instant'. what is the unknown, what data do we have, is there a simpler version of the problem to solve first, and how will we check the result afterwards",
+    "Look at the proposal in docs/rfc-cache-layer.md from every angle before I send it to the team: the hard facts we have, gut concerns, what could go wrong, the upside, alternative designs, and whether the process and next step are right.",
+    "instead of asking how to make the import job fast, flip it: list everything that would make src/importer/run.py as slow as possible, then tell me which of those we are already doing",
+    "The integration test passes locally and on two of three CI runners but fails on the third with a timezone-shifted timestamp. I have only these observations. What explanations fit them, which is the most plausible, and how would you confirm or kill it?"
+  ],
+  "should_not_trigger": [
+    "You concluded the memory leak is in the websocket handler. Before I accept that, try to disprove your own finding: rerun the heap comparison with the handler disabled and tell me whether the growth is still there.",
+    "my teammate says we should use the ORM because most developers use it and the framework author recommends it. is that a sound argument or is something off with the reasoning?",
+    "Interview me about this rollout plan one question at a time until every open branch of the decision tree is resolved, then write the agreed plan to docs/rollout.md.",
+    "write the postmortem for last night's outage of the notification service: timeline, contributing factors, five whys, action items, in the standard blameless template",
+    "Enter plan mode and track the refactor of src/payments/ as a checklist in the plan file, updating each item's status as you finish it.",
+    "split the epic 'self-serve password reset' into tickets following the repo's ticket convention, with acceptance criteria on each",
+    "Add 'think step by step and show your reasoning' to the system prompt in prompts/classifier.txt and tune the few-shot examples so the grader agrees with the labels more often.",
+    "Investigate why deploys got slower this month: pull the recent pull requests, the CI history and the team chat threads, and give me a sourced summary of what changed.",
+    "Should the retry logic live in a base class or be injected as a strategy object? Sketch the class layout for src/http/client.py with the trade-offs of each pattern.",
+    "what's the current best practice for connection pooling with the async postgres driver? check the official docs and the issue tracker before recommending anything"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "skill": "smith-clarity",
+  "should_trigger": [
+    "The design doc argues: if the cache is misconfigured, latency goes up; latency went up; therefore the cache is misconfigured. Review docs/incident-notes.md and tell me whether that reasoning holds.",
+    "we should just go with the graph database, basically every team i know uses one now and the conference keynote speaker said relational is dead. agree?",
+    "I'm certain the regression came from the logging change because that's the first thing I looked at and the diff looks suspicious. Check whether I'm fixating on my first guess before I revert it.",
+    "You found one explanation for the 502s (the load balancer idle timeout). Don't stop there. What else could explain the same symptoms, and why did you settle on that one?",
+    "we always solve this kind of thing with a redis lock, so add one around the invoice numbering in src/billing/sequence.py",
+    "I estimated two days for the SSO integration. Sanity-check that number: how long did comparable integrations in this repo's history actually take, and am I being optimistic?",
+    "Last month a corrupted protobuf took down the ingest service and it was dramatic, so I want to add schema validation on every internal call. Is that the most likely failure we face, or just the most memorable one?",
+    "The null check you added makes the crash in OrderSummary.tsx go away. Before we close this, is that the cause or did we just hide the symptom?",
+    "Great, we both agree on moving session state into JWTs. Ship it.",
+    "the contractor who proposed the sharding scheme has been wrong before so I'd rather ignore the proposal in docs/sharding.md. ok to drop it?"
+  ],
+  "should_not_trigger": [
+    "Assume the queue migration failed six months from now and list the reasons why, grouped by category, then add mitigations to the plan.",
+    "Design an experiment to test the hypothesis that the new index speeds up the dashboard query: define the control, the metric and what result would falsify it.",
+    "Give me a three-point estimate for the reporting rewrite: optimistic, most likely, pessimistic, and the weighted expected value.",
+    "Lint the Python in src/ for logic errors like unreachable branches and always-true conditions and fix what you find.",
+    "grill me on this architecture plan one question at a time until we've resolved every open decision",
+    "Write the incident postmortem for the failed certificate rotation, including root cause and contributing factors.",
+    "Review my pull request for bugs and unclear naming before I request human review.",
+    "The classifier prompt in prompts/triage.md keeps anchoring on the first example. Rewrite the few-shot section so the examples are balanced.",
+    "find the bottleneck in our build pipeline and tell me what to optimise first",
+    "Research whether the HTTP client library supports connection reuse across forks; cite the official docs."
+  ]
+}

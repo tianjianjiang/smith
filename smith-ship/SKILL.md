@@ -1,6 +1,6 @@
 ---
 name: smith-ship
-description: Ship pipeline
+description: Ship pipeline from review to merge. Use when the user runs /smith-ship or asks to ship, land or merge a finished change.
 metadata:
   argument-hint: "[scope or PR title | stack]"
 allowed-tools: Bash(git *), Bash(gh *)

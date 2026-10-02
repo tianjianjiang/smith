@@ -1,0 +1,23 @@
+{"skill": "smith-skills", "should_trigger": [
+"Add a new skill under .claude/skills/db-migrations/ that teaches the agent our schema-change rules. Create the SKILL.md with the right frontmatter and body layout.",
+"our AGENTS.md has grown to 400 lines. trim it down to a proper entry point and move the detail into on-demand files",
+"This SKILL.md uses a big comparison table and four levels of nested bullets. Restructure it so an agent parses it reliably.",
+"The repo root only has AGENTS.md and Claude Code isn't picking up any of our rules, while the other agent tools do. What's missing?",
+"I committed .claude/agents/release-notes.md and it references read_memory('release_context') and /Users/me/scripts/notes.sh. A teammate says it does nothing on their machine. Fix the file so it works for anyone.",
+"Rename the skill directory from deploy-grill to something more precise, and make sure the name field, the description wording and its length follow the agent-skills format.",
+"my committed hook script reads $CLAUDE_TOOL_INPUT_FILE_PATH and always exits 0 without doing anything. what is the correct way to get the tool input in a hook that ships with the repo?",
+"Rewrite the rules section of skills/api-conventions/SKILL.md: it's a wall of 'NEVER do X' lines wrapped in <forbidden> tags. Make it follow current skill-body conventions.",
+"I'm writing a steering file for Kiro covering our logging rules. What goes at the top, what goes at the bottom, and how large can it get before it should be split?",
+"My subagents launched through the Task tool ignore the rules in our skills. Do skills auto-load there, and how should cross-references to always-loaded versus on-demand skills be written in the files?"
+], "should_not_trigger": [
+"Write the system prompt for the summarization endpoint in services/summarizer/prompt.py. It mixes instructions with the user's document, so structure it well.",
+"Which XML tags should wrap the retrieved documents and the question in the runtime prompt I send to the model?",
+"Update README.md with install steps and a usage example for the new CLI flags.",
+"Spawn three subagents to audit the auth, billing and search modules in parallel and tell me how to brief them.",
+"what's the convention for placeholder tokens in our templates, angle brackets or guillemets?",
+"Measure how often the agent picks the right skill: build a 20-prompt eval and run it in CI on every change to .claude/.",
+"Add a PreToolUse hook entry to .claude/settings.json that blocks edits under infra/prod/. Which settings scope should it live in?",
+"In Cursor, context is at 75%. Summarize and tell me which rules files can be dropped from the session.",
+"Document the public functions in src/geo/distance.py with proper docstrings and type hints.",
+"Run /init to generate a CLAUDE.md for this repo with the build, test and lint commands."
+]}

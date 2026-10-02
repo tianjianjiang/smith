@@ -1,0 +1,23 @@
+{"skill": "smith-review", "should_trigger": [
+"Review my current change locally and keep going round after round until it's clean. Don't commit or push anything.",
+"review the diff on this branch with everything we have, not just one bot. i want to see which review tools ran each round",
+"Run a full review pass on the working tree changes in src/auth/, focus on security. Apply the high-confidence fixes and re-review until it converges.",
+"You said the review converged but I only see the bot reviewer in the output. Did the security review and the simplifier pass run? Give me the per-tool receipt for the last round.",
+"Start the iterative local review on this bugfix. For each finding, check it against the actual lines and trace the execution path instead of accepting it at face value.",
+"We're on round 4 of reviewing this diff and the two reviewers keep contradicting each other about whether to inline the helper. What's the stopping rule here?",
+"How deep should each tool go during the convergence rounds of the local review, and should I launch several copies of the same reviewer in parallel to speed it up? Then kick off round 1.",
+"The last two review rounds on my change only produced informational notes. Are we done, or does it need another round? Report the verdict.",
+"Do the multi-round review of my diff; it only touches docs/ and one SKILL.md, so work out which reviewers apply and mark the rest as not applicable with a reason.",
+"Review the current change to convergence. There's already an open PR for this branch, so deliver the findings where they belong."
+], "should_not_trigger": [
+"Review PR 507 from a teammate and leave your comments on it.",
+"Take this change all the way: branch, commit, push, open the PR, review, merge.",
+"Run the go/no-go gate before I push and tell me if shipping is allowed.",
+"The bot reviewer left six threads on my PR. Reply to each and resolve the ones that are addressed.",
+"Simplify the function I just wrote in utils/retry.ts; it's too clever.",
+"Do a security review of the pending changes on this branch, just that one pass.",
+"Review my design doc for the notification service and point out weak assumptions.",
+"What's the right way to request a re-review from a human reviewer after I push fixes?",
+"Write tests for the changes in src/cart/ and make sure coverage doesn't drop.",
+"The bot review on my PR finished instantly with zero files reviewed. Is that a pass?"
+]}

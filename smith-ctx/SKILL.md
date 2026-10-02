@@ -1,11 +1,10 @@
 ---
 name: smith-ctx
-description: Universal context-management foundation
+description: Universal context-management foundation. Always active. Use when context usage grows, when deciding how much of a file or directory to read, or when choosing what to keep or discard across a context reset.
 ---
 
 # Context Management
 
-**Load if:** Always active (context management foundation)
 **Prerequisites:** @smith-guidance/SKILL.md
 
 ## Proactive Context Management

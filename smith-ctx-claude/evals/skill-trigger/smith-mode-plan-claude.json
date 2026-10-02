@@ -1,0 +1,27 @@
+{
+  "skill": "smith-mode-plan-claude",
+  "should_trigger": [
+    "You are in Claude Code plan mode and the plan for the retry-policy change is written. Present it for my approval.",
+    "I rejected your plan in the Claude Code approval dialog with the note 'split the migration into two steps'. Revise and resubmit.",
+    "claude code: ExitPlanMode came back rejected with no message and then 'Re-entering Plan Mode'. you have now retried three times. stop and do the right thing",
+    "Why did the PreToolUse hook block your ExitPlanMode call just now? The plan was two lines and obvious.",
+    "Last time the approval modal popped up I had no idea what the plan was about because the summary scrolled away behind it. Do it in a way that I actually get to read your reasoning first, then ask for approval.",
+    "plan's ready, the fix is trivial, just call ExitPlanMode right away without the walkthrough",
+    "I approved the first plan in Claude Code, then we went back into plan mode for a follow-up. You explained the approach an hour ago already. Can you go straight to the approval prompt for the second plan?",
+    "I clicked the option that accepts the plan and clears the context in Claude Code. What happens to the plan and do you need to do anything on your side before the session ends?",
+    "the claude code plan approval keeps bouncing back with no feedback. what should I press to get out of plan mode by hand so you can continue?",
+    "You called ExitPlanMode, I rejected it, and you called it again with the identical plan file. Explain what the correct sequence should have been."
+  ],
+  "should_not_trigger": [
+    "Resume plans/migrate-auth.md from the first unchecked task and keep the checkboxes up to date as you go.",
+    "Claude Code keeps asking permission for every git status. Add the read-only git commands to the allowlist in settings.json.",
+    "the auto mode classifier in Claude Code blocked my force push with lease. why, and what is the accepted way to do it",
+    "My Claude Code context is at 58 percent. What should I keep before I run /clear?",
+    "Register a PreToolUse hook in ~/.claude/settings.json that blocks Edit and Write while the repo is on the main branch.",
+    "Commit the approved plan as plan.md under docs/features/audit-log/ so the build stage has an audit trail next to intent.md and spec.md.",
+    "what is plan mode supposed to mean in general? I use Kiro and Cursor, not Claude Code",
+    "Spawn two subagents in Claude Code, one to read the billing service and one to read the ledger service, and have them each return a summary under 300 words.",
+    "In Claude Code, how do I rebind shift+tab so that it no longer cycles the permission mode?",
+    "Checkpoint this session to Serena and Basic-Memory and give me the reload block for after the clear."
+  ]
+}

@@ -1,14 +1,12 @@
 ---
 name: smith-settings
-description: Claude Code settings files
+description: Claude Code settings files and scopes. Use when editing settings.json or .claude config, choosing the scope for a key, or building a hook that enforces a convention.
 ---
 
 # Claude Code Settings
 
 **Scope:** Settings file layout + scope precedence, and a convention-validator
 hook recipe. NOT a hooks or permissions deep-dive — those live elsewhere.
-**Load if:** Editing `settings.json` / `.claude` config, choosing which scope a
-key belongs in, OR building a hook that enforces a repo convention.
 **Prerequisites:** `@smith-ctx-claude/SKILL.md` (hooks + permission-mode
 deep-dive), `@smith-ctx-claude-mode-auto/SKILL.md` (permissions, `$defaults`, classifier)
 **Authoritative source:** [Claude Code settings](https://code.claude.com/docs/en/settings), [hooks](https://code.claude.com/docs/en/hooks)

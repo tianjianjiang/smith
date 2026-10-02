@@ -1,12 +1,11 @@
 ---
 name: smith-worktree
-description: Claude Code worktree TOOLS
+description: Claude Code worktree tools (EnterWorktree, ExitWorktree). Use when entering or leaving a worktree, when an isolation guard refuses an edit or a git command, or cleaning up after a merge.
 ---
 
 # Claude Code Worktree Tooling
 
 **Scope:** `EnterWorktree`, `ExitWorktree`, `worktree.baseRef`, `worktree.bgIsolation` settings, the background-session isolation guard, and the squash-merge sync protocol
-**Load if:** The bg-isolation guard refused an edit, OR `EnterWorktree` failed, OR the agent is planning a multi-file change that warrants isolation, OR the user mentions worktrees / `bgIsolation` / `baseRef`, OR cleaning up after a worktree-based PR merge
 **Prerequisites:** `@smith-git/SKILL.md` (git worktree fundamentals), `@smith-gh-pr/SKILL.md` (PR flow context)
 **Authoritative sources:** https://code.claude.com/docs/en/changelog (worktree.baseRef v2.1.133, bgIsolation v2.1.143); https://code.claude.com/docs/en/worktrees "How Claude Code enforces isolation"
 

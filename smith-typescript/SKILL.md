@@ -1,12 +1,11 @@
 ---
 name: smith-typescript
-description: TypeScript development standards
+description: TypeScript development standards. Use when working with TypeScript, or configuring path aliases or a test runner.
 ---
 
 # TypeScript Development Standards
 
 **Scope:** TypeScript projects (frontend or backend)
-**Load if:** Working with TypeScript
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md
 
 ## CRITICAL: Path Aliases

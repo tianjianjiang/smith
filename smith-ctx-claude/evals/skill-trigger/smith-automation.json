@@ -1,0 +1,27 @@
+{
+  "skill": "smith-automation",
+  "should_trigger": [
+    "the staging deploy takes about 20 minutes. check its status page every few minutes in this claude code session and tell me the moment it goes green or red",
+    "Remind me at 3pm today to push the release branch. I'll still be in this Claude Code session.",
+    "I want a report of failing nightly tests generated every weekday at 07:00 even when my laptop is closed and no terminal is open. Set that up from Claude Code and tell me what limits apply.",
+    "tail logs/worker.log while the load test runs and interrupt me as soon as a line containing 'OOMKilled' or 'panic' shows up. don't sit in a sleep loop",
+    "/loop 7m check whether the docs build for my pull request finished",
+    "You're in a self-paced loop babysitting CI on my branch. The run usually takes 12 minutes. How long should you wait between checks so we don't waste prompt cache, and what do you show me as the reason?",
+    "We run Claude Code through our cloud provider's hosted model endpoint rather than the first-party API. I typed /loop with just a prompt and it fires every 10 minutes no matter what; the live log watcher tool is missing too. Is that expected?",
+    "I started `make e2e` as a background shell command a minute ago. Should you set up a recurring check on it, or is there a better way to know when it finishes?",
+    "I set up a recurring check last week with /loop and it has stopped firing. Also the one-shot reminder I set for 14:00 fired about a minute early. Explain both and fix the recurring one so it lasts.",
+    "Keep tending my pull request in a loop while I'm in meetings: fix review comments, rerun CI, and push when it's ready. Spell out what 'ready' has to mean before you push anything from a loop tick."
+  ],
+  "should_not_trigger": [
+    "Add a crontab entry on the build host that runs scripts/rotate-logs.sh every night at 02:30 and mails the output to the ops alias.",
+    "write a GitHub Actions workflow with a schedule trigger that runs the dependency audit every Monday morning",
+    "Start a Ralph loop on the flaky-test cleanup: iterate until `pytest tests/integration` passes three times in a row, and persist state between iterations.",
+    "Add a PostToolUse hook in my Claude Code settings.json that runs the formatter every time a file is edited.",
+    "Run the multi-round local review on my branch until the last round comes back clean, then tell me if it's ready to ship.",
+    "our retry helper in src/net/backoff.py polls the job API with a fixed 5s sleep. rewrite it with exponential backoff and jitter and add unit tests",
+    "Spawn three subagents in parallel to audit the auth, billing and search modules, and have each return only a short findings list.",
+    "Claude Code context is at 58% in this session. What should I save before clearing, and which command do I run?",
+    "Implement a debounce on the file watcher in src/dev-server/watch.ts so a burst of saves triggers one rebuild instead of ten.",
+    "Auto mode just blocked my scheduled production deploy command with a classifier denial. What are my options?"
+  ]
+}

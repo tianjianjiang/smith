@@ -1,13 +1,11 @@
 ---
 name: smith-slack
-description: Slack message/reply drafting discipline
+description: Slack drafting discipline (draft, never send). Use when drafting or replying to a Slack message, calling any slack_* MCP tool, or running a /slack command.
 ---
 
 # Slack Drafting Discipline
 
 **Scope:** Drafting and replying to Slack messages (portable rules)
-**Load if:** Drafting/replying in Slack, any `slack_send_message*` / `slack_*`
-MCP tool, or a `/slack:*` command
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
 
 These are repeat-corrected rules. They get forgotten because they live only in

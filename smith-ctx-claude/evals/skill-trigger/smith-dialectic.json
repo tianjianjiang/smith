@@ -1,0 +1,27 @@
+{
+  "skill": "smith-dialectic",
+  "should_trigger": [
+    "grill me on my plan to split the monolith's auth module into its own service. don't go easy.",
+    "Here's my design for the new caching layer (docs/cache-design.md). Stress-test it against what the README and CLAUDE.md say about our deployment constraints before I commit to it.",
+    "I want to be interrogated about my database migration plan until there are no open questions left. One question at a time, and tell me what you'd answer.",
+    "Play devil's advocate on my rollout plan for feature flags in the billing service. I think it's solid but I haven't had anyone push back on it.",
+    "My plan: replace the cron jobs with a queue-based scheduler. Walk through every decision in it with me and challenge each one — I keep saying 'the worker' and I'm not sure I mean the same thing each time.",
+    "Before I start building, question my approach to multi-tenancy. If something I claim about how the tenant resolver works can be checked in the code, check it instead of asking me.",
+    "poke holes in my plan for the search reindex — invent the nasty edge cases and make me say exactly what happens in each",
+    "I've written plan.md for moving our config from env vars to a config service. Run a Socratic session on it; use the README and docs/architecture.md as the evidence base.",
+    "Challenge my proposal to drop the ORM and write raw SQL in the reporting module. Keep asking until we actually agree on what the plan is.",
+    "I said the API gateway retries idempotent requests only. Interview me about my retry redesign and call it out whenever what I say disagrees with the code."
+  ],
+  "should_not_trigger": [
+    "You concluded the memory leak is in the image resizer. Red-team your own findings before I act on them.",
+    "A teammate sent me their design doc for the new notification pipeline (docs/notify-rfc.md). Review it and list the weaknesses.",
+    "Score my migration plan against this 12-item readiness checklist and give me pass/fail per item.",
+    "Write an implementation plan for adding SSO to the admin console and track progress in the plan file.",
+    "Break this problem into independent sub-problems: users report slow dashboards, but only on Mondays.",
+    "Is there a logical fallacy in this argument from the design review: 'everyone else uses microservices, so we should too'?",
+    "Draft ten interview questions for a senior backend engineer candidate focusing on distributed systems.",
+    "I disagree with your suggestion to use a queue here. Convince me with evidence or drop it.",
+    "Research current best practice for zero-downtime Postgres schema changes and recommend an approach with sources.",
+    "The requirement says 'export should be fast'. Before you implement, ask me whatever you need to clarify."
+  ]
+}

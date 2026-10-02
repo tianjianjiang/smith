@@ -1,0 +1,23 @@
+{"skill": "smith-ship", "should_trigger": [
+"The rate-limiter fix in this worktree is done. Take it all the way: review, commit, PR, handle the review bots, merge, and clean up afterwards.",
+"ship it",
+"I've got uncommitted changes sitting on main for the retry-budget feature. Get them onto a proper branch and carry the change through to a merged PR.",
+"This refactor is too big for one PR. Split it into a dependent chain of PRs, show me the breakdown first, then land the chain bottom-up.",
+"land this change end to end. title should be \"fix(cache): evict stale entries on reconnect\"",
+"PR is open and the automated reviewer left four findings. Fix the valid ones, push, get it back to a clean verdict and merge it, then sync my local default branch.",
+"Everything for the pagination change is staged. Run the pre-ship checks, get it reviewed until nothing new comes up, open the PR and squash-merge once it's green. Stop only if something needs my decision.",
+"take the current branch from here to merged; note there's a child PR stacked on top of it so be careful with branch deletion",
+"The working tree is dirty and I'm in the primary checkout. I want this delivered as a merged PR today. Decide whether to branch in place or move to a worktree and go.",
+"Finish delivering the logging cleanup: it's committed locally but never pushed. Push, PR, review round, merge, remove the worktree and pull the default branch."
+], "should_not_trigger": [
+"Review my current diff locally for bugs before I do anything else with it. Don't commit or push.",
+"write a commit message for the staged changes in src/scheduler/",
+"Reply to the two open review threads on my PR explaining why we kept the mutex; don't change any code.",
+"Run the pre-ship gate only and tell me which checks fail. I'm not ready to push.",
+"Create a worktree for an experiment branch off the default branch and switch this session into it.",
+"Deploy the billing service image tagged v2.14.0 to the staging cluster and watch the rollout.",
+"rebase my feature branch onto the latest default branch and resolve the conflict in package-lock.json",
+"gh pr list shows nothing but I know I have open PRs. Is it the wrong repo default or an auth scope problem?",
+"Cut a release: bump the version in pyproject.toml, update CHANGELOG.md, and tag it.",
+"The shipping-cost calculator in src/ship/rates.ts returns NaN for zero-weight parcels. Find the bug and add a test."
+]}

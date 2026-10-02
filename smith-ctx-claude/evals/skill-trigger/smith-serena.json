@@ -1,0 +1,23 @@
+{"skill": "smith-serena", "should_trigger": [
+"The Serena MCP server is connected in this session. Rename the retry logic inside PaymentClient.charge in src/payments/client.py so it uses exponential backoff; the file is about 3000 lines so don't dump the whole thing.",
+"find every caller of normalize_address() across the repo before I change its signature. serena is available, use the semantic tools",
+"New session on the inventory service. Serena is running with --project-from-cwd. Get yourself oriented from whatever project memories exist before touching code.",
+"Serena was started globally without a project. I'm in ~/work/ledger-api now; do whatever is needed so its symbol tools work against this repo.",
+"We're about to hit the context limit. Save where we are, the current task and the next steps into Serena memory so I can pick this up after a reset.",
+"Serena onboarding errors out on our docs-only repo because it can't detect a language. What should .serena/project.yml contain?",
+"I entered a worktree mid-session with EnterWorktree and now Serena's find_symbol returns results from the primary checkout. How should I address files in the worktree?",
+"~/.config/tool/rules.md is a symlink to a file in my dotfiles repo. Edit it to add the new rule, and make sure the link doesn't get replaced by a regular file.",
+"two memories disagree: session_summary says the cache TTL is 300s and cache_notes says 60s. sort it out and fix whichever is stale",
+"Finished phase 2 of the auth refactor. Record the findings, decisions and blockers so the next session has them, then load what's relevant for phase 3. Serena MCP is on."
+], "should_not_trigger": [
+"Take a checkpoint of this session to both memory backends and give me the reload block so I can /clear.",
+"save a quick note to Basic Memory: the staging database password rotates every Monday",
+"Create a new git worktree for the hotfix branch and move this session into it.",
+"Context is at 55% in Claude Code. What should I keep and what can be dropped before I clear?",
+"The Playwright MCP browser tool keeps timing out on browser_click after navigation. How do I make it reliable?",
+"Set up the Ralph loop for the flaky test investigation: hypothesis, test, iterate until the suite passes three times in a row.",
+"I'm in Kiro and the session auto-summarized at 80%. What's the recommended way to manage context here going forward?",
+"add a new MCP server entry for our internal docs search to .mcp.json and tell me how to restrict which tools it exposes",
+"Use the TypeScript language server from my editor config: why does tsserver report 'Cannot find module' for the path alias @core/* in tsconfig.json?",
+"Spawn a subagent to grep the logs directory for every occurrence of 'connection reset' and return only the counts per file."
+]}

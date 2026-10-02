@@ -1,6 +1,6 @@
 ---
 name: smith-checkpoint
-description: Memory checkpoint
+description: Memory checkpoint to Serena and Basic-Memory. Use when the user runs /smith-checkpoint, asks to save or hand off session state, and before recommending /clear.
 metadata:
   argument-hint: "[label] [plan=path] [body=path] [serena=path]"
 ---

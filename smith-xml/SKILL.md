@@ -1,12 +1,10 @@
 ---
 name: smith-xml
-description: XML tag standards
+description: XML tag standards for runtime prompts. Use when constructing a prompt that mixes instructions with embedded data, such as a subagent prompt.
 ---
 
 # XML Tag Standards
 
-**Load if:** Constructing a runtime prompt that mixes instructions with
-embedded data (a subagent prompt, an assembled system message)
 **Prerequisites:** None
 
 **Scope note:** this file is about XML tags in *runtime prompts*, not

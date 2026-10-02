@@ -1,12 +1,11 @@
 ---
 name: smith-design
-description: Architecture design patterns and OOP practices
+description: Architecture and type design principles. Use when designing or reviewing an architecture, refactoring a module or class, or reviewing the design of a type.
 ---
 
 # Design Principles
 
 **Scope:** Architecture design patterns applying SOLID (defined in @smith-principles/SKILL.md)
-**Load if:** Starting new feature, refactoring, architecture review
 **Prerequisites:** @smith-principles/SKILL.md (SOLID, DRY, KISS, YAGNI, MECE)
 
 ## Before You Finish

@@ -1,12 +1,11 @@
 ---
 name: smith-ide
-description: IDE path variable mappings
+description: IDE path variable mappings. Use when editing IDE config files (.vscode/, .kiro/, .cursor/) or translating path variables between IDEs.
 ---
 
 # IDE Path Variable Mappings
 
 **Scope:** Maps conceptual path variables to IDE-specific syntax
-**Load if:** Writing/editing IDE config files (.vscode/, .kiro/, .cursor/) OR using IDE path variables
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, `@smith-style/SKILL.md`
 
 ## CRITICAL: Variable Translation

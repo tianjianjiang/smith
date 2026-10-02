@@ -1,12 +1,11 @@
 ---
 name: smith-analysis
-description: Reasoning frameworks and problem decomposition
+description: Reasoning frameworks and problem decomposition. Use when planning an implementation, estimating scope, breaking down a complex task, or assessing risk.
 ---
 
 # Reasoning Frameworks
 
 **Scope:** Reasoning, problem decomposition, and analysis techniques
-**Load if:** Planning implementation, evaluating arguments, estimating scope, decomposing tasks
 **Prerequisites:** @smith-guidance/SKILL.md
 
 **Foundation**: Based on OODA Loop's Orient phase (Boyd) - the "cognitive engine" that drives decision-making through mental models, prior experience, and analysis/synthesis.

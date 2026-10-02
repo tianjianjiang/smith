@@ -1,11 +1,10 @@
 ---
 name: smith-prompts
-description: Prompt engineering standards
+description: Prompt engineering standards. Use when writing or revising a prompt, system prompt or agent instruction file, or optimizing token and cache usage.
 ---
 
 # Prompt Engineering Standards
 
-**Load if:** Writing AI prompts, optimizing context usage
 **Prerequisites:** @smith-principles/SKILL.md
 
 ## Prompt Caching
@@ -31,7 +30,7 @@ Cache reduces costs 90%, latency 85%
 
 ```markdown
 <!-- STATIC - cached -->
-**Metadata**: Scope, Load if, Prerequisites
+**Metadata**: Scope, Prerequisites
 
 ## Critical Rules
 

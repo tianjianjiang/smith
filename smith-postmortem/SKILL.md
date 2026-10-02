@@ -1,12 +1,11 @@
 ---
 name: smith-postmortem
-description: Incident postmortem methodology and templates
+description: Incident postmortem methodology and templates. Use when conducting a postmortem, writing an incident report, or analysing an outage.
 ---
 
 # Postmortem Standards
 
 **Scope:** Technical/engineering incident postmortem templates, methodologies, and best practices
-**Load if:** Conducting incident postmortems, writing postmortem reports, establishing postmortem processes, incident response workflows, post-incident analysis
 **Prerequisites:** None (standalone guideline)
 
 Postmortems are structured reviews after incidents to understand what happened, why it happened, and how to prevent recurrence. Principles: blameless culture (systems, not people), learning focus, timely execution (48-72 hours), actionable outcomes (action items with timelines).

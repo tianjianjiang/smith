@@ -1,0 +1,23 @@
+{"skill": "smith-style", "should_trigger": [
+"Create a branch for the work on token refresh in the auth module. Pick the name yourself.",
+"commit the staged changes in src/cache/ with a proper message",
+"I'm adding tests for the tokenize function in the parser module plus a JSON file of input/expected cases. What should the two files be called?",
+"Is it query-processor.md or query_processor.md for the new doc? And the REST versus GraphQL variants of the API guide?",
+"My commit subject is 'Added the new retry logic to the client and also fixed the flaky timeout test and updated docs' and the hook rejects it. Rewrite it properly.",
+"Open the PR for this branch. Make sure the AI-assistance attribution line at the end of the body is in the right format and comes from the right place, not typed by hand.",
+"claude code keeps appending 'Co-Authored-By' and a 'Generated with' line to my commits on top of our own attribution trailer. how do I get rid of the duplicate?",
+"I called the branch fix/auth_post-review after the last review round and the push got blocked by the branch-name hook. What should it be renamed to?",
+"Copy the summary from our wiki page into the GitHub issue. It has [[Deploy Runbook]] style links, and the issue thread is in English while the page is in Traditional Chinese.",
+"File an issue for the export timeout problem. Phrase the title and body around the situation and desired outcome instead of the fix. Also, should you add a Signed-off-by line to the commit that references it?"
+], "should_not_trigger": [
+"Rebase my branch onto the default branch and fix the conflict in src/router.ts; I think I also need to force-push afterwards.",
+"Reformat the whole repo with ruff format and fix the lint errors it reports in src/.",
+"The card component's padding and font sizes look off on mobile. Fix the CSS in components/Card.vue.",
+"rename the variable `d` to something meaningful throughout utils/dates.ts and tighten its type",
+"The generated config files are missing the final newline and the logs have emoji in them. Clean both up.",
+"Draft a Slack reply in the release thread saying the hotfix is out, with the PR linked.",
+"Create a worktree for the experiment and tell me how the worktree branch gets synced after a squash merge.",
+"Our templates use <name> for variables in some files and {{name}} in others. Which placeholder form is standard here?",
+"The design doc uses 'GT', 'RR' and 'v2-fixed' without ever explaining them. Expand the shorthand so outside readers can follow.",
+"gh pr create fails with 'no commits between main and feat/export'. What's going on?"
+]}
