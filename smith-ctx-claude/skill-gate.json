@@ -1,0 +1,18 @@
+{
+  "_comment": "Table of the skill-load-gate PreToolUse hook (scripts/skill-load-gate.mjs). Each rule names one governed action and the skill that must be loaded in the session before it runs. A rule matches by `tool` (JS regex on the tool name; with `path`, a regex the tool's target file must also match) or by `command` (a Bash command segment whose program and subcommand match; with `argument`, a regex one of its tokens must also match; the program is recognised at the start of a segment, after shell keywords and command prefixes such as `then`, `timeout 60` or `rtk`, and inside a command or process substitution). `path` is matched without regard to case. A Bash call is matched by `command` rules only, never by a `tool` rule. `skill` is the lower-case name exactly as the Skill tool takes it. `alwaysLoaded` lists the skills the entry file imports into every session; they count as loaded without a Skill call. scripts/tests/skill-load-gate.test.sh holds one refused and one allowed case per rule and a refused case for every other alternative a rule lists: add them with every new rule or alternative.",
+  "alwaysLoaded": ["smith-principles", "smith-standards", "smith-guidance", "smith-ctx"],
+  "rules": [
+    { "action": "git commit", "skill": "smith-git", "command": { "program": "git", "subcommands": ["commit"] } },
+    { "action": "git push", "skill": "smith-git", "command": { "program": "git", "subcommands": ["push"] } },
+    { "action": "pull request create or edit", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["pr create", "pr new", "pr edit"] } },
+    { "action": "pull request review or comment", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["pr review", "pr comment", "issue comment"] } },
+    { "action": "review or comment through the GitHub API", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["api"], "argument": "^[^=\\s]*/(comments|reviews)(/|\\?|$)" } },
+    { "action": "message draft to another person", "skill": "smith-slack", "tool": "^mcp__.*slack__slack_(send_message|send_message_draft|schedule_message)$" },
+    { "action": "ticket write", "skill": "smith-tickets", "tool": "^mcp__.*atlassian__(createJiraIssue|editJiraIssue)$" },
+    { "action": "issue create or edit", "skill": "smith-tickets", "command": { "program": "gh", "subcommands": ["issue create", "issue new", "issue edit"] } },
+    { "action": "subagent spawn", "skill": "smith-subagents", "tool": "^(Agent|Task)$" },
+    { "action": "web fetch or search", "skill": "smith-research", "tool": "^(WebFetch|WebSearch)$" },
+    { "action": "skill file write", "skill": "smith-skills", "tool": "^(Edit|Write|mcp__(plugin_serena_)?serena__(replace_content|replace_symbol_body|insert_after_symbol|insert_before_symbol|create_text_file))$", "path": "(^|/)SKILL\\.md$" },
+    { "action": "leave plan mode", "skill": "smith-mode-plan-claude", "tool": "^ExitPlanMode$" }
+  ]
+}

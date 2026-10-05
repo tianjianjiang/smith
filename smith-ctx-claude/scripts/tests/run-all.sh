@@ -12,6 +12,9 @@ for check in \
   review-orchestration-guard \
   skill-read-substitution-guard \
   skill-claim-lint \
+  skills-invoked \
+  skill-load-gate \
+  skill-router \
   gh-stack-guard \
   attribution \
   git-command-tokenizer \

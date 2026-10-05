@@ -1,92 +1,81 @@
 #!/usr/bin/env node
-import { readFileSync, createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
+import { READING_IS_NOT_LOADING, skillsAvailableInSession } from "./lib/skills-invoked.mjs";
 
-const CLAIMED_SKILL = /using @([a-z0-9-]+)/gi;
+const SKILLS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const NAMESPACED_NAME = "[a-z0-9-]+(?::[a-z0-9-]+)?";
+const SKILL_NAME = `@${NAMESPACED_NAME}(?![\\w/-])`;
+const REASON = "\\s*[(（][^)）\\n]*[)）]";
+const CLAIM = new RegExp(
+  `\\busing\\s+(${SKILL_NAME}(?:${REASON})?(?:(?:\\s*[,、]\\s*(?:and\\s+)?|\\s+and\\s+)${SKILL_NAME}(?:${REASON})?)*)`,
+  "gi",
+);
+const REASONS = new RegExp(REASON, "g");
+const CLAIMED_NAME = new RegExp(`@(${NAMESPACED_NAME})`, "gi");
+const NEGATION_BEFORE_A_CLAIM = /(?:\bnot|n't|\bwithout|\bnever|\bno\s+longer)(?:\s+(?!only\b)\w+ly)?\s+$/i;
+const SKILL_NAME_ALONE_IN_A_CODE_SPAN = new RegExp(`\`(@${NAMESPACED_NAME})\``, "gi");
+const QUOTED_OR_CODE =
+  /```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”|「[^」\n]*」|(?<!\w)'[^'\n]*'(?!\w)|‘[^’\n]*’/g;
 
 function claimedSkills(message) {
   const claimed = new Set();
   if (typeof message !== "string") return claimed;
-  let match;
-  CLAIMED_SKILL.lastIndex = 0;
-  while ((match = CLAIMED_SKILL.exec(message)) !== null) {
-    claimed.add(match[1].toLowerCase());
+  const prose = message.replace(SKILL_NAME_ALONE_IN_A_CODE_SPAN, "$1").replace(QUOTED_OR_CODE, " ");
+  for (const claim of prose.matchAll(CLAIM)) {
+    if (NEGATION_BEFORE_A_CLAIM.test(prose.slice(0, claim.index))) continue;
+    for (const name of claim[1].replace(REASONS, "").matchAll(CLAIMED_NAME)) claimed.add(name[1].toLowerCase());
   }
   return claimed;
 }
 
-async function skillsInvokedThisTurn(transcriptPath) {
-  const invoked = new Set();
-  const lines = createInterface({
-    input: createReadStream(transcriptPath, { encoding: "utf-8" }),
-    crlfDelay: Infinity,
-  });
-  for await (const line of lines) {
-    if (!line.trim()) continue;
-    let event;
-    try {
-      event = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    if (event && event.type === "user") {
-      const blocks = event.message && event.message.content;
-      const carriesToolResult =
-        Array.isArray(blocks) &&
-        blocks.some((block) => block && block.type === "tool_result");
-      if (!carriesToolResult) invoked.clear();
-      continue;
-    }
-    const content = event && event.message && event.message.content;
-    if (!Array.isArray(content)) continue;
-    for (const block of content) {
-      if (block && block.type === "tool_use" && block.name === "Skill") {
-        const skill = block.input && block.input.skill;
-        if (typeof skill === "string") invoked.add(skill.toLowerCase());
-      }
-    }
-  }
-  return invoked;
+function isSkillOfThisRepository(name) {
+  return existsSync(resolve(SKILLS_ROOT, name, "SKILL.md"));
 }
 
-function reminder(uninvoked) {
-  const list = uninvoked.map((name) => `@${name}`).join(", ");
+function listed(names) {
+  return names.map((name) => `@${name}`).join(", ");
+}
+
+function refusal(unloaded) {
+  const several = unloaded.length > 1;
   return (
-    `skill-claim-lint: you wrote "using ${list}" but did not invoke ` +
-    `${uninvoked.length > 1 ? "them" : "it"} via the Skill tool this turn. USE ` +
-    `a skill by invoking it (Skill tool), not by reading or mentioning it - ` +
-    `reading the SKILL.md by hand is not using the skill.`
+    `skill-claim-lint: the last message says "using ${listed(unloaded)}" but ` +
+    `${several ? "those skills were" : "that skill was"} not loaded in this session. ` +
+    `Load ${several ? "them" : "it"} with the Skill tool and act on what ` +
+    `${several ? "they direct" : "it directs"}, or take the claim back. ` +
+    READING_IS_NOT_LOADING
+  );
+}
+
+function advisory(unloaded) {
+  return (
+    `skill-claim-lint: the last message says "using ${listed(unloaded)}", which no Skill ` +
+    `call in this session loaded. If that names a skill, load it with the Skill tool.`
   );
 }
 
 async function main() {
-  let input;
-  try {
-    input = JSON.parse(readFileSync(0, "utf-8"));
-  } catch {
-    return;
-  }
+  const input = readHookInput();
   if (!input || typeof input !== "object") return;
+  if (input.stop_hook_active === true) return;
 
   const claimed = claimedSkills(input.last_assistant_message);
   if (claimed.size === 0) return;
+  if (typeof input.transcript_path !== "string") return;
 
-  const transcriptPath = input.transcript_path;
-  if (typeof transcriptPath !== "string") return;
+  const available = await skillsAvailableInSession(input.transcript_path);
+  const unloaded = [...claimed].filter((name) => !available.has(name));
+  if (unloaded.length === 0) return;
 
-  let invoked;
-  try {
-    invoked = await skillsInvokedThisTurn(transcriptPath);
-  } catch {
-    return;
-  }
-
-  const uninvoked = [...claimed].filter((name) => !invoked.has(name));
-  if (uninvoked.length === 0) return;
-
-  process.stdout.write(
-    JSON.stringify({ systemMessage: reminder(uninvoked) }) + "\n",
-  );
+  const known = unloaded.filter(isSkillOfThisRepository);
+  const decision =
+    known.length > 0
+      ? { decision: "block", reason: refusal(known) }
+      : { systemMessage: advisory(unloaded) };
+  process.stdout.write(JSON.stringify(decision) + "\n");
 }
 
 main().catch(() => {});
