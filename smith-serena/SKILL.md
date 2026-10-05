@@ -9,7 +9,7 @@ description: Serena MCP integration. ALWAYS load before any Serena tool call or 
 
 ## CRITICAL: Serena-First Principle
 
-**When Serena MCP is available, ALWAYS use Serena for:**
+**When Serena MCP is available, prefer Serena for:**
 
 1. **File I/O** - All file reading and writing operations
 2. **Language server features** - Symbols, references, navigation, semantic editing
@@ -22,7 +22,7 @@ description: Serena MCP integration. ALWAYS load before any Serena tool call or 
 4. `replace_symbol_body` - Replacing function/class bodies
 5. `find_referencing_symbols` - Navigation, impact analysis
 6. `write_memory`, `read_memory` - Persistent context
-7. Platform native tools - **Fallback ONLY when Serena unavailable**
+7. Platform native tools - fallback when Serena is unavailable or has no tool for the operation
 
 **Prefer Serena over platform native tools when available:**
 - Native file read tools may truncate large files silently
@@ -180,7 +180,7 @@ language: markdown
 list_memories()
 ```
 
-- If successful: Serena is available, use Serena tools exclusively
+- If successful: Serena is available; prefer Serena tools
 - If fails: Fall back to platform native tools with caution
 
 ## Before You Finish
@@ -189,7 +189,7 @@ list_memories()
 
 1. Test availability: `list_memories()`
 2. Use Serena tools for file I/O and language server features
-3. Fall back to platform native tools ONLY if Serena unavailable
+3. Fall back to platform native tools when Serena is unavailable or has no tool for the operation
 
 **Workflow for code tasks:**
 1. `read_memory()` - Load relevant context before starting

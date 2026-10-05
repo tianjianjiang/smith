@@ -10,9 +10,7 @@ description: Tool configuration standards. Use when configuring an IDE, an MCP s
 
 ## CRITICAL: Tool Configuration
 
-- Check codebase and local docs BEFORE using MCP tools
-- Use MCP tools only when task specifically requires them
-- Activate tools conditionally, not by default
+- Use an MCP tool when it gives better or fresher information than the codebase and local docs (Context7 for an unfamiliar external library, Serena for symbol navigation and cross-session memory)
 - Mandate Serena MCP only for multi-session plans, not all plans
 - Require Context7 only for unfamiliar external libraries, not all libraries
 
@@ -221,5 +219,4 @@ Before enabling anything you did not author, read the plugin's `hooks/`, `comman
 
 **Before using MCP tools:**
 1. Check codebase and local docs first
-2. Use MCP only when local info insufficient
-3. Configure tools conditionally per task
+2. Use an MCP tool when it gives better or fresher information than they do

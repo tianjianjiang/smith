@@ -24,13 +24,10 @@ prompt-engineering docs never mention primacy/recency, and state that
 
 ## Rule Loading Notification
 
-**Every AGENTS.md MUST define:**
+**Every AGENTS.md defines:**
 - Which files are always-active vs on-demand
-- Notification format: "Loaded @file.md (reason)"
-- Deactivation trigger: "Unload after N turns unused"
+- Notification format: `using @skill-name (reason)`
 - Context thresholds: Claude Code 50%/60%, Cursor/Kiro 70%/80%
-
-**Enforcement**: Reporting proves actual loading, not fake compliance
 
 ## Critical Rules
 
@@ -119,8 +116,8 @@ This distinguishes core skills (always in context) from contextual skills (loade
 
 How Claude Code actually loads skills (non-obvious; governs why smith works):
 
-- Claude Code does NOT auto-execute skill-loading instructions written in
-  CLAUDE.md / AGENTS.md — the agent must proactively Read the skill files.
+- Claude Code does not execute skill-loading instructions written in
+  CLAUDE.md / AGENTS.md; skills load when invoked through the Skill tool.
   Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
 - Auto-triggering is description/shape-match in the MAIN thread only.
   Task/Workflow subagents do NOT auto-load skills or AGENTS.md — pass the
@@ -153,8 +150,8 @@ instructions with embedded data, e.g. subagent prompts.)
 
 **Structure:**
 - `##` headers name the topic — a header like "## Branch Naming" already
-  signals scope; strengthen individual bullets with MUST/ALWAYS/NEVER
-  wording instead of relying on a wrapper tag to carry that weight.
+  signals scope; state each rule plainly with its reason instead of
+  relying on a wrapper tag or capitalised MUST/ALWAYS/NEVER.
 - Prefer telling the agent what to do over what not to do. Rewrite
   prohibitions as affirmative statements and fold them into the normal
   bullet list — "Only commit when the user explicitly asks" carries the

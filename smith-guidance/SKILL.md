@@ -254,8 +254,8 @@ findings in the main thread. Prefer targeted reads over whole-file/whole-dir.
 
 **Before implementing:**
 1. Read relevant files
-2. Ask clarifying questions
-3. Propose alternatives with trade-offs
+2. Ask clarifying questions only when the requirement is ambiguous and no smith convention answers it
+3. Propose alternatives with trade-offs when multiple approaches exist
 4. Get approval before major changes
 
 **When disagreeing:**

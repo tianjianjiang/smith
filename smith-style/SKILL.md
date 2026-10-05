@@ -60,7 +60,7 @@ docs: update deployment guide
 - Use `docs` only when the commit doesn't also change code
 
 **Special prefixes** (outside conventional commits):
-- `#WIP` — Work-in-progress checkpoint, not a conventional commit (used by auto-commit rules)
+- `#WIP` — Work-in-progress checkpoint, not a conventional commit (used when the user accepts a WIP checkpoint commit)
 
 ## Assisted-by attribution
 
@@ -72,7 +72,7 @@ which mandates it for commits; extending it to PR bodies, review comments, and
 Slack is a Smith convention.
 
 **Format**: `Assisted-by: «AGENT_NAME»:«MODEL_VERSION» [«tool»]…`
-- Smith value: `Assisted-by: Claude:claude-opus-4-8` — `«MODEL_VERSION»` is the
+- Smith value: `Assisted-by: Claude:«session-model-id»` — `«MODEL_VERSION»` is the
   actual running session model id, not a frozen string.
 - Optional bracketed `[«tool»]` entries name specialized analysis tools only
   (e.g. coccinelle, sparse, semgrep); never basic dev tools (git, editors).
@@ -190,7 +190,7 @@ to match retroactively.
 
 ## Before You Finish
 
-**Before naming:**
+**Before naming a file** (branches: see Branch Names):
 1. Is it a single concept? → underscore
 2. Is it a part/variant? → hyphen
 3. Is it a date/ticket? → hyphen

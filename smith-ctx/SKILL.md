@@ -42,7 +42,7 @@ description: Universal context-management foundation. Always active. Use when co
 
 **When Serena MCP is available, prefer Serena tools over native tools:**
 
-**Why**: Kiro's `readFile` truncates, `strReplace` fails on duplicates. Serena's regex mode handles complex replacements reliably.
+**Why**: symbol-level reads and regex edits keep context small; Kiro-specific native-tool failures are in `@smith-ctx-kiro/SKILL.md`.
 
 **Tool preference:**
 - **Reading**: `search_for_pattern` > `find_symbol` > native `readFile`

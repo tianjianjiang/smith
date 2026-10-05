@@ -37,15 +37,9 @@ resolve: {
 
 Framework CLIs may provide enhanced type checking. Match CI configuration for consistency.
 
-## Claude Code LSP (Experimental)
+## Claude Code LSP
 
-**LSP plugins exist but are currently broken** (race condition in initialization):
-- `typescript-lsp@claude-plugins-official`
-- `pyright-lsp@claude-plugins-official`
-
-**When fixed**, LSP provides: goToDefinition, findReferences, hover, documentSymbol, getDiagnostics
-
-**Workaround**: Use Serena MCP for language server features (`find_symbol`, `find_referencing_symbols`)
+Use Serena MCP (`find_symbol`, `find_referencing_symbols`) for language-server features, per `@smith-serena/SKILL.md`; the harness LSP tool is the fallback when Serena is unavailable.
 
 ## Related
 

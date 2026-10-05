@@ -13,14 +13,6 @@ Prefer the `gh pr-review` extension, `gh api`, or GraphQL queries over GitHub
 MCP tools — MCP tools are hard to control pagination on (25k token
 truncation), less complete than the CLI, and require a personal token.
 
-## Token Efficiency
-
-**Safe perPage limits:**
-- `list_pull_requests`: perPage 20-30
-- `get_review_comments`: perPage 10 (bot reviews are massive)
-- `get_files`: perPage 30
-- `search_repositories`: minimal_output: true
-
 ## Common Pitfalls
 
 - **ALWAYS assign yourself**: `--assignee @me`

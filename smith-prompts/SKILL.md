@@ -17,7 +17,7 @@ Cache reduces costs 90%, latency 85%
 3. Project context (AGENTS.md, docs)
 4. Dynamic content last (recent changes)
 
-**Cache breakpoints**: Every ~1024 tokens. Prefix must be identical for cache hit.
+**Cache breakpoints** (Anthropic): explicit `cache_control` markers; the prefix up to each must be identical for a hit, and short prefixes below a model-specific minimum are not cached.
 
 **Rules:**
 - Keep tool definitions in a consistent order between calls
@@ -34,13 +34,13 @@ Cache reduces costs 90%, latency 85%
 
 ## Critical Rules
 
-Critical ALWAYS rules, written as affirmative statements
+Critical rules, written as affirmative statements with their reasons
 
 ## Hard Limits
 
 Anti-patterns with no natural positive phrasing
 
-<!-- CACHE BREAKPOINT (~1024 tokens) -->
+<!-- CACHE BREAKPOINT (at or past the model's minimum cacheable prefix) -->
 
 <!-- DYNAMIC - not cached -->
 ## Examples
@@ -73,7 +73,7 @@ Code examples that evolve
 
 **Platform mechanisms:**
 - **OpenAI**: JSON Schema with `strict: true` (100% compliance)
-- **Anthropic**: Tool use with flexible schemas
+- **Anthropic**: structured outputs (`output_config.format` with a JSON schema); `strict: true` on tool definitions
 - **Gemini**: responseSchema with retry
 
 **Schema design:**

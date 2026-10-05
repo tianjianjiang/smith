@@ -112,6 +112,6 @@ Work expands to fill the time available for completion.
 
 ## Related
 
-- @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
+- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, exploration workflow
 - `@smith-analysis/SKILL.md` - Pre-mortem analysis, constraint thinking
 - `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings

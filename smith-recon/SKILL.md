@@ -32,7 +32,7 @@ this — no separate "resume" command is needed.
    Load `@smith-research`/`@smith-validation` (verify before asserting) and
    `@smith-subagents` (returns are claims; restate in-band).
 3. **Read bounded** — for noisy history use a scripted full scan (counts +
-   denominator), not sampling (`@smith-guidance` Scope Verification: close
+   denominator), not sampling (`@smith-guidance` Operating Discipline: close
    gaps, don't just disclose them). Quote source lines / URLs as you go.
 4. **Cross-verify** — reconcile sources; flag contradictions; mark anything
    unverified explicitly. Verify suspicious claims before relying on them.

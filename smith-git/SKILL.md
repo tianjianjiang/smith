@@ -9,12 +9,12 @@ description: Git workflow gotchas. Use when committing, branching, merging, reba
 
 ## CRITICAL
 
-- MUST use `git mv` for renames (preserves history)
-- MUST GPG sign all commits: `git commit -S -m "..."`
-- MUST keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-gh-pr/SKILL.md` Stacked PRs
-- MUST verify current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase` — confirm it matches the branch you intend to modify
-- MUST create a dedicated branch (+worktree in background sessions, see
-  `@smith-worktree/SKILL.md`) BEFORE the first edit of any repo-file-modifying
+- Use `git mv` for renames (preserves history)
+- GPG sign all commits: `git commit -S -m "..."`
+- Keep branches linear (prefer rebase over merge) - essential for stacked PRs, see `@smith-gh-pr/SKILL.md` Stacked PRs
+- Verify the current branch (`git branch --show-current`) before `git commit`, `git push`, or `git rebase` — confirm it matches the branch you intend to modify
+- Create a dedicated branch (+worktree in background sessions, see
+  `@smith-worktree/SKILL.md`) before the first edit of any repo-file-modifying
   task — even when no commit is requested. Never start edits on the default
   branch or on an unrelated dirty branch. Mechanical backstop: the
   `branch-guard` PreToolUse hook (`smith-git/scripts/hooks/branch-guard.mjs`,
