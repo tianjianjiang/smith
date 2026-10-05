@@ -151,7 +151,7 @@ Test scenarios (shim environment; `$R` = fake repository,
    `PASS: write-checkpoint` with T1–T10 added.
 2. `shellcheck smith-checkpoint/scripts/write-checkpoint.sh
    smith-checkpoint/scripts/tests/write-checkpoint.test.sh`.
-3. `bash local-guard-secret/test.sh` and a real commit through the
+3. `bash smith-secret-guard-local/test.sh` and a real commit through the
    pre-commit and commit-msg hooks.
 4. After the runbook: from the implementation worktree, `/smith-checkpoint`
    → the entry in the primary checkout's `.serena/memories/<label>.md` has
