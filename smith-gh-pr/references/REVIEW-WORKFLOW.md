@@ -33,7 +33,7 @@ in-band (see `@smith-review`).
 - `/code-review --comment` — runs the review and posts findings as inline PR
   comments automatically — every finding at once, ungated, each one content
   addressed to a human. Review comments are a conversation, not a list, so they
-  stay **one per turn** (`@smith-guidance` Harmless) and `--comment`'s auto-post
+  stay **one per turn** (`@smith-guidance` Safety Rules) and `--comment`'s auto-post
   is therefore NOT the default path: post them one at a time. Asking for a
   review is not a yes for words that did not exist when it was asked.
 - Manual single inline comment via REST (when hand-authoring one finding):
@@ -81,7 +81,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 
 **Must-ask criteria (only interruption triggers):**
 - About to post content addressed to a human — a review finding, PR
-  description, or approval body (`@smith-guidance` Harmless). Replies to an
+  description, or approval body (`@smith-guidance` Safety Rules). Replies to an
   automated reviewer's own thread that no human has joined are mechanics and do
   not trigger this.
 - Finding requires scope change beyond the PR's stated goal
@@ -143,7 +143,7 @@ comment wording are point-in-time; the review-event test is not.
   approval body — is content: draft it, show it, wait for an explicit yes, one
   per turn. A reply to an automated reviewer's own thread is mechanics and needs
   no yes — unless a human has joined that thread, which makes it theirs.
-  Canonical split: `@smith-guidance` Harmless.
+  Canonical split: `@smith-guidance` Safety Rules.
 - Merging, `--force-with-lease`, ff-sync, and resolving an automated
   reviewer's threads are mechanics — decide-and-proceed inside an authorized
   ship (the PR ownership gate above bounds which PRs qualify). A human
@@ -154,7 +154,7 @@ comment wording are point-in-time; the review-event test is not.
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
   write under the user's account, and an approval body is content: draft it,
-  show it, and submit only on an explicit yes (`@smith-guidance` Harmless).
+  show it, and submit only on an explicit yes (`@smith-guidance` Safety Rules).
   End the body with the `Assisted-by:` line (`@smith-style`).
 - It **returns silently on success** (no output is normal, not a failure).
   ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
@@ -254,7 +254,7 @@ above for decide-vs-ask criteria and convergence rules):
 2. Classify each: code change vs clarification vs resolved
 3. High-confidence fixes: implement, commit, reply with SHA — a reply to the
    bot's own thread is mechanics, so it needs no yes (`@smith-guidance`
-   Harmless). A comment addressed to a human reviewer does.
+   Safety Rules). A comment addressed to a human reviewer does.
 4. Low-confidence: draft reply, ask user before posting
 5. Re-check after CI passes
 
@@ -269,7 +269,7 @@ Run `/autofix-pr` while on the PR's branch. Claude Code detects the open PR with
 
 **Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
 
-Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Harmless) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
+Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Safety Rules) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
 
 **Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
 
@@ -294,4 +294,3 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
   medium-for-user-review.
 
 **Plugin commands complement** (not replace) manual `gh` workflows.
-

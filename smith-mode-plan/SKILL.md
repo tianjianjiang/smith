@@ -31,7 +31,7 @@ then that skill for how Claude Code's UI and hooks realize it.
 
 ## CRITICAL: Plan Sync Protocol
 
-**After completing ANY task, you MUST update the plan file.**
+**After completing any task, update the plan file.**
 
 This ensures the next iteration sees your progress.
 
@@ -120,8 +120,8 @@ BLOCKER: «description of issue requiring human decision»
 
 ## Important Rules
 
-1. **ALWAYS update the plan file after completing work**
-2. **NEVER skip the sync step** - next iteration depends on it
+1. **Update the plan file after completing work**
+2. **Sync every iteration** - the next iteration reads it
 3. **Use checkbox format** `- [ ]` / `- [x]` for trackable tasks
 4. **Add timestamps** to progress log entries
 5. **Note file changes** in progress log for traceability

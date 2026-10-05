@@ -18,15 +18,15 @@ description: Universal coding standards. Always active. Use when writing code, l
 - Keep blank lines between code blocks minimal
 
 **Inline Comments**:
-- NEVER add inline comments to code
-- If you find yourself wanting to add an inline comment, STOP and ask the user how to make the code self-explanatory instead
+- Add no inline comments to code
+- If you find yourself wanting to add an inline comment, ask the user how to make the code self-explanatory instead
 - Code must be self-documenting through clear naming, structure, and extraction of well-named functions
 - Allowed exceptions (not inline comments): Config file value documentation (.env)
 
 **File Format**:
-- ALWAYS have exactly one newline at the end of every file
-- ALWAYS use language-appropriate formatters before commits
-- ALWAYS use descriptive names following language conventions
+- Have exactly one newline at the end of every file
+- Use language-appropriate formatters before commits
+- Use descriptive names following language conventions
 
 ## Acronym and Shorthand Expansion
 
@@ -75,7 +75,7 @@ internal-file exemption.
 
 **Examples:**
 - Python: `datetime.now().astimezone().isoformat()` (automatically uses local timezone)
-- JavaScript: `new Date().toISOString()` (UTC) or `new Date().toLocaleString('en-CA', {timeZoneName: 'short'})` (local with timezone)
+- JavaScript: `Temporal.Now.zonedDateTimeISO().toString({ smallestUnit: 'second', timeZoneName: 'never' })` where Temporal is available (`toISOString()` is UTC and does not meet this rule)
 
 ## Quality Standards
 

@@ -558,7 +558,7 @@ documentation and router-trigger design.
 
 **smith-research**: Proactive research protocol. Use when a question involves library or tool versions, API or CLI behaviour, or current best practices, and before recommending an external dependency.
 
-**local-guard-secret**: Local-only leak guard for the PUBLIC smith repo — scan staged diff, commit message, branch name, and PR title against the gitignored denylist of internal tokens (Jira keys, codenames, internal services) before any commit/push. Use when committing/pushing in the smith repo, editing a SKILL.md/AGENTS.md, writing a commit message or PR title, or when the user mentions a leak, a Jira key, or internal project names.
+**smith-secret-guard-local**: Local-only leak guard for the PUBLIC smith repo — scan staged diff, commit message, branch name, and PR title against the gitignored denylist of internal tokens (Jira keys, codenames, internal services) before any commit/push. Use when committing/pushing in the smith repo, editing a SKILL.md/AGENTS.md, writing a commit message or PR title, or when the user mentions a leak, a Jira key, or internal project names.
 
 ### Other
 

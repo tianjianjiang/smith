@@ -36,7 +36,7 @@ every revision — a single miss is a repeat-correction.**
    replying to is NOT formatting either and IS required when quoting.)
 5. **Confirm before send** — present the draft and wait for an explicit yes, one
    message per turn. Draft means draft: do not consider it sent until the user
-   says so. Silence is not consent. (Canonical: `@smith-guidance` Harmless —
+   says so. Silence is not consent. (Canonical: `@smith-guidance` Safety Rules —
    external writes, content vs mechanics.)
 6. **Outbound text stays clean** — keep internal metadata and scratch
    reasoning out of the message body.
@@ -68,7 +68,7 @@ Have the full picture first — drafts without evidence get rejected:
    likely channel); keyword search alone is insufficient.
 2. Pull the source evidence: Notion pages, GitHub PRs/issues, Opik traces.
 3. Verify any quote against the primary source, never a subagent summary or
-   search excerpt (`@smith-guidance` Honest — verify-from-source).
+   search excerpt (`@smith-guidance` Communication Standards — verify-from-source).
 
 ## Before You Finish
 

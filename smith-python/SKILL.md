@@ -9,12 +9,12 @@ description: Python development with uv, pytest and ruff. Use when writing or ru
 
 ## CRITICAL
 
-- ALWAYS use absolute imports (`from package.module import`) instead of relative imports (`from .module import`)
-- ALWAYS use type hints for all function signatures
-- ALWAYS use function-based tests: `def test_should_«action»_when_«condition»():` — instead of unittest-style TestCase classes or pytest class-based tests (`class TestFoo:`)
-- ALWAYS use virtual env runner: `poetry run` or `uv run` — running `.venv/bin/python -m pytest` directly skips required .env vars
-- ALWAYS use structured logging with `extra=` parameter for all log data, instead of %-style formatting in log messages
-- ALWAYS prefer moderate defaults for enum parameters
+- Use absolute imports (`from package.module import`) instead of relative imports (`from .module import`)
+- Use type hints for all function signatures
+- Use function-based tests: `def test_should_«action»_when_«condition»():` — instead of unittest-style TestCase classes or pytest class-based tests (`class TestFoo:`)
+- Use the virtual env runner: `poetry run` or `uv run` — running `.venv/bin/python -m pytest` directly skips required .env vars
+- Use structured logging with `extra=` parameter for all log data, instead of %-style formatting in log messages
+- Prefer moderate defaults for enum parameters
   (e.g., "medium" not "low"/"high" unless spec requires)
 - When refactoring, preserve existing parameter values
   and model references unless change is requested
@@ -84,14 +84,9 @@ import library  # Now sees config
 - **Logging**: `logger = logging.getLogger(__name__)`
 - **Dataclasses**: Use `@dataclass(frozen=True)` for immutable config
 
-## Claude Code LSP (Experimental)
+## Claude Code LSP
 
-**LSP plugins exist but are currently broken** (race condition in initialization):
-- `pyright-lsp@claude-plugins-official`
-
-**When fixed**, LSP provides: goToDefinition, findReferences, hover, documentSymbol, getDiagnostics
-
-**Workaround**: Use Serena MCP for language server features (`find_symbol`, `find_referencing_symbols`)
+Use Serena MCP (`find_symbol`, `find_referencing_symbols`) for language-server features, per `@smith-serena/SKILL.md`; the harness LSP tool is the fallback when Serena is unavailable.
 
 ## Related
 

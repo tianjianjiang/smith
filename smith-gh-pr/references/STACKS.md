@@ -111,7 +111,7 @@ main
 Every stacked PR body also ends with the `Assisted-by:` line (see
 `@smith-style`). The stack's PR titles and bodies are content: show them
 together and open on an explicit yes — reviewed together they count as one
-enumerated list (`@smith-guidance` Harmless, batched consent).
+enumerated list (`@smith-guidance` Safety Rules, batched consent).
 
 **Field meanings**:
 - `Depends on`: PRs that must merge before this one (upstream dependencies)

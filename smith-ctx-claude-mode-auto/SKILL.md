@@ -6,7 +6,7 @@ description: Claude Code auto mode classifier. Use when an auto-mode denial appe
 # Auto Mode Classifier — Denial Recovery
 
 **Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
-**Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (HHH, ask-before-assuming)
+**Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (safety rules, ask-before-assuming)
 **Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode
 
 ## CRITICAL: Denial Handling
@@ -33,7 +33,7 @@ Auto mode lets Claude execute without per-action permission prompts. A separate 
 - Cycle with `Shift+Tab` (opt-in on first cycle)
 - Persistent default: `{ "permissions": { "defaultMode": "auto" } }` in `~/.claude/settings.json` **only** — the same key in `.claude/settings.json` or `.claude/settings.local.json` is ignored, so a repo cannot grant itself auto mode
 
-**Requirements**: Max/Team/Enterprise/API plan; Sonnet 4.6, Opus 4.6, or Opus 4.7; Anthropic API provider. See the cited URL for the full matrix.
+**Requirements**: plan, model and provider limits apply; check the cited URL for the current matrix before recommending auto mode.
 
 ## What the Classifier Decides
 
@@ -194,4 +194,4 @@ reason, and no auto-mode counter involved.
 - Never propose a workaround — outcome (d) abandon
 
 **Before invoking known classifier-sensitive actions:**
-- Bare `--force` push, push to a shared or default branch (`main`, `develop`, etc. — never assume `main`), production deploys, IAM grants, cloud-storage mass deletes → confirm with the user first, even before the first classifier check. `--force-with-lease` on a branch you own is NOT in this set — it is mechanics (`@smith-guidance` Harmless, external writes); the lease is the safety check, and it is the recommended form above. "Own" means a personal or PR branch, never a shared or default one (`@smith-git`); where a PR exists, its ownership gate (`@smith-gh-pr`) is the test — before one exists, the branch being yours is.
+- Bare `--force` push, push to a shared or default branch (`main`, `develop`, etc. — never assume `main`), production deploys, IAM grants, cloud-storage mass deletes → confirm with the user first, even before the first classifier check. `--force-with-lease` on a branch you own is NOT in this set — it is mechanics (`@smith-guidance` Safety Rules, external writes); the lease is the safety check, and it is the recommended form above. "Own" means a personal or PR branch, never a shared or default one (`@smith-git`); where a PR exists, its ownership gate (`@smith-gh-pr`) is the test — before one exists, the branch being yours is.

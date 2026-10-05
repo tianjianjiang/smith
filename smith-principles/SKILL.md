@@ -9,9 +9,9 @@ description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Always act
 
 ## Critical Rules
 
-- MUST apply DRY before adding features
-- MUST apply KISS to choose simplest solution
-- MUST apply YAGNI to defer unneeded implementation
+- Apply DRY before adding features
+- Apply KISS: choose the simplest solution
+- Apply YAGNI: defer unneeded implementation
 - One reason to change per module (Single Responsibility)
 - Open for extension, closed for modification (Open/Closed)
 - Subtypes substitutable for base types (Liskov Substitution)
@@ -24,7 +24,7 @@ description: Fundamental coding principles (DRY, KISS, YAGNI, SOLID). Always act
 ## Related
 
 - @smith-standards/SKILL.md - Universal coding standards
-- @smith-guidance/SKILL.md - AI agent behavior (HHH framework)
+- @smith-guidance/SKILL.md - AI agent behavior (safety rules, anti-sycophancy)
 
 ## Before You Finish
 

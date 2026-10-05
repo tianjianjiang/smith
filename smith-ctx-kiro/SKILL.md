@@ -53,7 +53,7 @@ Use Serena `replace_content` over Kiro `strReplace` when Serena is available. Us
 **At session start:**
 1. Check if Serena MCP is available
 2. Run `activate_project` to initialize
-3. Run `check_onboarding_performed` to verify setup
+3. Run `onboarding` to check setup (returns instructions if needed)
 4. Run `list_memories` to discover available context
 5. Run `read_memory` for relevant project context
 
@@ -72,7 +72,7 @@ Kiro automatically loads AGENTS.md from workspace root (Kiro v0.5.0+). No separa
 - Place AGENTS.md at workspace root
 - Kiro reads it automatically at session start
 - Include instructions for loading domain-specific files
-- Critical rules (terminal limitations) embedded directly with XML tags
+- Critical rules (terminal limitations) embedded directly in AGENTS.md's Kiro Terminal section
 
 ## Related
 

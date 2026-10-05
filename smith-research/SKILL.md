@@ -75,7 +75,7 @@ the date.
 - Answering would require guessing
 - User's code references unfamiliar library
 - Error suggests version incompatibility
-- User mentions "latest", "current", "2024", "2025"
+- User mentions "latest", "current", or a specific year
 - Accuracy matters (research rather than skip)
 - Docs are accessible (provide current API examples, not outdated ones)
 - About to claim certainty about a version (verify first)
@@ -86,7 +86,7 @@ the date.
 
 ## Related
 
-- @smith-guidance/SKILL.md - Honest principle
+- @smith-guidance/SKILL.md - Communication Standards (verify-from-source)
 - `@smith-tools/SKILL.md` - MCP fetch configuration
 
 ## Before You Finish

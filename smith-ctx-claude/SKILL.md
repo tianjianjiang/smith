@@ -60,7 +60,7 @@ cost.
 
 **Before `/clear`:**
 1. Update plan file with current progress (if active)
-2. Commit current work with detailed message
+2. Commit current work with a detailed message if the user has authorized commits; otherwise list uncommitted files in the Reload block
 3. Save state to Serena memory with `write_memory()`
 4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command) — canonical format + reachability annotation in `@smith-checkpoint/SKILL.md` "Reload after /clear"
 
@@ -75,7 +75,7 @@ cost.
 ## Commit-Early Pattern
 
 - Do not batch commits to end of session — context resets lose uncommitted work
-- If 15+ tool calls pass without a commit and there are uncommitted changes, commit with `#WIP` prefix to preserve progress
+- When uncommitted changes accumulate, say so and offer a `#WIP` commit; commit only on the user's yes
 - Before destructive operations (rebase, `/clear`), commit or stash current work
 
 ## Context Hooks
@@ -180,7 +180,7 @@ Treat the user naming a slash command as sufficient grounds to try it — invoke
 
 **Location**: `$WORKSPACE_ROOT/.claude/CLAUDE.md` or `$HOME/.claude/CLAUDE.md`
 
-**Put in CLAUDE.md** (always active): critical guardrails (NEVER/ALWAYS),
+**Put in CLAUDE.md** (always active): critical guardrails stated plainly with their reasons,
 reference to @AGENTS.md, project-specific preferences.
 
 **Put in skill files** (context-triggered): detailed technical guidelines,

@@ -25,8 +25,8 @@ break down.
 1. **Gather context first** — read the relevant Notion/Jira/repo context (or
    run `/smith-recon` for the topic) so tickets are grounded, not guessed.
 2. **Decompose** — propose the numbered ticket list (title + Job Story + parent
-   Epic) and get scope approval before creating (`@smith-guidance` Scope
-   Verification; no presuming).
+   Epic) and get scope approval before creating (`@smith-guidance` Operating
+   Discipline; no presuming).
 3. **Resolve identities/parents from source** — confirm the Epic and any
    assignee via the API, not by guessing (`@smith-gh-cli` identity rule applies
    to trackers too).
@@ -40,4 +40,4 @@ break down.
 A ticket body is authored content: draft it, show it, and create only on an
 explicit yes — never bulk-create on a guess. Step 2's approved numbered list IS
 that yes for the tickets on it; anything not on it needs its own. Canonical
-rule: `@smith-guidance` Harmless — external writes.
+rule: `@smith-guidance` Safety Rules — external writes.

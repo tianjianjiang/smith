@@ -138,7 +138,7 @@ checked is recorded as such and fails that check rather than passing quietly.
   forbid this when the risk exists.
 - Verify-from-source applies to returns too: if a subagent asserts a label or
   mechanism, confirm against the actual file/doc before you rely on it (see
-  @smith-guidance/SKILL.md Honest).
+  @smith-guidance/SKILL.md Communication Standards).
 - For a delegated fix/diff, audit the execution path — trace that the change
   runs on the real failing input — not just its style or quality.
 - Reviewers may legitimately DISAGREE, and a vote count ranks severity

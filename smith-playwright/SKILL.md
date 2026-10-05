@@ -9,11 +9,11 @@ description: Playwright testing patterns. Use when running Playwright tests or a
 
 ## CRITICAL: Proactive Failure Monitoring
 
-- MUST check test runner exit code after every run
-- MUST inspect failure artifacts before reporting
-- MUST read actual error messages (not just "tests failed")
-- MUST classify root cause before reporting to user
-- MUST proactively detect and report -- do NOT wait for user
+- Check the test runner exit code after every run
+- Inspect failure artifacts before reporting
+- Read the actual error messages (not just "tests failed")
+- Classify the root cause before reporting to the user
+- Detect and report failures proactively, without waiting for the user
 
 ## Failure Analysis Protocol
 

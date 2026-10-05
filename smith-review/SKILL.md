@@ -58,7 +58,7 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    **One instance per tool per round**: Run exactly ONE instance of each tool 
    per round, not multiple in parallel. The tools internally parallelize their 
    own subagents. Running multiple instances of the SAME tool is redundant and 
-   wastes tokens. This preserves tool coverage (line 48: "do not skip") while 
+   wastes tokens. This preserves tool coverage (step 2: "do not skip") while 
    controlling cost through shallow effort depth, not fewer tools.
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style

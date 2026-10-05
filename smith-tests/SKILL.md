@@ -9,13 +9,13 @@ description: Testing standards and test-driven development (TDD). Use when writi
 
 ## CRITICAL
 
-- MUST mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
-- MUST use pytest functions (not classes) - see `@smith-python/SKILL.md`
-- MUST separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
-- MUST use virtual env runner for pytest (`poetry run` or `uv run`)
-- MUST write tests BEFORE implementation (TDD)
-- MUST run full test suite proactively after code changes — do not wait for the user to ask
-- MUST run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
+- Mirror source structure: `foo/bar/xyz.py` → `tests/unit/foo/bar/test_xyz.py`
+- Use pytest functions (not classes) - see `@smith-python/SKILL.md`
+- Separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
+- Use the virtual env runner for pytest (`poetry run` or `uv run`)
+- Write tests before implementation (TDD)
+- Run the full test suite proactively after code changes — do not wait for the user to ask
+- Run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
 - Run explicit test paths instead of `pytest -m "not integration"` when the folder structure is mirrored — that flag causes import conflicts
 - Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
 - For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing — write the test to match the real bug, not to fit the fix

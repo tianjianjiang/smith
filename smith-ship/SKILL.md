@@ -10,7 +10,7 @@ allowed-tools: Bash(git *), Bash(gh *)
 
 Drive the change in the current worktree from review to merged, following smith
 conventions. Run phases in order; stop and surface only on the must-ask triggers
-in `@smith-gh-pr/SKILL.md` (Review Convergence Protocol). Argument (if given) is
+in `@smith-gh-pr/SKILL.md` (references/REVIEW-WORKFLOW.md "Review Convergence Protocol"). Argument (if given) is
 the intended PR scope/title.
 
 ## Live state
@@ -37,7 +37,7 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    clean: if the checkout sits on a protected branch with nothing modified,
    branch or `EnterWorktree` before any edit, then re-run the gate. Never
    take path (a) below while still on a protected branch — committing there
-   is what `@smith-guidance` Harmless forbids; branch first, then commit.
+   is what `@smith-guidance` Safety Rules forbids; branch first, then commit.
    Otherwise check `git status --porcelain`: if the checkout is
    dirty, STOP and pick ONE path: (a) commit or stash the changes, then
    `EnterWorktree`; or (b) branch in place (`git switch -c …`) and continue in
@@ -57,11 +57,11 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 4. **Push & PR** — re-run `/smith-preflight` on the finished commit first and
    do NOT push on a `NO-GO` (step 0's verdict was taken before the branch and
    commit existed, so it does not carry). Then push the renamed branch;
-   `gh pr create --base <default> --assignee @me` with a What/Why/Testing
+   `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`
    line (`@smith-style`). Link issues only if real. The body and title are
    content: show them and create on an explicit yes (`@smith-guidance`
-   Harmless).
+   Safety Rules).
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
    and the content-vs-mechanics gate. Ship-specific: fix high-confidence

@@ -23,9 +23,9 @@ This document defines development workflow standards and code quality requiremen
 
 ## Code Quality (MANDATORY)
 
-- MUST run formatters and linters before commits (ideally after each file edit — use PostToolUse hooks when available, see `@smith-ctx-claude/SKILL.md`)
-- MUST run tests before commits
-- MUST fix all linting errors
+- Run formatters and linters before commits (ideally after each file edit — use PostToolUse hooks when available, see `@smith-ctx-claude/SKILL.md`)
+- Run tests before commits
+- Fix all linting errors
 
 **Language-specific commands:**
 - **Python**: See `@smith-python/SKILL.md#before-you-finish` (supports Poetry and uv)
@@ -33,11 +33,7 @@ This document defines development workflow standards and code quality requiremen
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @smith-guidance/SKILL.md for comprehensive patterns:
-- Exploration workflow (Read → Ask → Propose → Implement)
-- Debugging workflow (Reproduce → Analyze → Hypothesize → Test → Verify)
-- AGENTS.md optimization for prompt caching
-- Constitutional AI principles (HHH framework)
+**For AI agent workflows**: See @smith-guidance/SKILL.md (exploration workflow, safety rules, anti-sycophancy), `@smith-validation/SKILL.md` (debugging) and `@smith-prompts/SKILL.md` (prompt caching).
 
 ## Agent Task Decomposition
 
@@ -45,7 +41,7 @@ This document defines development workflow standards and code quality requiremen
 
 - Tasks MUST focus on logical phases, be independently verifiable
 - Exactly ONE task in_progress at any time
-- Mark complete only after tests pass and changes committed
+- Mark complete only after tests pass
 - Use git commits + todos for session bridging
 
 **Task states**: pending → in_progress → completed
@@ -174,4 +170,4 @@ See `@smith-ralph/SKILL.md` for full patterns.
 **Task management:**
 - One task in_progress at a time
 - Mark complete only after tests pass
-- Commit frequently for session recovery
+- Keep progress recoverable (plan file, checkpoint) between user-approved commits

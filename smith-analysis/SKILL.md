@@ -52,17 +52,6 @@ Best explanation from incomplete observations (inference to best explanation):
 3. Select most plausible explanation
 4. Test to confirm or falsify
 
-## Extended Thinking Guidance
-
-Modern LLMs have built-in extended thinking for complex problem-solving.
-
-**When to use**: Complex architectural decisions, multi-step refactoring, security analysis, performance optimization.
-
-- Rely on the model's built-in reasoning instead of "think step-by-step" prompts (counterproductive for models with built-in reasoning)
-- Keep reasoning steps internal — asking for visible reasoning steps defeats the efficiency purpose
-- Reserve extended thinking for complex problems; skip it for simple, straightforward tasks
-- Specify the desired outcome rather than giving explicit reasoning/process instructions
-
 ## Problem Decomposition
 
 ### First Principles Thinking
@@ -181,6 +170,6 @@ Ensure coverage by examining from 6 perspectives:
 
 ## Related
 
-- @smith-guidance/SKILL.md - Anti-sycophancy, HHH framework, exploration workflow
+- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, exploration workflow
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
 - `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings

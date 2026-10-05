@@ -54,9 +54,9 @@ and never a substitute for evidence you could still go and find.
 - **pr-ownership** — machine. See below.
 - **external-write** — attested. Every human-facing external write this
   task made carried its own explicit yes. Owner @smith-guidance
-  Harmless, External writes.
+  Safety Rules, External writes.
 - **verify-before-assert** — attested. Every convention or rule
-  asserted was quoted from its source. Owner @smith-guidance Honest.
+  asserted was quoted from its source. Owner @smith-guidance Communication Standards.
 - **suggestions** — attested. Every mechanical review finding posted
   carried a committable `suggestion` block. Owner `@smith-gh-pr`
   Posting Review Findings.

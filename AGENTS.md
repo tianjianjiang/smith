@@ -53,8 +53,8 @@ backends and ends with a Reload block. Its dependencies:
 
 ## Core Principles
 
-DRY, KISS, YAGNI, SOLID, HHH — defined in @smith-principles/SKILL.md
-(force-loaded), HHH in @smith-guidance/SKILL.md. Not restated here.
+DRY, KISS, YAGNI, SOLID — defined in @smith-principles/SKILL.md
+(force-loaded). Not restated here.
 
 ## Skill Loading
 
@@ -68,9 +68,8 @@ safety net.
 SKILL.md for you. Read a SKILL.md by hand only to quote or edit it, never as a
 substitute for invoking.
 
-No "identify → Read → unload" bookkeeping: it depended on model discipline and
-was ~0% executed in practice (smith-* skills almost never loaded; the router
-hook replaces it). See `@smith-ctx-claude/SKILL.md`.
+Skills stay loaded once invoked; there is no unload step. See
+`@smith-ctx-claude/SKILL.md`.
 
 ## Guard Hooks
 
@@ -85,15 +84,15 @@ uncommitted changes never carry into a new worktree (details in
 
 ## Skill Notification
 
-ALWAYS emit one line per skill invocation, in the message where it shapes your
+Emit one line per skill invocation, in the message where it shapes your
 work: `using @skill-name (reason)`. Group multiple skills on one line. This is
 the user's only in-conversation visibility into which skills actually loaded —
 do not skip it because the Skill tool already logs the call.
 
 ## Proactive Context Management
 
-- **At warning threshold**: Warn, prepare retention criteria, unload unused skills
-- **At critical threshold**: CRITICAL - context reset required (see platform skill for thresholds and command)
+- **At warning threshold**: Warn and prepare retention criteria
+- **At critical threshold**: recommend a context reset (thresholds and command in the platform skill)
 
 ## Available Skills
 
@@ -116,7 +115,7 @@ external-dependency recommendations lives in `@smith-research/SKILL.md`.
 **Config required**: Gemini CLI, Aider
 **Note**: Cursor also supports `.mdc` format, but AGENTS.md works via MCP integration
 
-## Kiro Terminal (CRITICAL)
+## Kiro Terminal (Kiro sessions only)
 
 - Use Python scripts for file generation
 - Prefer Serena MCP tools over Kiro native file operations

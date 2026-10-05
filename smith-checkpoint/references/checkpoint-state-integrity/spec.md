@@ -266,7 +266,7 @@ own flags does record one.
 **EARS**: The system (script, tests, SKILL.md, references) shall contain
 no client, company, ticket, or client-folder identifier as defined by the
 local leak guard's denylist (Basic-Memory project names are not in it); the local leak
-guard (`local-guard-secret`) is the check.
+guard (`smith-secret-guard-local`) is the check.
 
 **GWT**:
 - Given the staged diff of this change
