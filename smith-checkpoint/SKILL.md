@@ -123,10 +123,8 @@ leaving it at the top.
    worktree's directory resolves to. It exits the same way when the
    memories are the worktree's own and the primary directory cannot be
    created. Repair the path and rerun.
-2. **Basic-Memory** (`uvx --prerelease=allow basic-memory tool read-note` +
-   `write-note --overwrite`; prerelease matches the MCP server's resolution,
-   since a stable build cannot open a database a prerelease migrated):
-   a note titled from the label, type `guide`, tag `checkpoint`, in the
+2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`,
+   on the release channel in Runtime prerequisites below): a note titled from the label, type `guide`, tag `checkpoint`, in the
    project selected per Runtime prerequisites "Backend selection" below
    (`--project <name>` on both calls when a project is configured and no
    profile lock is active; under a lock both calls omit it).
@@ -315,6 +313,15 @@ and reload degrades:
   Both are **local-only** in a default setup (Serena memories live under
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled).
+- **Basic-Memory release channel** — `write-checkpoint.sh` runs the CLI as
+  `uvx --prerelease=allow basic-memory`, so launch the MCP server the same
+  way: `uvx --prerelease=allow basic-memory mcp`. The CLI and the server
+  share one SQLite database and each runs its migrations on start; a build
+  that does not know the database's newest migration fails with `Can't
+  locate revision`. A stable-only server is therefore broken by a checkpoint
+  that resolved a newer prerelease, and a stable-only CLI by a prerelease
+  server. After a newer build migrates the database, restart any process
+  still running an older one.
 - **`jq`** — `write-checkpoint.sh` shells out to it to parse the Basic-Memory
   CLI's JSON output (note content on read, permalink on write) and the
   repository's `.claude/settings*.json`; not preinstalled on stock macOS.
