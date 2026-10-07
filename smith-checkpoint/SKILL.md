@@ -321,8 +321,8 @@ and reload degrades:
   opens it; a build that does not know the database's newest migration fails
   with `Can't locate revision`. A stable-only server is therefore broken by a
   checkpoint that resolved a prerelease carrying a newer migration, and a
-  stable-only CLI by such a server. After a newer build migrates the
-  database, restart any process still running an older one.
+  stable-only CLI by a server running such a prerelease. After a newer build
+  migrates the database, restart any process still running an older one.
 - **`jq`** — `write-checkpoint.sh` shells out to it to parse the Basic-Memory
   CLI's JSON output (note content on read, permalink on write) and the
   repository's `.claude/settings*.json`; not preinstalled on stock macOS.
