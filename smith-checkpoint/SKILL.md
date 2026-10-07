@@ -123,7 +123,9 @@ leaving it at the top.
    worktree's directory resolves to. It exits the same way when the
    memories are the worktree's own and the primary directory cannot be
    created. Repair the path and rerun.
-2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`):
+2. **Basic-Memory** (`uvx --prerelease=allow basic-memory tool read-note` +
+   `write-note --overwrite`; prerelease matches the MCP server's resolution,
+   since a stable build cannot open a database a prerelease migrated):
    a note titled from the label, type `guide`, tag `checkpoint`, in the
    project selected per Runtime prerequisites "Backend selection" below
    (`--project <name>` on both calls when a project is configured and no
