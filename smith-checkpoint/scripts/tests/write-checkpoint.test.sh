@@ -133,7 +133,8 @@ run_script_from_tree() {
 reset_logs
 out=$(run_script test_label_success "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "success path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write-note argv must pass --overwrite so it succeeds whether or not the note already exists: $(cat "$SHIM/bm.argv")"
-grep -q 'write-note' "$SHIM/bm.argv" || fail "checkpoint must write via write-note: $(cat "$SHIM/bm.argv")"
+head -n 1 "$SHIM/bm.argv" | grep -q '^--prerelease=allow basic-memory tool write-note ' || fail "write-note must run on the prerelease channel SKILL.md asks the MCP server to use, or it cannot open a database migrated by a prerelease carrying a newer migration: $(cat "$SHIM/bm.argv")"
+[ -s "$SHIM/bm_read.argv" ] && ! grep -qv '^--prerelease=allow basic-memory tool read-note ' "$SHIM/bm_read.argv" || fail "every read-note must run on the prerelease channel SKILL.md asks the MCP server to use, or it cannot open a database migrated by a prerelease carrying a newer migration: $(cat "$SHIM/bm_read.argv")"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "fresh checkpoint: Serena and Basic-Memory must receive identical content"
 [ -s "$SHIM/serena.content" ] || fail "content passed to backends is empty"
 [ "$(grep -c '^# test_label_success$' "$SHIM/serena.content")" = 1 ] || fail "fresh checkpoint must carry exactly one title line"

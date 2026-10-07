@@ -414,6 +414,10 @@ serena_memories() {
     uvx --from git+https://github.com/oraios/serena serena memories "$@"
 }
 
+basic_memory_tool() {
+    uvx --prerelease=allow basic-memory tool "$@"
+}
+
 read_serena_memory() {
     local serena_project="$1"
     local output error_file error_output
@@ -446,7 +450,7 @@ read_basic_memory_note_json() {
     local title="$1" bm_project="$2"
     local result error_file error_output
     error_file=$(mktemp)
-    if ! result=$(uvx basic-memory tool read-note "$title" ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
+    if ! result=$(basic_memory_tool read-note "$title" ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
         error_output=$(cat "$error_file")
         rm -f "$error_file"
         echo "Error: could not read existing Basic-Memory note for ${title}: ${error_output}" >&2
@@ -497,7 +501,7 @@ write_to_basic_memory() {
     local bm_project="$5"
     local document
     document=$(build_merged_document "$entry" "$existing")
-    uvx basic-memory tool write-note \
+    basic_memory_tool write-note \
         --title "${title}" \
         --folder "${folder}" \
         --type guide \
