@@ -16,10 +16,13 @@ choose, set, or compare a config directory.
 - Given one `config.json` listing projects `main`, `smith`, `sat`, `elu`
   with pairwise-disjoint `path` values
 - When `write-checkpoint.sh` runs in any repository
-- Then every `uvx basic-memory` call it makes carries at most a `--project
-  <name>` argument, and the script contains no reference to
+- Then every Basic-Memory CLI call it makes selects its store with at most
+  a `--project <name>` argument, and the script contains no reference to
   `BASIC_MEMORY_CONFIG_DIR` or `BASIC_MEMORY_HOME` other than the check in
   §S2
+- And every such call goes through `basic_memory_tool`, which runs
+  `uvx --prerelease=allow basic-memory tool`; `SKILL.md` Runtime
+  prerequisites "Basic-Memory release channel" documents that channel
 
 ## §S1 project-from-settings
 
