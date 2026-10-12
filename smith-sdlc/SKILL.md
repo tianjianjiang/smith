@@ -36,8 +36,9 @@ a line: Maintain's findings re-enter as a new `intent.md`.
 
 ## The Artifact Chain
 
-Each stage ends by committing one artifact to version control; committing
-it is what triggers the next stage:
+Each stage ends with one artifact committed to version control; a human
+accepting it, recorded as the merge, is what triggers the next stage; a
+rejection, recorded as a closed review, does not advance it:
 
 1. **Plan** → `intent.md` — a human-readable, machine-actionable proto-spec
 2. **Design** → `spec.md` — requirements + design in one pass, applied
@@ -51,10 +52,11 @@ it is what triggers the next stage:
 6. **Maintain** → the incident record — a detected control-band breach or
    scan finding, written back as a new `intent.md`
 
-The chain of commits is the audit trail: who asked for what, what the
-agent produced, and who approved it at each gate. Early-stage artifacts
-are markdown because a non-engineer and an agent must both read and act on
-the same file; from Build onward the artifact is code and its records.
+The commits, the merges and the review records that accept or reject them
+are the audit trail: who asked for what, what the agent produced, and who
+approved it at each gate. Early-stage artifacts are markdown because a
+non-engineer and an agent must both read and act on the same file; from
+Build onward the artifact is code and its records.
 
 ## Stage 1: Plan — intent.md
 
@@ -62,17 +64,16 @@ The originator brainstorms the problem with Claude in their own words —
 no formal language required — until scope, users, constraints and success
 criteria are concrete. Claude writes the result as `intent.md` (problem,
 proposed outcome, affected users/systems, constraints, open questions)
-using an organization template (encode this as a skill). Per the
-playbook's own numbered steps: "The originator corrects anything Claude
-misunderstood," then commits `intent.md` — the product owner "picks the
-idea up from there" for Stage 2, rather than doing the correcting or
-committing themselves (a separate framing sentence earlier in the same
-play says the product owner reviews and corrects it "before it is
-committed," which sits in tension with those numbered steps — the
-numbered steps are the operational instructions, so treat those as
-authoritative). Home: an `intent/` folder in the product repo for a single
-product; a directory in a monorepo; a dedicated intent repo only when
-intent spans many repositories.
+using an organization template (encode this as a skill). "The originator
+corrects anything Claude misunderstood" and commits `intent.md` for
+review; the product owner reviews and corrects it there, and "the accept
+or reject decision that sends the intent into Stage 2: Design is recorded
+as the merge or the closing review." The playbook's line that the product
+owner corrects it "before it is committed" reads as before it lands in
+the intent home, so the two steps do not conflict: the originator
+proposes, the product owner accepts. Home: an `intent/` folder in the
+product repo for a single product; a directory in a monorepo; a dedicated
+intent repo only when intent spans many repositories.
 
 **Measure:** time from first conversation to committed `intent.md`
 (leading); the survival rate of intents accepted into Design vs. closed,
@@ -89,25 +90,25 @@ Design from the `intent.md`, then exports to Claude Code to build. Commit
 `spec.md` alongside `intent.md`.
 
 **The playbook mandates no internal notation for `spec.md`** — only that
-one session produces it, org skills constrain it, and committing it
+one session produces it, org skills constrain it, and accepting it
 triggers Build. That leaves room to require `spec.md` as the normative
 contract, in EARS (Easy Approach to Requirements Syntax: ubiquitous /
 event-driven / state-driven / optional-feature / unwanted-behaviour
 requirement forms) paired with a Given-When-Then acceptance scenario per
 requirement, without contradicting anything the playbook actually
 prescribes. Reference authoritative schemas/code by name rather than
-restating their fields. `spec.md` is committed alongside `intent.md` at
-this stage transition — the playbook calls them "the file pair" to
-describe that co-commit, not to assert a one-to-one count; it never
-discusses one `intent.md` splitting into several specs or several intents
-merging into one, so don't read a cardinality rule into language that was
-only describing what gets committed together.
+restating their fields. `spec.md` is committed alongside `intent.md` —
+the playbook calls them "the file pair" because together they record
+"what was asked for and what was decided", not to assert a one-to-one
+count; it never discusses one `intent.md` splitting into several specs or
+several intents merging into one, so don't read a cardinality rule into
+language that was only describing what sits together.
 
 ### design.md as an Architecture Decision Record (ADR) log (optional, durable, cross-cutting, smith addition)
 
 Design decisions get *made* in this stage's session, which is why this
 lives here rather than under Build — but the log itself is not part of
-that per-stage co-commit: one `design.md` per subsystem/component, not per
+that per-stage file pair: one `design.md` per subsystem/component, not per
 feature, gaining an entry only when a decision made during a Design-stage
 session is significant enough to outlive the current change. Most
 sessions produce no ADR entry at all; the decision's rationale just lives
