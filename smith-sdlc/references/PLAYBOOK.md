@@ -49,6 +49,14 @@ Author: <name> (<team>). Status: draft.
 <what isn't decided yet>
 ```
 
+The `Status:` line is a human-readable note on the document's own state,
+as in Anthropic's examples (`draft` on an `intent.md`, `ready for product
+owner review` on a `spec.md`). Nothing in this flow reads it or waits on
+it: the product owner's accept or reject is recorded as the merge of the
+artifact or the closed review, and that record is the audit trail (see
+`../SKILL.md` "The Artifact Chain"). Do not build a status
+workflow on top of this line.
+
 ## spec.md prompt (Design stage)
 
 ```
