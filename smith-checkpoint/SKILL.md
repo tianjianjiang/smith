@@ -24,9 +24,14 @@ Save the SAME facts to both backends, each in its own format; do not skip one.
 ## What to capture
 
 Durable only (not transient chatter): goals/decisions, file:line anchors,
-PR/commit SHAs, open follow-ups, and any correction the user gave on how to
-work. Convert relative dates to absolute. Omit what the repo/git already
-records.
+PR/commit SHAs, open follow-ups, and corrections the user gave that apply
+to this work thread only. Convert relative dates to absolute. Omit what the
+repo/git already records.
+
+A correction that applies beyond this work thread follows
+@smith-guidance/SKILL.md "Route general corrections to a general place":
+once it is written to that place, the body lists only a pointer to it
+under Related; a draft the user has not approved yet goes under Next.
 
 ## Compression Requirements
 
@@ -67,6 +72,8 @@ Implement rate limiting (`auth-plan.md:121-145`)
 ## Related
 - PR #789 (awaiting review)
 - Serena: `oauth_implementation_status`
+- Rule: re-run the failing test before claiming a fix →
+  `~/.claude/rules/«topic».md`
 ```
 
 ## Targets and formats
@@ -231,6 +238,10 @@ When invoked via `/smith-checkpoint` (no arguments required):
    title or Date/Plan/Session header):
    - Combine extracted facts (step 1) with rich context/reasoning
    - Add decisions (why, consequences), next steps with context
+   - Before writing Decisions, apply the test in @smith-guidance/SKILL.md
+     "Route general corrections to a general place" to each user
+     correction; a written one becomes a pointer under Related, an
+     unapproved draft a Next item
    - List Serena memories and Basic-Memory notes written this session under
      Related. From a worktree, name Serena memories by the location the
      script prints on stderr after relocation (a memory written by MCP into
