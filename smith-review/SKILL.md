@@ -2,7 +2,7 @@
 name: smith-review
 description: Multi-round local review loop. Use when the user runs /smith-review or asks to review local changes before a push.
 argument-hint: [optional focus area]
-allowed-tools: Bash(git *), Bash(gh *)
+allowed-tools: Bash(git *), Bash(gh *), Bash(node *review-receipt.mjs *)
 ---
 
 # /smith-review — review the current change until convergence
@@ -74,6 +74,17 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    (alternating contradicting verdicts without new evidence) is a terminal but
    NON-converged state: escalate the trade-off to the user and stop iterating
    — do not report converged. Report findings + verdict + the receipt in-band.
+6. **Record the receipt** — on a converged verdict only, and once the
+   reviewed change is committed exactly as reviewed (`/smith-ship` step 3,
+   or the user), run `node «skills»/smith-review/scripts/review-receipt.mjs
+   write "«plugin-pass receipt line»"` from the repository (add `--base
+   «parent»` on a stacked branch). It refuses a dirty tree and a line that
+   leaves a tool without `ran` or `NA:«reason»`, and keys the receipt to the
+   combined diff of HEAD against its merge base with the default branch, so
+   a reword or a rebase that leaves that diff unchanged keeps it and any
+   change to the diff needs a new review. `/smith-preflight`'s
+   `review-converged` check reads it and gives `NO-GO` without it. Writing
+   a receipt for a review that did not converge is a false report.
 
 **Delivery when a PR exists.** Post findings to the PR per `@smith-gh-pr`
 "Posting Review Findings" (inline comments anchored to lines, a committable

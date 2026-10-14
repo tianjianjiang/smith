@@ -30,6 +30,9 @@ owning skill, and the owner's wording wins over this file's.
 - Subagent spawn ledger (written by `subagent-contract-guard`; see
   subagent-contract below):
   !`node -e 'const configDir=process.env.CLAUDE_CONFIG_DIR||process.env.HOME+"/.claude";import(configDir+"/skills/smith-ctx-claude/scripts/spawn-ledger-report.mjs").catch(()=>{process.exitCode=1})' 2>/dev/null || echo "subagent-contract PROBE-UNAVAILABLE — this profile has no guard installed at its skills path"`
+- Review receipt (written by `/smith-review` step 6; see review-converged
+  below):
+  !`node "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-review/scripts/review-receipt.mjs" check 2>&1 || true`
 
 ## Checks
 
@@ -61,6 +64,7 @@ and never a substitute for evidence you could still go and find.
   carried a committable `suggestion` block. Owner `@smith-gh-pr`
   Posting Review Findings.
 - **subagent-contract** — machine when the ledger probe answers. See below.
+- **review-converged** — machine. See below.
 
 **branch-first.** Owner @smith-git CRITICAL, enforced by
 `smith-git/scripts/hooks/branch-guard.mjs`. Protected: `main`,
@@ -182,6 +186,25 @@ verdict than the truth, so do it deliberately and say what you did.
 the ledger outlives the session that wrote it. Never answer it
 `SKIP:resumed-session` while the probe is giving an answer.
 
+**review-converged.** Owner `@smith-review/SKILL.md` step 6. The Review
+receipt probe prints the verdict; take it verbatim:
+
+- `PASS` — a converged `/smith-review` receipt names the combined diff of
+  HEAD against its merge base with the default branch. A reword, or a
+  rebase that leaves that diff unchanged, keeps it; any change to the diff
+  does not.
+- `FAIL:«reason»` — no receipt, an incomplete or mismatched one,
+  uncommitted changes, or no change to name. Report `FAIL` with the
+  printed reason; the fix is `/smith-review` to convergence, not a
+  hand-written receipt.
+- For a stacked branch, run the probe's command with `--base «parent»`
+  and report that line instead.
+- The receipt proves a converged review was recorded for this diff, not
+  that the tools ran; it turns a skipped review into a `NO-GO`.
+- No output, or an error that is not a `review-converged` line, means the
+  probe did not run: `FAIL:probe-unavailable`, since a missing signal is
+  never a passing one.
+
 ## Verdict
 
 Report every check as `«name» «PASS|FAIL|SKIP|N/A»` in the order listed
@@ -191,14 +214,18 @@ append their reason as `:«reason»`. Put the verdict on the next line:
 ```text
 branch-first PASS · secret-scan PASS · pr-ownership SKIP:no-pr ·
 external-write N/A:no-writes · verify-before-assert PASS ·
-suggestions N/A:no-findings · subagent-contract N/A:no-spawns
+suggestions N/A:no-findings · subagent-contract N/A:no-spawns ·
+review-converged PASS
 GO
 ```
 
-Any `FAIL` → `NO-GO`, `branch-first` included: print the `NO-GO`. One
-exception governs what `/smith-ship` does with that verdict, never what
+Any `FAIL` → `NO-GO`, `branch-first` included: print the `NO-GO`. Two
+exceptions govern what `/smith-ship` does with that verdict, never what
 you print — a `branch-first FAIL` from sitting on a protected branch is
-resolved at ship's Isolate step, and a detached HEAD is not that case.
+resolved at ship's Isolate step (a detached HEAD is not that case), and a
+`review-converged FAIL` before ship's review step is answered there. Ship's
+step 0 owns the conditions, including that branch-first routes only when
+no check other than `review-converged` also fails.
 A check missing from the line counts as a `FAIL`. State the line in your
 own message; do not point at tool output.
 

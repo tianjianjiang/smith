@@ -182,7 +182,15 @@ covers the task until the owner names it.
   never trigger, the ones the entry file always loads among them.
   `smith-ctx-claude/scripts/skill-trigger-eval.mjs` measures it; the
   records are `instruction-enforcement/skill-trigger/before.jsonl` and
-  `after.jsonl`, and `compare` on the two files prints the table. A
+  `after.jsonl`, and `compare` on the two files prints the table.
+- A newer model does not remove the need. The same descriptions measured
+  on `claude-opus-5-5`, one run per prompt, for the four always-loaded
+  skills and the 18 most used ones, trigger 138 of 220 prompts against 123
+  of 220 for the first run of `after.jsonl`, a gap one run per prompt
+  cannot separate from noise; `smith-dev`, `smith-git`, `smith-ctx-claude`
+  and `smith-validation` still trigger 4 of 10. The record is
+  `instruction-enforcement/skill-trigger/opus-5-5.jsonl`; `compare` refuses
+  two models, so count it per skill. A
   condition the session cannot meet suppresses loading: "Use when Serena
   MCP is available" in a session without that server. An imperative clause
   raises it: "ALWAYS load before writing, resuming or updating a plan

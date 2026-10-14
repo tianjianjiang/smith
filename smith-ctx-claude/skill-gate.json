@@ -4,6 +4,8 @@
   "rules": [
     { "action": "git commit", "skill": "smith-git", "command": { "program": "git", "subcommands": ["commit"] } },
     { "action": "git push", "skill": "smith-git", "command": { "program": "git", "subcommands": ["push"] } },
+    { "action": "push outside the ship pipeline", "skill": "smith-ship", "command": { "program": "git", "subcommands": ["push"] } },
+    { "action": "pull request create outside the ship pipeline", "skill": "smith-ship", "command": { "program": "gh", "subcommands": ["pr create", "pr new"] } },
     { "action": "pull request create or edit", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["pr create", "pr new", "pr edit"] } },
     { "action": "pull request review or comment", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["pr review", "pr comment", "issue comment"] } },
     { "action": "review or comment through the GitHub API", "skill": "smith-gh-pr", "command": { "program": "gh", "subcommands": ["api"], "argument": "^[^=\\s]*/(comments|reviews)(/|\\?|$)" } },
