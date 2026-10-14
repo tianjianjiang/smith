@@ -391,7 +391,7 @@ skill via the Skill tool:
 **SDLC (software development lifecycle)**: `intent.md`/`spec.md`/`design.md`, AI-native or agentic software development lifecycle, the SDLC playbook, an ADR (Architecture Decision Record), Given-When-Then acceptance scenarios, or EARS (Easy Approach to Requirements Syntax) followed by one of `syntax`/`notation`/`form(s)`/`format`/`requirement(s)` — bare `EARS` deliberately does not trigger, because the router matches case-insensitively and would fire on the English word "ears" → `@smith-sdlc/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `cron`, "poll for", "every N minutes/hours" → `@smith-automation/SKILL.md`
 **Subagents**: "subagent"/"sub-agent", "parallel agents", "fan out" (the spawn itself is enforced by `skill-load-gate`) → `@smith-subagents/SKILL.md`
-**Git/GitHub**: `git commit`/`git stash`, rebase, cherry-pick, branch naming (the commit and the push are enforced by `skill-load-gate`) → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
+**Git/GitHub**: `git commit`/`git stash`, rebase, cherry-pick, branch naming (the commit and the push are enforced by `skill-load-gate`; the push and `gh pr create` also need `@smith-ship`) → `@smith-git/SKILL.md` + `@smith-style/SKILL.md`,
   Worktrees (raw git) → `@smith-git/SKILL.md`,
   Worktrees (Claude Code tools: EnterWorktree/ExitWorktree, bgIsolation, squash-merge sync) → `@smith-worktree/SKILL.md`,
   "pull request"/"PR", "code review", `gh pr` → `@smith-gh-pr/SKILL.md` + `@smith-gh-cli/SKILL.md` + `@smith-style/SKILL.md`,

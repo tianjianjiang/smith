@@ -11,12 +11,14 @@ COVERED="$TMPD/covered-actions"
 : > "$COVERED"
 
 transcript_loading() {
-  path="$TMPD/loaded-$1.jsonl"
-  printf '%s\n' \
-    '{"type":"user","message":{"content":"go"}}' \
-    "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"call-1\",\"name\":\"Skill\",\"input\":{\"skill\":\"$1\"}}]}}" \
-    '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"call-1","content":"Launching skill"}]}}' \
-    > "$path"
+  path="$TMPD/loaded-$(echo "$*" | tr ' ' '+').jsonl"
+  echo '{"type":"user","message":{"content":"go"}}' > "$path"
+  call=0
+  for skill in "$@"; do
+    call=$((call + 1))
+    echo "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"id\":\"call-$call\",\"name\":\"Skill\",\"input\":{\"skill\":\"$skill\"}}]}}" >> "$path"
+    echo "{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"call-$call\",\"content\":\"Launching skill\"}]}}" >> "$path"
+  done
   echo "$path"
 }
 
@@ -48,15 +50,21 @@ refused() {
 }
 
 allowed() {
-  out=$(run "$(transcript_loading "$2")" "$3" "$4" "") || fail "$1: hook crashed"
-  [ -z "$out" ] || fail "$1: expected silence with $2 loaded, got: $out"
+  out=$(run "$(transcript_loading $2 $5)" "$3" "$4" "") || fail "$1: hook crashed"
+  [ -z "$out" ] || fail "$1: expected silence with $2 $5 loaded, got: $out"
+}
+
+refused_with_only() {
+  out=$(run "$(transcript_loading "$3")" "$4" "$5" "") || fail "$1: hook crashed"
+  echo "$out" | grep -q '"permissionDecision":"deny"' || fail "$1: expected a refusal, got: $out"
+  echo "$out" | grep -q "@$2" || fail "$1: refusal should name @$2, got: $out"
 }
 
 governed() {
   echo "$1" >> "$COVERED"
   refused "$1 without $2" "$2" "$3" "$4"
   echo "$out" | grep -q "$1 is governed by" || fail "$1: refusal should name the action, got: $out"
-  allowed "$1 with $2" "$2" "$3" "$4"
+  allowed "$1 with $2" "$2" "$3" "$4" "$5"
 }
 
 ungoverned() {
@@ -67,8 +75,11 @@ ungoverned() {
 SKILL_FILE_EDIT='{"file_path":"/repo/smith-git/SKILL.md","old_string":"a","new_string":"b"}'
 
 governed "git commit" smith-git Bash "$(bash_command 'git commit -m message')"
-governed "git push" smith-git Bash "$(bash_command 'git push -u origin feat/thing')"
-governed "pull request create or edit" smith-gh-pr Bash "$(bash_command 'gh pr create --title t --body b')"
+governed "git push" smith-git Bash "$(bash_command 'git push -u origin feat/thing')" smith-ship
+governed "push outside the ship pipeline" smith-ship Bash "$(bash_command 'git push -u origin feat/thing')" smith-git
+governed "pull request create or edit" smith-gh-pr Bash "$(bash_command 'gh pr create --title t --body b')" smith-ship
+governed "pull request create outside the ship pipeline" smith-ship Bash \
+  "$(bash_command 'gh pr create --title t --body b')" smith-gh-pr
 governed "pull request review or comment" smith-gh-pr Bash "$(bash_command 'gh pr review 12 --approve')"
 governed "review or comment through the GitHub API" smith-gh-pr Bash \
   "$(bash_command 'gh api repos/owner/name/pulls/12/comments -f body=text')"
@@ -94,6 +105,10 @@ for command in 'gh pr new --fill' 'gh pr edit 12 --body text' 'gh pr comment 12 
   'gh api -X POST repos/owner/name/issues/3/comments?per_page=1'; do
   refused "alternative: $command" smith-gh-pr Bash "$(bash_command "$command")"
 done
+refused "alternative: gh pr new" smith-ship Bash "$(bash_command 'gh pr new --fill')"
+refused_with_only "push with only smith-git loaded" smith-ship smith-git Bash "$(bash_command 'git push')"
+refused_with_only "pull request create with only smith-gh-pr loaded" smith-ship smith-gh-pr Bash \
+  "$(bash_command 'gh pr create --fill')"
 refused "alternative: gh issue new" smith-tickets Bash "$(bash_command 'gh issue new --title t')"
 for tool in mcp__plugin_slack_slack__slack_send_message mcp__plugin_slack_slack__slack_schedule_message; do
   refused "alternative: $tool" smith-slack "$tool" '{"channel_id":"C1","message":"hello"}'

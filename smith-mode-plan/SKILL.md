@@ -63,6 +63,17 @@ Use this format in plan files for trackable progress:
 - Blockers: None
 ```
 
+## Shipping Step
+
+- Write a plan's shipping as one task, `/smith-ship`, never as hand-written
+  lint, commit, push and pull-request steps. `@smith-ship/SKILL.md` runs
+  `/smith-preflight` and the `/smith-review` loop before the push; a plan
+  that lists the steps itself skips both.
+- Shipping still needs its own explicit instruction; approving the plan is
+  not approving the push (@smith-guidance/SKILL.md Safety Rules).
+- In Claude Code, `skill-load-gate` refuses `git push` and `gh pr create`
+  until `smith-ship` is loaded (`smith-ctx-claude/skill-gate.json`).
+
 ## Workflow Per Iteration
 
 ```

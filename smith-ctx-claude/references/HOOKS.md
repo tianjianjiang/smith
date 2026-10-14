@@ -568,7 +568,10 @@ its skill and how to recognise it.
   inside a command or process substitution (`out=$(git push)`, `<(git
   push)`), also one inside the string of `sh -c` or `eval`, and with a
   redirection attached to a word (`git push>/dev/null`).
-- Governed actions: `git commit` and `git push` (`smith-git`); `gh pr
+- Governed actions: `git commit` and `git push` (`smith-git`); `git push`
+  and `gh pr create` (alias `new`) once more (`smith-ship`), so a plan or
+  hand-written step list that skips `/smith-ship` meets its preflight and
+  review order before the push; `gh pr
   create` (alias `new`), `gh pr edit`, `gh pr review`, `gh pr comment`,
   `gh issue comment` and a `gh api` call on a comments or reviews path
   (`smith-gh-pr`); a Slack message, draft or scheduled message
