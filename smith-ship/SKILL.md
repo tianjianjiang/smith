@@ -26,13 +26,15 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 `@smith-subagents/SKILL.md`.
 
 0. **Preflight** — run `/smith-preflight` to see which invariants the change
-   already violates. Exactly one result routes instead of blocking: a
-   `branch-first FAIL` caused by the checkout sitting on a protected branch,
-   and only when it is the ONLY failing check — paired with any other `FAIL`
-   it stops here like the rest, or the companion failure rides along
-   unaddressed. A `branch-first FAIL` from a detached HEAD is never that case.
-   Every other `FAIL` stops here — a secret-scan failure in particular must
-   not reach review or commit. The binding refusal on push stays at step 4.
+   already violates. Two results route instead of blocking. A
+   `review-converged FAIL` is expected before step 2 and is answered there.
+   A `branch-first FAIL` caused by the checkout sitting on a protected
+   branch routes to step 1, but only when no check other than
+   `review-converged` also fails — paired with any other `FAIL` it stops
+   here like the rest, or the companion failure rides along unaddressed. A
+   `branch-first FAIL` from a detached HEAD is never that case. Every other
+   `FAIL` stops here — a secret-scan failure in particular must not reach
+   review or commit. The binding refusal on push stays at step 4.
 1. **Isolate** — a `branch-first FAIL` from step 0 is not cleared by being
    clean: if the checkout sits on a protected branch with nothing modified,
    branch or `EnterWorktree` before any edit, then re-run the gate. Never
@@ -54,9 +56,12 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
    body ≤72/line, `Assisted-by:` trailer (see `@smith-style`). One concern per
    commit.
-4. **Push & PR** — re-run `/smith-preflight` on the finished commit first and
-   do NOT push on a `NO-GO` (step 0's verdict was taken before the branch and
-   commit existed, so it does not carry). Then push the renamed branch;
+4. **Push & PR** — record the review receipt for the finished commit
+   (`@smith-review/SKILL.md` step 6), then re-run `/smith-preflight` on it
+   and do NOT push on a `NO-GO`; its `review-converged` check is what
+   refuses a push nobody reviewed (step 0's verdict was taken before the
+   branch and commit existed, so it does not carry). Then push the renamed
+   branch;
    `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`
    line (`@smith-style`). Link issues only if real. The body and title are
@@ -65,12 +70,14 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
    and the content-vs-mechanics gate. Ship-specific: fix high-confidence
-   findings with **fix + amend** (not new commits); re-run `/smith-preflight`
-   before each of those pushes too — an amended commit is content step 4's
-   verdict never saw, so a token introduced while fixing a review finding
-   would otherwise reach the remote unscanned; after each push rerun the
-   `/smith-review` loop to a fresh converged verdict (full receipt plus
-   criteria — a mechanics-only recheck is not convergence); confirm
+   findings with **fix + amend** (not new commits). Before each of those
+   pushes, in this order: rerun the `/smith-review` loop to a fresh
+   converged verdict (full receipt plus criteria — a mechanics-only recheck
+   is not convergence), since an amend that changes the diff leaves the old
+   receipt behind; record its receipt; then re-run `/smith-preflight` and do
+   NOT push on a `NO-GO` — an amended commit is content step 4's verdict
+   never saw, so a token introduced while fixing a review finding would
+   otherwise reach the remote unscanned; confirm
    CodeRabbit actually
    ran before trusting 0 (`@smith-gh-pr` "CodeRabbit fails OPEN").
 6. **Merge** — re-run `/smith-preflight` once more first: the PR title, body

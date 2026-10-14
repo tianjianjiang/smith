@@ -50,9 +50,10 @@ This document defines development workflow standards and code quality requiremen
 
 ## Pre-PR Quality Gates
 
-Ship through `/smith-ship` (`@smith-ship/SKILL.md`): it runs these gates,
-`/smith-preflight` and the `/smith-review` loop in order. A task list or
-plan names that one step instead of listing commit and push itself.
+Run the gates below first, then ship through `/smith-ship`
+(`@smith-ship/SKILL.md`): it runs `/smith-preflight`, the `/smith-review`
+loop, commit, push and pull request in order. A task list or plan names
+that one step instead of listing commit and push itself.
 
 Before creating a pull request:
 
