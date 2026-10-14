@@ -43,10 +43,14 @@ run() {
 
 bash_command() { node -e 'process.stdout.write(JSON.stringify({ command: process.argv[1] }))' "$1"; }
 
-refused() {
-  out=$(run "$NOTHING_LOADED" "$3" "$4" "") || fail "$1: hook crashed"
+expect_refusal() {
   echo "$out" | grep -q '"permissionDecision":"deny"' || fail "$1: expected a refusal, got: $out"
   echo "$out" | grep -q "@$2" || fail "$1: refusal should name @$2, got: $out"
+}
+
+refused() {
+  out=$(run "$NOTHING_LOADED" "$3" "$4" "") || fail "$1: hook crashed"
+  expect_refusal "$1" "$2"
 }
 
 allowed() {
@@ -56,8 +60,7 @@ allowed() {
 
 refused_with_only() {
   out=$(run "$(transcript_loading "$3")" "$4" "$5" "") || fail "$1: hook crashed"
-  echo "$out" | grep -q '"permissionDecision":"deny"' || fail "$1: expected a refusal, got: $out"
-  echo "$out" | grep -q "@$2" || fail "$1: refusal should name @$2, got: $out"
+  expect_refusal "$1" "$2"
 }
 
 governed() {

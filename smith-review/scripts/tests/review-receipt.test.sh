@@ -15,7 +15,7 @@ git -C "$REPO" remote add origin "$TMPD/remote.git"
 repo_git() { git -C "$REPO" -c user.name=t -c user.email=t@example.com -c commit.gpgsign=false "$@"; }
 commit_file() {
   printf '%b' "$2" > "$REPO/$1"
-  git -C "$REPO" add "$1"
+  repo_git add "$1"
   repo_git commit -q -m "$3"
 }
 tool() { (cd "$REPO" && node "$TOOL" "$@"); }
@@ -48,11 +48,12 @@ expect_fail
 rm "$REPO/untracked.txt"
 
 receipts="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)/smith-review-receipts"
-receipt_file="$receipts/$(ls "$receipts")"
+change_id="$(ls "$receipts")"
+receipt_file="$receipts/$change_id"
 cp "$receipt_file" "$TMPD/saved"
 : > "$receipt_file"
 expect_fail
-printf '{"changeId":"%s","receipt":"coderabbit ran"}\n' "$(ls "$receipts")" > "$receipt_file"
+printf '{"changeId":"%s","receipt":"coderabbit ran"}\n' "$change_id" > "$receipt_file"
 expect_fail
 printf '{"changeId":"another","receipt":"%s"}\n' "$FULL_RECEIPT" > "$receipt_file"
 expect_fail
@@ -74,7 +75,7 @@ repo_git rebase -q main || fail "rebase onto the new main failed"
 expect_pass
 
 printf 'def f():\n  return 1\n' > "$REPO/feature.py"
-git -C "$REPO" add feature.py
+repo_git add feature.py
 repo_git commit -q --amend --no-edit
 expect_fail
 tool write "$FULL_RECEIPT" >/dev/null || fail "re-indent receipt should be written"

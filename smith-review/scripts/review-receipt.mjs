@@ -17,12 +17,16 @@ function baseOption(commandArguments) {
   return index === -1 ? null : commandArguments[index + 1] || "";
 }
 
+function describeChange(change) {
+  return `diff of HEAD against ${change.base} (${change.changeId.slice(0, 12)})`;
+}
+
 function check(directory, base) {
   const change = reviewedChange(directory, base);
   if (change.problem) return [`review-converged FAIL:${change.problem}`, 1];
   if (change.dirty) return ["review-converged FAIL:uncommitted changes the receipt cannot name", 1];
   const state = receiptState(change);
-  const subject = `diff of HEAD against ${change.base} (${change.changeId.slice(0, 12)})`;
+  const subject = describeChange(change);
   if (state === "present") return [`review-converged PASS — receipt for the ${subject}`, 0];
   return [`review-converged FAIL:receipt ${state} for the ${subject}; run /smith-review to convergence`, 1];
 }
@@ -34,7 +38,7 @@ function main(commandArguments) {
   if (base === "") throw new Error(`${BASE_OPTION} needs a ref`);
   if (command === "write" && typeof line === "string" && line !== BASE_OPTION) {
     const change = writeReviewReceipt(directory, line, base);
-    console.log(`review receipt written for the diff of HEAD against ${change.base} (${change.changeId.slice(0, 12)})`);
+    console.log(`review receipt written for the ${describeChange(change)}`);
     return 0;
   }
   if (command === "check") {
