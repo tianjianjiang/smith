@@ -200,6 +200,21 @@ This closes two rationalizations:
   test that reproduces it, then make it pass". Weak criteria force constant
   check-ins; strong criteria let you loop independently.
 
+**Route general corrections to a general place:**
+- Test: would this correction change what you do outside this work
+  thread — in another task in this repository, or in another repository?
+  If yes, it is general; "always", "from now on", or a repeat of an
+  earlier mistake are strong signs
+- Its reach picks the place: a skill (every repository), the user-level
+  rules (personal; on Claude Code a file under `~/.claude/rules/`), or
+  the repository's project memory or `CLAUDE.md` (one repository)
+- Draft it the same turn and show it; the target changes only after the
+  user approves the wording, and until then the draft is an open
+  follow-up (a checkpoint's Next section), not a rule
+- A checkpoint, plan, PR description, or session or task memory holds
+  only a pointer to the written rule: those records are read only when
+  that thread resumes
+
 **Close gaps — don't just disclose them:**
 - A discovered gap (sampled subset, unscanned source, unverified claim) MUST be
   closed with full coverage before you conclude. Disclosing "I only checked X"
