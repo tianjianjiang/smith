@@ -203,6 +203,47 @@ blocks "$current_call_flushed_substantial_bundle_after_prior_elaboration" \
 blocks "$text_bundled_with_non_exitplanmode_tool" \
   "text bundled with a non-ExitPlanMode tool call (Write) does not count as elaboration"
 
+REQUEST_BLOB="{\"type\":\"api-request-blob\",\"sessionId\":\"s\",\"hash\":\"h\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"<system-reminder>$LONG_TEXT</system-reminder>\"}]}}"
+
+request_blob_is_not_elaboration="$TMPD/request-blob-is-not-elaboration.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"x"}}]}}' \
+  '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"x","content":"loaded"}]}}' \
+  "$REQUEST_BLOB" \
+  > "$request_blob_is_not_elaboration"
+
+elaboration_survives_request_blob="$TMPD/elaboration-survives-request-blob.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  "$REQUEST_BLOB" \
+  > "$elaboration_survives_request_blob"
+
+unknown_event_type_is_not_elaboration="$TMPD/unknown-event-type-is-not-elaboration.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"future-event\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  > "$unknown_event_type_is_not_elaboration"
+
+request_blob_after_rejected_attempt="$TMPD/request-blob-after-rejected-attempt.jsonl"
+printf '%s\n' \
+  '{"type":"user","message":{"content":"plan the feature"}}' \
+  "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"$LONG_TEXT\"}]}}" \
+  '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"ExitPlanMode","input":{"plan":"v1"}}]}}' \
+  '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"x","content":"rejected: use a different approach"}]}}' \
+  "$REQUEST_BLOB" \
+  > "$request_blob_after_rejected_attempt"
+
+blocks "$request_blob_is_not_elaboration" \
+  "a logged API request (api-request-blob) does not count as elaboration"
+allows "$elaboration_survives_request_blob" \
+  "prior elaboration survives a logged API request (api-request-blob)"
+blocks "$unknown_event_type_is_not_elaboration" \
+  "text in any event type other than assistant does not count as elaboration"
+blocks "$request_blob_after_rejected_attempt" \
+  "a logged API request after a rejected ExitPlanMode attempt is not fresh elaboration"
+
 approval_after_elaboration="$TMPD/approval-after-elaboration.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"plan the feature"}}' \
