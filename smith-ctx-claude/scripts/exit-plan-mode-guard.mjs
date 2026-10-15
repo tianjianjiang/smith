@@ -81,6 +81,7 @@ async function scanTranscript(transcriptPath, currentToolUseId) {
       }
       continue;
     }
+    if (event.type !== "assistant") continue;
 
     const content = event.message && event.message.content;
     if (toolUseNames(content).includes("ExitPlanMode")) {
