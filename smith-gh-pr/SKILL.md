@@ -52,7 +52,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    not user-specified, confirm it with the user before pushing
 5. Push to remote
 
-**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a description is content addressed to a human — show it and open on an explicit yes (`@smith-guidance` Safety Rules).
+**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a description is payload — show it and open on an explicit yes (`@smith-guidance` Safety Rules).
 
 ## Working on Existing PRs
 
@@ -69,8 +69,11 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 5. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
-6. Reply with commit SHA — by reviewer type:
-   - **Automated reviewer's thread, no human joined**: post directly (mechanics)
+6. Show the commit message and commit on a yes, then reply with the SHA — by
+   reviewer type:
+   - **Automated reviewer's thread, no human joined**: post directly (mechanics
+     only inside a ship or review the user invoked, and only "fixed in «SHA»"
+     or a one-line decline)
    - **Human reviewer, or a human joined the bot thread**: draft, show, post
      only on an explicit yes, one reply per turn (`@smith-guidance` External writes)
 7. **Resolve only automated reviewers' threads** after addressing — don't leave
@@ -84,9 +87,9 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
   Review Findings" below) so the author commits it in one click instead of
   re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
-- Reply with commit SHA; in an automated reviewer's thread that no human joined, then resolve it with `gh pr-review threads resolve`. A human reviewer's thread gets the reply only after their explicit yes and stays open for them to resolve (`@smith-guidance` External writes)
+- Reply with commit SHA; in an automated reviewer's thread that no human joined, inside a ship or review the user invoked, then resolve it with `gh pr-review threads resolve`. A human reviewer's thread gets the reply only after their explicit yes and stays open for them to resolve (`@smith-guidance` External writes)
 - Proactive audit: search codebase for similar issues before committing
-- **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is content — show it and post on a yes (`@smith-guidance` Safety Rules)
+- **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is payload — show it and post on a yes (`@smith-guidance` Safety Rules)
 - **Attribution**: When Claude Code generates or posts a comment, end it with the `Assisted-by:` line (see `@smith-style`). No "on behalf of" line — the account it posts under already names that human. A handle in a body names the person the comment addresses, never its poster.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
 - Keep `@copilot` out of replies — mentioning it triggers unwanted sub-PRs
@@ -175,9 +178,11 @@ or as a custom skill. For `/loop` semantics see `@smith-automation/SKILL.md`.
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement, commit, reply with SHA — a reply to the
-   bot's own thread is mechanics, so it needs no yes (`@smith-guidance`
-   Safety Rules). A comment addressed to a human reviewer does.
+3. High-confidence fixes: implement locally, show the commit message and
+   commit on a yes, reply with the SHA. Inside a ship or review the user
+   invoked, a reply in the bot's own thread limited to "fixed in «SHA»" or
+   a one-line decline is mechanics (`@smith-guidance` Safety Rules); any
+   other reply is payload and needs a yes.
 4. Low-confidence: draft reply, ask user before posting
 5. Re-check after CI passes
 
@@ -251,7 +256,8 @@ on a stack.
 - Keep stacks to 3-4 levels deep; one worktree per unit.
 - Every stacked PR body carries `Depends on:` / `Blocks:` and ends with the
   `Assisted-by:` line; the stack's titles and bodies are shown together and
-  opened on one explicit yes (batched consent, `@smith-guidance` Safety Rules).
+  opened on one explicit yes (one list whose every draft was shown,
+  `@smith-guidance` Safety Rules).
 - Before stack-wide operations on EXISTING branches, verify scope:
   `./smith-gh-pr/scripts/verify-stack-scope.sh '«branch-glob»'` — enumerate
   all branches, present the summary, get approval. The pre-branch

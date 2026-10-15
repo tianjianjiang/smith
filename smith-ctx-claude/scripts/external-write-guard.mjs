@@ -50,8 +50,8 @@ function isExternalWrite(toolName) {
 
 function consentReason(subject, ...extraGuidance) {
   return [
-    `External write '${subject}' is human-facing content: @smith-guidance ` +
-      `requires a per-artifact explicit yes (draft it, show it, wait).`,
+    `External write '${subject}' publishes a payload: @smith-guidance ` +
+      `requires showing it and an explicit yes before the write (draft it, show it, wait).`,
     ...extraGuidance,
     "Approve only if the user has read and okayed THIS write.",
   ].join(" ");

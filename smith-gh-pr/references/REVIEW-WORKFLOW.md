@@ -31,8 +31,8 @@ in-band (see `@smith-review`).
 **Mechanism (prefer the built-in):**
 
 - `/code-review --comment` — runs the review and posts findings as inline PR
-  comments automatically — every finding at once, ungated, each one content
-  addressed to a human. Review comments are a conversation, not a list, so they
+  comments automatically — every finding at once, ungated, each one
+  payload. Review comments are a conversation, not a list, so they
   stay **one per turn** (`@smith-guidance` Safety Rules) and `--comment`'s auto-post
   is therefore NOT the default path: post them one at a time. Asking for a
   review is not a yes for words that did not exist when it was asked.
@@ -68,8 +68,8 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   "Approving a PR by command".
 
 **Decide-and-proceed defaults (do NOT ask between obvious steps):**
-- CodeRabbit finding is Critical/Warning + high-confidence: fix, commit, push
-  silently
+- CodeRabbit finding is Critical/Warning + high-confidence: fix locally;
+  commit and push only after showing the commit message and getting a yes
 - CodeRabbit finding is Info/Nitpick: reply-and-resolve or skip with a
   one-line reason
 - After pushing a fix: re-run review immediately
@@ -80,10 +80,11 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
 **Must-ask criteria (only interruption triggers):**
-- About to post content addressed to a human — a review finding, PR
-  description, or approval body (`@smith-guidance` Safety Rules). Replies to an
-  automated reviewer's own thread that no human has joined are mechanics and do
-  not trigger this.
+- About to publish payload — a commit message, review finding, PR
+  description, or approval body (`@smith-guidance` Safety Rules). Inside a
+  ship or review the user invoked, a reply of "fixed in «SHA»" or a one-line
+  decline in an automated reviewer's own thread that no human has joined is
+  mechanics and does not trigger this.
 - Finding requires scope change beyond the PR's stated goal
 - Finding contradicts an existing smith-skill rule (meta-question)
 - Auto-mode classifier denial without a documented escape pattern
@@ -139,11 +140,13 @@ of `coderabbit review` (both retrieved 2026-07-27). The quotas and the App's
 comment wording are point-in-time; the review-event test is not.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
-- A comment addressed to a **human** — a review finding, a PR description, an
-  approval body — is content: draft it, show it, wait for an explicit yes, one
-  per turn. A reply to an automated reviewer's own thread is mechanics and needs
-  no yes — unless a human has joined that thread, which makes it theirs.
-  Canonical split: `@smith-guidance` Safety Rules.
+- Every word a write publishes — a review finding, a PR description, an
+  approval body, a commit message — is payload: draft it, show it, wait for an
+  explicit yes, one per turn. Inside a ship or review the user invoked, a
+  reply of "fixed in «SHA»" or a one-line decline in an automated reviewer's
+  own thread is mechanics — unless a human has joined that thread, which
+  makes it theirs.
+  Canonical rule: `@smith-guidance` Safety Rules.
 - Merging, `--force-with-lease`, ff-sync, and resolving an automated
   reviewer's threads are mechanics — decide-and-proceed inside an authorized
   ship (the PR ownership gate above bounds which PRs qualify). A human
@@ -252,9 +255,11 @@ above for decide-vs-ask criteria and convergence rules):
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement, commit, reply with SHA — a reply to the
-   bot's own thread is mechanics, so it needs no yes (`@smith-guidance`
-   Safety Rules). A comment addressed to a human reviewer does.
+3. High-confidence fixes: implement locally, show the commit message and
+   commit on a yes, reply with the SHA. Inside a ship or review the user
+   invoked, a reply in the bot's own thread limited to "fixed in «SHA»" or
+   a one-line decline is mechanics (`@smith-guidance` Safety Rules); any
+   other reply is payload and needs a yes.
 4. Low-confidence: draft reply, ask user before posting
 5. Re-check after CI passes
 

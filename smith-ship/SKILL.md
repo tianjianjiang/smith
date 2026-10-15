@@ -55,7 +55,7 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    it reports converged.
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
    body ≤72/line, `Assisted-by:` trailer (see `@smith-style`). One concern per
-   commit.
+   commit. Show each commit message and commit on a yes.
 4. **Push & PR** — record the review receipt for the finished commit
    (`@smith-review/SKILL.md` step 6), then re-run `/smith-preflight` on it
    and do NOT push on a `NO-GO`; its `review-converged` check is what
@@ -65,12 +65,13 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`
    line (`@smith-style`). Link issues only if real. The body and title are
-   content: show them and create on an explicit yes (`@smith-guidance`
+   payload: show them and create on an explicit yes (`@smith-guidance`
    Safety Rules).
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
-   and the content-vs-mechanics gate. Ship-specific: fix high-confidence
-   findings with **fix + amend** (not new commits). Before each of those
+   and the payload-vs-mechanics gate. Ship-specific: fix high-confidence
+   findings locally, then show the commit message and **amend** on a yes
+   (not new commits). Before each of those
    pushes, in this order: rerun the `/smith-review` loop to a fresh
    converged verdict (full receipt plus criteria — a mechanics-only recheck
    is not convergence), since an amend that changes the diff leaves the old
@@ -109,7 +110,7 @@ the stack) and `@smith-worktree`.
   stack overrides: the PR base is the parent branch (not the default
   branch), and the PR body carries `Depends on:` / `Blocks:`. Branch names
   follow `@smith-style`. The stack's PR titles and bodies are shown together
-  and opened on one explicit yes (batched consent).
+  and opened on one explicit yes (one list whose every draft was shown).
 - **Phases 5-7 are stack-wide, not per unit** — address review across the
   stack, then merge bottom-up with retarget-before-merge and manual parent
   branch deletion per `@smith-gh-pr` Stacked PRs; cascade

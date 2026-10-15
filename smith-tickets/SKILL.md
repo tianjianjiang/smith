@@ -37,7 +37,7 @@ break down.
 5. **Verify** — re-read each created ticket to confirm parent + format; fix any
    that drifted.
 
-A ticket body is authored content: draft it, show it, and create only on an
+A ticket body is payload: draft it, show it, and create only on an
 explicit yes — never bulk-create on a guess. Step 2's approved numbered list IS
 that yes for the tickets on it; anything not on it needs its own. Canonical
 rule: `@smith-guidance` Safety Rules — external writes.

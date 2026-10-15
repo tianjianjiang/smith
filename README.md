@@ -55,7 +55,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `skill-router` | UserPromptSubmit | `smith-ctx-claude/scripts/skill-router.mjs` | Advisory: on a prompt the owner typed, surfaces candidate skills that are not loaded yet | ctx-claude |
 | `branch-guard` | PreToolUse (`Edit\|Write\|NotebookEdit`+) | `smith-git/scripts/hooks/branch-guard.mjs` | Blocks edits on the default branch | git |
 | `worktree-dirty-guard` | PreToolUse (`EnterWorktree`) | `smith-git/scripts/hooks/worktree-dirty-guard.mjs` | Blocks entering a worktree with uncommitted changes | git |
-| `external-write-guard` | PreToolUse (`mcp__.*`, `Bash`) | `smith-ctx-claude/scripts/external-write-guard.mjs` | Escalates human-facing writes to `ask` | ctx-claude |
+| `external-write-guard` | PreToolUse (`mcp__.*`, `Bash`) | `smith-ctx-claude/scripts/external-write-guard.mjs` | Escalates payload-carrying writes to `ask` | ctx-claude |
 | `askuserquestion-arity` | PreToolUse (`AskUserQuestion`) | `smith-ctx-claude/scripts/askuserquestion-arity.mjs` | Blocks a multi-question call | ctx-claude |
 | `volatile-artifact-guard` | Stop/SubagentStop/SessionEnd | `smith-ctx-claude/scripts/volatile-artifact-guard.mjs` | Advisory: lists files left under volatile paths | ctx-claude |
 | `branch-rename-open-pr` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/branch-rename-open-pr.mjs` | Blocks renaming a branch with an open PR | ctx-claude |
