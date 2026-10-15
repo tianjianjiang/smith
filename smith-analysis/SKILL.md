@@ -170,6 +170,6 @@ Ensure coverage by examining from 6 perspectives:
 
 ## Related
 
-- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, exploration workflow
+- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, making changes
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
 - `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings

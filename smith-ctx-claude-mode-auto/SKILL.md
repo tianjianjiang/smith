@@ -6,7 +6,7 @@ description: Claude Code auto mode classifier. Use when an auto-mode denial appe
 # Auto Mode Classifier — Denial Recovery
 
 **Scope:** Claude Code auto mode (`permissions.defaultMode: "auto"`), the classifier that gates risky actions
-**Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (safety rules, ask-before-assuming)
+**Prerequisites:** `@smith-ctx-claude/SKILL.md` (permission modes overview), `@smith-guidance/SKILL.md` (safety rules, ask or decide)
 **Authoritative source:** https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode
 
 ## CRITICAL: Denial Handling
@@ -177,7 +177,7 @@ reason, and no auto-mode counter involved.
 - `@smith-ctx-claude/SKILL.md` - Permission modes overview (this skill is the deep-dive for the `auto` mode)
 - `@smith-git/SKILL.md` - Force-push and push-to-main behavior (common classifier triggers)
 - `@smith-gh-pr/SKILL.md` - PR push and merge flows
-- `@smith-guidance/SKILL.md` - Ask-before-assuming, anti-sycophancy (the denial-recovery protocol is an application of these)
+- `@smith-guidance/SKILL.md` - Ask or decide, anti-sycophancy (the denial-recovery protocol is an application of these)
 - `@smith-settings/SKILL.md` - Where permission keys live; convention-validator hook recipe
 
 ## Before You Finish

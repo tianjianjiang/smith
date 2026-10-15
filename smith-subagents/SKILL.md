@@ -7,8 +7,8 @@ description: Subagent spawning and return discipline. Use when about to spawn an
 
 **Scope:** Spawning, scoping, and consuming Task/Agent subagents and
 workflow orchestration; what tools to grant and how to trust returns
-**Prerequisites:** @smith-guidance/SKILL.md (delegation + in-band progress),
-@smith-ctx/SKILL.md (context isolation)
+**Prerequisites:** @smith-guidance/SKILL.md (in-band progress),
+@smith-ctx/SKILL.md (delegation, context isolation)
 
 ## CRITICAL: Spawn Narrow, Trust Nothing
 
@@ -177,7 +177,7 @@ checked is recorded as such and fails that check rather than passing quietly.
 
 ## Related
 
-- @smith-guidance/SKILL.md - Delegation, in-band progress, verify-from-source
+- @smith-guidance/SKILL.md - In-band progress, verify-from-source
 - @smith-ctx/SKILL.md - Context isolation: keep findings, discard the noise
 - `@smith-ralph/SKILL.md` - Iterative orchestration patterns
 - `@smith-skills/SKILL.md` - Subagents don't auto-load skills; pass rules inline

@@ -43,7 +43,7 @@ Phase 2: «milestone» + tests
 Output <promise>COMPLETE</promise> after all phases.
 ```
 
-### Exploration Workflow (smith-guidance)
+### Exploration Workflow
 
 **Ralph = structured exploration**: Read files → Form hypothesis → Design test → Execute → Loop.
 
@@ -138,7 +138,7 @@ Team lead spawns teammates; each gets independent context. Requires `CLAUDE_CODE
 - `@smith-tests/SKILL.md` - TDD workflow
 - `@smith-validation/SKILL.md` - Debugging techniques
 - `@smith-dev/SKILL.md` - Task decomposition
-- @smith-guidance/SKILL.md - Exploration workflow
+- @smith-guidance/SKILL.md - Making Changes: read before proposing
 - @smith-ctx/SKILL.md - Context management
 - `@smith-git/SKILL.md` - Commit patterns
 - `@smith-serena/SKILL.md` - Memory persistence

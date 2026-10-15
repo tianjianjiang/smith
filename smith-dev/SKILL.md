@@ -33,7 +33,7 @@ This document defines development workflow standards and code quality requiremen
 
 ## Agent-Assisted Development
 
-**For AI agent workflows**: See @smith-guidance/SKILL.md (exploration workflow, safety rules, anti-sycophancy), `@smith-validation/SKILL.md` (debugging) and `@smith-prompts/SKILL.md` (prompt caching).
+**For AI agent workflows**: See @smith-guidance/SKILL.md (making changes, safety rules, anti-sycophancy), `@smith-validation/SKILL.md` (debugging) and `@smith-prompts/SKILL.md` (prompt caching).
 
 ## Agent Task Decomposition
 
