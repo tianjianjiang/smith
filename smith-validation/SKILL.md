@@ -255,7 +255,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 
 ## Related
 
-- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, exploration workflow
+- @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, making changes
 - `@smith-analysis/SKILL.md` - Reasoning patterns, problem decomposition
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies, confirmation bias, premature closure
 - `@smith-tests/SKILL.md` - Reproduce-first; never mock the branch under test

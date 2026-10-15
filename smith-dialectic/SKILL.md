@@ -6,7 +6,7 @@ description: Socratic interview that stress-tests a plan. Use when the user asks
 # Socratic Plan Interview
 
 **Scope:** Relentless Socratic questioning of user's plan against project docs and code
-**Prerequisites:** @smith-guidance/SKILL.md (Questioning Techniques, Anti-Sycophancy)
+**Prerequisites:** @smith-guidance/SKILL.md (Anti-Sycophancy)
 **Based on:** [mattpocock/skills grill-with-docs](https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md)
 
 ## CRITICAL: Interview Protocol
@@ -50,7 +50,7 @@ When the user states how something works, check whether the code agrees. Surface
 
 ## Questioning Style
 
-Builds on @smith-guidance/SKILL.md Socratic Method:
+Socratic Method:
 
 - **Clarify**: "What exactly do you mean when you say X covers Y?"
 - **Challenge**: "The README says this requires A. Your plan assumes B. How do you reconcile?"
@@ -61,7 +61,7 @@ Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules through
 
 ## Related
 
-- @smith-guidance/SKILL.md - Socratic Method, Anti-Sycophancy (foundation)
+- @smith-guidance/SKILL.md - Anti-Sycophancy (foundation)
 - `@smith-analysis/SKILL.md` - Constructive reasoning (complement)
 - `@smith-clarity/SKILL.md` - Cognitive traps (defensive complement)
 - `@smith-validation/SKILL.md` - Hypothesis testing; adversarial verification of findings
