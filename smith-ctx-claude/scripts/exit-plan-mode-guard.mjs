@@ -21,7 +21,11 @@ const CLASSIFIER_SYSTEM_PROMPT = [
   "Decide whether the message is the user approving that plan so the work can proceed as it stands.",
   "A message that adds instructions, asks a question, requests a change, or raises a doubt is not an approval,",
   "even when it opens with an affirmative word.",
+  "A short go-ahead in any language is an approval.",
   "Answer with exactly one lowercase word and nothing else: approval, or elaboration.",
+  'Examples: "go" -> approval; "ok" -> approval; "yes" -> approval; "lgtm" -> approval;',
+  '"好" -> approval; "可以" -> approval; "go, but rename the file first" -> elaboration;',
+  '"why not use a regex?" -> elaboration.',
 ].join(" ");
 
 function hasSubstantialText(content) {
@@ -112,6 +116,8 @@ function classifiedAsApproval(message) {
       CLASSIFIER_MODEL,
       "--system-prompt",
       CLASSIFIER_SYSTEM_PROMPT,
+      "--tools",
+      "",
       "--strict-mcp-config",
       "--mcp-config",
       '{"mcpServers":{}}',
@@ -127,14 +133,24 @@ function classifiedAsApproval(message) {
     },
   );
   if (result.error || result.status !== 0 || typeof result.stdout !== "string") {
-    writeSync(
-      2,
-      "exit-plan-mode-guard: approval classifier unavailable, falling back to the " +
-        `elaboration requirement: ${(result.error && result.error.message) || `exit ${result.status}`}\n`,
-    );
+    const reason = (result.error && result.error.message) || `exit ${result.status}`;
+    const stderr = (result.stderr || "").trim();
+    warnClassifierFallback("unavailable", stderr ? `${reason}: ${stderr.slice(0, 300)}` : reason);
     return false;
   }
-  return result.stdout.trim().toLowerCase() === "approval";
+  const verdict = result.stdout.trim().toLowerCase();
+  if (verdict !== "approval" && verdict !== "elaboration") {
+    warnClassifierFallback("returned unexpected output", JSON.stringify(verdict.slice(0, 100)));
+  }
+  return verdict === "approval";
+}
+
+function warnClassifierFallback(cause, detail) {
+  writeSync(
+    2,
+    `exit-plan-mode-guard: approval classifier ${cause}, ` +
+      `falling back to the elaboration requirement: ${detail}\n`,
+  );
 }
 
 function blockAndExit() {

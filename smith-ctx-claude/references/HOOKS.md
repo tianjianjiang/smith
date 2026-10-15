@@ -856,24 +856,58 @@ allows the call and spends nothing, and only on the path where it would
 otherwise block does it ask a model whether the last genuine user message
 approves the plan. Classification runs as `claude -p --model haiku` over
 that one message, with `--setting-sources ''`, `--strict-mcp-config`, an
-empty MCP config, a replacement `--system-prompt`, and `os.tmpdir()` as the
-working directory, so the child loads no user settings, no hooks, no MCP
-servers and no project memory; the child also carries
-`SMITH_APPROVAL_CLASSIFIER=1`, on which the guard returns immediately, as a
-second barrier against re-entry. Verified 2026-09-04: a child launched with
-`--setting-sources user` does fire user `UserPromptSubmit` hooks and one
-launched with `--setting-sources ''` does not; the lean invocation costs
-3.0-3.3 seconds, paid only on the would-block path.
+empty MCP config, `--tools ''`, a replacement `--system-prompt`, and
+`os.tmpdir()` as the working directory, so the child loads no user
+settings, no hooks, no MCP servers, no tools and no project memory; the
+child also carries `SMITH_APPROVAL_CLASSIFIER=1`, on which the guard
+returns immediately, as a second barrier against re-entry. Verified
+2026-09-04: a child launched with `--setting-sources user` does fire
+user `UserPromptSubmit` hooks and one launched with `--setting-sources ''`
+does not; the lean invocation costs 3.0-3.3 seconds, paid only on the
+would-block path.
 
 `SMITH_APPROVAL_CLASSIFIER_BIN`, `SMITH_APPROVAL_CLASSIFIER_MODEL` and
 `SMITH_APPROVAL_CLASSIFIER_TIMEOUT_MS` override the binary, the model and
 the 30-second timeout; the tests use the binary override to substitute
 fixed-verdict stubs. A classifier that errors, times out, exits non-zero or
-answers anything other than `approval` falls back to the elaboration
-requirement (a stderr note, never a silent allow), so an unreachable model
-costs one extra elaboration turn rather than disabling the guard. A user
+answers anything other than `approval` or `elaboration` falls back to the
+elaboration requirement with a stderr note, never a silent allow; the note
+for a failed child carries the start of its stderr, so an older CLI that
+rejects `--tools` names the flag. A plain `elaboration` answer blocks
+without a note. An unreachable model therefore costs one extra
+elaboration turn rather than disabling the guard. A user
 turn whose text is a local-command echo (`<local-command-stdout>`,
 `<command-name>`) is not treated as the last user message.
+
+`--tools ''` is what makes terse approvals pass. Without it the child
+carries Claude Code's default tool set, and on Haiku 5.5 (what `haiku`
+resolves to on the Anthropic API) the zero-shot classifier rejected short
+go-aheads: measured 2026-10-16, "go" and "ok" 0/5, "approve the plan" 3/5,
+and 100/150 on fifteen held-out replies such as "sure" and "looks right".
+Removing the tools alone took the same zero-shot prompt to 328/330 over
+tuning and held-out replies; `--effort low` alone (65/75 held-out) and
+`--no-session-persistence` alone (67/75) did not help, and prompt rewording
+on its own plateaued near 91% held-out. The system prompt also states that
+a short go-ahead in any language is an approval and carries few-shot
+examples ("go", "ok", "yes", "lgtm", "好", "可以" as approval; a
+conditional go-ahead and a question as elaboration); with the examples and
+`--tools ''` together it measured 330/330 with no false approval. Haiku
+4.5, which `haiku` resolves to on Bedrock and which a profile can pin with
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`, measured 165/165 with and without the
+flag. The mechanism is not established; a likely reading is that with
+tools present an imperative reply reads as a task for the classifier.
+
+The stubbed tests cannot see the model, so
+`smith-ctx-claude/scripts/tests/exit-plan-mode-guard.classifier-eval.sh`
+runs the real guard end to end against the real classifier, five runs per
+case
+(`SMITH_LIVE_CLASSIFIER_EVAL_RUNS`), and fails if any run misclassifies or
+the classifier is unavailable. Six of its twelve approval cases are the
+prompt's own examples and two of its six elaboration cases paraphrase
+the prompt's elaboration examples, so only the remaining ten cases are
+unseen phrasings. It needs the `claude` CLI and network, so it is
+skipped unless `SMITH_LIVE_CLASSIFIER_EVAL=1` and is not part of
+`smith-ctx-claude/scripts/tests/run-all.sh`.
 
 An earlier attempt at this (pull request #250, superseded) classified every
 incoming message from a `UserPromptSubmit` hook using a keyword regex and a

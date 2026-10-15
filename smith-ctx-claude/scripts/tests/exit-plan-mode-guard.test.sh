@@ -282,6 +282,45 @@ use_classifier classifier-unavailable
 blocks "$approval_after_blocked_exit_plan_mode" \
   "an unavailable classifier falls back to the elaboration requirement"
 
+make_stub classifier-fails-with-stderr 'echo "error: unknown option --tools" >&2; exit 1'
+use_classifier classifier-fails-with-stderr
+blocks "$approval_after_blocked_exit_plan_mode" \
+  "a classifier that fails with stderr still falls back to the elaboration requirement"
+echo "$out" | grep -q 'approval classifier unavailable.*: error: unknown option --tools' \
+  || fail "the unavailable diagnostic should carry the classifier's stderr, got: $out"
+
+use_classifier no-such-classifier
+blocks "$approval_after_blocked_exit_plan_mode" \
+  "a missing classifier binary falls back to the elaboration requirement"
+echo "$out" | grep -q 'approval classifier unavailable.*ENOENT' \
+  || fail "a missing classifier binary should be reported with its spawn error, got: $out"
+
+make_stub says-something-else 'echo "\"go\" -> approval"'
+use_classifier says-something-else
+blocks "$approval_after_blocked_exit_plan_mode" \
+  "an answer that is neither approval nor elaboration is not an approval"
+echo "$out" | grep -q 'approval classifier returned unexpected output.*go' \
+  || fail "an unexpected classifier answer should be reported, got: $out"
+
+use_classifier says-elaboration
+blocks "$approval_after_blocked_exit_plan_mode" \
+  "a plain elaboration answer blocks"
+echo "$out" | grep -q 'unexpected output' \
+  && fail "a plain elaboration answer should not be reported as unexpected, got: $out"
+
+make_stub approves-only-without-tools 'previous=""
+for argument in "$@"; do
+  if [ "$previous" = "--tools" ] && [ -z "$argument" ]; then
+    echo approval
+    exit 0
+  fi
+  previous="$argument"
+done
+echo elaboration'
+use_classifier approves-only-without-tools
+allows "$approval_after_blocked_exit_plan_mode" \
+  "the classifier runs with every tool disabled (--tools \"\")"
+
 local_command_echo_is_not_the_last_user_message="$TMPD/local-command-echo.jsonl"
 printf '%s\n' \
   '{"type":"user","message":{"content":"plan the feature"}}' \
