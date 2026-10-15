@@ -2,7 +2,7 @@
 name: smith-checkpoint
 description: Memory checkpoint to Serena and Basic-Memory. Use when the user runs /smith-checkpoint, asks to save or hand off session state, and before recommending /clear.
 metadata:
-  argument-hint: "[label] [plan=path] [body=path] [serena=path]"
+  argument-hint: "[label] [plan=path] [body=path] [serena=path] [roots=dirs] [audit=skip]"
 ---
 
 # /smith-checkpoint — persist session state to both memories
@@ -18,6 +18,11 @@ Capture what would otherwise be lost across sessions. Arguments:
   passed and the Serena CLI's own default applies. When the current directory is itself a Serena
   project other than the chosen one, the script prints a divergence warning
   with the `serena=` value that would target it
+- `roots=dir[:dir…]`: extra directories (another repository, for example)
+  where the audit resolves `file:line` anchors and commit SHAs
+- `audit=skip`: bypass the pre-write audit; only on the user's explicit
+  say-so, and the Reload block reports it (the audit runs only with
+  `body=`)
 
 Save the SAME facts to both backends, each in its own format; do not skip one.
 
@@ -217,7 +222,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 2. **Check for an active plan** — list `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/*.md` and check
    whether one matches this session's current work. If one does, pass it
-   explicitly as `plan=«path»` in step 4; never rely on inference alone.
+   explicitly as `plan=«path»` in steps 6 and 7; never rely on inference alone.
    (write-checkpoint.sh also falls back to the ctx-claude plan-state file
    when `plan=` is omitted, but an explicit path is more reliable when a
    plan is visibly in play.)
@@ -262,12 +267,36 @@ When invoked via `/smith-checkpoint` (no arguments required):
      ```
    - Omit `body=` only when session produced nothing durable
 
-6. **Call write-checkpoint.sh**:
+6. **Audit before writing.** After `/clear` the next session has only the
+   body, the plan and what they point at; make them current, correct and
+   complete first (checks and resolution rules:
+   `references/checkpoint-audit/spec.md`):
+   - Sync the plan file per `@smith-mode-plan/SKILL.md` Plan Sync Protocol:
+     checkboxes match what is done, `<- CURRENT` moved, superseded tasks
+     removed, a progress log entry added
+   - Re-verify every fact in the body against its source now (`git log`,
+     `gh pr view`, the file at that line), never from memory; fix or drop
+     what no longer holds
+   - Cold-reader test: from the body, the plan and the Related anchors
+     alone, could a fresh session name the goal, the current task, the next
+     action, the worktree and every open decision? Add what is missing;
+     completeness beats the ~400-token aim
+   - Remove contradictions: the plan owns task state, the body owns
+     decisions and context
+   - Run the scripted audit and fix every `FAIL`, judge every `WARN`:
+     ```bash
+     ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh "«body-file»" "plan=«path»"
+     ```
+     An anchor that fails to resolve is wrong for the next reader too: write
+     its path from the repository root, absolute, or add `roots=`; do not
+     reach for `audit=skip`
+
+7. **Call write-checkpoint.sh**:
    ```bash
    ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
    ```
 
-7. The script (exit 0 on success):
+8. The script (exit 0 on success):
    - Without `plan=`, falls back to the ctx-claude plan-state file for this
      session's cwd (same source the stop hook uses)
    - Refuses to run while `BASIC_MEMORY_CONFIG_DIR` or `BASIC_MEMORY_HOME`
@@ -279,6 +308,8 @@ When invoked via `/smith-checkpoint` (no arguments required):
        unmigrated profile launcher script, a long-lived `claude daemon`
        started before the migration (`claude daemon stop --any`), or a
        stale shell export
+   - With `body=`, runs `audit-checkpoint.sh` and exits before any write
+     when it fails (`audit=skip` bypasses it)
    - Relocates worktree-local Serena memories into the primary checkout
      (see Targets and formats) before touching either backend
    - Builds a dated entry: `## «timestamp»`, plan, session, `**Git**`
@@ -292,8 +323,23 @@ When invoked via `/smith-checkpoint` (no arguments required):
    - Reads any existing memory/note under the label and prepends the new
      entry to it (see Targets and formats above); only the first checkpoint
      under a label creates fresh state
-   - Writes to both backends (Serena + Basic-Memory) — these two writes are
-     the only required success criteria
+   - Backs up each backend's prior document to
+     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/checkpoint-backups/«label»/`
+     (last 5 per backend kept) before overwriting it, and aborts that
+     backend's write when the backup cannot be made or is gone after
+     pruning
+   - Writes to both backends (Serena + Basic-Memory) and reads each one
+     back: the new entry must be on top and the entry count must be the
+     prior count plus one, and each backend must read back exactly what
+     was written (leading and trailing newlines aside). On a mismatch or
+     a failed write it writes the backup back,
+     and the restore holds only when the document read back equals the
+     backup; on a label's first checkpoint it deletes the document it
+     created instead (Basic-Memory only by the permalink its write
+     returned, never by title). It fails naming the backend and the
+     outcome (see `references/checkpoint-audit/spec.md`). A Basic-Memory
+     failure also rolls Serena back, so both backends keep the same
+     entries. These verified writes are the only required success criteria
    - On Claude Code, also writes the post-`/clear` memory-restore flag via
      `write-reload-flag.sh` (see Runtime prerequisites below). This write is
      always optional: on another platform, or if that sibling script is
@@ -307,10 +353,13 @@ When invoked via `/smith-checkpoint` (no arguments required):
      default project"), the Basic-Memory permalink
      with its project and folder, the plan, the worktree line (with the
      `EnterWorktree` step) when in a worktree, the relocation counts when
-     any memory was moved, removed or renamed, and the reload flag path
+     any memory was moved, removed or renamed, the reload flag path, the
+     audit status, the verified entry count of each backend, and the
+     backup directory when a backup was made
 
-8. If script exits non-zero, report stderr error.
-9. On success, output Reload block to user.
+9. If script exits non-zero, report stderr error; the checkpoint is not
+   done until it exits 0.
+10. On success, output Reload block to user.
 
 ## Runtime prerequisites
 
