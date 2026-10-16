@@ -151,83 +151,24 @@ Behind base + no conflicts + explicit "update" → AUTO-REBASE. Full tree in `re
 
 ## /ultrareview — Cloud Deep-Review
 
-`/ultrareview` (research preview, v2.1.86+) runs a multi-agent reviewer fleet in a remote Claude Code on the web sandbox. Higher signal than the built-in single-pass `/review` slash command: every finding is independently reproduced and verified before it's reported. Takes 5–10 min; runs in background so the terminal stays free.
-
-**Invocation:**
-
-- `/ultrareview` — review diff between current branch and default branch (includes uncommitted/staged)
-- `/ultrareview «PR»` — review a GitHub PR (PR mode; clones from GitHub directly, requires `github.com` remote)
-- `claude ultrareview «PR»` (or `«base»`) — non-interactive variant; prints findings to stdout; flags `--json`, `--timeout «minutes»`
-
-**Requires:** authenticated with claude.ai (run `/login`), not available on Bedrock/Vertex/Foundry or for Zero Data Retention organizations.
-
-**Billing:** Pro/Max get 3 one-time free runs; after that, billed as usage credits (~$5–$20/run by change size). Team/Enterprise has no free runs. Account must have usage credits enabled (`/usage-credits` to check). User-invoked only — agent does not start one on its own.
-
-**Track:** `/tasks` shows running reviews. Stopping a review archives the cloud session and doesn't return partial findings; a stopped/failed run still consumes a free run.
-
-**When to recommend over the built-in `/review`:** before merging a substantial change where pre-merge confidence matters; not for quick iterative feedback. Source: https://code.claude.com/docs/en/ultrareview
+User-invoked, billed multi-agent cloud review of a branch or PR; the agent
+never starts one. Invocation, requirements, billing and when to recommend it
+in `references/REVIEW-WORKFLOW.md`.
 
 ## Automated PR Review Monitoring
 
-**`/loop` for review cycles** — periodically poll for
-new review comments and auto-address them:
-
-```shell
-/loop 5m /smith-gh-pr:check-reviews
-```
-
-Note: `check-reviews` is a conceptual pattern, not a
-built-in sub-command. Implement the workflow below manually
-or as a custom skill. For `/loop` semantics see `@smith-automation/SKILL.md`.
-
-**Auto-address workflow** (see "Review Convergence Protocol" in
-`references/REVIEW-WORKFLOW.md` for decide-vs-ask criteria and convergence rules):
-1. Fetch unresolved comments:
-   `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
-2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement locally, show the commit message and
-   commit on a yes, reply with the SHA. Inside a ship or review the user
-   invoked, a reply in the bot's own thread limited to "fixed in «SHA»" or
-   a one-line decline is mechanics (`@smith-guidance` Safety Rules); any
-   other reply is payload and needs a yes.
-4. Low-confidence: draft the reply, show it, and call the reply in the same
-   turn; approving the guard's prompt is the yes (`@smith-ctx-claude`
-   External Writes)
-5. Re-check after CI passes
-
-**Proactive self-review** — before reviewer sees changes:
-- Run CodeRabbit review via configured integration (e.g. `coderabbit:review` skill or GitHub App) after pushing
-- Address mechanical feedback (lint, naming, tests)
-  before human review begins
-
-**`/autofix-pr` — cloud auto-fix loop**
-
-**Not recommended: `/autofix-pr` cannot show its payload first.** The cloud session outlives the terminal and pushes commits and posts review replies under the user's account without showing them, while `@smith-guidance` Safety Rules require every commit message, and every reply beyond "fixed in «SHA»" or a one-line decline in a bot thread no human joined, to be shown for a yes before the write. Use the monitoring loop pattern above instead: the terminal stays attached and the user approves each commit, push and reply.
-
-`/autofix-pr` (run while on the PR's branch): Claude Code detects the open PR with `gh`, spawns a Claude Code on the web session, and turns on auto-fix for that PR in one step. The web session subscribes to GitHub events (CI checks, review comments) and pushes fixes for high-confidence cases; ambiguous changes prompt instead of pushing.
-
-**Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
-
-**Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
-
-Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-requests
+Poll for review comments with `/loop` and address them by the auto-address
+workflow; full steps in `references/REVIEW-WORKFLOW.md`. `/autofix-pr` is
+not recommended: its cloud session pushes commits and posts replies without
+showing them first (`@smith-guidance` Safety Rules).
 
 ## Claude Code Plugin Integration
 
-**When plugins are available, prefer plugin commands:**
-
-- **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
-- **`/commit-push-pr`**: Not recommended: it commits, pushes and creates the
-  PR in one step without showing the commit message or PR text first
-  (`@smith-guidance` Safety Rules). Ship with `/smith-ship` instead
-- **`pr-review-toolkit:review-pr`**: the SINGLE entry point for multi-agent
-  review — it orchestrates its own 6 subagents. NEVER hand-pick or invoke the
-  individual agents (`code-reviewer`, `silent-failure-hunter`,
-  `pr-test-analyzer`, etc.) directly via the Task tool. A HIGH finding from one
-  agent needs >=2-of-6 corroboration; a solo HIGH downgrades to
-  medium-for-user-review.
-
-**Plugin commands complement** (not replace) manual `gh` workflows.
+Prefer `/code-review` and `pr-review-toolkit:review-pr` (the single entry
+point for its own subagents) when available. `/commit-push-pr` is not
+recommended: it commits, pushes and opens the PR without showing the commit
+message or PR text first; ship with `/smith-ship`. Details in
+`references/REVIEW-WORKFLOW.md`.
 
 ## Stacked PRs
 
