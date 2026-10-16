@@ -63,8 +63,15 @@ no marker in its text, so the router treats it as owner-typed.
 — PreToolUse guard (matchers `mcp__.*` and `Bash`) that escalates
 human-facing writes to a `permissionDecision:"ask"` prompt, so an external
 write cannot fire without a per-artifact yes. On the **MCP channel**: the
-human-facing write tools (Jira/Confluence create·edit·transition·comment,
-Notion create·update·move·duplicate, non-draft Slack sends). Read/search/fetch
+human-facing write tools: Jira/Confluence create·edit·transition·comment, both
+the older names and the current `addOrEditJiraIssueComment` and
+`create`/`updateConfluenceContent`; `executeWrite`/`executeDestructive`,
+whose operation is opaque to the hook; Notion
+create·update·move·duplicate·delete·restore and send-message-to-session;
+non-draft Slack sends, schedules, canvases, lists, file shares and new
+channels. The list is not exhaustive: reactions and resolving a discussion
+are mechanics and stay unmatched, and an unmatched write still needs a yes
+in chat (`smith-ctx-claude/SKILL.md`). Read/search/fetch
 tools and every `*_draft` variant fall through untouched. The write set is a
 pre-compiled `const` in the script itself (its single source of truth). On
 the **Bash channel** (reusing `unwrappedCommandSegments` from

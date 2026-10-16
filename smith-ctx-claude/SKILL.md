@@ -165,6 +165,15 @@ multiSelect for ONE coherent choice (e.g. which sources to sweep) is fine;
 batching distinct decisions is not. (Implementation-phase confirmations that
 follow logically from an approved plan need no re-ask.)
 
+## External Writes — The Permission Prompt Is the Yes
+
+`external-write-guard` makes every write it matches raise a permission
+prompt, in auto mode too. For those writes, show the exact draft in chat
+and call the tool in the same turn: approving the prompt is the explicit
+yes `@smith-guidance` requires, so do not first ask "post it?" in chat.
+A rejected prompt is a no; revise and show the draft again. A write the
+guard does not match still needs a yes in chat first.
+
 ## Slash Command Invocation
 
 When the user names a slash command (e.g. `/insights`, `/commit`, `/foo`), invoke it directly via the `Skill` tool. The user naming the command IS the confirmation it exists. A failed `Skill` call costs one round-trip; an exhaustive existence audit costs dozens of tool calls plus a confidently wrong conclusion.

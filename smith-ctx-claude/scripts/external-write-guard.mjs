@@ -3,10 +3,11 @@ import { readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import { GH_GLOBAL_VALUE_FLAGS, nonFlagTokensAfterGh } from "./lib/gh-command.mjs";
 
 const PUBLIC_EXTERNAL_WRITE_PATTERNS = [
-  /mcp__plugin_atlassian_atlassian__(createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue|addWorklogToJiraIssue|createIssueLink|createConfluencePage|updateConfluencePage|createConfluenceFooterComment|createConfluenceInlineComment)$/,
-  /mcp__plugin_Notion_notion__notion-(create|update|move|duplicate)-/,
+  /mcp__plugin_atlassian_atlassian__(createJiraIssue|editJiraIssue|transitionJiraIssue|addCommentToJiraIssue|addOrEditJiraIssueComment|addWorklogToJiraIssue|createIssueLink|createConfluencePage|updateConfluencePage|createConfluenceContent|updateConfluenceContent|createConfluenceFooterComment|createConfluenceInlineComment|executeWrite|executeDestructive)$/,
+  /mcp__plugin_Notion_notion__notion-(create|update|move|duplicate|delete|restore)-/,
+  /mcp__plugin_Notion_notion__notion-send-message-to-session$/,
   /mcp__plugin_slack_slack__slack_send_message(?!_draft)/,
-  /mcp__plugin_slack_slack__slack_schedule_message$/,
+  /mcp__plugin_slack_slack__slack_(schedule_message|create_canvas|update_canvas|create_list|update_list|add_list_record|update_list_record|complete_file_upload|create_conversation)$/,
 ];
 
 const GH_API_METHOD_FLAGS = new Set(["-X", "--method"]);
