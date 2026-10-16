@@ -275,10 +275,11 @@ above for decide-vs-ask criteria and convergence rules):
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
 3. High-confidence fixes: implement locally, show the commit message and
-   commit on a yes, reply with the SHA. Inside a ship or review the user
-   invoked, a reply in the bot's own thread limited to "fixed in «SHA»" or
-   a one-line decline is mechanics (`@smith-guidance` Safety Rules); any
-   other reply is payload and needs a yes.
+   commit on a yes, push (inside a ship the user invoked or on the user's
+   instruction to push), then reply with the pushed SHA. Inside a ship or
+   review the user invoked, a reply in the bot's own thread limited to
+   "fixed in «SHA»" or a one-line decline is mechanics (`@smith-guidance`
+   Safety Rules); any other reply is payload and needs a yes.
 4. Low-confidence: draft the reply, show it, and call the reply in the same
    turn; approving the guard's prompt is the yes (`@smith-ctx-claude`
    External Writes)

@@ -61,9 +61,12 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    (`@smith-review/SKILL.md` step 6), then re-run `/smith-preflight` on it
    and do NOT push on a `NO-GO`; its `review-converged` check is what
    refuses a push nobody reviewed (step 0's verdict was taken before the
-   branch and commit existed, so it does not carry). Then, if the user did
-   not specify the branch name, show it and push only on an explicit yes;
-   otherwise push (`@smith-gh-pr` PR Creation Workflow step 4,
+   branch and commit existed, so it does not carry). Then show any commit
+   message the push would publish that was not yet approved (such as a
+   Ralph loop's local commits, `@smith-ralph`) and, if the user did not
+   specify the branch name, the branch name, and push only on an explicit
+   yes; when every commit message was already approved and the user chose
+   the branch name, push (`@smith-gh-pr` PR Creation Workflow step 4,
    `@smith-guidance` External writes);
    `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`

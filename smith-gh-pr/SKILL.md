@@ -48,8 +48,10 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 1. Run linter and formatter
 2. Run tests
 3. Rebase onto parent branch (not always main - check stacked PRs)
-4. Run the `@smith-style` pre-push branch-name checklist; if the branch name was
-   not user-specified, confirm it with the user before pushing
+4. Run the `@smith-style` pre-push branch-name checklist; before pushing, show
+   any commit message not yet approved (such as a Ralph loop's local commits,
+   `@smith-ralph`) and, if the branch name was not user-specified, the branch
+   name, and get an explicit yes to what was shown; then push per step 5
 5. Push to remote on the user's instruction (or inside `/smith-ship`)
 
 **AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a title and description are payload — show them and open on an explicit yes (`@smith-guidance` Safety Rules).
@@ -70,8 +72,9 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 5. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
-6. Show the commit message and commit on a yes, then reply with the SHA — by
-   reviewer type:
+6. Show the commit message and commit on a yes, push it (inside a ship the
+   user invoked or on the user's instruction to push), then reply with the
+   pushed SHA — by reviewer type:
    - **Automated reviewer's thread, no human joined**: inside a ship or review
      the user invoked, post "fixed in «SHA»" or a one-line decline directly
      (mechanics); any other reply, or any reply outside such a ship or review,

@@ -19,13 +19,17 @@ and it automates most of the manual dance documented below:
   bodies first and run it only after an explicit yes
 - `gh stack push` — push the active branches in the stack to the remote only,
   without creating or updating PRs; run it only inside a ship the user
-  invoked or on the user's instruction to push
+  invoked or on the user's instruction to push, and only after an explicit
+  yes on any commit message not yet approved and any branch name not yet on
+  the remote that the user did not choose
 - `gh stack sync` — fetch, reconcile with the stack on GitHub, fast-forward
   the trunk, cascade-rebase every branch onto its updated parent, push all
   branches with `--force-with-lease --atomic`, and link the open PRs into
   the GitHub stack object. The one command for "update the stack after
   trunk or a parent moved"; it pushes and links, so run it only inside a
-  ship the user invoked or on the user's instruction to sync
+  ship the user invoked or on the user's instruction to sync, and only after
+  an explicit yes on any commit message not yet approved and any branch name
+  not yet on the remote that the user did not choose
 - `gh stack rebase` — the cascade rebase alone; `--continue` after resolving
   a conflict, `--abort` restores every branch
 - `gh stack checkout <stack#|PR#|PR-URL>` — adopt an existing stack from
