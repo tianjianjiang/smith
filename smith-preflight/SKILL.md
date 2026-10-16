@@ -56,8 +56,11 @@ and never a substitute for evidence you could still go and find.
   attested otherwise. See below.
 - **pr-ownership** — machine. See below.
 - **external-write** — attested. Every external write this task made had
-  its payload shown and an explicit yes before the write. Owner @smith-guidance
-  Safety Rules, External writes.
+  its payload shown and an explicit yes before the write, or was one of
+  the listed mechanics inside a transaction the user approved, or
+  published no words and was the user's explicit instruction for that
+  action. Owner
+  @smith-guidance Safety Rules, External writes.
 - **verify-before-assert** — attested. Every convention or rule
   asserted was quoted from its source. Owner @smith-guidance Communication Standards.
 - **suggestions** — attested. Every mechanical review finding posted

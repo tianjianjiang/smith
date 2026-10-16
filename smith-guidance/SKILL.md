@@ -66,20 +66,21 @@ description: Core agent steering. Always active. Use for every task, especially 
   comments, commit messages, branch names
 - Show the payload and wait for an explicit yes before the write: one item
   per turn, or one list of artifacts whose every draft was shown; review
-  comments are never a list. No request for work authorizes the unseen
-  words it will produce
+  comments are never a list; a guard's permission prompt is that yes. No
+  request for work authorizes the unseen words it will produce
 - Inside an approved transaction, its only mechanics are:
   `--force-with-lease` to your own branch, ff-only sync, merging a PR the
-  user authored once told to (authorship is not that instruction), and
-  replying "fixed in «SHA»" or a one-line decline to, then resolving, an
-  automated reviewer's thread no human joined; a human's thread stays
-  theirs to resolve
+  user authored once told to (authorship is not that instruction) and
+  deleting its merged branch, and
+  replying "fixed in «SHA»" or a one-line decline in an automated
+  reviewer's thread no human joined, then resolving it; a human's thread
+  stays theirs to resolve
 - Anything else is a new transaction needing a new yes: a changed payload,
   an action the instruction did not name, or undoing what landed (closing
   a PR, deleting a pushed branch or a sent message). Silence or your own
   confidence is not a yes
-- If a write fails, retry once with the same payload, then stop and report
-  what landed; a preflight NO-GO aborts
+- If a write fails and did not land, retry once with the same payload,
+  then stop and report; a preflight NO-GO aborts
 
 ## Anti-Sycophancy
 
@@ -130,7 +131,7 @@ offer options instead of chaining workarounds.
 
 **Estimates:** relative sizes (S/M/L/XL) or plain comparisons, never
 invented numbers; describe what each approach requires and let the user
-judge value. "Not enough data to estimate" is fine.
+judge value.
 
 **Verifiable goals:** turn a vague ask into checkable criteria first ("fix
 the bug" → "a test reproduces it, then passes").
@@ -168,7 +169,7 @@ if it would change what you do in another task or repository; "always",
 
 ## In-Band Progress
 
-Async and background runs: `references/IN-BAND-PROGRESS.md`
+`references/IN-BAND-PROGRESS.md`
 
 ## Related
 

@@ -41,7 +41,8 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    take path (a) below while still on a protected branch — committing there
    is what `@smith-guidance` Safety Rules forbids; branch first, then commit.
    Otherwise check `git status --porcelain`: if the checkout is
-   dirty, STOP and pick ONE path: (a) commit or stash the changes, then
+   dirty, STOP and pick ONE path: (a) commit (show the commit message and
+   commit on a yes) or stash the changes, then
    `EnterWorktree`; or (b) branch in place (`git switch -c …`) and continue in
    the current checkout — no `EnterWorktree` at all (the tree is still dirty
    and the `worktree-dirty-guard` hook would block it; a new worktree starts
@@ -60,8 +61,10 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    (`@smith-review/SKILL.md` step 6), then re-run `/smith-preflight` on it
    and do NOT push on a `NO-GO`; its `review-converged` check is what
    refuses a push nobody reviewed (step 0's verdict was taken before the
-   branch and commit existed, so it does not carry). Then push the renamed
-   branch;
+   branch and commit existed, so it does not carry). Then, if the user did
+   not specify the branch name, show it and push only on an explicit yes;
+   otherwise push (`@smith-gh-pr` PR Creation Workflow step 4,
+   `@smith-guidance` External writes);
    `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`
    line (`@smith-style`). Link issues only if real. The body and title are
@@ -76,8 +79,8 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    converged verdict (full receipt plus criteria — a mechanics-only recheck
    is not convergence), since an amend that changes the diff leaves the old
    receipt behind; record its receipt; then re-run `/smith-preflight` and do
-   NOT push on a `NO-GO` — an amended commit is content step 4's verdict
-   never saw, so a token introduced while fixing a review finding would
+   NOT push on a `NO-GO` — an amended commit carries changes step 4's
+   verdict never saw, so a token introduced while fixing a review finding would
    otherwise reach the remote unscanned; confirm
    CodeRabbit actually
    ran before trusting 0 (`@smith-gh-pr` "CodeRabbit fails OPEN").
@@ -110,7 +113,8 @@ the stack) and `@smith-worktree`.
   stack overrides: the PR base is the parent branch (not the default
   branch), and the PR body carries `Depends on:` / `Blocks:`. Branch names
   follow `@smith-style`. The stack's PR titles and bodies are shown together
-  and opened on one explicit yes (one list whose every draft was shown).
+  and opened on one explicit yes (one list whose every draft was shown), so
+  no unit opens its PR in phase 4 before every unit's draft is shown.
 - **Phases 5-7 are stack-wide, not per unit** — address review across the
   stack, then merge bottom-up with retarget-before-merge and manual parent
   branch deletion per `@smith-gh-pr` Stacked PRs; cascade

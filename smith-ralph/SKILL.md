@@ -78,7 +78,9 @@ Output <promise>COMPLETE</promise> after all phases.
 ## Phase Boundary Protocol
 
 **At EVERY phase boundary (regardless of context level) of a loop the user
-invoked** — the invocation authorizes these local commits, not a push:
+invoked** — the invocation authorizes these local commits, not a push; their
+commit messages are payload and are shown for a yes before any later push
+(`@smith-guidance` Safety Rules):
 1. Mark completed tasks [x] in plan file
 2. Commit current work
 3. Save phase state: `write_memory("ralph_«task»_phase_N")`

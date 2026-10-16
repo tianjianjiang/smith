@@ -84,6 +84,11 @@ Distinct from `/loop`:
 - `/loop` runs in the current session, on the user's machine, dies on new session
 - `/schedule` runs in the cloud on a calendar/cron, runs without an open terminal, persistent across machine reboots
 
+When writing a routine prompt with `/schedule`, keep it draft- and
+report-only: the routine runs in the cloud without smith skills and cannot
+show its payload first, so any commit, push, post or ticket write waits for
+the user in a live session (`@smith-guidance` External writes).
+
 Constraints: requires Pro/Max/Team/Enterprise plan; cloud-only (no access to local files — runs against a fresh clone); MCP servers configured per task; minimum interval 1 hour.
 
 For local-machine durable scheduling without a cloud account, use Desktop scheduled tasks (separate Claude Code feature) — not covered here.
@@ -118,3 +123,9 @@ For local-machine durable scheduling without a cloud account, use Desktop schedu
 - Never push the first version of a change from a loop tick without that review
   pass. A loop must not optimize for green CI by inverting review-then-push into
   push-then-react-to-one-bot.
+- A loop tick never publishes payload unseen: a commit message is shown for an
+  explicit yes before the commit (a Ralph loop's local commits excepted,
+  `@smith-ralph`), and a new branch name, PR text and replies before any push
+  or post (`@smith-guidance` External writes). The loop pauses for each of
+  those yeses; only the mechanics that rule lists run without one, and only
+  when the loop runs inside a ship or review the user invoked.

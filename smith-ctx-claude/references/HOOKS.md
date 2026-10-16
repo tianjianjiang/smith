@@ -11,7 +11,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
 | `skill-router.mjs` | UserPromptSubmit | Advisory: on a prompt the owner typed, surfaces candidate skills that are not loaded yet |
-| `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates payload-carrying writes to an `ask` prompt |
+| `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates the external writes it matches (see its section) to an `ask` prompt |
 | `askuserquestion-arity.mjs` | PreToolUse (`AskUserQuestion`) | Blocks a multi-question call |
 | `volatile-artifact-guard.mjs` | Stop / SubagentStop / SessionEnd | Advisory: lists files written under volatile paths |
 | `branch-rename-open-pr.mjs` | PreToolUse (`Bash`) | Blocks renaming a branch with an open PR |
@@ -60,18 +60,20 @@ no marker in its text, so the router treats it as owner-typed.
 ## external-write-guard
 
 **external-write-guard** (`smith-ctx-claude/scripts/external-write-guard.mjs`)
-— PreToolUse guard (matchers `mcp__.*` and `Bash`) that escalates
-payload-carrying writes to a `permissionDecision:"ask"` prompt, so an external
-write cannot fire without a per-artifact yes. On the **MCP channel**: the
-payload-carrying write tools: Jira/Confluence create·edit·transition·comment, both
-the older names and the current `addOrEditJiraIssueComment` and
-`create`/`updateConfluenceContent`; `executeWrite`/`executeDestructive`,
-whose operation is opaque to the hook; Notion
-create·update·move·duplicate·delete·restore and send-message-to-session;
+— PreToolUse guard (matchers `mcp__.*` and `Bash`) that escalates the
+external writes listed below, and only those, to a `permissionDecision:"ask"`
+prompt, so none of those writes can fire without an explicit yes at that
+prompt. On the **MCP channel**: those write tools: Jira/Confluence
+create·edit·transition·comment, both the older names and the current
+`addOrEditJiraIssueComment` and `create`/`updateConfluenceContent`;
+`executeWrite`/`executeDestructive`, whose operation is opaque to the hook;
+Notion create·update·move·duplicate·delete·restore and
+send-message-to-session;
 non-draft Slack sends, schedules, canvases, lists, file shares and new
 channels. The list is not exhaustive: reactions and resolving a discussion
-are mechanics and stay unmatched, and an unmatched write still needs a yes
-in chat (`smith-ctx-claude/SKILL.md`). Read/search/fetch
+stay unmatched because they publish no words and need only the user's
+instruction for that action; an unmatched write that publishes words still
+needs a yes in chat (`smith-ctx-claude/SKILL.md`). Read/search/fetch
 tools and every `*_draft` variant fall through untouched. The write set is a
 pre-compiled `const` in the script itself (its single source of truth). On
 the **Bash channel** (reusing `unwrappedCommandSegments` from
@@ -145,7 +147,8 @@ comments reply` (this repo's own documented review-thread-reply path,
 token appearing anywhere in the command, not by its position, so a
 documented-valid reordering like `gh pr-review comments --pr 1 reply ...`
 is still caught; `gh pr-review threads resolve`/`list` are not flagged —
-they publish no words (resolve / read), same allowlist principle as `resolveReviewThread` below),
+they publish no words (resolve / read), same allowlist principle as
+`resolveReviewThread` below),
 `gh api` against an endpoint matching `/comments` or `/reviews` (with or without a
 trailing query string) when the request is a write (explicit
 `-X`/`--method` `POST/PUT/PATCH/DELETE`, or an implied `POST` from
@@ -194,8 +197,10 @@ content — `gh release create/edit --notes`, `gh gist create/edit`, `gh repo
 edit --description` and similar — are NOT audited or covered here; this
 guard's scope is PR/issue comment, review, reply, and close/reopen comment
 only. `git push` remains uncovered here; it still needs the user's explicit
-instruction, and the commit messages and branch name it publishes are payload
-(`@smith-guidance` Safety Rules). `smith-git/scripts/lib/git-command-tokenizer.mjs` is loaded via a `dynamic import()`
+instruction, and the commit messages and branch name it publishes are payload:
+the commit messages are shown before they are published, and the branch name
+before the push unless the user chose it (`@smith-gh-pr` PR Creation Workflow step 4,
+`@smith-guidance` Safety Rules). `smith-git/scripts/lib/git-command-tokenizer.mjs` is loaded via a `dynamic import()`
 inside the Bash-channel path only, not statically at the top of the file —
 a missing or malformed copy of that shared file therefore can't disable the
 MCP channel (which has no file dependency of its own) and, on the Bash

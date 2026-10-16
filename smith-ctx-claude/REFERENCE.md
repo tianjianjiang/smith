@@ -280,8 +280,10 @@ cross-repo sharing (see `@smith-tools/SKILL.md` for details).
 
 **Available plugin commands:**
 - `/code-review` - Automated PR review with parallel agents
-- `/commit` - Auto-commit with message generation
-- `/commit-push-pr` - Full PR workflow
+- `/commit` - Auto-commit with message generation (commits before the message
+  is shown; user-typed only, never an agent's substitute for a yes)
+- `/commit-push-pr` - Full PR workflow (not recommended: publishes the commit
+  message and PR text unseen; use `/smith-ship`)
 - `/clean_gone` - Branch cleanup
 
 **Check installed plugins:** `/plugins` or `cat ~/.claude/plugins/installed_plugins.json`

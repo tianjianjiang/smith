@@ -33,11 +33,18 @@ break down.
 4. **Create** — via the Atlassian MCP tools. Use the correct Jira hierarchy
    field per issue type: a sub-task uses the `parent` field; a story/task links
    to its Epic via the Epic Link (or `parent` on team-managed projects). Set
-   the Job Story body (Japanese) + labels. Report created keys + URLs in-band.
-5. **Verify** — re-read each created ticket to confirm parent + format; fix any
-   that drifted.
+   the Job Story body (Japanese), labels, assignee and parent. Report created
+   keys + URLs in-band.
+5. **Verify** — re-read each created ticket to confirm body, labels, assignee,
+   parent and format; for any
+   that drifted, show the corrected fields and edit only on an explicit yes.
 
-A ticket body is payload: draft it, show it, and create only on an
-explicit yes — never bulk-create on a guess. Step 2's approved numbered list IS
-that yes for the tickets on it; anything not on it needs its own. Canonical
-rule: `@smith-guidance` Safety Rules — external writes.
+A ticket's body, labels, assignee and parent are payload: draft them, show
+them, and create only on an explicit yes — never bulk-create on a guess.
+Step 2's approved numbered list IS that yes only when each entry showed the
+full ticket (body, labels, assignee, parent); otherwise show the tickets as
+one list and wait for a yes before creating. Any ticket not on the
+approved list needs its own yes. Where `external-write-guard` matches the
+create or edit, show the full ticket (or the corrected fields) and call the
+tool in the same turn instead: approving its prompt is that yes
+(`@smith-ctx-claude` External Writes). Canonical rule: `@smith-guidance` Safety Rules — external writes.
