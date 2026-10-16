@@ -136,6 +136,8 @@ trailer or contains "on behalf of". A harness-level trailer (e.g. a default
 **When commit-commands plugin is available:**
 
 - **`/commit`**: Auto-generates commit message, stages files, creates commit
+  before the message is shown; the user typing it accepts that, but an agent
+  never runs it in place of showing the message for a yes
 - **`/clean_gone`**: Cleans up branches deleted from remote (including worktrees)
 
 **Manual commands still needed for:**

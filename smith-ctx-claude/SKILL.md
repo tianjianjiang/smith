@@ -60,7 +60,7 @@ cost.
 
 **Before `/clear`:**
 1. Update plan file with current progress (if active)
-2. Commit current work with a detailed message if the user has authorized commits; otherwise list uncommitted files in the Reload block
+2. Commit current work if the user has authorized commits, showing the detailed commit message for an explicit yes first (`@smith-guidance` External writes); otherwise list uncommitted files in the Reload block
 3. Save state to Serena memory with `write_memory()`
 4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command) — canonical format + reachability annotation in `@smith-checkpoint/SKILL.md` "Reload after /clear"
 
@@ -76,7 +76,7 @@ cost.
 
 - Do not batch commits to end of session — context resets lose uncommitted work
 - When uncommitted changes accumulate, say so and offer a `#WIP` commit; commit only on the user's yes
-- Before destructive operations (rebase, `/clear`), commit or stash current work
+- Before destructive operations (rebase, `/clear`), commit (message shown for an explicit yes) or stash current work
 
 ## Context Hooks
 
@@ -100,7 +100,7 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 
 **When stop hook triggers:**
 1. Mark completed tasks in plan (if plan active)
-2. Commit uncommitted work
+2. Commit uncommitted work only if the user has authorized commits, showing the commit message for an explicit yes first (`@smith-guidance` External writes); otherwise list uncommitted files in the Reload block
 3. Write the session's durable facts to a body file (format: `@smith-checkpoint`)
 4. Invoke /smith-checkpoint with the label, plan path and `body=«path»` from
    the hook's invoke directive
@@ -168,11 +168,17 @@ follow logically from an approved plan need no re-ask.)
 ## External Writes — The Permission Prompt Is the Yes
 
 `external-write-guard` makes every write it matches raise a permission
-prompt, in auto mode too. For those writes, show the exact draft in chat
-and call the tool in the same turn: approving the prompt is the explicit
-yes `@smith-guidance` requires, so do not first ask "post it?" in chat.
+prompt, in auto mode too. For those writes, show the exact draft (or, for
+a write with no text, the exact action; outside a transaction the user
+approved, such a write also needs the user's instruction for that action)
+in chat and call the tool in the same turn: approving the prompt is the
+explicit yes `@smith-guidance` requires, so do not first ask "post it?" in
+chat.
 A rejected prompt is a no; revise and show the draft again. A write the
-guard does not match still needs a yes in chat first.
+guard does not match still needs its payload shown and a yes in chat
+first if it publishes words; one that publishes none needs only the
+user's instruction for that action, and a mechanic inside an approved
+transaction needs neither (`@smith-guidance`).
 
 ## Slash Command Invocation
 
@@ -209,7 +215,7 @@ platform-specific patterns.
    - Esc+Esc -> select checkpoint -> Summarize
    - Guide: "Focus on «task», «decisions», «file:line refs»"
 2. At 50%: Warn, prepare retention criteria
-3. At 60%: Commit, update plan, save to Serena, "/clear"
+3. At 60%: if the user has authorized commits, commit on a yes to the shown message (else list uncommitted files), update plan, save to Serena, "/clear"
 4. After /clear: Plan auto-reloads; check Serena memories; recall from JSONL if no memory saved
 
 **Throughout:** keep tool-output spill out of context (sandbox-process, delegate, reference by path).

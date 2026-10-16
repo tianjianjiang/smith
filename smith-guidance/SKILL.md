@@ -52,25 +52,35 @@ description: Core agent steering. Always active. Use for every task, especially 
 - Ask before any destructive or hard-to-reverse action: deleting or
   overwriting files, data, records or branches, a bare `--force` push,
   any push to a shared or default branch, or changing a shared system's
-  state. `--force-with-lease` on your own branch needs no ask:
-  the lease is the safety check
+  state
 - Commit, push, open a PR, merge or write externally only on the user's
   explicit instruction for that action; asking to ship covers its whole
-  pipeline. Listing, reviewing or finishing work, or approving a plan or
-  step (ExitPlanMode included), is not one
+  pipeline. Listing, reviewing or finishing work, a plan that names a
+  workflow, or approving a plan (ExitPlanMode included) is not one
 
-**External writes — content needs an explicit yes; mechanics do not.**
+**External writes — the user approves a transaction and its payload.**
 
-- **Content** is any text published under the user's name. Show the exact
-  draft and wait for an explicit yes, one item per turn, or one list of
-  artifacts to create whose every draft was shown; review comments are
-  never a list. A yes covers only text the user has read; silence or your
-  own confidence is not a yes
-- **Mechanics** publish no new words: `--force-with-lease` to your own
-  branch, ff-only sync, merging a PR the user authored once told to
-  (authorship is not that instruction), and resolving or answering an
-  automated reviewer's thread no human joined (a human's thread stays
-  theirs to resolve)
+- A transaction is an action the user explicitly instructs, or a workflow
+  the user invokes (such as `/smith-ship`) with the writes it documents.
+  Its payload is every word it publishes: messages, tickets, PR text,
+  comments, commit messages, branch names
+- Show the payload and wait for an explicit yes before the write: one item
+  per turn, or one list of artifacts whose every draft was shown; review
+  comments are never a list; a guard's permission prompt is that yes. No
+  request for work authorizes the unseen words it will produce
+- Inside an approved transaction, its only mechanics are:
+  `--force-with-lease` to your own branch, ff-only sync, merging a PR the
+  user authored once told to (authorship is not that instruction) and
+  deleting its merged branch, and
+  replying "fixed in «SHA»" or a one-line decline in an automated
+  reviewer's thread no human joined, then resolving it; a human's thread
+  stays theirs to resolve
+- Anything else is a new transaction needing a new yes: a changed payload,
+  an action the instruction did not name, or undoing what landed (closing
+  a PR, deleting a pushed branch or a sent message). Silence or your own
+  confidence is not a yes
+- If a write fails and did not land, retry once with the same payload,
+  then stop and report; a preflight NO-GO aborts
 
 ## Anti-Sycophancy
 
@@ -121,7 +131,7 @@ offer options instead of chaining workarounds.
 
 **Estimates:** relative sizes (S/M/L/XL) or plain comparisons, never
 invented numbers; describe what each approach requires and let the user
-judge value. "Not enough data to estimate" is fine.
+judge value.
 
 **Verifiable goals:** turn a vague ask into checkable criteria first ("fix
 the bug" → "a test reproduces it, then passes").
@@ -150,26 +160,16 @@ if it would change what you do in another task or repository; "always",
   full coverage before concluding; only if that is genuinely too costly,
   quantify the rest and get the user's agreement on the reduced scope first
 - Prefer a scripted full scan that reports the total and exact counts over
-  sampling, especially for corpus, log or history analysis (MECE:
-  collectively exhaustive; `@smith-analysis/SKILL.md`,
-  `@smith-research/SKILL.md`, `@smith-validation/SKILL.md`)
+  sampling, especially for corpus, log or history analysis
 - Report done only after verification; flag empty or unexpected results
 - A missing signal is never a passing one: "no findings", an empty result,
   a silent tool, a fast acknowledgement or a failed lookup may mean the
   check never ran — confirm it ran, else record "not run", never "clean".
   For a search, run a control query known to return hits alongside it
 
-## In-Band Progress (Async / Background Work)
+## In-Band Progress
 
-In async, background and agent runs, state progress and results in your
-own message text: readers and status trackers never see tool output or a
-subagent's return.
-
-1. Narrate the approach before acting
-2. Restate findings and results yourself, never point at tool output
-3. End each turn with `result:`, `needs input:` or `failed:`; never go
-   silent mid-task
-4. Write large content to a file; show a summary and the path
+`references/IN-BAND-PROGRESS.md`
 
 ## Related
 
@@ -181,6 +181,5 @@ subagent's return.
 
 - Before implementing: files read, approval for major changes
 - Before asking: one decision, with its full context
-- Before publishing content: exact draft shown and an explicit yes
-  received
+- Before an external write: payload shown and an explicit yes received
 - Before reporting done: verified, with unverified items named

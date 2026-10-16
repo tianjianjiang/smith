@@ -87,7 +87,9 @@ for brand, security, compliance and user experience. The product owner
 reviews the spec against the intent and routes flagged concerns to policy
 owners before engineering sees it. Front-end work mocks up in Claude
 Design from the `intent.md`, then exports to Claude Code to build. Commit
-`spec.md` alongside `intent.md`.
+`spec.md` alongside `intent.md`. Before every commit named in this
+playbook, show its message and commit only on an explicit yes
+(`@smith-guidance` External writes).
 
 **The playbook mandates no internal notation for `spec.md`** — only that
 one session produces it, org skills constrain it, and accepting it

@@ -15,14 +15,21 @@ and it automates most of the manual dance documented below:
 - `gh stack add <branch>` — put the current commit on a new branch atop the
   stack (the one-commit-per-branch unit)
 - `gh stack submit` — push the branches AND create/update the whole PR chain
-  on GitHub (the create-the-PRs step)
+  on GitHub (the create-the-PRs step); show the branch names, titles and
+  bodies first and run it only after an explicit yes
 - `gh stack push` — push the active branches in the stack to the remote only,
-  without creating or updating PRs
+  without creating or updating PRs; run it only inside a ship the user
+  invoked or on the user's instruction to push, and only after an explicit
+  yes on any commit message not yet approved and any branch name not yet on
+  the remote that the user did not choose
 - `gh stack sync` — fetch, reconcile with the stack on GitHub, fast-forward
   the trunk, cascade-rebase every branch onto its updated parent, push all
   branches with `--force-with-lease --atomic`, and link the open PRs into
   the GitHub stack object. The one command for "update the stack after
-  trunk or a parent moved"
+  trunk or a parent moved"; it pushes and links, so run it only inside a
+  ship the user invoked or on the user's instruction to sync, and only after
+  an explicit yes on any commit message not yet approved and any branch name
+  not yet on the remote that the user did not choose
 - `gh stack rebase` — the cascade rebase alone; `--continue` after resolving
   a conflict, `--abort` restores every branch
 - `gh stack checkout <stack#|PR#|PR-URL>` — adopt an existing stack from
@@ -30,9 +37,12 @@ and it automates most of the manual dance documented below:
   tracking)
 - `gh stack link <bottom> ... <top>` — register existing PRs as a stack on
   GitHub without local tracking; a stack number as the first argument appends
-  to that stack
-- `gh stack merge` — merge the chain bottom-up
-- `gh stack view` / `modify` / `unstack` — inspect, restructure, or dissolve
+  to that stack; it writes to GitHub, so run it only inside a ship the user
+  invoked or on the user's instruction to link
+- `gh stack merge` — merge the chain bottom-up; only inside a ship the user
+  invoked or after the user said to merge
+- `gh stack view` inspects; `modify` / `unstack` restructure or dissolve the
+  stack on GitHub, only on the user's instruction for that action
 
 The manual `git rebase --onto` cascade and per-child base-retargeting in the
 sections below remain the fallback ONLY when the extension is unavailable, and
@@ -54,7 +64,9 @@ That message is a missing tracking file, not a missing stack. Recovery:
 
 1. `gh stack checkout <stack#>` (the number in the GitHub stack UI; a PR
    number or URL also works) — restores tracking in this worktree from GitHub
-2. `gh stack sync` — rebases the cascade and pushes atomically
+2. `gh stack sync`, only inside a ship the user invoked or on the user's
+   instruction to sync — rebases the cascade, pushes atomically and links the
+   PRs into the stack
 3. On a conflict, `gh stack rebase`, resolve, `gh stack rebase --continue`
    (or `--abort`)
 
@@ -73,8 +85,9 @@ rebases, and a false conflict):
   `gh stack sync` rewrites it from GitHub.
 
 A branch checked out in another worktree cannot be rebased; `git -C <that
-worktree> checkout --detach` first, then run `gh stack sync` from the
-worktree that owns the stack tracking.
+worktree> checkout --detach` first, then, inside a ship the user invoked or
+on the user's instruction to sync, run `gh stack sync` from the worktree that
+owns the stack tracking.
 
 ## When to stack
 
@@ -109,9 +122,9 @@ main
 ```
 
 Every stacked PR body also ends with the `Assisted-by:` line (see
-`@smith-style`). The stack's PR titles and bodies are content: show them
+`@smith-style`). The stack's PR titles and bodies are payload: show them
 together and open on an explicit yes — reviewed together they count as one
-enumerated list (`@smith-guidance` Safety Rules, batched consent).
+list whose every draft was shown (`@smith-guidance` Safety Rules).
 
 **Field meanings**:
 - `Depends on`: PRs that must merge before this one (upstream dependencies)
@@ -137,6 +150,12 @@ continuing.
 
 ## Merge workflow (bottom-up)
 
+Run the retargets, merges and pushes in the steps below only inside a ship
+the user invoked, or else each on the user's instruction for that action:
+retargets and merges after the user said to merge, pushes after the user said
+to push (`@smith-guidance` External writes); `--force-with-lease` to your own
+branch counts as mechanics only inside that transaction.
+
 1. Wait for parent PR approval
 2. Retarget the child PR's base onto the parent's base (its grandparent, or
    the default branch if the parent is the stack's base) — BEFORE merging
@@ -157,6 +176,10 @@ continuing.
 ```
 
 ## Rebasing after a parent merges
+
+Run the pushes below only inside a ship the user invoked or on the user's
+instruction to push (`@smith-guidance` External writes); `--force-with-lease`
+to your own branch counts as mechanics only inside that transaction.
 
 ```shell
 git fetch origin
@@ -183,6 +206,11 @@ main ──●──●──●──M
 ```
 
 ## Squash merge with stacked PRs
+
+Run the retargets, pushes, branch deletions and merges below only inside a
+ship the user invoked, or else each on the user's instruction for that action
+(`@smith-guidance` External writes); `--force-with-lease` to your own
+branch counts as mechanics only inside that transaction.
 
 Squash merge IS allowed if the branch-deletion process is followed.
 
@@ -226,6 +254,12 @@ git rebase -i main
 
 ## Keeping a stack updated
 
+Run the merges and pushes below only inside a ship the user invoked or on the
+user's instruction to update the stack; a `git merge` that is not a
+fast-forward commits git's default merge message, so show that message and
+run the merge only on a yes
+(`@smith-guidance` External writes).
+
 Cascade updates through the stack sequentially — update each child by
 merging its immediate parent, never the default branch directly:
 
@@ -251,8 +285,10 @@ documented in PR descriptions; atomic commits within each level; bottom-up
 merge order; stacks no deeper than 3-4 levels.
 
 **Good communication**: document stack relationships in PR descriptions;
-update child PRs promptly after a parent merges; notify reviewers when
-dependencies merge; explain the overall feature in the base PR.
+after a parent merges, draft the child-PR update and any reviewer
+notification, show them, and write only on an explicit yes
+(`@smith-guidance` External writes); explain the overall feature in the
+base PR.
 
 **Avoid**: stacks deeper than 3-4 levels; merging out of order; forgetting
 to update children after a parent merge; stacking unrelated changes.

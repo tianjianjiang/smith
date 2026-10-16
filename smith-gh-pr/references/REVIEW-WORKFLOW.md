@@ -28,14 +28,15 @@ in-band (see `@smith-review`).
   comment says on sight who it is for. For a purely informational inline note
   it is optional.
 
-**Mechanism (prefer the built-in):**
+**Mechanism (post one finding per turn):**
 
 - `/code-review --comment` — runs the review and posts findings as inline PR
-  comments automatically — every finding at once, ungated, each one content
-  addressed to a human. Review comments are a conversation, not a list, so they
-  stay **one per turn** (`@smith-guidance` Safety Rules) and `--comment`'s auto-post
-  is therefore NOT the default path: post them one at a time. Asking for a
-  review is not a yes for words that did not exist when it was asked.
+  comments automatically — every finding at once, ungated, each one
+  payload. Review comments are a conversation, not a list, so they
+  stay **one per turn** (`@smith-guidance` Safety Rules). Do not use
+  `--comment`: run the review without it and post each finding one at a
+  time, after its own explicit yes (the guard's prompt counts). Asking for a review is not a yes for
+  words that did not exist when it was asked.
 - Manual single inline comment via REST (when hand-authoring one finding):
 
 ````shell
@@ -67,23 +68,30 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - Approving another author's PR is different — that IS legitimate; see
   "Approving a PR by command".
 
-**Decide-and-proceed defaults (do NOT ask between obvious steps):**
-- CodeRabbit finding is Critical/Warning + high-confidence: fix, commit, push
-  silently
-- CodeRabbit finding is Info/Nitpick: reply-and-resolve or skip with a
-  one-line reason
+**Decide-and-proceed defaults (no questions between obvious steps; payload still needs its yes):**
+- CodeRabbit finding is Critical/Warning + high-confidence: fix locally;
+  show the commit message and commit on a yes; push only inside a ship the
+  user invoked or on their instruction
+- CodeRabbit finding is Info/Nitpick: in a bot thread no human joined, inside
+  a ship or review the user invoked, reply "fixed in «SHA»" or a one-line
+  decline, then resolve; any other reply is payload and needs a yes
 - After pushing a fix: re-run review immediately
-- 0 actionable findings on a user-authored PR: merge (`gh pr merge --squash
+- 0 actionable findings on a user-authored PR, inside a ship the user invoked
+  or after the user said to merge: merge (`gh pr merge --squash
   --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
   (see "Stacked PRs" below)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
 
 **Must-ask criteria (only interruption triggers):**
-- About to post content addressed to a human — a review finding, PR
-  description, or approval body (`@smith-guidance` Safety Rules). Replies to an
-  automated reviewer's own thread that no human has joined are mechanics and do
-  not trigger this.
+- About to publish payload — a commit message, review finding, PR
+  description, or approval body (`@smith-guidance` Safety Rules). For a
+  write `external-write-guard` matches (a review finding, an approval
+  body), show it and call the tool in the same turn instead: its prompt is
+  the ask. Inside a
+  ship or review the user invoked, a reply of "fixed in «SHA»" or a one-line
+  decline in an automated reviewer's own thread that no human has joined is
+  mechanics and does not trigger this.
 - Finding requires scope change beyond the PR's stated goal
 - Finding contradicts an existing smith-skill rule (meta-question)
 - Auto-mode classifier denial without a documented escape pattern
@@ -116,7 +124,8 @@ the loop WITHOUT convergence (escalated to the user, not merged).
 - Pull-request, editor, and command-line reviews are three SEPARATE hourly
   channels, each counted per developer, so one refusing says nothing about
   another. Re-trigger the App with a `@coderabbitai review` comment as the
-  rolling window frees capacity.
+  rolling window frees capacity; a PR comment is payload: show it and post
+  on an explicit yes (the guard's prompt counts) (`@smith-guidance` External writes).
 - The App's fast reply (currently "Action performed — Review finished") is an
   acknowledgement, not a result: it posts within seconds and reads the same
   whether the review ran, was skipped, or was blocked (a blocked one admits it
@@ -139,22 +148,35 @@ of `coderabbit review` (both retrieved 2026-07-27). The quotas and the App's
 comment wording are point-in-time; the review-event test is not.
 
 **External write rule (Notion, Slack, Jira, GitHub comments):**
-- A comment addressed to a **human** — a review finding, a PR description, an
-  approval body — is content: draft it, show it, wait for an explicit yes, one
-  per turn. A reply to an automated reviewer's own thread is mechanics and needs
-  no yes — unless a human has joined that thread, which makes it theirs.
-  Canonical split: `@smith-guidance` Safety Rules.
-- Merging, `--force-with-lease`, ff-sync, and resolving an automated
-  reviewer's threads are mechanics — decide-and-proceed inside an authorized
-  ship (the PR ownership gate above bounds which PRs qualify). A human
+- Every word a write publishes — a review finding, a PR description, an
+  approval body, a commit message (a Ralph loop's local commits excepted,
+  `@smith-ralph`) — is payload: draft it, show it, and wait for an explicit
+  yes (one item per turn, or one list whose every draft was shown; review
+  findings are never a list). For a write `external-write-guard` matches,
+  show it and call the tool in the same turn: approving its prompt is that
+  yes (`@smith-ctx-claude` External Writes). Inside a ship or review the
+  user invoked, a
+  reply of "fixed in «SHA»" or a one-line decline in an automated reviewer's
+  own thread is mechanics — unless a human has joined that thread, which
+  makes it theirs.
+  Canonical rule: `@smith-guidance` Safety Rules.
+- Merging a PR the user authored once told to and deleting its merged
+  branch, `--force-with-lease` to your own branch, and ff-only sync are
+  mechanics inside a transaction that performs them, such as a ship the
+  user invoked (a review performs none of them); resolving an automated
+  reviewer's thread that no human joined, after a "fixed in «SHA»" or
+  one-line-decline reply, is a mechanic inside a ship or review the user
+  invoked (the PR ownership gate above bounds which PRs qualify). A human
   reviewer's thread stays open for them to resolve.
-- Always end the body with the `Assisted-by:` line (`@smith-style`)
+- Always end the body with the `Assisted-by:` line (`@smith-style`); that
+  line does not turn a "fixed in «SHA»" or one-line-decline reply into payload
 
 ## Approving a PR by command
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
-  write under the user's account, and an approval body is content: draft it,
-  show it, and submit only on an explicit yes (`@smith-guidance` Safety Rules).
+  write under the user's account, and an approval body is payload: draft it,
+  show it, and submit only on an explicit yes (the guard's prompt counts)
+  (`@smith-guidance` Safety Rules).
   End the body with the `Assisted-by:` line (`@smith-style`).
 - It **returns silently on success** (no output is normal, not a failure).
   ALWAYS verify: `gh pr view <n> -R <owner/repo> --json reviewDecision,reviews`
@@ -252,10 +274,15 @@ above for decide-vs-ask criteria and convergence rules):
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement, commit, reply with SHA — a reply to the
-   bot's own thread is mechanics, so it needs no yes (`@smith-guidance`
-   Safety Rules). A comment addressed to a human reviewer does.
-4. Low-confidence: draft reply, ask user before posting
+3. High-confidence fixes: implement locally, show the commit message and
+   commit on a yes, push (inside a ship the user invoked or on the user's
+   instruction to push), then reply with the pushed SHA. Inside a ship or
+   review the user invoked, a reply in the bot's own thread limited to
+   "fixed in «SHA»" or a one-line decline is mechanics (`@smith-guidance`
+   Safety Rules); any other reply is payload and needs a yes.
+4. Low-confidence: draft the reply, show it, and call the reply in the same
+   turn; approving the guard's prompt is the yes (`@smith-ctx-claude`
+   External Writes)
 5. Re-check after CI passes
 
 **Proactive self-review** — before reviewer sees changes:
@@ -265,27 +292,24 @@ above for decide-vs-ask criteria and convergence rules):
 
 **`/autofix-pr` — cloud auto-fix loop**
 
-Run `/autofix-pr` while on the PR's branch. Claude Code detects the open PR with `gh`, spawns a Claude Code on the web session, and turns on auto-fix for that PR in one step. The web session subscribes to GitHub events (CI checks, review comments) and pushes fixes for high-confidence cases; ambiguous changes prompt instead of pushing.
+**Not recommended: `/autofix-pr` cannot show its payload first.** The cloud session outlives the terminal and pushes commits and posts review replies under the user's account without showing them, while `@smith-guidance` Safety Rules require every commit message, and every reply beyond "fixed in «SHA»" or a one-line decline in a bot thread no human joined, to be shown for a yes before the write. Use the monitoring loop pattern above instead: the terminal stays attached and the user approves each commit, push and reply.
+
+`/autofix-pr` (run while on the PR's branch): Claude Code detects the open PR with `gh`, spawns a Claude Code on the web session, and turns on auto-fix for that PR in one step. The web session subscribes to GitHub events (CI checks, review comments) and pushes fixes for high-confidence cases; ambiguous changes prompt instead of pushing.
 
 **Requires** the Claude GitHub App installed on the repo (PR webhooks). Replies to review threads post under the user's GitHub account but are labeled as Claude Code authored. Disable per-PR via the web session's CI status bar.
-
-Running `/autofix-pr` is itself the up-front authorization for that PR's loop — the one case where the per-item yes (`@smith-guidance` Safety Rules) cannot apply, since the session outlives the terminal. It authorizes exactly two things on that one PR: pushing fixes, and replying to its review threads. It does NOT authorize merging, `--force-with-lease`, or any action on a linked or downstream PR — those still run through `/smith-ship` and the PR ownership gate. Its replies post under the user's account, so they carry the same attribution as any other reply: the `Assisted-by:` line (`@smith-style`). Authorization is what the loop grants; attribution is not waived by it.
 
 **Warning:** if the repo uses comment-triggered automation (Atlantis, Terraform Cloud, GitHub Actions on `issue_comment`), auto-fix's review replies can trigger those workflows. Avoid auto-fix where a PR comment can deploy infrastructure or run privileged operations.
 
 Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-requests
-
-**When to use the monitoring loop pattern (above) vs `/autofix-pr`:**
-
-- Loop pattern: terminal stays attached; agent under the user's direct supervision; user controls each push
-- `/autofix-pr`: terminal can close; runs autonomously in cloud; for PRs where you're confident in unattended fixing
 
 ## Claude Code Plugin Integration
 
 **When plugins are available, prefer plugin commands:**
 
 - **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
-- **`/commit-push-pr`**: Commits, pushes, and creates PR in one step
+- **`/commit-push-pr`**: Not recommended: it commits, pushes and creates the
+  PR in one step without showing the commit message or PR text first
+  (`@smith-guidance` Safety Rules). Ship with `/smith-ship` instead
 - **`pr-review-toolkit:review-pr`**: the SINGLE entry point for multi-agent
   review — it orchestrates its own 6 subagents. NEVER hand-pick or invoke the
   individual agents (`code-reviewer`, `silent-failure-hunter`,

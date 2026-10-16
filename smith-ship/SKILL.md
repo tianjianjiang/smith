@@ -41,7 +41,8 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    take path (a) below while still on a protected branch — committing there
    is what `@smith-guidance` Safety Rules forbids; branch first, then commit.
    Otherwise check `git status --porcelain`: if the checkout is
-   dirty, STOP and pick ONE path: (a) commit or stash the changes, then
+   dirty, STOP and pick ONE path: (a) commit (show the commit message and
+   commit on a yes) or stash the changes, then
    `EnterWorktree`; or (b) branch in place (`git switch -c …`) and continue in
    the current checkout — no `EnterWorktree` at all (the tree is still dirty
    and the `worktree-dirty-guard` hook would block it; a new worktree starts
@@ -55,28 +56,34 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    it reports converged.
 3. **Commit** — logically and semantically atomic; conventional subject ≤72,
    body ≤72/line, `Assisted-by:` trailer (see `@smith-style`). One concern per
-   commit.
+   commit. Show each commit message and commit on a yes.
 4. **Push & PR** — record the review receipt for the finished commit
    (`@smith-review/SKILL.md` step 6), then re-run `/smith-preflight` on it
    and do NOT push on a `NO-GO`; its `review-converged` check is what
    refuses a push nobody reviewed (step 0's verdict was taken before the
-   branch and commit existed, so it does not carry). Then push the renamed
-   branch;
+   branch and commit existed, so it does not carry). Then show any commit
+   message the push would publish that was not yet approved (such as a
+   Ralph loop's local commits, `@smith-ralph`) and, if the user did not
+   specify the branch name, the branch name, and push only on an explicit
+   yes; when every commit message was already approved and the user chose
+   the branch name, push (`@smith-gh-pr` PR Creation Workflow step 4,
+   `@smith-guidance` External writes);
    `gh pr create --base <default> --assignee @me` with a What/Why
    body ending with the `Assisted-by:`
    line (`@smith-style`). Link issues only if real. The body and title are
-   content: show them and create on an explicit yes (`@smith-guidance`
+   payload: show them and create on an explicit yes (`@smith-guidance`
    Safety Rules).
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
-   and the content-vs-mechanics gate. Ship-specific: fix high-confidence
-   findings with **fix + amend** (not new commits). Before each of those
+   and the payload-vs-mechanics gate. Ship-specific: fix high-confidence
+   findings locally, then show the commit message and **amend** on a yes
+   (not new commits). Before each of those
    pushes, in this order: rerun the `/smith-review` loop to a fresh
    converged verdict (full receipt plus criteria — a mechanics-only recheck
    is not convergence), since an amend that changes the diff leaves the old
    receipt behind; record its receipt; then re-run `/smith-preflight` and do
-   NOT push on a `NO-GO` — an amended commit is content step 4's verdict
-   never saw, so a token introduced while fixing a review finding would
+   NOT push on a `NO-GO` — an amended commit carries changes step 4's
+   verdict never saw, so a token introduced while fixing a review finding would
    otherwise reach the remote unscanned; confirm
    CodeRabbit actually
    ran before trusting 0 (`@smith-gh-pr` "CodeRabbit fails OPEN").
@@ -109,7 +116,8 @@ the stack) and `@smith-worktree`.
   stack overrides: the PR base is the parent branch (not the default
   branch), and the PR body carries `Depends on:` / `Blocks:`. Branch names
   follow `@smith-style`. The stack's PR titles and bodies are shown together
-  and opened on one explicit yes (batched consent).
+  and opened on one explicit yes (one list whose every draft was shown), so
+  no unit opens its PR in phase 4 before every unit's draft is shown.
 - **Phases 5-7 are stack-wide, not per unit** — address review across the
   stack, then merge bottom-up with retarget-before-merge and manual parent
   branch deletion per `@smith-gh-pr` Stacked PRs; cascade

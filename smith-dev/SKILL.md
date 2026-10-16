@@ -42,7 +42,7 @@ This document defines development workflow standards and code quality requiremen
 - Tasks MUST focus on logical phases, be independently verifiable
 - Exactly ONE task in_progress at any time
 - Mark complete only after tests pass
-- Use git commits + todos for session bridging
+- Use git commits (message shown for a yes) + todos for session bridging
 
 **Task states**: pending → in_progress → completed
 

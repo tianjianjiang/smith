@@ -77,7 +77,10 @@ Output <promise>COMPLETE</promise> after all phases.
 
 ## Phase Boundary Protocol
 
-**At EVERY phase boundary (regardless of context level):**
+**At EVERY phase boundary (regardless of context level) of a loop the user
+invoked** — the invocation authorizes these local commits, not a push; their
+commit messages are payload and are shown for a yes before any later push
+(`@smith-guidance` Safety Rules):
 1. Mark completed tasks [x] in plan file
 2. Commit current work
 3. Save phase state: `write_memory("ralph_«task»_phase_N")`
@@ -97,7 +100,8 @@ If plan has no ## headings, each `- [ ]` task = one phase.
 
 ## Commit Strategy
 
-**Atomic commits mark iteration boundaries.**
+**Atomic commits mark iteration boundaries** (local only, inside a loop the
+user invoked).
 
 1. Complete iteration (test passes or hypothesis proven)
 2. Commit with iteration number: `fix(feature): iteration 3 - resolved null check`

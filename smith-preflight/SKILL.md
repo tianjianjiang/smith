@@ -55,9 +55,12 @@ and never a substitute for evidence you could still go and find.
   the change, whether you produced it here or a commit's hook did;
   attested otherwise. See below.
 - **pr-ownership** — machine. See below.
-- **external-write** — attested. Every human-facing external write this
-  task made carried its own explicit yes. Owner @smith-guidance
-  Safety Rules, External writes.
+- **external-write** — attested. Every external write this task made had
+  its payload shown and an explicit yes before the write, or was one of
+  the listed mechanics inside a transaction the user approved, or
+  published no words and was the user's explicit instruction for that
+  action. Owner
+  @smith-guidance Safety Rules, External writes.
 - **verify-before-assert** — attested. Every convention or rule
   asserted was quoted from its source. Owner @smith-guidance Communication Standards.
 - **suggestions** — attested. Every mechanical review finding posted

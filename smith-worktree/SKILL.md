@@ -32,7 +32,8 @@ checkout never carry over — they stay behind, stranded from the task. The
 `worktree-dirty-guard` PreToolUse hook
 (`smith-git/scripts/hooks/worktree-dirty-guard.mjs`, registered
 user-globally) blocks `EnterWorktree` while `git status --porcelain` is
-non-empty; resolve deliberately (commit, stash-and-apply inside the worktree,
+non-empty; resolve deliberately (commit, after showing the commit message for an
+explicit yes per `@smith-guidance` External writes; stash-and-apply inside the worktree;
 or branch in place) before retrying.
 
 - Naming: the `name` param accepts `/`-separated segments; each segment may contain letters, digits, dots, underscores, dashes only. The branch name is always `worktree-«name»` regardless.
@@ -92,7 +93,7 @@ Background sessions in repos without `worktree.bgIsolation: "none"` block the fi
 
 Two correct responses:
 
-- **`EnterWorktree`** — default. Branch off, work in isolation, push from the worktree, merge, exit + remove.
+- **`EnterWorktree`** — default. Branch off, work in isolation; when the user asks to ship, run `/smith-ship` from the worktree; exit + remove.
 - **Repo-scoped opt-out**: write `{ "worktree": { "bgIsolation": "none" } }` to the repo's `.claude/settings.json`. Appropriate when the user has indicated they want in-place edits in this repo (e.g. *"keep changes in the local working copy so I can evaluate"*).
 
 ## Built-in Isolation Guard (git command shape)
@@ -185,7 +186,7 @@ git pull --ff-only
 ## Before You Finish
 
 **Before any EnterWorktree:**
-- `git status --porcelain` — if non-empty, STOP: commit, stash-and-apply
+- `git status --porcelain` — if non-empty, STOP: commit (show the commit message and commit on a yes), stash-and-apply
   inside the worktree, or branch in place instead. Uncommitted changes never
   carry into a new worktree (the `worktree-dirty-guard` hook blocks this).
 

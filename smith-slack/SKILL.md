@@ -37,7 +37,7 @@ every revision — a single miss is a repeat-correction.**
 5. **Confirm before send** — present the draft and wait for an explicit yes, one
    message per turn. Draft means draft: do not consider it sent until the user
    says so. Silence is not consent. (Canonical: `@smith-guidance` Safety Rules —
-   external writes, content vs mechanics.)
+   external writes, transaction and payload.)
 6. **Outbound text stays clean** — keep internal metadata and scratch
    reasoning out of the message body.
 
