@@ -165,19 +165,34 @@ multiSelect for ONE coherent choice (e.g. which sources to sweep) is fine;
 batching distinct decisions is not. (Implementation-phase confirmations that
 follow logically from an approved plan need no re-ask.)
 
-## External Writes — The Permission Prompt Is the Yes
+## External Writes — Preview, Then the User's Reply
 
-`external-write-guard` makes every write it matches raise a permission
-prompt, in auto mode too. For those writes, show the exact draft (or, for
-a write with no text, the exact action; outside a transaction the user
-approved, such a write also needs the user's instruction for that action)
-in chat and call the tool in the same turn: approving the prompt is the
-explicit yes `@smith-guidance` requires, so do not first ask "post it?" in
-chat.
-A rejected prompt is a no; revise and show the draft again. A write the
-guard does not match still needs its payload shown and a yes in chat
-first if it publishes words; one that publishes none needs only the
-user's instruction for that action, and a mechanic inside an approved
+Permissions and confirmation are separate: allow rules decide whether a
+tool may run, and `external-write-guard` never reads or overrides them.
+For every write it matches, the guard reads the transcript and lets the
+call through only when every text field and target identifier (page,
+issue, parent) was shown verbatim and the user replied after it, by a
+typed message or an AskUserQuestion answer; notifications do not count.
+Preview one smaller part per turn and wait for the reply to each; save
+long text to a durable file the user can open in an editor and give its
+absolute path on a line that says "preview"; a file changed after the
+reply no longer counts. Pass `gh` bodies in single quotes, a quoted
+heredoc (`<<'EOF'`) or `--body-file` in a command of its own. Name the
+target in the same message as content written to it. The guard does not
+notice a repost: a yes covers one write, so posting the same payload
+again needs a new preview and reply. Otherwise
+the guard denies the call: show the missing part, wait for the reply,
+and call again only on a yes. A subagent's
+write is denied; return the draft to the main thread. A "fixed in «SHA»"
+reply passes as mechanics only after the user typed `/smith-ship` or
+`/smith-review` in this session, when the SHA
+exists locally and GitHub reports every comment in that thread as written
+by a bot. The guard raises a permission prompt only when it cannot check:
+no readable transcript, a body from stdin, `--input` or shell expansion,
+or a write with no text. A write the guard
+does not match still needs its payload shown and a yes in chat first if
+it publishes words; one that publishes none needs only the user's
+instruction for that action, and a mechanic inside an approved
 transaction needs neither (`@smith-guidance`).
 
 ## Slash Command Invocation

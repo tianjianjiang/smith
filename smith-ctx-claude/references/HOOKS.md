@@ -11,7 +11,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | Hook | Event (matcher) | Blocks / Advisory |
 |---|---|---|
 | `skill-router.mjs` | UserPromptSubmit | Advisory: on a prompt the owner typed, surfaces candidate skills that are not loaded yet |
-| `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Escalates the external writes it matches (see its section) to an `ask` prompt |
+| `external-write-guard.mjs` | PreToolUse (`mcp__.*`, `Bash`) | Denies the external writes it matches (see its section) until their payload was previewed in chat and the user replied |
 | `askuserquestion-arity.mjs` | PreToolUse (`AskUserQuestion`) | Blocks a multi-question call |
 | `volatile-artifact-guard.mjs` | Stop / SubagentStop / SessionEnd | Advisory: lists files written under volatile paths |
 | `branch-rename-open-pr.mjs` | PreToolUse (`Bash`) | Blocks renaming a branch with an open PR |
@@ -60,10 +60,94 @@ no marker in its text, so the router treats it as owner-typed.
 ## external-write-guard
 
 **external-write-guard** (`smith-ctx-claude/scripts/external-write-guard.mjs`)
-— PreToolUse guard (matchers `mcp__.*` and `Bash`) that escalates the
-external writes listed below, and only those, to a `permissionDecision:"ask"`
-prompt, so none of those writes can fire without an explicit yes at that
-prompt. On the **MCP channel**: those write tools: Jira/Confluence
+— PreToolUse guard (matchers `mcp__.*` and `Bash`) that lets the external
+writes listed below, and only those, run only after their payload was
+previewed in chat and the user replied. It enforces confirmation, not
+permission: it never reads allow rules, so a server-wide allow and "don't
+ask again" work as configured. Threat model: it stops an agent that writes
+before the user has replied, by haste or a mistaken belief that it has a
+yes; it does not stop an agent that sets out to forge a yes or evade the
+parser (a pre-filled AskUserQuestion answer, a wrapper script, a `gh`
+alias), which permissions, sandboxing and model behavior have to cover.
+Decision per matched call:
+
+| Situation | Decision |
+| --- | --- |
+| Every payload leaf appears in a main-thread assistant message, or in a file such a message names, and the user replied after that message (a named file must be unchanged since the reply) | none (the call proceeds) |
+| A leaf never shown, or shown but not yet answered | `deny`, telling the agent to preview the missing part and wait |
+| Called from a subagent (`agent_id` set) | `deny`: return the draft to the main thread |
+| A single-step `gh pr-review comments reply` with one inline body of exactly `fixed in «SHA»` and no extra positional argument, the SHA a commit in the working repository, no `GH_REPO`/`GH_HOST`, `--hostname` or host-qualified `-R`, a `/smith-ship` or `/smith-review` command the user typed in this session (a `Skill` call by the assistant does not count), and a `--thread-id` whose comments GitHub reports as all `Bot`-authored (one `gh api graphql` lookup; any failure counts as not) | none (mechanics, `@smith-guidance`) |
+| Cannot check: transcript missing or unreadable, body from stdin, `--input` or an unreadable file, a body, file path or target built by shell expansion, a body file read by a command with other steps, a short flag with letters or a value attached (`-cb`, `-bTEXT`, `-XPOST`, whose parsing the guard does not replicate), a `gh` flag outside the guard's known list (`KNOWN_GH_WRITE_FLAGS`), `GH_REPO`/`GH_HOST` set on the command line, a GraphQL query built by shell expansion, no text at all, or the hook failing after it matched the call | `ask` (fallback) |
+
+Payload leaves (`scripts/lib/write-payload.mjs`): an MCP write is checked
+against its declared signature in `scripts/lib/write-signatures.mjs`,
+which gives every field of the tool's input schema one role: `content`
+(published text, matched against the preview), `target` (where it is
+published, shown too; a UUID matches with or without dashes),
+`reference` (content the call points to but does not carry, such as a
+template, cover image or uploaded file; a Notion `icon` or a Confluence
+`body.value` counts as one when its value is a URL) or `structural`
+(publishes nothing, such as `cloudId` or `allow_async`). A tool with no declared
+signature, a field the signature does not declare, or a `reference`
+field with a value cannot be checked, so the guard asks, as it did for
+every MCP write before. Inside a content or target field the leaves are
+every string, every number (an ID included: `transitionId`, `sprintId`,
+a nested `priority.id`), the key name of every `true` flag
+(`allow_deleting_content`), and the key name of every value that clears
+a field (`null`, `false`, an empty string or list), reference fields
+included, so clearing a Jira description, a Notion property or a cover is
+previewed too, and the action, such as a
+`command` of `replace_content`, is previewed too; `old_str` is a locator,
+except that it counts when its `new_str` is empty, since that text is
+deleted, and the empty `new_str` then needs no preview of its own. When a tool's input schema changes, its signature must be
+updated, or the new field makes the guard ask. On the Bash channel, the
+`--body`/`-b`, `--comment`/`-c` (close or reopen) and `gh api` field
+values plus the contents of `--body-file`/`-F` and `@file` fields, with
+the target as target leaves: the PR or issue number, `-R`/`--repo`, `--hostname`, the
+`gh api` endpoint, and `--pr`/`--thread-id` plus any positional argument
+after `reply` for `gh pr-review`. The action is a content leaf too: the
+review verdict (`approve`, `request-changes`, `comment`), `delete-branch`
+on close, and the `gh api` HTTP method (`POST`, `PATCH`, `DELETE`). A
+body file must be a regular file (not a link or FIFO); a background
+process that rewrites it after the check is not detected. A `gh api` endpoint ending in `graphql`
+(a bare name, a path or a full URL) is GraphQL. A write
+whose leaves are all targets counts as a write with no text. Every
+positional argument after the subcommand, skipping the values of body
+and global flags, is a target leaf, so the value of an allowed flag the
+guard does not parse as taking one (`--reason`, `--duplicate-of`) must be
+previewed too rather than hiding the PR or issue number. A preview that contains a leaf inside a longer
+sentence still counts ("will NOT approve this change" covers "approve
+this change"); the user's reply is what rejects it. Shell values are literal
+only when the whole command has no `$`, backtick, unquoted glob or brace, or
+leading `~` outside single quotes; otherwise a value holding one is
+opaque. A `$(cat <<'EOF' … EOF)` body with a quoted delimiter is read as
+literal text unless the delimiter line also appears inside it. A
+command whose subcommand or endpoint itself comes from expansion is not
+recognised as a write at all, the same command-substitution limitation
+described below. Matching is verbatim after whitespace is collapsed,
+and a leaf that starts or ends with an ASCII letter or digit must not
+sit inside a longer run of them, so `o` or `1` does not match inside
+`hosts` or `x41`. Leaves may
+be previewed one part per turn, each answered separately; long text may
+be previewed as a file whose absolute or `~/` path appears on a line
+that also says `preview` (or 預覽, プレビュー), up to 5 MB, with both its
+modification and status-change times (mtime, ctime) no later than the
+reply's timestamp, so a backdated mtime does not hide an edit; a
+symbolic link at that path never counts. Swapping a parent directory for
+a link is not detected: only a content snapshot taken at reply time
+would catch it. A target
+leaf (UUID, long hex id, URL, issue key)
+counts only in an answered message that also holds, or names a file
+holding, at least one content leaf of the same call. The guard does not
+track whether a previewed payload was already posted: that one yes
+covers one write is `@smith-guidance`'s rule, not the hook's check. A reply
+(`scripts/lib/write-preview.mjs`) is a timestamped user event with
+`origin.kind` `human`, or a non-error AskUserQuestion `tool_result`; a
+user event without `origin` never counts (agent-team teammate messages
+and SDK-driven prompts carry none), nor do task notifications, peer
+messages, `isMeta` events, compaction summaries (`isCompactSummary`,
+`isVisibleInTranscriptOnly`) and sidechain events. On a Claude Code
+version that writes no `origin`, answer through AskUserQuestion. On the **MCP channel**: those write tools: Jira/Confluence
 create·edit·transition·comment, both the older names and the current
 `addOrEditJiraIssueComment` and `create`/`updateConfluenceContent`;
 `executeWrite`/`executeDestructive`, whose operation is opaque to the hook;
@@ -140,8 +224,9 @@ would actually run; this is a narrow, shebang-line-oriented feature
 `gh pr comment`/`gh issue comment`
 (always), `gh pr review` when a submit flag is present (`-a/--approve`,
 `-c/--comment`, `-r/--request-changes`, including a clustered short form like
-`-ab`), `gh pr close`/`gh pr reopen`/`gh issue close`/`gh issue reopen` when
-a `-c`/`--comment`/attached `-cVALUE` value is present, `gh pr-review
+`-ab` or `-abTEXT` whose leading letters hold one of them), `gh pr close`/`gh
+pr reopen`/`gh issue close`/`gh issue reopen` when `--comment` or a short
+flag cluster containing `c` (`-c`, `-dc`, `-cVALUE`) is present, `gh pr-review
 comments reply` (this repo's own documented review-thread-reply path,
 `@smith-gh-pr` "Posting Review Findings" — detected by the literal `reply`
 token appearing anywhere in the command, not by its position, so a
@@ -204,12 +289,12 @@ before the push unless the user chose it (`@smith-gh-pr` PR Creation Workflow st
 inside the Bash-channel path only, not statically at the top of the file —
 a missing or malformed copy of that shared file therefore can't disable the
 MCP channel (which has no file dependency of its own) and, on the Bash
-channel specifically, is treated the same as the unwrap-depth-exceeded case
-above: fails CLOSED (`ask`), not open, since a tokenizer that can't load
-means the command can't be shown safe. Verified directly: renaming the
-shared file to simulate a missing copy still asks on a real MCP write and
-now also asks (rather than silently allowing) on a Bash write that would
-otherwise have matched.
+channel specifically, fails CLOSED (`ask`), not open, for every Bash
+command that contains the word `gh` (reads such as `gh pr view` included),
+whether the tokenizer fails to load or throws while splitting the command;
+a command without `gh` passes silently. The test suite runs the guard from
+a copy without the tokenizer to check both sides, and that an MCP write
+still gets the preview check.
 
 ## askuserquestion-arity
 

@@ -45,6 +45,6 @@ Step 2's approved numbered list IS that yes only when each entry showed the
 full ticket (body, labels, assignee, parent); otherwise show the tickets as
 one list and wait for a yes before creating. Any ticket not on the
 approved list needs its own yes. Where `external-write-guard` matches the
-create or edit, show the full ticket (or the corrected fields) and call the
-tool in the same turn instead: approving its prompt is that yes
-(`@smith-ctx-claude` External Writes). Canonical rule: `@smith-guidance` Safety Rules — external writes.
+create or edit, it denies the call until the full ticket (or the corrected
+fields) was shown and the user replied (`@smith-ctx-claude` External
+Writes). Canonical rule: `@smith-guidance` Safety Rules — external writes.

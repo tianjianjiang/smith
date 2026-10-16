@@ -66,8 +66,8 @@ description: Core agent steering. Always active. Use for every task, especially 
   comments, commit messages, branch names
 - Show the payload and wait for an explicit yes before the write: one item
   per turn, or one list of artifacts whose every draft was shown; review
-  comments are never a list; a guard's permission prompt is that yes. No
-  request for work authorizes the unseen words it will produce
+  comments are never a list. No request for work authorizes the unseen
+  words it will produce
 - Inside an approved transaction, its only mechanics are:
   `--force-with-lease` to your own branch, ff-only sync, merging a PR the
   user authored once told to (authorship is not that instruction) and

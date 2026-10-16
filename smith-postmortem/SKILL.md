@@ -12,7 +12,7 @@ Postmortems are structured reviews after incidents to understand what happened, 
 
 ## Core Principles
 
-- MUST draft the postmortem, the share message, meeting invitations, runbook or wiki edits and action-item tickets (including ticket updates and transitions), show them, and publish, send, schedule, create or update each only on an explicit yes (the guard's prompt counts) (`@smith-guidance` External writes); every write below follows this
+- MUST draft the postmortem, the share message, meeting invitations, runbook or wiki edits and action-item tickets (including ticket updates and transitions), show them, and publish, send, schedule, create or update each only on an explicit yes (`@smith-guidance` External writes); every write below follows this
 - MUST maintain blameless culture - focus on systems, processes, and contributing factors, not individual fault
 - MUST be conducted within 48-72 hours of incident resolution
 - MUST invite all key participants (incident commander, responders, affected teams) — proceed at the scheduled time with the available core group, and collect input from anyone who couldn't attend asynchronously; don't let one person's unavailability stall the 48-72 hour window
