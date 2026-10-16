@@ -16,6 +16,21 @@ export function isGenuineNewUserTurn(event) {
   return !hasBlockType(content, "tool_result");
 }
 
+export function userTurnText(event) {
+  const content = event.message && event.message.content;
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block && block.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+}
+
+export function isLocalCommandEcho(text) {
+  return text.startsWith("<local-command-stdout>") || text.startsWith("<command-name>");
+}
+
 export async function* readTranscriptEvents(transcriptPath) {
   const lines = createInterface({
     input: createReadStream(transcriptPath, { encoding: "utf-8" }),

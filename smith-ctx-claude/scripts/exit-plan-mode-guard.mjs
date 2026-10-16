@@ -1,20 +1,17 @@
 #!/usr/bin/env node
 import { writeSync } from "node:fs";
-import { spawnSync } from "node:child_process";
-import { tmpdir } from "node:os";
 import { readHookInput, blockWithError } from "../../smith-git/scripts/lib/hook-utils.mjs";
 import {
   hasBlockType,
   isGenuineNewUserTurn,
+  isLocalCommandEcho,
   readTranscriptTurns,
   toolUseNames,
+  userTurnText,
 } from "../../smith-git/scripts/lib/transcript-turns.mjs";
+import { classify, isClassifierReentry } from "./lib/approval-classifier.mjs";
 
 const MIN_ELABORATION_CHARS = 80;
-const CLASSIFIER_BIN = process.env.SMITH_APPROVAL_CLASSIFIER_BIN || "claude";
-const CLASSIFIER_MODEL = process.env.SMITH_APPROVAL_CLASSIFIER_MODEL || "haiku";
-const CLASSIFIER_TIMEOUT_MS = Number(process.env.SMITH_APPROVAL_CLASSIFIER_TIMEOUT_MS) || 30000;
-const CLASSIFIER_REENTRY_ENV = "SMITH_APPROVAL_CLASSIFIER";
 const CLASSIFIER_SYSTEM_PROMPT = [
   "You classify one message from a software engineering chat session.",
   "The assistant has just presented a plan and is about to submit it for approval.",
@@ -37,21 +34,6 @@ function hasSubstantialText(content) {
     }
   }
   return total >= MIN_ELABORATION_CHARS;
-}
-
-function userTurnText(event) {
-  const content = event.message && event.message.content;
-  if (typeof content === "string") return content.trim();
-  if (!Array.isArray(content)) return "";
-  return content
-    .filter((block) => block && block.type === "text" && typeof block.text === "string")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
-}
-
-function isLocalCommandEcho(text) {
-  return text.startsWith("<local-command-stdout>") || text.startsWith("<command-name>");
 }
 
 function isCurrentExitPlanModeCall(content, currentToolUseId) {
@@ -108,49 +90,14 @@ async function scanTranscript(transcriptPath, currentToolUseId) {
 }
 
 function classifiedAsApproval(message) {
-  const result = spawnSync(
-    CLASSIFIER_BIN,
-    [
-      "-p",
-      "--model",
-      CLASSIFIER_MODEL,
-      "--system-prompt",
-      CLASSIFIER_SYSTEM_PROMPT,
-      "--tools",
-      "",
-      "--strict-mcp-config",
-      "--mcp-config",
-      '{"mcpServers":{}}',
-      "--setting-sources",
-      "",
-    ],
-    {
-      input: message,
-      encoding: "utf8",
-      cwd: tmpdir(),
-      timeout: CLASSIFIER_TIMEOUT_MS,
-      env: { ...process.env, [CLASSIFIER_REENTRY_ENV]: "1" },
-    },
-  );
-  if (result.error || result.status !== 0 || typeof result.stdout !== "string") {
-    const reason = (result.error && result.error.message) || `exit ${result.status}`;
-    const stderr = (result.stderr || "").trim();
-    warnClassifierFallback("unavailable", stderr ? `${reason}: ${stderr.slice(0, 300)}` : reason);
-    return false;
-  }
-  const verdict = result.stdout.trim().toLowerCase();
-  if (verdict !== "approval" && verdict !== "elaboration") {
-    warnClassifierFallback("returned unexpected output", JSON.stringify(verdict.slice(0, 100)));
-  }
+  const verdict = classify({
+    hookName: "exit-plan-mode-guard",
+    fallback: "the elaboration requirement",
+    systemPrompt: CLASSIFIER_SYSTEM_PROMPT,
+    input: message,
+    labels: ["approval", "elaboration"],
+  });
   return verdict === "approval";
-}
-
-function warnClassifierFallback(cause, detail) {
-  writeSync(
-    2,
-    `exit-plan-mode-guard: approval classifier ${cause}, ` +
-      `falling back to the elaboration requirement: ${detail}\n`,
-  );
 }
 
 function blockAndExit() {
@@ -168,7 +115,7 @@ function blockAndExit() {
 }
 
 async function main() {
-  if (process.env[CLASSIFIER_REENTRY_ENV] === "1") return;
+  if (isClassifierReentry()) return;
 
   const input = readHookInput();
   if (!input || typeof input !== "object") return;
