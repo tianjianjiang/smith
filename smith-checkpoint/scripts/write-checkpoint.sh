@@ -11,6 +11,15 @@ BM_FOLDER=""
 RELOCATED_MOVED=0
 RELOCATED_REMOVED=0
 RELOCATED_RENAMED=0
+AUDIT_STATUS=""
+SERENA_ENTRIES=""
+BM_ENTRIES=""
+SERENA_BACKUP=""
+SERENA_PRIOR=""
+BM_BACKUP=""
+BM_WRITE_RESULT=""
+readonly BACKUPS_KEPT=5
+readonly ENTRY_HEADING_PATTERN='^## [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}$'
 
 extract_arg() {
     local key="$1" arg
@@ -436,14 +445,194 @@ read_serena_memory() {
     return 1
 }
 
+count_entries() {
+    grep -cE "$ENTRY_HEADING_PATTERN" <<<"$1" || true
+}
+
+first_entry_heading() {
+    grep -m1 -E "$ENTRY_HEADING_PATTERN" <<<"$1" || true
+}
+
+verify_readback() {
+    local backend="$1" timestamp="$2" prior="$3" stored="$4"
+    local expected actual top
+    expected=$(( $(count_entries "$prior") + 1 ))
+    actual=$(count_entries "$stored")
+    top=$(first_entry_heading "$stored")
+    if [[ "$top" != "## ${timestamp}" ]]; then
+        echo "Error: ${backend} readback: newest entry is '${top:-none}', expected '## ${timestamp}'" >&2
+        return 1
+    fi
+    if (( actual != expected )); then
+        echo "Error: ${backend} readback: ${actual} entries stored, expected ${expected} (prior entries lost or duplicated)" >&2
+        return 1
+    fi
+    printf '%s' "$actual"
+}
+
+without_leading_newlines() {
+    local text="$1"
+    while [[ "$text" == $'\n'* ]]; do
+        text="${text#$'\n'}"
+    done
+    printf '%s' "$text"
+}
+
+same_text() {
+    [[ "$(without_leading_newlines "$1")" == "$(without_leading_newlines "$2")" ]]
+}
+
+verify_exact_readback() {
+    local backend="$1" document="$2" stored="$3"
+    same_text "$stored" "$document" && return 0
+    echo "Error: ${backend} readback: the stored document differs from what was written" >&2
+    return 1
+}
+
+backup_directory() {
+    printf '%s/checkpoint-backups/%s' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "$LABEL"
+}
+
+prune_backups() {
+    local directory="$1" backend="$2" keep="$3" stale_file
+    find "$directory" -maxdepth 1 -type f -name "*-${backend}.md" \
+        | sort -r \
+        | tail -n +$((BACKUPS_KEPT + 1)) \
+        | while IFS= read -r stale_file; do
+            [[ "$stale_file" == "$keep" ]] && continue
+            rm -f "$stale_file" || echo "Warning: could not prune old backup ${stale_file}" >&2
+        done
+}
+
+backup_prior() {
+    local backend="$1" prior="$2"
+    local directory backup_file
+    [[ -n "$prior" ]] || return 0
+    directory=$(backup_directory)
+    backup_file="${directory}/$(date -u +%Y%m%dT%H%M%SZ)-$$-${backend}.md"
+    if ! mkdir -p "$directory" || ! printf '%s' "$prior" > "$backup_file"; then
+        echo "Error: could not back up the ${backend} document before overwriting it: ${backup_file}; nothing was written to ${backend}" >&2
+        return 1
+    fi
+    prune_backups "$directory" "$backend" "$backup_file"
+    if [[ ! -f "$backup_file" ]]; then
+        echo "Error: the ${backend} backup vanished after pruning: ${backup_file}; nothing was written to ${backend}" >&2
+        return 1
+    fi
+    printf '%s' "$backup_file"
+}
+
+protect_backup() {
+    local backup_file="$1" protected="${1%.md}-restore-failed.md"
+    if mv "$backup_file" "$protected" 2>/dev/null; then
+        printf '%s' "$protected"
+    else
+        echo "Warning: could not rename ${backup_file} out of pruning; copy it somewhere safe before the next checkpoint under this label" >&2
+        printf '%s' "$backup_file"
+    fi
+}
+
+report_restore() {
+    local backend="$1" backup_file="$2" prior="$3" restored="$4" written="$5"
+    if [[ -z "$backup_file" ]]; then
+        if (( written )) && [[ -z "$restored" ]]; then
+            echo "Error: ${backend} held no prior document, so the one this checkpoint created was removed; this checkpoint is not in ${backend}" >&2
+        else
+            echo "Error: ${backend} held no prior document and the removal of the one this checkpoint may have created could not be confirmed; check ${backend} for this checkpoint's entry" >&2
+        fi
+    elif (( written )) && same_text "$restored" "$prior"; then
+        echo "Error: ${backend} restored from ${backup_file}; this checkpoint is not in ${backend}" >&2
+    else
+        echo "Error: ${backend} restore failed; its prior document is preserved at $(protect_backup "$backup_file")" >&2
+    fi
+}
+
+restore_serena() {
+    local serena_project="$1" backup_file="$2" prior="$3" restored="" written=0
+    if [[ -n "$backup_file" ]]; then
+        serena_memories write "${LABEL}" ${serena_project:+"$serena_project"} --content "${prior}" >&2 && written=1
+    else
+        serena_memories delete "${LABEL}" ${serena_project:+"$serena_project"} >&2 && written=1
+    fi
+    restored=$(read_serena_memory "$serena_project") || written=0
+    report_restore Serena "$backup_file" "$prior" "$restored" "$written"
+}
+
 write_to_serena() {
-    local entry="$1"
-    local serena_project="$2"
+    local entry="$1" serena_project="$2" timestamp="$3"
+    local document stored
     echo "Writing to Serena: ${LABEL}" >&2
-    local existing document
-    existing=$(read_serena_memory "$serena_project") || return 1
-    document=$(build_merged_document "$entry" "$existing")
-    serena_memories write "${LABEL}" ${serena_project:+"$serena_project"} --content "${document}" >&2
+    SERENA_PRIOR=$(read_serena_memory "$serena_project") || return 1
+    SERENA_BACKUP=$(backup_prior serena "$SERENA_PRIOR") || return 1
+    document=$(build_merged_document "$entry" "$SERENA_PRIOR")
+    if serena_memories write "${LABEL}" ${serena_project:+"$serena_project"} --content "${document}" >&2 \
+        && stored=$(read_serena_memory "$serena_project") \
+        && SERENA_ENTRIES=$(verify_readback Serena "$timestamp" "$SERENA_PRIOR" "$stored") \
+        && verify_exact_readback Serena "$document" "$stored"; then
+        return 0
+    fi
+    restore_serena "$serena_project" "$SERENA_BACKUP" "$SERENA_PRIOR"
+    return 1
+}
+
+restore_basic_memory() {
+    local title="$1" folder="$2" bm_project="$3" backup_file="$4" prior="$5" permalink="$6"
+    local restored="" written=0
+    if [[ -n "$backup_file" ]]; then
+        write_basic_memory_document "$title" "$folder" "$bm_project" "$prior" >/dev/null && written=1
+        restored=$(read_basic_memory_content "$title" "$bm_project") || written=0
+    elif [[ -z "$permalink" ]]; then
+        echo "Error: Basic-Memory held no prior document and returned no permalink for this write, so nothing was deleted (deleting by title could hit a same-titled note elsewhere); check Basic-Memory for this checkpoint's entry" >&2
+        return 0
+    else
+        basic_memory_tool delete-note "$permalink" ${bm_project:+--project "$bm_project"} >&2 && written=1
+        restored=$(read_basic_memory_content "$permalink" "$bm_project") || written=0
+        restored+=$(read_basic_memory_content "$title" "$bm_project") || written=0
+    fi
+    report_restore Basic-Memory "$backup_file" "$prior" "$restored" "$written"
+}
+
+permalink_of() {
+    jq -r '.permalink // empty' <<<"$1" 2>/dev/null || true
+}
+
+write_and_verify_basic_memory() {
+    local entry="$1" title="$2" prior="$3" folder="$4" bm_project="$5" timestamp="$6"
+    local result="" document stored
+    BM_BACKUP=$(backup_prior basic-memory "$prior") || return 1
+    document=$(build_merged_document "$entry" "$prior")
+    if result=$(write_basic_memory_document "$title" "$folder" "$bm_project" "$document") \
+        && stored=$(read_basic_memory_content "$title" "$bm_project") \
+        && BM_ENTRIES=$(verify_readback Basic-Memory "$timestamp" "$prior" "$stored") \
+        && verify_exact_readback Basic-Memory "$document" "$stored"; then
+        BM_WRITE_RESULT="$result"
+        return 0
+    fi
+    restore_basic_memory "$title" "$folder" "$bm_project" "$BM_BACKUP" "$prior" "$(permalink_of "$result")"
+    return 1
+}
+
+run_audit() {
+    local body_path="$1" plan_path="$2"
+    local audit_script skip roots
+    [[ -n "$body_path" ]] || { AUDIT_STATUS="not run (no body)"; return 0; }
+    skip=$(extract_arg audit || true)
+    if [[ "$skip" == "skip" ]]; then
+        echo "Warning: audit skipped by audit=skip" >&2
+        AUDIT_STATUS="skipped by audit=skip"
+        return 0
+    fi
+    audit_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/audit-checkpoint.sh"
+    if [[ ! -x "$audit_script" ]]; then
+        echo "Error: audit script missing or not executable: ${audit_script}; nothing was written" >&2
+        exit 1
+    fi
+    roots=$(extract_arg roots || true)
+    if ! "$audit_script" "$body_path" ${plan_path:+"plan=$plan_path"} ${roots:+"roots=$roots"} >&2; then
+        echo "Error: checkpoint audit failed; nothing was written. Fix each FAIL above and rerun" >&2
+        exit 1
+    fi
+    AUDIT_STATUS="passed"
 }
 
 read_basic_memory_note_json() {
@@ -467,6 +656,12 @@ extract_basic_memory_content() {
         return 1
     fi
     printf '%s' "$content"
+}
+
+read_basic_memory_content() {
+    local title="$1" bm_project="$2" read_result
+    read_result=$(read_basic_memory_note_json "$title" "$bm_project") || return 1
+    extract_basic_memory_content "$read_result" "$title"
 }
 
 extract_basic_memory_file_path() {
@@ -493,14 +688,11 @@ resolve_basic_memory_folder() {
     printf '%s' "${existing_folder:-projects/${project}}"
 }
 
-write_to_basic_memory() {
-    local entry="$1"
-    local title="$2"
-    local existing="$3"
-    local folder="$4"
-    local bm_project="$5"
-    local document
-    document=$(build_merged_document "$entry" "$existing")
+write_basic_memory_document() {
+    local title="$1"
+    local folder="$2"
+    local bm_project="$3"
+    local document="$4"
     basic_memory_tool write-note \
         --title "${title}" \
         --folder "${folder}" \
@@ -538,6 +730,9 @@ EOF
     fi
     relocation=$(relocation_summary)
     [[ -n "$relocation" ]] && echo "- Relocated worktree memories: ${relocation}"
+    echo "- Audit: ${AUDIT_STATUS}"
+    echo "- Verified: serena ${SERENA_ENTRIES} entries, basic-memory ${BM_ENTRIES} entries"
+    [[ -n "${SERENA_BACKUP}${BM_BACKUP}" ]] && echo "- Prior documents backed up: $(backup_directory) (last ${BACKUPS_KEPT} per backend kept)"
     [[ -n "$RELOAD_FLAG_PATH" ]] && echo "- Reload flag: ${RELOAD_FLAG_PATH}"
 
     case "$reload_status" in
@@ -568,7 +763,9 @@ EOF
 }
 
 fail_basic_memory_write() {
-    echo "Error: Basic-Memory write failed" >&2
+    local serena_project="$1"
+    echo "Error: Basic-Memory write failed; rolling Serena back so both backends hold the same entries" >&2
+    restore_serena "$serena_project" "$SERENA_BACKUP" "$SERENA_PRIOR"
     exit 1
 }
 
@@ -606,6 +803,7 @@ main() {
     serena_project=$(resolve_serena_project "$primary_checkout") || exit 1
     warn_serena_divergence "$serena_project"
     serena_location=$(serena_memory_location "$serena_project")
+    run_audit "$body_path" "$plan_path"
     relocate_worktree_memories "$worktree" "$primary_checkout"
     local timestamp=$(generate_timestamp)
     local entry
@@ -615,17 +813,18 @@ main() {
     }
     local bm_title=$(transform_label_to_basic_memory_title)
 
-    if ! write_to_serena "$entry" "$serena_project"; then
+    if ! write_to_serena "$entry" "$serena_project" "$timestamp"; then
         echo "Error: Serena write failed" >&2
         exit 1
     fi
 
     echo "Writing to Basic-Memory: ${bm_title}" >&2
     local bm_read_result bm_existing bm_result
-    bm_read_result=$(read_basic_memory_note_json "$bm_title" "$bm_project") || fail_basic_memory_write
-    bm_existing=$(extract_basic_memory_content "$bm_read_result" "$bm_title") || fail_basic_memory_write
+    bm_read_result=$(read_basic_memory_note_json "$bm_title" "$bm_project") || fail_basic_memory_write "$serena_project"
+    bm_existing=$(extract_basic_memory_content "$bm_read_result" "$bm_title") || fail_basic_memory_write "$serena_project"
     BM_FOLDER=$(resolve_basic_memory_folder "$bm_read_result" "$project")
-    bm_result=$(write_to_basic_memory "$entry" "$bm_title" "$bm_existing" "$BM_FOLDER" "$bm_project") || fail_basic_memory_write
+    write_and_verify_basic_memory "$entry" "$bm_title" "$bm_existing" "$BM_FOLDER" "$bm_project" "$timestamp" || fail_basic_memory_write "$serena_project"
+    bm_result="$BM_WRITE_RESULT"
 
     local permalink
     if ! permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>&1); then
