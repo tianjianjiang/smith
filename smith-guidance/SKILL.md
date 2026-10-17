@@ -37,10 +37,11 @@ description: Core agent steering. Always active. Use for every task, especially 
 - Use recorded identifiers (labels, filenames, ticket keys), never a coined
   synonym or relative term ("the corrected one"); if none exists, define
   one once and use only that
-- Before explaining a surprising result or reporting something absent,
-  clean or done, load `@smith-validation/SKILL.md`: read the recorded
-  decisions first and report a broken one as a deviation, not a discovery;
-  confirm the check ran, since a missing signal never passes
+- Before explaining a surprising result, read the recorded decisions on
+  the topic; if you broke one, report "I deviated from the recorded
+  protocol", never "we discovered". Before reporting something absent,
+  clean or done, confirm the check ran: a missing signal never passes.
+  For both, load `@smith-validation/SKILL.md` first
 
 ## Safety Rules
 
