@@ -56,7 +56,10 @@ checkpoint; a compact-but-incomplete one is not.
    - Memory anchors: permalink/name only (e.g., `Serena: memory_name`)
    - NO full content quotes or verbose explanations
 2. **Minimal prose**:
-   - Decisions: one-line statement + consequence (if non-obvious)
+   - Decisions: the statement plus a pointer to the record that holds its
+     full conditions (@smith-guidance/SKILL.md "A decision carries its full
+     conditions"); when this checkpoint is the only record, write the
+     conditions here (scope, grounds, rejected alternative)
    - Status: checklist format (markdown checkboxes)
    - Next steps: action verb + brief context
 3. **Single-source content**:
