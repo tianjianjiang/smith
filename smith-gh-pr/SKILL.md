@@ -80,7 +80,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
      (mechanics); any other reply, or any reply outside such a ship or review,
      is payload: draft, show, post on an explicit yes
    - **Human reviewer, or a human joined the bot thread**: draft, show, post
-     only on an explicit yes (the guard's prompt counts), one reply per turn (`@smith-guidance` External writes)
+     only on an explicit yes, one reply per turn (`@smith-guidance` External writes)
 7. **Resolve only automated reviewers' threads** after addressing, inside a
    ship or review the user invoked or on the user's explicit instruction to
    resolve them — don't leave
@@ -94,7 +94,7 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
   Review Findings" below) so the author commits it in one click instead of
   re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
-- Reply with the commit SHA. In an automated reviewer's thread that no human joined, inside a ship or review the user invoked, reply "fixed in «SHA»" or a one-line decline and then resolve the thread with `gh pr-review threads resolve`; any other reply is payload and needs a yes. In a human reviewer's thread, show the reply and post it on an explicit yes (the guard's prompt counts), and leave the thread open for the reviewer to resolve (`@smith-guidance` External writes)
+- Reply with the commit SHA. In an automated reviewer's thread that no human joined, inside a ship or review the user invoked, reply "fixed in «SHA»" or a one-line decline and then resolve the thread with `gh pr-review threads resolve`; any other reply is payload and needs a yes. In a human reviewer's thread, show the reply and post it on an explicit yes, and leave the thread open for the reviewer to resolve (`@smith-guidance` External writes)
 - Proactive audit: search codebase for similar issues before committing
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is payload — show it and post on a yes (`@smith-guidance` Safety Rules)
 - **Attribution**: When Claude Code generates or posts a comment, end it with the `Assisted-by:` line (see `@smith-style`); that line does not turn a "fixed in «SHA»" or one-line-decline reply into payload. No "on behalf of" line — the account it posts under already names that human. A handle in a body names the person the comment addresses, never its poster.

@@ -87,7 +87,7 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    a receipt for a review that did not converge is a false report.
 
 **Delivery when a PR exists.** Post findings to the PR one per turn, each
-shown for an explicit yes (the guard's prompt counts) before posting (`@smith-guidance`
+shown for an explicit yes before posting (`@smith-guidance`
 External writes),
 per `@smith-gh-pr`
 "Posting Review Findings" (inline comments anchored to lines, a committable

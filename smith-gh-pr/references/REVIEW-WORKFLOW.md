@@ -35,7 +35,7 @@ in-band (see `@smith-review`).
   payload. Review comments are a conversation, not a list, so they
   stay **one per turn** (`@smith-guidance` Safety Rules). Do not use
   `--comment`: run the review without it and post each finding one at a
-  time, after its own explicit yes (the guard's prompt counts). Asking for a review is not a yes for
+  time, after its own explicit yes. Asking for a review is not a yes for
   words that did not exist when it was asked.
 - Manual single inline comment via REST (when hand-authoring one finding):
 
@@ -87,8 +87,8 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - About to publish payload — a commit message, review finding, PR
   description, or approval body (`@smith-guidance` Safety Rules). For a
   write `external-write-guard` matches (a review finding, an approval
-  body), show it and call the tool in the same turn instead: its prompt is
-  the ask. Inside a
+  body), show it, wait for the user's reply, and call the tool only on a
+  yes: the guard denies a call made before that reply. Inside a
   ship or review the user invoked, a reply of "fixed in «SHA»" or a one-line
   decline in an automated reviewer's own thread that no human has joined is
   mechanics and does not trigger this.
@@ -125,7 +125,7 @@ the loop WITHOUT convergence (escalated to the user, not merged).
   channels, each counted per developer, so one refusing says nothing about
   another. Re-trigger the App with a `@coderabbitai review` comment as the
   rolling window frees capacity; a PR comment is payload: show it and post
-  on an explicit yes (the guard's prompt counts) (`@smith-guidance` External writes).
+  on an explicit yes (`@smith-guidance` External writes).
 - The App's fast reply (currently "Action performed — Review finished") is an
   acknowledgement, not a result: it posts within seconds and reads the same
   whether the review ran, was skipped, or was blocked (a blocked one admits it
@@ -153,8 +153,8 @@ comment wording are point-in-time; the review-event test is not.
   `@smith-ralph`) — is payload: draft it, show it, and wait for an explicit
   yes (one item per turn, or one list whose every draft was shown; review
   findings are never a list). For a write `external-write-guard` matches,
-  show it and call the tool in the same turn: approving its prompt is that
-  yes (`@smith-ctx-claude` External Writes). Inside a ship or review the
+  the guard denies the call until the payload was shown and the user
+  replied (`@smith-ctx-claude` External Writes). Inside a ship or review the
   user invoked, a
   reply of "fixed in «SHA»" or a one-line decline in an automated reviewer's
   own thread is mechanics — unless a human has joined that thread, which
@@ -175,7 +175,7 @@ comment wording are point-in-time; the review-event test is not.
 
 - `gh pr review <n> -R <owner/repo> --approve --body-file <f>` — an external
   write under the user's account, and an approval body is payload: draft it,
-  show it, and submit only on an explicit yes (the guard's prompt counts)
+  show it, and submit only on an explicit yes
   (`@smith-guidance` Safety Rules).
   End the body with the `Assisted-by:` line (`@smith-style`).
 - It **returns silently on success** (no output is normal, not a failure).
@@ -280,9 +280,8 @@ above for decide-vs-ask criteria and convergence rules):
    review the user invoked, a reply in the bot's own thread limited to
    "fixed in «SHA»" or a one-line decline is mechanics (`@smith-guidance`
    Safety Rules); any other reply is payload and needs a yes.
-4. Low-confidence: draft the reply, show it, and call the reply in the same
-   turn; approving the guard's prompt is the yes (`@smith-ctx-claude`
-   External Writes)
+4. Low-confidence: draft the reply, show it, wait for the user's reply,
+   and post it only on a yes (`@smith-ctx-claude` External Writes)
 5. Re-check after CI passes
 
 **Proactive self-review** — before reviewer sees changes:
