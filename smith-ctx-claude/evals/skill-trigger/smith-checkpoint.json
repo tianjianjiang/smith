@@ -10,7 +10,10 @@
     "Serena write succeeded but the note write to the other memory backend failed halfway. If I just rerun the save, will I get a duplicate entry? What's the safe way to retry?",
     "persist this session to memory but target the Serena project in ../platform-docs instead of this checkout. it printed a divergence warning last time",
     "The save aborted with 'jq: command not found' before touching either backend. What does the script need installed, and which project will the note go to once it runs?",
-    "After the last save and /clear, nothing was restored automatically in the new Claude Code session. Which hooks have to be registered for the reload to fire, and how do I resume by hand from the reload block?"
+    "After the last save and /clear, nothing was restored automatically in the new Claude Code session. Which hooks have to be registered for the reload to fire, and how do I resume by hand from the reload block?",
+    "We just agreed to keep the v1 orders endpoint alive until the mobile app ships 4.2. Record that decision in memory with its scope and the reason, so later sessions find it.",
+    "Save this as a risk item in memory: the nightly export can silently skip partitions when the source database lags. Include the failure modes, the current controls and what we don't know yet.",
+    "Write the follow-up queue we just agreed on into memory, numbered as we discussed, so the next session can pick the next item without asking me again."
   ],
   "should_not_trigger": [
     "Commit what we have as a WIP commit on this branch so nothing is lost, message 'wip: half-done pagination'.",
@@ -22,6 +25,8 @@
     "resume the investigation into the flaky uploader from last week: sweep the memories, recent commits and open pull requests and tell me where it stood",
     "Add a rule to CLAUDE.md so every session in this repo knows to run tests with `uv run pytest`.",
     "git stash my changes with a unique tag, switch to main to check something, then restore them by SHA",
-    "Our Postgres WAL checkpoints are causing latency spikes every five minutes. Tune checkpoint_timeout and max_wal_size in the config for the reporting database."
+    "Our Postgres WAL checkpoints are causing latency spikes every five minutes. Tune checkpoint_timeout and max_wal_size in the config for the reporting database.",
+    "Write an architecture decision record at docs/adr/0007-keep-v1-orders-endpoint.md for keeping the v1 orders endpoint until mobile 4.2 ships, in the same format as the other ADRs in that folder.",
+    "Open a ticket in our tracker for the risk that the nightly export skips partitions when the source database lags, and assign it to the data team."
   ]
 }
