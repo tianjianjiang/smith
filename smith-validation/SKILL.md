@@ -123,13 +123,16 @@ unconditional, not fired by suspicion.
   hook that scans the transcript for writes under volatile prefixes and lists
   them before exit would close it; until then, checkpoint early when
   artifacts accumulate.
-- **An empty search result is not evidence without a control.** Empty is
-  ambiguous between "absent" and "query broken"; the only discriminator is a
-  control query known to return hits through the same pipeline. A negative
-  reported without one is a claim about your query, not about the world.
-- **A queued decision carries its full payload**: the concrete proposal, why
-  it was raised, and what "yes" would change — recorded alongside. Can't
-  write those down → not ready to queue.
+- **A missing signal is never a passing one.** "No findings", an empty
+  result, a silent tool, a fast acknowledgement or a failed lookup may mean
+  the check never ran: confirm it ran, else record "not run", never "clean".
+  An empty search is ambiguous between "absent" and "query broken": run,
+  alongside it, a control query known to return hits through the same
+  pipeline. A negative reported without one is a claim about your query,
+  not about the world.
+- **A queued decision carries its full conditions**, as listed under "A
+  decision carries its full conditions" in @smith-guidance/SKILL.md.
+  Can't write those down → not ready to queue.
 - **Re-derive presented aggregates**: a count or "N open items" is a DERIVED
   value — re-run the enumeration against the primary source in the session
   that presents it; the cached value is only a checksum, and a mismatch is a
@@ -238,6 +241,8 @@ See `references/TECHNIQUES.md` for:
    is reported as deviation, not discovery
 7. Checkpoint written? Artifact census done; every "persisted" claim carries
    its same-turn listing
+8. Reporting something absent, clean or done? Confirm the check ran (a
+   control query for a search); else record "not run", never "clean"
 
 ## Claude Code Plugin Integration
 
