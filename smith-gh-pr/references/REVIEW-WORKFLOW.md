@@ -104,7 +104,7 @@ merge" here means that loop reported converged; a flip-flopping reviewer ends
 the loop WITHOUT convergence (escalated to the user, not merged).
 
 **CodeRabbit fails OPEN — absence of review is NOT a pass.** One instance of
-`@smith-guidance` "a missing signal is never a passing one":
+`@smith-validation` "a missing signal is never a passing one":
 - CodeRabbit silently skips review on exhausted credits / the per-plan hourly
   rate-limit: "Review limit reached". The cap is a ROLLING allowance that
   differs per plan and per channel, with its own open-source tier — read the

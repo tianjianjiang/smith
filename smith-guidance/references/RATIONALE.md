@@ -13,9 +13,16 @@ there; this file only explains them.
   discovery diminishing beyond that size:
   https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/
 
-## Elaborate before asking
+## A decision carries its full conditions
 
-The rule closes two rationalizations:
+Without its conditions a decision gets applied beyond its scope, two
+decisions that interact look compatible until they collide, and a
+question cannot be answered without reconstructing context the asker
+already had. The same holds for the record: a reader who sees only the
+recorded decision must be able to tell when it applies and when it stops
+applying.
+
+The rule also closes two rationalizations:
 
 - Asking "how should I handle the 62 «coined-term» cases?" when
   «coined-term» is a word you coined and never defined: the user must

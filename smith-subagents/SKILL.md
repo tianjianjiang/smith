@@ -159,8 +159,7 @@ checked is recorded as such and fails that check rather than passing quietly.
 - Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
   output alone does not reach me" — rather than chasing a round trip later.
 - Treat an idle notification as "ready to be asked", never as "clean".
-  Silence is a missing signal, not a passing one (`@smith-guidance` close
-  gaps).
+  Silence is a missing signal, not a passing one (`@smith-validation`).
 - The `summary` on an idle notification goes STALE — it echoes the agent's
   last delivered report, so it can show a verdict already fixed. Re-read the
   message; never trust the summary line.

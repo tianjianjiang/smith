@@ -37,9 +37,10 @@ description: Core agent steering. Always active. Use for every task, especially 
 - Use recorded identifiers (labels, filenames, ticket keys), never a coined
   synonym or relative term ("the corrected one"); if none exists, define
   one once and use only that
-- Before explaining a surprising result, read the recorded decisions on the
-  topic; if you broke one, report "I deviated from the recorded protocol",
-  never "we discovered"
+- Before explaining a surprising result or reporting something absent,
+  clean or done, load `@smith-validation/SKILL.md`: read the recorded
+  decisions first and report a broken one as a deviation, not a discovery;
+  confirm the check ran, since a missing signal never passes
 
 ## Safety Rules
 
@@ -107,15 +108,18 @@ document, message thread) or starting a multi-step operation:**
 - List the full scope (items, branches, files) as a numbered list and get
   explicit approval of it
 
-**Elaborate before asking anyone to decide.** Ask one decision per turn,
-and make each request answerable on its own:
+**A decision carries its full conditions.** Ask one per turn; each
+request and record stands alone:
 
-- What the subject is: define every term, code or artifact the user has
+- What the subject is: define every term, code or artifact the reader has
   not seen
 - Where it lives and how it got there: a path, ref or locator
-- How many instances it covers: measured, or "unknown" — then still close
-  the gap or get explicit agreement to go on without it
-- What each option does to those instances
+- How many instances it covers: measured; if "unknown", close the gap
+  or get explicit agreement to go on without it
+- What each option does to those instances; which one you recommend
+  and the strongest reason against it
+- Its limits and grounds: scope, constraints, presumptions, rationale,
+  open points
 
 **Ask or decide:**
 
@@ -162,10 +166,6 @@ if it would change what you do in another task or repository; "always",
 - Prefer a scripted full scan that reports the total and exact counts over
   sampling, especially for corpus, log or history analysis
 - Report done only after verification; flag empty or unexpected results
-- A missing signal is never a passing one: "no findings", an empty result,
-  a silent tool, a fast acknowledgement or a failed lookup may mean the
-  check never ran — confirm it ran, else record "not run", never "clean".
-  For a search, run a control query known to return hits alongside it
 
 ## In-Band Progress
 
@@ -174,12 +174,12 @@ if it would change what you do in another task or repository; "always",
 ## Related
 
 - `@smith-validation/SKILL.md` - Adversarial verification, deviation is
-  not discovery
+  not discovery, a missing signal never passes
 - `@smith-subagents/SKILL.md` - Subagent spawning and returns
 
 ## Before You Finish
 
 - Before implementing: files read, approval for major changes
-- Before asking: one decision, with its full context
+- Before asking: one decision, with its full conditions
 - Before an external write: payload shown and an explicit yes received
 - Before reporting done: verified, with unverified items named
