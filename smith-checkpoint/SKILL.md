@@ -26,6 +26,10 @@ Capture what would otherwise be lost across sessions. Arguments:
 
 Save the SAME facts to both backends, each in its own format; do not skip one.
 
+A durable record the user asks you to save (a risk item, a decision, a
+follow-up queue) goes into a /smith-checkpoint run, so both backends get
+the same facts without asking which.
+
 ## What to capture
 
 Durable only (not transient chatter): goals/decisions, file:line anchors,
