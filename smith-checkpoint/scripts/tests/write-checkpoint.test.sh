@@ -455,6 +455,42 @@ unset RELOAD_FLAG_LOG
 rm -rf "$TREE_WRITTEN"
 
 reset_logs
+TREE_SUPERSEDE="$SHIM/tree-supersede"
+make_fake_repo_root "$TREE_SUPERSEDE"
+install_reload_sibling "$TREE_SUPERSEDE" <<'EOF'
+#!/bin/sh
+flag="$SUPERSEDE_DIR/.pending-memory-restore-new-$$"
+printf '%s\n%s\n%s\n%s\n%s\n' "sess" "now" "$PWD" "$1" "$SUPERSEDE_KEY" > "$flag"
+echo "Wrote reload flag: $flag"
+exit 0
+EOF
+SUPERSEDE_DIR="$SHIM/supersede-plans"
+export SUPERSEDE_DIR SUPERSEDE_KEY
+seed_supersede_flags() {
+  rm -rf "$SUPERSEDE_DIR"; mkdir -p "$SUPERSEDE_DIR"
+  printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_supersede "$1" > "$SUPERSEDE_DIR/.pending-memory-restore-same"
+  printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_other "$1" > "$SUPERSEDE_DIR/.pending-memory-restore-otherlabel"
+  printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_supersede "key-other" > "$SUPERSEDE_DIR/.pending-memory-restore-othersession"
+  printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM/elsewhere" test_label_supersede "$1" > "$SUPERSEDE_DIR/.pending-memory-restore-otherdir"
+}
+SUPERSEDE_KEY="key-a"
+seed_supersede_flags "$SUPERSEDE_KEY"
+out=$(run_script_from_tree "$TREE_SUPERSEDE" test_label_supersede "plan=$PLAN" "body=$BODY") || fail "supersede: checkpoint must succeed"
+[ ! -e "$SUPERSEDE_DIR/.pending-memory-restore-same" ] || fail "supersede: an earlier flag with the same cwd, label and session key must be removed"
+for kept in otherlabel othersession otherdir; do
+  [ -f "$SUPERSEDE_DIR/.pending-memory-restore-$kept" ] || fail "supersede: the $kept flag must be kept"
+done
+[ "$(ls -A "$SUPERSEDE_DIR" | wc -l | tr -d ' ')" = 4 ] || fail "supersede: the new flag and the three other flags must remain: $(ls -A "$SUPERSEDE_DIR")"
+echo "$out" | grep -qF -- '- Superseded reload flags: 1 earlier flag(s)' || fail "supersede: the summary must report one superseded flag: $out"
+SUPERSEDE_KEY=""
+seed_supersede_flags "$SUPERSEDE_KEY"
+out=$(run_script_from_tree "$TREE_SUPERSEDE" test_label_supersede "plan=$PLAN" "body=$BODY") || fail "supersede-keyless: checkpoint must succeed"
+[ -f "$SUPERSEDE_DIR/.pending-memory-restore-same" ] || fail "supersede-keyless: a flag without a session key must supersede nothing"
+echo "$out" | grep -qF -- 'Superseded reload flags' && fail "supersede-keyless: nothing superseded must print no superseded line: $out"
+unset SUPERSEDE_DIR SUPERSEDE_KEY
+rm -rf "$TREE_SUPERSEDE" "$SHIM/supersede-plans"
+
+reset_logs
 TREE_FAILED="$SHIM/tree-failed"
 make_fake_repo_root "$TREE_FAILED"
 install_reload_sibling "$TREE_FAILED" <<'EOF'
