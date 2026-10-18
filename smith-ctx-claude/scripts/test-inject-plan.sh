@@ -3448,6 +3448,8 @@ printf '%s\n%s\n%s\n%s\n' "sess_99" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_99" "c
 printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000099-99098"
 OUTPUT=$(echo '{"cwd":"'"$REPO_99"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "99" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE (checkpoint: checkpoint-99)" && \
+   assert_contains "99" "$OUTPUT" "read it from one backend" && \
+   assert_not_contains "99" "$OUTPUT" "recent notes" && \
    assert_contains "99" "$OUTPUT" "malformed flag, no recorded path" && \
    assert_contains "99" "$OUTPUT" "are corrupt or truncated flag files"; then
     echo "  PASS"
@@ -3474,6 +3476,8 @@ OUTPUT=$(echo '{"cwd":"'"$REPO_100"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "100" "$OUTPUT" "2 checkpoints for this directory" && \
    assert_contains "100" "$OUTPUT" "n- checkpoint-100-a — 2026-" && \
    assert_contains "100" "$OUTPUT" "n- checkpoint-100-b — 2026-" && \
+   assert_contains "100" "$OUTPUT" "Then restore it: read it from one backend" && \
+   assert_not_contains "100" "$OUTPUT" "recent notes" && \
    assert_contains "100" "$OUTPUT" "are corrupt or truncated flag files"; then
     echo "  PASS"
     PASS=$((PASS + 1))

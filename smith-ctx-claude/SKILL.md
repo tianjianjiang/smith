@@ -61,14 +61,14 @@ cost.
 **Before `/clear`:**
 1. Update plan file with current progress (if active)
 2. Commit current work if the user has authorized commits, showing the detailed commit message for an explicit yes first (`@smith-guidance` External writes); otherwise list uncommitted files in the Reload block
-3. Save state to Serena memory with `write_memory()`
-4. AFTER all tool calls complete, output a self-contained **Reload with:** block (plan path, memory name, resume command) — canonical format + reachability annotation in `@smith-checkpoint/SKILL.md` "Reload after /clear"
+3. Run `/smith-checkpoint` (`@smith-checkpoint/SKILL.md`)
+4. AFTER all tool calls complete, output the Reload block it printed, unchanged
 
 **Preserved**: Project files, CLAUDE.md, plan files. **Lost**: conversation history.
 
 **After `/clear`:**
 1. Plan auto-reloads with todo reconstruction ONLY if a flag file exists (from enforce-clear or on-plan-exit); state file alone = informational, not auto-resume
-2. If Serena MCP available: list_memories(), read relevant memories
+2. Follow the memory-restore directive the SessionStart:clear hook injects; without one, restore the checkpoint the Reload block names from one backend
 3. Re-read relevant files as needed
 4. No memory saved? Recover intent from the JSONL transcript — see `smith-ctx-claude/REFERENCE.md` "JSONL State Recall"
 

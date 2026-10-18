@@ -29,6 +29,10 @@ echo "$out" | grep -q 'my_checkpoint_label' || fail "expected checkpoint label i
 echo "$out" | grep -q 'pending-memory-restore-20260904T000000-1' || fail "expected flag path in reminder, got: $out"
 pass "reminds when a flag matches this session's own key"
 
+echo "$out" | grep -q 'read it from one backend' || fail "expected the one-backend restore instruction, got: $out"
+echo "$out" | grep -q 'recent notes' && fail "must not ask to read both backends, got: $out"
+pass "asks to restore from one backend only"
+
 [ -f "$TMP/plans/.pending-memory-restore-20260904T000000-1" ] || fail "flag must NOT be deleted"
 pass "does not consume the flag"
 
