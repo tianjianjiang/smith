@@ -58,11 +58,13 @@ Use Serena `replace_content` over Kiro `strReplace` when Serena is available. Us
 5. Run `read_memory` for relevant project context
 
 **During work:**
-- Use `write_memory` for important discoveries
+- Record an important discovery in the next checkpoint's body
+  (`@smith-checkpoint/SKILL.md`)
 - Use semantic tools (`find_symbol`, `replace_content`) over text-based
 
 **Before compaction (70% context):**
-- Save session state with `write_memory`
+- Save session state through `@smith-checkpoint/SKILL.md`; write its
+  body file with a file tool or a Python script, not a heredoc
 
 ## AGENTS.md Integration
 
