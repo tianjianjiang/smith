@@ -65,6 +65,6 @@ done
 
 _oc_msg="A /smith-checkpoint reload flag for THIS session is still pending"
 [[ -n "$_oc_label" ]] && _oc_msg="${_oc_msg} (\"${_oc_label}\")"
-_oc_msg="${_oc_msg}. It has not been consumed -- restore it now (Serena list_memories()/read_memory(), Basic-Memory recent notes) if you have not already, or leave it for /clear to offer. Flag: ${_oc_found}"
+_oc_msg="${_oc_msg}. It has not been consumed -- restore it now (${CHECKPOINT_READ_ONE_BACKEND}) if you have not already, or leave it for /clear to offer. Flag: ${_oc_found}"
 
 json_session_start_output "$_oc_msg"

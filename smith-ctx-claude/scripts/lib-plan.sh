@@ -25,6 +25,7 @@ fi
 PLANS_DIR="$CTX_FLAGS_DIR"
 RALPH_STATE_FILENAME="ralph-loop.local.md"
 ORCH_STATE_PREFIX=".ralph-orchestrator-"
+CHECKPOINT_READ_ONE_BACKEND="read it from one backend, since both hold the same facts: Serena read_memory() when available, else the Basic-Memory note of the same title; open the other only if the first is missing or fails"
 
 # Durable scope for a directory: the repository's MAIN working tree.
 #
