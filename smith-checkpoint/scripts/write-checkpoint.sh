@@ -7,6 +7,7 @@ readonly -a EXTRA_ARGS=("$@")
 
 RELOAD_STATUS=""
 RELOAD_FLAG_PATH=""
+RELOAD_SUPERSEDED=0
 BM_FOLDER=""
 RELOCATED_MOVED=0
 RELOCATED_REMOVED=0
@@ -66,10 +67,24 @@ write_reload_flag() {
     if output=$("$reload_script" "$LABEL" 2>&1); then
         RELOAD_FLAG_PATH=$(sed -n 's/^Wrote reload flag: //p' <<<"$output" | tail -1)
         RELOAD_STATUS="written"
+        supersede_earlier_reload_flags
     else
         echo "Warning: reload-flag write failed: ${output}" >&2
         RELOAD_STATUS="failed"
     fi
+    return 0
+}
+
+supersede_earlier_reload_flags() {
+    [[ -n "$RELOAD_FLAG_PATH" && -f "$RELOAD_FLAG_PATH" && ! -L "$RELOAD_FLAG_PATH" ]] || return 0
+    [[ -n "$(sed -n '5p' "$RELOAD_FLAG_PATH" 2>/dev/null)" ]] || return 0
+    local identity old_flag
+    identity=$(sed -n '3,5p' "$RELOAD_FLAG_PATH" 2>/dev/null) || return 0
+    for old_flag in "$(dirname "$RELOAD_FLAG_PATH")"/.pending-memory-restore-*; do
+        [[ "$old_flag" != "$RELOAD_FLAG_PATH" && -f "$old_flag" && ! -L "$old_flag" ]] || continue
+        [[ "$(sed -n '3,5p' "$old_flag" 2>/dev/null)" == "$identity" ]] || continue
+        rm -f "$old_flag" 2>/dev/null && RELOAD_SUPERSEDED=$((RELOAD_SUPERSEDED + 1))
+    done
     return 0
 }
 
@@ -734,6 +749,7 @@ EOF
     echo "- Verified: serena ${SERENA_ENTRIES} entries, basic-memory ${BM_ENTRIES} entries"
     [[ -n "${SERENA_BACKUP}${BM_BACKUP}" ]] && echo "- Prior documents backed up: $(backup_directory) (last ${BACKUPS_KEPT} per backend kept)"
     [[ -n "$RELOAD_FLAG_PATH" ]] && echo "- Reload flag: ${RELOAD_FLAG_PATH}"
+    [[ "$RELOAD_SUPERSEDED" -gt 0 ]] && echo "- Superseded reload flags: ${RELOAD_SUPERSEDED} earlier flag(s) of this session for this directory and label"
 
     case "$reload_status" in
         written)

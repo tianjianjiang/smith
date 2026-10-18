@@ -354,6 +354,11 @@ When invoked via `/smith-checkpoint` (no arguments required):
      error is reported as a warning. Neither case fails the checkpoint —
      it only means auto-reload is unavailable for this checkpoint, not that
      the checkpoint itself failed
+   - After that flag is written, deletes this session's earlier pending
+     flags for the same directory and label (lines 3-5 of the flag equal),
+     so repeated checkpoints before one `/clear` leave one pointer; a flag
+     without a session key supersedes nothing. Only the pointer goes; the
+     earlier entries stay in both backends
    - Outputs success to stderr, Reload block to stdout. The Reload block
      lists: the Serena memory file by absolute path (when a Serena project
      was resolved; outside git without `serena=`, the label and "Serena
@@ -361,7 +366,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
      with its project and folder, the plan, the worktree line (with the
      `EnterWorktree` step) when in a worktree, the relocation counts when
      any memory was moved, removed or renamed, the reload flag path, the
-     audit status, the verified entry count of each backend, and the
+     superseded flag count when any was removed, the audit status, the verified entry count of each backend, and the
      backup directory when a backup was made
 
 9. If script exits non-zero, report stderr error; the checkpoint is not
