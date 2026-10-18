@@ -173,6 +173,15 @@ bug. Guard both ends: `@smith-tests/SKILL.md` (never mock the branch/unit under
 test; reproduce the bug as a failing test first) and `@smith-subagents/SKILL.md`
 (audit the execution path of a delegated diff, not just its style).
 
+**Fix where the bad state is made, not where it is read.** When a
+consumer receives bad, duplicated or inconsistent input, carry the step 1
+trace back to the producer that created it, ask why it did, and put the
+step 3 fix there. Teaching the consumer to tolerate the input gives it
+decisions it never had to make, and each one is a new way to fail.
+Tolerate in the consumer only when the producer is outside your control,
+and say so. A sign you are at the wrong end: every review round finds a
+new edge case in your fix.
+
 ## Anti-Workaround Policy
 
 - Only add `# noqa`, `// NOLINT`, or similar inline suppressions when the
