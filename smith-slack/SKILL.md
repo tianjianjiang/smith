@@ -22,7 +22,8 @@ every revision — a single miss is a repeat-correction.**
 
 1. **Draft, never direct-send** — use `slack_send_message_draft` in place of
    `slack_send_message`. Route all communication through channels; drafting or
-   sending a DM is off-limits (company policy).
+   sending a DM is off-limits (company policy). Only one draft per channel: a
+   repeat call may return success without replacing it, or an error.
 2. **Attribution footnote is the LAST line** — every message body ends with the
    attribution footnote, which includes the `Assisted-by:` line (format in
    `@smith-style`; team-specific footnote parts stay in project memory). This is
@@ -42,10 +43,15 @@ every revision — a single miss is a repeat-correction.**
 6. **Outbound text stays clean** — keep internal metadata and scratch
    reasoning out of the message body.
 
+**After the call:** treat a response without `draft_id` as nothing written,
+and ask the user to check the draft in Slack (the returned `channel_link`
+opens its channel).
+
 ## Links & Mentions (required, not "formatting")
 
 - **Links**: Slack mrkdwn `<«url»|«display text»>` — never bare URLs, never
-  markdown `[text](url)`.
+  markdown `[text](url)`: the draft tool keeps the label and silently drops
+  the URL.
 - **Mentions**: `<@«USERID»>` (resolves + notifies). Use the resolving `<@USERID>`
   form always — display names like `@佐藤` don't notify. Use ONE consistent form
   for all addressees (canonical `<@«USERID»> さん` where a project memory sets it).
@@ -61,9 +67,8 @@ every revision — a single miss is a repeat-correction.**
 - **End each quote block with a blank line** — `slack_send_message_draft`
   takes standard Markdown, where a line right after a `> ` line joins the
   quote (lazy continuation), so the reply renders as the other person's
-  words. Start every quoted line with `> `, put one empty line after the
-  last one, and ask the user to check the draft in Slack (the returned
-  `channel_link` opens its channel) before handing it over.
+  words. Start every quoted line with `> ` and put one empty line after the
+  last one.
 - **Thread vs top-level** — a follow-up on an existing topic defaults to a thread
   reply; before posting top-level, state why it should leave the thread.
 
@@ -86,6 +91,9 @@ Have the full picture first — drafts without evidence get rejected:
 4. zero bold/italic/backticks; links `<url|text>`, mentions `<@USERID>`
 5. concise, fluent, quoted reply (blank line after the quote), no recap
 6. show draft, wait for confirmation
+
+**After the call:** no `draft_id` = nothing written; the user checks the
+draft in Slack.
 
 ## Related
 
