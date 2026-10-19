@@ -7,6 +7,7 @@ description: Slack drafting discipline (draft, never send). Use when drafting or
 
 **Scope:** Drafting and replying to Slack messages (portable rules)
 **Prerequisites:** @smith-principles/SKILL.md, @smith-standards/SKILL.md, @smith-guidance/SKILL.md, @smith-ctx/SKILL.md
+**Sources:** `references/SOURCES.md`
 
 These are repeat-corrected rules. They get forgotten because they live only in
 project-local memory and never fire at draft time. This skill is the trigger.
@@ -57,6 +58,12 @@ every revision — a single miss is a repeat-correction.**
   know. Do not repeat what the thread already says.
 - **Quote what you reply to** — lead a reply with the exact passage in a `> `
   blockquote, then respond.
+- **End each quote block with a blank line** — `slack_send_message_draft`
+  takes standard Markdown, where a line right after a `> ` line joins the
+  quote (lazy continuation), so the reply renders as the other person's
+  words. Start every quoted line with `> `, put one empty line after the
+  last one, and ask the user to check the draft in Slack (the returned
+  `channel_link` opens its channel) before handing it over.
 - **Thread vs top-level** — a follow-up on an existing topic defaults to a thread
   reply; before posting top-level, state why it should leave the thread.
 
@@ -77,7 +84,7 @@ Have the full picture first — drafts without evidence get rejected:
 2. last line = attribution footnote (includes `Assisted-by:` line)
 3. every reference = hyperlinked exact title / URL
 4. zero bold/italic/backticks; links `<url|text>`, mentions `<@USERID>`
-5. concise, fluent, quoted reply, no recap
+5. concise, fluent, quoted reply (blank line after the quote), no recap
 6. show draft, wait for confirmation
 
 ## Related
