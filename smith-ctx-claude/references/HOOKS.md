@@ -29,7 +29,8 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
 | `stack-merge-guard.mjs` | PreToolUse (`Bash`) | Asks before `gh pr merge --delete-branch` orphans an open child PR |
 | `amend-shared-commit-guard.mjs` | PreToolUse (`Bash`) | Asks before `git commit --amend` rewrites a parent branch's tip |
-| `attribution-model-stamp.sh` | PreToolUse (`Bash`) | Refreshes the model-id file `attribution.sh` reads for `Assisted-by:` trailers |
+| `attribution-model-stamp.sh` | PreToolUse (`Bash`) | Refreshes the model-id file the Claude model source reads for `Assisted-by:` trailers |
+| `attribution-guard.sh` | PreToolUse (`Bash\|mcp__.*`) | Blocks a commit, pull-request text or Slack draft the agent writes unless it matches a declared write signature and its text passes the attribution rule |
 
 ## skill-router
 
@@ -105,8 +106,10 @@ updated, or the new field makes the guard ask. On the Bash channel, the
 values plus the contents of `--body-file`/`-F` and `@file` fields, with
 the target as target leaves: the PR or issue number, `-R`/`--repo`, `--hostname`, the
 `gh api` endpoint, and `--pr`/`--thread-id` plus any positional argument
-after `reply` for `gh pr-review`. The action is a content leaf too: the
-review verdict (`approve`, `request-changes`, `comment`), `delete-branch`
+after `reply` for `gh pr-review`, or `--pr`, `--review-id`, `--path`,
+`--line` and `--start-line` plus any positional argument after `review`. The action is a content leaf too: the
+review verdict (`approve`, `request-changes`, `comment`, or the
+`gh pr-review --event` value), `delete-branch`
 on close, and the `gh api` HTTP method (`POST`, `PATCH`, `DELETE`). A
 body file must be a regular file (not a link or FIFO); a background
 process that rewrites it after the check is not detected. A `gh api` endpoint ending in `graphql`
@@ -233,7 +236,9 @@ token appearing anywhere in the command, not by its position, so a
 documented-valid reordering like `gh pr-review comments --pr 1 reply ...`
 is still caught; `gh pr-review threads resolve`/`list` are not flagged —
 they publish no words (resolve / read), same allowlist principle as
-`resolveReviewThread` below),
+`resolveReviewThread` below), `gh pr-review review` with `--add-comment` (an
+inline comment, published with the review) or `--submit` (`--start` opens a
+pending review and publishes nothing, so it is not flagged),
 `gh api` against an endpoint matching `/comments` or `/reviews` (with or without a
 trailing query string) when the request is a write (explicit
 `-X`/`--method` `POST/PUT/PATCH/DELETE`, or an implied `POST` from
@@ -1140,57 +1145,117 @@ above (`` X=$(git commit --amend) ``) — permanent, not tracked-fixable.
 — PreToolUse hook (matcher `Bash`) for the deterministic `Assisted-by:`
 attribution mechanism. It is target-agnostic and **never inspects or rewrites the
 tool's arguments**: on each Bash call it reads the newest assistant
-`.message.model` from the session transcript and refreshes a cwd-keyed model file
-(`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-<cwd-hash>`), so the
-companion `attribution.sh` command has a fresh, correct model id. Keyed by working
-directory (git toplevel, else `pwd -P`) rather than by `session_key`, because
-`session_key` hashes `$PPID` and a Bash-tool subprocess cannot reproduce a hook's
-PPID — the working directory is the only coordinate both the hook and the command
-share. It picks up a mid-session `/model` switch from the next turn's Bash calls
+`.message.model` from the session transcript and, when the id matches
+`ATTRIBUTION_MODEL_ID_FORMAT`, refreshes a session-keyed model file
+(`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-<session_id>`), so the
+Claude model source (`smith-ctx-claude/scripts/attribution-model-source.sh`) has a
+fresh, correct model id. A malformed id
+leaves the previous file in place, so bad state is never written. The key is the
+hook's `session_id`, which a Bash command sees as `CLAUDE_CODE_SESSION_ID`: "For
+Bash, PowerShell, and hooks this matches the `session_id` field in the hook JSON
+input and is updated on `/clear`" (https://code.claude.com/docs/en/env-vars;
+added in Claude Code 2.1.132). It picks up a mid-session `/model` switch from the next turn's Bash calls
 onward (the model id has no environment variable — `ANTHROPIC_MODEL` goes stale on
 switch; the switching turn's own commit can still read the prior model, since the
 new model's assistant line may not be flushed yet) and always exits 0 (fail-open);
 it emits no permission decision and never blocks a Bash call. Needs `jq`.
 
-`attribution.sh` (the single source of truth) reads that file and prints
-`Assisted-by: Claude:<model>` (or `Claude:<model>` with the `value` argument), or
-exits non-zero printing nothing if the model is unknown — so a trailer is omitted,
-never guessed. Every target **pulls** it, so the line is never hand-typed:
-- git commit → capture into an arg array so an unknown model omits the trailer
-  rather than aborting the commit (a bare `git commit --trailer "$(…/attribution.sh)"`
-  fails with `empty --trailer argument` when the model is unknown, and the
-  `trailer.assisted-by.cmd` config form appends a dangling empty `Assisted-by:`):
-  ```
-  args=(-m "your message")
-  ab=$(…/attribution.sh) && args+=(--trailer "$ab")
-  git commit "${args[@]}"
-  ```
-  git parses the full `Assisted-by: Claude:<model>` line into a trailer.
-- gh PR body/comment → embed `$(…/attribution.sh)` in the body.
-- MCP writes (Slack/Jira/Confluence/Notion) → their arguments are not a shell, so
-  the composer runs `attribution.sh` and includes its output when authoring the
-  message. No MCP hook: the single source guarantees the format; only presence
-  depends on remembering to include it.
+`smith-style/scripts/attribution.sh` (the single source of truth, `@smith-style`
+"Assisted-by attribution") asks each model source listed in
+`smith-style/scripts/attribution-model-sources.txt`; the Claude source reads that
+file and answers `Claude:<model>`. The script prints `Assisted-by: Claude:<model>`
+(or `Claude:<model>` with the `value` argument), or exits non-zero printing
+nothing if no source knows the model — so a trailer is never guessed. Every target **pulls** it, so the line is never hand-typed:
+- git commit, gh PR body, review or comment → write the body to a draft file with
+  Write, append the trailer in a separate Bash call with
+  `…/attribution.sh >> «file»`, show the file, then `git commit -F «file»` or
+  `gh … --body-file «file»`, run as a command of its own, so the approved text
+  is the text that ships. The draft path is absolute: an unquoted `~` is shell
+  expansion and is blocked. A `$(…)` substitution cannot be used: the guards
+  below block any message built by shell expansion, and inside a worktree
+  Claude Code's isolation check refuses such a git or gh command first
+  (https://code.claude.com/docs/en/worktrees, "Command shape"). Do not use the
+  `trailer.assisted-by.cmd` config form: it appends a dangling empty
+  `Assisted-by:` when the model is unknown.
+- `gh pr-review` inline comments, thread replies and review submissions → the
+  extension has no `--body-file`, so run `attribution.sh` in a Bash call first
+  and end a single-quoted `--body '…'` with the line it printed, unchanged. The
+  line is then typed into the command, but the guard compares it with the
+  script's output character by character, so a drifted line is still blocked.
+- Slack drafts → the `message` field is not a shell, so the composer runs
+  `attribution.sh` and pastes its output as the last line. Jira, Confluence and
+  Notion writes follow the same recipe but are not checked.
 
-**Presence on `git commit` and `gh pr create/edit/comment/review` is enforced,
-not just documented above** — see `smith-git/scripts/hooks/commit-attribution-guard.sh`
-(`@smith-git/references/HOOKS.md`) and `smith-gh-pr/scripts/enforce-attribution.sh`
-(`smith-gh-pr/README.md`), both sharing the regex/"on behalf of" check in
-`attribution-lib.sh`'s `attribution_check_body` function. A harness-level default
+**The trailer is enforced, not just documented above.** One Claude Code
+adapter, `smith-ctx-claude/scripts/attribution-guard.mjs` (run by
+`attribution-guard.sh`), applies the one rule in
+`smith-style/scripts/lib/attribution.mjs` before the call. It first recognises
+a covered write from the registry `smith-style/scripts/attribution-signatures.json`
+(data, read by `smith-style/scripts/lib/attribution-signatures.mjs`): a git
+`commit`, `merge`, `pull`, `revert` or `commit-tree`; a `gh pr
+create|new|comment|merge|revert`, a `gh pr edit` or `gh pr review` that may
+carry a body, a `gh pr|issue close|reopen` with a comment, a `gh issue
+comment`, a `gh pr-review` write (`review --add-comment`, `review --submit`,
+`comments reply`), a `gh api` write of pull request or comment text other than
+a delete; and the Slack `slack_send_message_draft` tool. Anything else passes.
+A covered write is allowed only when it matches one of the registry's
+signatures exactly (its words, then only the flags, value flags and number of
+positional arguments the signature declares, one flag of each required group, and
+the payload flag exactly once) and the text read from the declared payload
+passes the rule. A covered write that matches no signature is blocked with the
+recipe: `-m`, the editor, a short flag cluster, `--fill`, a literal `--body`
+where `--body-file` exists, a git global option other than `-C` and
+`--no-pager`, a merge,
+pull or revert with a message git generates, and every `gh api` text write.
+A payload file must be named by an absolute path, not built by shell
+expansion, be a regular file rather than a symlink, and be read by a command
+that runs no other step, not even inside `sh -c`, `eval` or a subshell, and
+expands nothing (a `$(…)` in another argument could rewrite the file before
+git or gh reads it). A literal payload (`gh pr-review --body`, a close or
+reopen `--comment`) in a command that expands anything, `$'…'` quoting
+included, is blocked. Signatures without a
+payload pass without a check: reused messages (`git commit --amend
+--no-edit`, `-C`, `--fixup`, `--squash`), `git merge --ff-only`, `git pull
+--ff-only|--rebase`, `git revert --no-commit`, `gh pr merge` without a body,
+`gh pr review --approve` without a body, and `gh pr-review review --submit`
+without a body. The adapter finds git and gh through `lib/shell-scan.mjs`, the
+scanner `skill-load-gate` also uses: inside `sh -c`, after `env`, `sudo`,
+`timeout` or similar, and inside a command or process substitution. The
+fence rule approximates CommonMark (https://spec.commonmark.org/0.31.2/): a
+fence closes only on the same character at least as long, and an unclosed fence
+hides nothing; unlike CommonMark, an opener indented by four or more spaces or
+a backtick opener whose info string holds a backtick still opens a fence.
+
+The rule asserts only that the script's line did not reach the text: no line
+starts with `Assisted-by:` outside fenced code blocks, or a line that looks like
+one (leading spaces, any dash between the two words, a full-width colon or
+zero-width characters allowed) differs from what `attribution.sh` prints,
+optionally followed by ` [«tool»]` entries. The expected line comes from
+running `attribution.sh` itself with the hook's `session_id`, so the guard and
+the script cannot disagree. With no model for the session, `attribution.sh`
+prints nothing, so no line can come from the recipe and a write that carries
+text is blocked. A
+guard that fails internally exits 2 and blocks the call; `attribution-guard.sh`
+turns any other non-zero exit of the node module (a failed import or an
+unreadable registry) into 2 as well. The guard is a
+safety net for an agent that follows the recipe but may drift, not a sandbox: a
+script that runs git or gh, a gh or git alias (also one defined with `-c`
+in the same command), git configuration set through environment variables
+(`GIT_CONFIG_*`), and `git push` are not read. If
+`node` is missing, `attribution-guard.sh` blocks any call whose command or tool
+name contains `git`, `gh` or `slack_send_message_draft` anywhere, even in an
+argument, instead of letting it through; it reads the call with `jq` when it
+exists, and the whole hook input otherwise. A harness-level default
 trailer (Claude Code's own `Co-Authored-By:`/"Generated with" text) does not satisfy
-either hook; also set `attribution.commit`/`attribution.pr` to `""` in `settings.json`
+the guard; also set `attribution.commit`/`attribution.pr` to `""` in `settings.json`
 so the harness stops appending a competing trailer in the first place — hardcoding
 those settings to a literal `Assisted-by:` string instead is NOT an option: they take
 only a static string with no model-name templating, which reintroduces the exact
 staleness problem this mechanism exists to avoid.
 
-Limitations (by design; the model id is not reachable as an environment variable,
-so the file keyed by working directory is the only coordinate a hook and a
-Bash-context pull can share): two concurrent sessions in the SAME checkout on
-different models overwrite each other's `.assisted-model-<hash>` (worktrees are
-isolated by distinct git toplevel); the commit made in the same turn as a `/model`
-switch can still read the prior model; and each distinct repo leaves a small
-persistent `.assisted-model-<hash>` cache file under `plans/`.
+Limitations: the commit made in the same turn as a `/model` switch can still
+read the prior model, and each session leaves a small
+`.assisted-model-<session_id>` file under `plans/`.
 
 ## Test runners
 
@@ -1291,6 +1356,12 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/amend-shared-commit-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" },
           { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
+        ]
+      },
+      {
+        "matcher": "Bash|mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-guard.sh\"" }
         ]
       },
       {
@@ -1430,7 +1501,7 @@ then:
     `gh stack sync`. Without the extension both stay silent.
 15. **attribution-model-stamp** — run any Bash command, then confirm
     `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/.assisted-model-*` holds the current
-    model id, and that `smith-ctx-claude/scripts/attribution.sh` prints
+    model id, and that `smith-style/scripts/attribution.sh` prints
     `Assisted-by: Claude:<model>`. The Bash call is never blocked or altered.
 16. **exit-plan-mode-guard** — in plan mode, call `ExitPlanMode` in the same
     message as the plan explanation (or with no prior elaboration turn at
@@ -1480,16 +1551,22 @@ then:
     `"status":"review_completed"` and non-empty `reviewedFiles`. Confirm
     `coderabbit review` (no `--agent`), `coderabbit --help`, and
     `coderabbit auth status` stay silent.
-23. **commit-attribution-guard** — attempt `git commit -m "x"` with no
-    `Assisted-by:` trailer; confirm it blocks with the required-format
-    guidance. Confirm a commit whose message includes a correct
-    `Assisted-by: Claude:<model>` trailer (via `-m`, `-F`, or the
-    `-m "$(cat <<'EOF' ...)"` heredoc form) is allowed, and that
-    `git status`/`git log` stay silent.
-24. **enforce-attribution** — attempt `gh pr create --body "x"` (or `--body-file`,
-    `pr edit`, `pr comment`, `pr review`) with no `Assisted-by:` trailer; confirm
-    it blocks. Confirm a body containing the correct trailer is allowed, and
-    that "on behalf of" in the body blocks even with a correct trailer present.
+23. **attribution-guard, commits** — attempt `git commit -m "x"` and confirm
+    it blocks with the recipe; confirm that `git commit -F` naming an absolute
+    draft the line was appended to with `attribution.sh >> «file»` lands, that
+    a draft without the line, a relative draft path, `git add -A && git commit
+    -F «file»`, a `git merge` with the generated message and a `git revert`
+    without `--no-commit` are blocked, and that `git status`/`git log` stay
+    silent.
+24. **attribution-guard, pull-request text and Slack drafts** — attempt `gh pr
+    create --body "x"` and confirm it blocks as literal text even with a
+    correct line; attempt `gh pr-review comments reply --body 'x'` and a Slack
+    draft with no `Assisted-by:` line and confirm both block with the recipe.
+    Confirm that a `--body-file` draft the line was appended to with
+    `attribution.sh >> «file»` is allowed, that `gh pr create --fill` and a
+    `gh api` POST to a comments endpoint are blocked, that "on behalf of" in
+    the body blocks even with a correct line present, and that `gh pr view`
+    and other MCP tools stay silent.
 25. **personal-data-guard** — yourself, not through an agent, pipe a payload
     that carries a string you listed in `personal-data-guard.json` into the
     hook, for example

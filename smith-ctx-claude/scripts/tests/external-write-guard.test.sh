@@ -103,6 +103,11 @@ asks   "-R interspersed between resource and subcommand" "$(bash_cmd 'gh pr -R o
 asks   "-R interspersed before api endpoint" "$(bash_cmd 'gh api -R o/r repos/o/r/issues/1/comments -f body=x')"
 asks   "gh api leading-slash /graphql mutation" "$(bash_cmd "gh api /graphql -f query='mutation { addComment(input: {}) { clientMutationId } }'")"
 
+asks   "gh pr-review inline comment" "$(bash_cmd 'gh pr-review review --add-comment --pr 1 -R o/r --review-id R --path a.js --line 3 --body test')"
+asks   "gh pr-review review submit" "$(bash_cmd 'gh pr-review review --submit --pr 1 -R o/r --review-id R --event COMMENT --body test')"
+asks   "gh pr-review review submit without a body" "$(bash_cmd 'gh pr-review review --submit --pr 1 -R o/r --review-id R --event APPROVE')"
+silent "gh pr-review review start" "$(bash_cmd 'gh pr-review review --start --pr 1 -R o/r')"
+silent "gh pr-review review view" "$(bash_cmd 'gh pr-review review view --pr 1 -R o/r')"
 silent "gh pr-review threads resolve"  "$(bash_cmd 'gh pr-review threads resolve --pr 1 -R o/r --thread-id PRRT_x')"
 silent "gh pr-review threads list"     "$(bash_cmd 'gh pr-review threads list --pr 1 -R o/r --unresolved')"
 silent "gh pr review no submit flag" "$(bash_cmd 'gh pr review 123')"
@@ -234,6 +239,10 @@ asks   "gh api --input stays opaque"            "$(gh_call "$GH" 'gh api repos/o
 denies "an approval never previewed"            "$(gh_call "$GH" 'gh pr review 7 --approve')"
 APPROVE=$(transcript approve "$(assistant a1 "I will approve PR 7.")" "$(human yes)")
 silent "an approval previewed and answered"     "$(gh_call "$APPROVE" 'gh pr review 7 --approve')"
+SUBMIT_EVENT=$(transcript submitevent "$(assistant a1 "Submit review R on PR 7 to approve it.")" "$(human yes)")
+SUBMIT_NO_EVENT=$(transcript submitnoevent "$(assistant a1 "Submit review R on PR 7.")" "$(human yes)")
+silent "a pr-review submit whose event was previewed" "$(gh_call "$SUBMIT_EVENT" 'gh pr-review review --submit --pr 7 --review-id R --event APPROVE')"
+denies "a pr-review submit whose event was not previewed" "$(gh_call "$SUBMIT_NO_EVENT" 'gh pr-review review --submit --pr 7 --review-id R --event APPROVE')"
 denies "gh same body, different PR number"      "$(gh_call "$GH" "gh pr comment 9 --body \"$BODY\"")"
 denies "gh -R repo never previewed"             "$(gh_call "$GH" "gh pr comment 7 -R other/repo --body \"$BODY\"")"
 API_GH=$(transcript apigh "$(assistant a1 "POST to repos/o/r/issues/7/comments: $BODY")" "$(human yes)")
@@ -270,6 +279,14 @@ denies "a reply without a timestamp does not count" "$(update_call "$(transcript
 THREAD=$(transcript thread "$(assistant a1 "Reply on PR 7, thread PRRT_x: $BODY")" "$(human yes)")
 silent "pr-review reply to the previewed thread" "$(gh_call "$THREAD" "gh pr-review comments reply --pr 7 --thread-id PRRT_x --body \"$BODY\"")"
 denies "pr-review reply to another thread"      "$(gh_call "$THREAD" "gh pr-review comments reply --pr 7 --thread-id PRRT_y --body \"$BODY\"")"
+INLINE=$(transcript inline "$(assistant a1 "Inline comment on PR 7, review R, file a.js lines 2 to 3: $BODY")" "$(human yes)")
+silent "pr-review inline comment previewed"     "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 3 --body \"$BODY\"")"
+silent "pr-review inline range previewed"       "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --start-line 2 --line 3 --body \"$BODY\"")"
+denies "pr-review inline comment in another review" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id Q --path a.js --line 3 --body \"$BODY\"")"
+denies "pr-review inline comment on another line" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 9 --body \"$BODY\"")"
+denies "pr-review inline range from another start line" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --start-line 1 --line 3 --body \"$BODY\"")"
+denies "pr-review inline comment on another file" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path b.js --line 3 --body \"$BODY\"")"
+denies "pr-review inline comment with other text" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 3 --body \"Unpreviewed text\"")"
 
 silent "gh api -F body=@file previewed"         "$(gh_call "$API_GH" 'gh api repos/o/r/issues/7/comments -F body=@body.md')"
 asks   "gh api -F body=@file unreadable"        "$(gh_call "$API_GH" 'gh api repos/o/r/issues/7/comments -F body=@missing.md')"

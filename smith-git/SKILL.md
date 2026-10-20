@@ -97,13 +97,32 @@ commit type, description is lowercase hyphen-separated words, e.g.
 
 **Attribution**: AI-assisted commits carry an `Assisted-by:` trailer; the agent
 never adds `Signed-off-by:` (only humans certify the DCO) — see
-`@smith-style/SKILL.md`. **Enforced deterministically by
-`smith-git/scripts/hooks/commit-attribution-guard.sh`** (PreToolUse, matcher
-`Bash`) — blocks a `git commit` whose message (via `-m`, `--message`, `-F`,
-`--file=`, or the `-m "$(cat <<'EOF' ...)"` heredoc form) is missing the
-trailer or contains "on behalf of". A harness-level trailer (e.g. a default
-`Co-Authored-By:` line) does not satisfy this — the hook checks for the
-`Assisted-by:` pattern specifically.
+`@smith-style/SKILL.md` "Assisted-by attribution" for the rule and the
+draft-file recipe. The Claude Code adapter for commits is
+`smith-ctx-claude/scripts/attribution-guard.mjs` (one adapter for commits,
+pull-request text and Slack drafts; `smith-ctx-claude/references/HOOKS.md`
+"attribution-model-stamp"). A git `commit`, `merge`, `pull`, `revert` or
+`commit-tree` is allowed only when it matches a signature declared in
+`smith-style/scripts/attribution-signatures.json`:
+
+- `git commit -F «absolute path»` (or `--file`), run as a command of its own,
+  whose file passes the rule. `-m`, the editor, a short flag cluster such as
+  `-aF`, `-s`, a relative or expanded path, and a git global option other
+  than `-C` and `--no-pager` are blocked.
+- A reused message passes: `--amend --no-edit`, `-C «commit»`, `--fixup`,
+  `--squash`; `cherry-pick`, `rebase` and `am` are not covered.
+- A message git generates is blocked: `git merge` without `--ff-only`,
+  `--squash`, `--no-commit` or `-F «absolute path»`; `git pull` without
+  `--ff-only` or `--rebase`; `git revert` without `--no-commit` (revert with
+  `--no-commit`, then commit with `-F`); `git commit-tree`.
+
+The adapter checks the agent, not git: commits made outside the agent's tool
+calls, a git invocation hidden from the scanner (a program name built by
+expansion, a git alias, git configuration set through `GIT_CONFIG_*`
+environment variables, a git nested in another program's argument such as
+`rebase -x` or `find -exec`) are not checked. Options that change the
+message after it is written (`--cleanup`, a comment character) are blocked
+on the command line but not read from config files.
 
 ## Non-Obvious Flags
 

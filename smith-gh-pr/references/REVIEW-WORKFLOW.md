@@ -37,13 +37,22 @@ in-band (see `@smith-review`).
   `--comment`: run the review without it and post each finding one at a
   time, after its own explicit yes. Asking for a review is not a yes for
   words that did not exist when it was asked.
-- Manual single inline comment via REST (when hand-authoring one finding):
+- Manual single inline comment with `gh pr-review` (when hand-authoring one
+  finding). Run `attribution.sh` first and end the single-quoted body with the
+  line it printed; a `gh api` write of a review comment is blocked:
 
 ````shell
-gh api repos/{owner}/{repo}/pulls/{pr}/comments \
-  -f commit_id={headSHA} -f path={file} -F line={n} -f side=RIGHT \
-  -f body=$'Explain the issue briefly.\n\n```suggestion\nfixed line(s) here\n```'
-# Multi-line range: add -F start_line={firstLine} -f start_side=RIGHT
+gh pr-review review --start --pr {pr} -R {owner}/{repo}
+gh pr-review review --add-comment --pr {pr} -R {owner}/{repo} --review-id {id} \
+  --path {file} --line {n} --body 'Explain the issue briefly.
+
+```suggestion
+fixed line(s) here
+```
+
+Assisted-by: Claude:«session-model-id»'
+# Multi-line range: add --start-line {firstLine}
+gh pr-review review --submit --pr {pr} -R {owner}/{repo} --review-id {id} --event COMMENT
 ````
 
 A committable suggestion is just a fenced block inside the comment body:

@@ -1,6 +1,6 @@
 import { lstatSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { nonFlagTokensAfterGh } from "./gh-command.mjs";
+import { ghNonBodyValueFlags, isCloseOrReopen, nonFlagTokensAfterGh } from "./gh-command.mjs";
 import { ANY_KEY, CONTENT, REFERENCE, SCALAR, STRUCTURAL, TARGET, URL_REFERENCE, WRITE_SIGNATURES } from "./write-signatures.mjs";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
@@ -9,13 +9,12 @@ const URL_SHAPE = /^[a-z][a-z0-9+.-]*:\/\/\S+$/i;
 const BODY_VALUE_FLAGS = new Set(["--body", "-b"]);
 const CLOSE_COMMENT_FLAGS = new Set(["--comment", "-c"]);
 const BODY_FILE_FLAGS = new Set(["--body-file", "-F"]);
-const CLOSE_SUBCOMMANDS = new Set(["close", "reopen"]);
 const API_FIELD_FLAGS = new Set(["-f", "--raw-field", "-F", "--field"]);
 const API_FILE_FIELD_FLAGS = new Set(["-F", "--field"]);
 const SHELL_EXPANSION = /[$`*?[~{]/;
 const UNQUOTED_GLOB = new Set(["*", "?", "[", "{"]);
 const ASCII_WORD_CHAR = /[A-Za-z0-9]/;
-const QUOTED_HEREDOC_SUBSTITUTION = /^\$\(cat <<-?(['"])(\w+)\1\n([\s\S]*?)\n\2\s*\)$/;
+const QUOTED_HEREDOC_SUBSTITUTION = /^\$\(cat <<(-?)(['"])(\w+)\2\n([\s\S]*?)\n\3\s*\)$/;
 
 export function contentLeaves(leaves, targets) {
   return leaves.filter((leaf) => !targets.has(leaf));
@@ -194,12 +193,12 @@ function isExpanded(payload, text) {
 
 function addShellBody(payload, token) {
   const heredoc = QUOTED_HEREDOC_SUBSTITUTION.exec(token);
-  if (heredoc && endsHeredocEarly(heredoc[3], heredoc[2])) {
-    payload.opaque = "a heredoc whose delimiter line appears more than once";
+  if (heredoc && endsHeredocEarly(heredoc[4], heredoc[3])) {
+    payload.opaque = "a heredoc whose delimiter line appears more than once; pass it with --body-file";
     return;
   }
   if (heredoc) {
-    addBody(payload, heredoc[3]);
+    addBody(payload, heredoc[1] ? heredoc[4].replace(/^\t+/gm, "") : heredoc[4]);
     return;
   }
   if (isExpanded(payload, token)) {
@@ -249,13 +248,13 @@ function collectApiFields(tokens, payload, cwd) {
 }
 
 function collectBodyFlags(tokens, payload, cwd) {
-  const valueFlags = CLOSE_SUBCOMMANDS.has(nonFlagTokensAfterGh(tokens)[1])
-    ? new Set([...BODY_VALUE_FLAGS, ...CLOSE_COMMENT_FLAGS])
-    : BODY_VALUE_FLAGS;
+  const subcommand = nonFlagTokensAfterGh(tokens)[1];
+  const textFlags = isCloseOrReopen(subcommand) ? new Set([...BODY_VALUE_FLAGS, ...CLOSE_COMMENT_FLAGS]) : BODY_VALUE_FLAGS;
+  const otherValueFlags = ghNonBodyValueFlags(subcommand);
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
     const next = tokens[index + 1];
-    if (valueFlags.has(token)) {
+    if (textFlags.has(token)) {
       if (next !== undefined) addShellBody(payload, next);
       index += 1;
       continue;
@@ -263,7 +262,9 @@ function collectBodyFlags(tokens, payload, cwd) {
     if (BODY_FILE_FLAGS.has(token)) {
       addBodyFile(payload, next, cwd);
       index += 1;
+      continue;
     }
+    if (otherValueFlags.has(token)) index += 1;
   }
 }
 

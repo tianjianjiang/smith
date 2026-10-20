@@ -11,6 +11,8 @@ export const GLOBAL_OPTIONS_TAKING_A_VALUE = new Set([
   "--namespace",
   "--exec-path",
   "--config-env",
+  "--attr-source",
+  "--list-cmds",
 ]);
 
 export function withoutLeadingEnvAssignments(tokens) {

@@ -60,7 +60,6 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `volatile-artifact-guard` | Stop/SubagentStop/SessionEnd | `smith-ctx-claude/scripts/volatile-artifact-guard.mjs` | Advisory: lists files left under volatile paths | ctx-claude |
 | `branch-rename-open-pr` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/branch-rename-open-pr.mjs` | Blocks renaming a branch with an open PR | ctx-claude |
 | `branch-name-guard` | PreToolUse (`Bash`, `EnterWorktree`) | `smith-git/scripts/hooks/branch-name-guard.mjs` | Blocks a non-Conventional-Branch-Names create/rename | git |
-| `commit-attribution-guard` | PreToolUse (`Bash`) | `smith-git/scripts/hooks/commit-attribution-guard.sh` | Blocks a `git commit` missing the `Assisted-by:` trailer | git |
 | `inline-comment-lint` | PreToolUse (`Edit\|Write\|NotebookEdit`) | `smith-standards/scripts/inline-comment-lint.mjs` | Advisory: flags inline comments | standards |
 | `coined-shorthand-lint` | PreToolUse (`Edit\|Write\|NotebookEdit`) | `smith-ctx-claude/scripts/coined-shorthand-lint.mjs` | Advisory: flags meaningless coined index codes | ctx-claude |
 | `review-orchestration-guard` | PreToolUse (`Agent\|Task`) | `smith-ctx-claude/scripts/review-orchestration-guard.mjs` | Advisory: prefer the toolkit orchestrator | ctx-claude |
@@ -78,7 +77,7 @@ self-check under its owning skill's `scripts/tests/run-all.sh`.
 | `stack-merge-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/stack-merge-guard.mjs` | Asks before deleting a branch with an open child PR | ctx-claude |
 | `amend-shared-commit-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/amend-shared-commit-guard.mjs` | Asks before amending a commit shared with another branch | ctx-claude |
 | `attribution-model-stamp` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/attribution-model-stamp.sh` | Refreshes the model-id file for `Assisted-by:` trailers | ctx-claude |
-| `enforce-attribution` | PreToolUse (`Bash`) | `smith-gh-pr/scripts/enforce-attribution.sh` | Blocks a `gh pr create/edit/comment/review` missing the `Assisted-by:` trailer | gh-pr |
+| `attribution-guard` | PreToolUse (`Bash\|mcp__.*`) | `smith-ctx-claude/scripts/attribution-guard.sh` | Blocks a commit, pull-request text or Slack draft the agent writes unless it matches a write signature declared in `smith-style/scripts/attribution-signatures.json` and its text passes the attribution rule | ctx-claude |
 | `uv-tool-health-check` | SessionStart (all sources) | `smith-serena/scripts/uv-tool-health-check.sh` | Self-heals a broken `uv tool`-managed venv (e.g. `serena-agent`) | serena |
 | `link-worktree-memories` | SessionStart (all sources) | `smith-serena/scripts/link-worktree-memories.sh` | Links a worktree's `.serena/memories` to the primary checkout's so Serena memory tools share them | serena |
 | `worktree-path-guard` | PreToolUse (`mcp__(plugin_serena_)?serena__.*`) | `smith-serena/scripts/worktree-path-guard.mjs` | Blocks a Serena call whose path lands in the checkout Serena is rooted in while the session works in another, names the prefixed path | serena |
@@ -89,11 +88,10 @@ skill, not here:
 - `smith-ctx-claude/references/HOOKS.md` — most hooks above, the registration
   JSON, and the verification steps
 - `smith-git/references/HOOKS.md` — `branch-guard`, `worktree-dirty-guard`,
-  `branch-name-guard`, `commit-attribution-guard`, `post-merge-pull-reminder`
+  `branch-name-guard`, `post-merge-pull-reminder`
 - `smith-standards/references/HOOKS.md` — `inline-comment-lint`
 - `smith-serena/references/HOOKS.md` — `uv-tool-health-check`,
   `link-worktree-memories`, `worktree-path-guard`
-- `smith-gh-pr/README.md` — `enforce-attribution`
 
 `/smith-checkpoint`'s runtime prerequisites (Serena/Basic-Memory availability,
 the reload-flag hook, the session-restart marker hook, cloud/fresh-clone
