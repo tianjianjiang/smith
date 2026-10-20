@@ -17,7 +17,7 @@ in-band (see `@smith-review`).
   what you already wrote, and is the single most common way a review finding
   wastes their time. Omit the block ONLY when the fix needs design discussion or
   cannot be expressed as a line-range replacement — and say which in the
-  comment. "I did not bother" is not one of the two exemptions.
+  comment. Skipping it for convenience is not one of the two exemptions.
 - **Replace the whole commented range.** GitHub replaces the commented line(s)
   with the block's contents verbatim — the block may hold more or fewer lines
   than the range (a suggestion can add or drop lines). Comment on the full range
@@ -65,7 +65,7 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 
 ## Review Convergence Protocol
 
-**PR ownership gate (whose PRs may we merge?):**
+**PR ownership gate (whose PRs may be merged?):**
 - Merge or `--force-with-lease` push ONLY a PR the user authored (or explicitly
   says is theirs to merge). When unsure, check
   `gh pr view {PR} --json author --jq .author.login` against

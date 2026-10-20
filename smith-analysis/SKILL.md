@@ -58,7 +58,7 @@ Best explanation from incomplete observations (inference to best explanation):
 
 Break down to fundamentals, reason up:
 
-1. **Identify assumptions** - What do we take for granted?
+1. **Identify assumptions** - What is taken for granted?
 2. **Decompose** - What are the fundamental truths?
 3. **Reconstruct** - Build solution from first principles only
 
@@ -140,7 +140,7 @@ Increases problem identification by 30%.
 
 Think backward to avoid failure:
 
-- Instead of "How do I succeed?" ask "How could I fail?"
+- Instead of "How can this succeed?" ask "How could this fail?"
 - Instead of "How to make this fast?" ask "What would make this slow?"
 - Avoid stupidity rather than seeking brilliance
 
@@ -153,12 +153,12 @@ already in hand, see `@smith-validation` Adversarial Verification.
 
 Ensure coverage by examining from 6 perspectives:
 
-- **White** (Facts): What data/evidence do we have?
-- **Red** (Intuition): What does gut feeling say? Any concerns?
+- **White** (Facts): What data/evidence is available?
+- **Red** (Intuition): What do unmeasured signals suggest? Any concerns?
 - **Black** (Caution): What could go wrong? What are the risks?
 - **Yellow** (Optimism): What are the benefits? Best case?
 - **Green** (Creativity): What alternatives exist? New approaches?
-- **Blue** (Process): Are we on track? What's the next step?
+- **Blue** (Process): Is the work on track? What's the next step?
 
 ## Before You Finish
 

@@ -127,7 +127,7 @@ abstractly or abandoning the task.
 
 - **Navigate first, then hand off.** Drive the Model Context Protocol (MCP)
   browser to the exact login URL, then say in ONE message: the window is open
-  on «page name», complete the login there, tell me when you're done. Never
+  on «page name», complete the login there, reply once it is done. Never
   ask "do you have an account?" in the abstract, and never report the task
   blocked as "requires authentication" without opening the page.
 - **Name the page, don't echo the URL.** Identify it by site and page ("the

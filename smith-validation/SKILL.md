@@ -23,7 +23,7 @@ Rapid progress through multiple competing hypotheses:
 3. **Execute experiments** - Run tests to eliminate hypotheses
 4. **Iterate** - Refine remaining hypotheses, repeat
 
-**Key insight**: Science advances fastest when we actively try to disprove hypotheses, not confirm them.
+**Key insight**: Science advances fastest by actively trying to disprove hypotheses, not confirm them.
 
 **For debugging**:
 
@@ -44,7 +44,7 @@ A theory is scientific only if it can be proven false:
 **Anti-pattern**: Only running tests you expect to pass
 **Good practice**: Actively try to break your own code
 
-**Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — let me check" and check.
+**Falsify a workaround before presenting it as the solution**: when proposing a fix or workaround that depends on external system behavior (MCP/OAuth/API/CLI/feature support), first search the issue tracker for known failures of that exact mechanism. Never present an untested mechanism in a confident voice — say "unverified — checking now" and check.
 
 ## Adversarial Verification of Findings
 
@@ -91,7 +91,7 @@ workflow patterns it lists. The post separately names self-preferential bias
 ("Claude's tendency to prefer its own results or findings, especially when
 asked to verify or judge them against a rubric") among three failure modes that
 isolated subagents combat. Aiming this pattern at that bias, and at your own
-findings, is our application — not a claim the post makes.
+findings, is this skill's application — not a claim the post makes.
 
 ## Deviation Is Not Discovery
 
@@ -103,9 +103,10 @@ unconditional, not fired by suspicion.
 
 - Before interpreting ANY surprising or anomalous result, read the topic's
   recorded memory/decision set FIRST — especially when your current
-  explanation feels coherent.
+  explanation seems coherent.
 - If a recorded decision covers the situation and was violated, report
-  **"I deviated from the recorded protocol"** — never "we discovered" /
+  **"the main thread deviated from the recorded protocol"** (or "the
+  subagent …") — never "X was discovered" /
   "the verdict is overturned". Wrong-input or wrong-protocol runs are
   **void measurements**: they support no claim about the system under test.
 - Tripwire words in your own draft that MANDATE the read before publishing:
@@ -146,7 +147,7 @@ unconditional, not fired by suspicion.
   part your last action satisfied. A snapshot is not version control:
   ongoing edit-work needs history, not a one-time copy of its start state.
 - **Every proposed action traces to an open requirement.** After a
-  correction, re-derive from scratch — "we were in the middle of doing this"
+  correction, re-derive from scratch — "this work was already under way"
   is not a requirement; if the motivating question is answered, the
   follow-up dissolved with it. Fabricated work manufactures real risks.
 
