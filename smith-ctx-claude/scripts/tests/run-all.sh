@@ -17,6 +17,7 @@ for check in \
   skill-router \
   gh-stack-guard \
   attribution \
+  attribution-guard \
   git-command-tokenizer \
   transcript-turns \
   exit-plan-mode-guard \

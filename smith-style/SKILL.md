@@ -77,19 +77,33 @@ Slack is a Smith convention.
 - Optional bracketed `[«tool»]` entries name specialized analysis tools only
   (e.g. coccinelle, sparse, semgrep); never basic dev tools (git, editors).
 
-**Deterministic source — do not hand-type the trailer.** The model id has no
-environment variable, and hand-typing is where the format drifts (a parenthetical
-instead of the colon form). `smith-ctx-claude/scripts/attribution.sh` is the single
-source: it prints the correct `Assisted-by: Claude:«MODEL_VERSION»` from the live
-session model, kept current by the `attribution-model-stamp` PreToolUse hook. Pull
-it, never type it — for a commit add it as a `--trailer` only when non-empty (the
-empty-safe array recipe is in README "Hooks"; a bare `--trailer "$(…)"` aborts the
-commit when the model is unknown), embed `$(…/attribution.sh)` in a gh PR body or a
-`gh pr review --comment --body …` body, or run it and paste its output into an MCP
-message (Slack/Jira). Details and registration in README "Hooks". A draft shown
-to the user for approval (commit message, PR body, review comment, Slack text)
-carries the script's output as well: run `attribution.sh` before composing the
-draft and paste the printed line; never type the trailer into a draft.
+**Deterministic source — do not hand-type the trailer.** Hand-typing is where
+the format drifts (a parenthetical instead of the colon form).
+`smith-style/scripts/attribution.sh` is the single source: it prints
+`Assisted-by: «AGENT_NAME»:«MODEL_VERSION»` from the first model source listed
+in `smith-style/scripts/attribution-model-sources.txt` that knows the session
+(for Claude Code, `smith-ctx-claude/scripts/attribution-model-source.sh`, kept
+current by the `attribution-model-stamp` hook). Pull it, never type it. For a
+commit message, PR body or review comment, write the body to a draft file,
+append the trailer in a separate shell call with `…/attribution.sh >> «file»`,
+show the file, and pass its absolute path with `git commit -F «file»` or
+`gh … --body-file «file»` as a command of its own. `gh pr-review` has no `--body-file`: run the script first and end a
+single-quoted `--body '…'` with the line it printed, unchanged. For an MCP
+message (Slack/Jira), run the script and paste its output.
+
+**One rule, checked where the agent writes.**
+`smith-style/scripts/lib/attribution.mjs` holds the rule. It asserts only that
+the script's line did not reach a text: the line is missing, differs from what
+the script prints, or an `Assisted-by:`-shaped line differs from it. A
+matching line proves nothing more, so the rule makes no claim that the script
+ran. Agent adapters call it at the agent's own tool boundary and block; humans
+are not checked. A write whose text cannot be read from a declared field (a
+`-m` message, the editor, a merge or revert message git generates, a literal
+body where a body-file flag exists) is not allowed. Covered writes and their allowed
+shapes are data, `smith-style/scripts/attribution-signatures.json`: git
+commits, merges, pulls and reverts, pull request and issue comment text, and
+Slack drafts. The Claude Code adapter is
+`smith-ctx-claude`'s `attribution-guard`. Registration in README "Hooks".
 
 **Never add a `Signed-off-by:` trailer yourself** — only a human can certify the
 DCO, so the agent must not add one (a human may still add their own), and
@@ -106,8 +120,8 @@ superseded by it). Set both to empty rather than to a literal `Assisted-by:`
 string: `attribution.commit`/`.pr` take only a static string with no
 model-name templating, so hardcoding one there reintroduces the exact
 staleness problem `attribution.sh` exists to avoid. Emptying them removes the
-competing default; `commit-attribution-guard.sh` and `enforce-attribution.sh`
-(`@smith-git`, `@smith-gh-pr`) are what actually enforce the correct trailer's
+competing default; `attribution-guard.sh` (`@smith-ctx-claude`) is what
+actually enforces the correct trailer's
 presence.
 
 ## Branch Names

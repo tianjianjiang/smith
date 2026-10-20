@@ -1,0 +1,1 @@
+smith-ctx-claude/scripts/attribution-model-source.sh

@@ -1,0 +1,232 @@
+{
+  "commands": [
+    {
+      "program": "git",
+      "globalFlags": ["--no-pager"],
+      "globalValueFlags": ["-C"],
+      "covered": [
+        { "words": ["commit"] },
+        { "words": ["merge"] },
+        { "words": ["pull"] },
+        { "words": ["revert"] },
+        { "words": ["commit-tree"] }
+      ],
+      "signatures": [
+        {
+          "words": ["commit"],
+          "payload": { "flags": ["-F", "--file"], "from": "file" },
+          "flags": ["-a", "--all", "--amend", "--allow-empty", "--no-verify", "-n", "-q", "--quiet", "-S", "--gpg-sign"],
+          "positionals": "any"
+        },
+        {
+          "words": ["commit"],
+          "required": [["--amend"], ["--no-edit"]],
+          "flags": ["-a", "--all", "--amend", "--no-edit", "--allow-empty", "--no-verify", "-n", "-q", "--quiet", "-S", "--gpg-sign"],
+          "positionals": "any"
+        },
+        {
+          "words": ["commit"],
+          "required": [["-C", "--reuse-message", "--fixup", "--squash"]],
+          "flags": ["-a", "--all", "--amend", "--no-verify", "-n", "-q", "--quiet", "-S", "--gpg-sign"],
+          "valueFlags": ["-C", "--reuse-message", "--fixup", "--squash"],
+          "positionals": "any"
+        },
+        {
+          "words": ["merge"],
+          "payload": { "flags": ["-F", "--file"], "from": "file" },
+          "flags": ["--no-ff", "--ff", "-q", "--quiet", "--no-verify", "-S", "--gpg-sign"],
+          "positionals": "any"
+        },
+        {
+          "words": ["merge"],
+          "required": [["--ff-only", "--squash", "--no-commit", "--abort", "--quit"]],
+          "flags": ["--ff-only", "--squash", "--no-commit", "--abort", "--quit", "-q", "--quiet"],
+          "positionals": "any"
+        },
+        {
+          "words": ["pull"],
+          "required": [["--ff-only", "--rebase", "-r"]],
+          "flags": ["--ff-only", "--rebase", "-r", "-q", "--quiet", "--prune", "-p", "--tags"],
+          "positionals": 2
+        },
+        {
+          "words": ["revert"],
+          "required": [["-n", "--no-commit", "--abort", "--quit", "--skip"]],
+          "flags": ["-n", "--no-commit", "--abort", "--quit", "--skip"],
+          "positionals": "any"
+        }
+      ]
+    },
+    {
+      "program": "gh",
+      "covered": [
+        { "words": ["pr", "create"] },
+        { "words": ["pr", "new"] },
+        { "words": ["pr", "edit"], "whenAnyFlag": ["-b", "--body", "-F", "--body-file"] },
+        { "words": ["pr", "comment"] },
+        { "words": ["pr", "review"], "whenAnyFlag": ["-a", "--approve", "-r", "--request-changes", "-c", "--comment", "-b", "--body", "-F", "--body-file"] },
+        { "words": ["pr", "merge"] },
+        { "words": ["pr", "revert"] },
+        { "words": ["pr", "close"], "whenAnyFlag": ["-c", "--comment"] },
+        { "words": ["pr", "reopen"], "whenAnyFlag": ["-c", "--comment"] },
+        { "words": ["issue", "comment"] },
+        { "words": ["issue", "close"], "whenAnyFlag": ["-c", "--comment"] },
+        { "words": ["issue", "reopen"], "whenAnyFlag": ["-c", "--comment"] },
+        { "words": ["pr-review", "review"], "whenAnyFlag": ["--add-comment", "--submit", "-b", "--body"] },
+        { "words": ["pr-review", "comments", "reply"] },
+        {
+          "words": ["api"],
+          "recognizer": "gh-api-pull-request-text",
+          "hint": "gh api is for reads: post review comments and replies with gh pr-review, a PR-level comment with gh pr comment --body-file, and a pull request body with gh pr create|edit|merge --body-file"
+        }
+      ],
+      "signatures": [
+        {
+          "words": ["pr", "create"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["-d", "--draft", "--no-maintainer-edit", "--dry-run"],
+          "valueFlags": ["-R", "--repo", "-t", "--title", "-B", "--base", "-H", "--head", "-l", "--label", "-r", "--reviewer", "-a", "--assignee", "-m", "--milestone", "-p", "--project"],
+          "positionals": 0
+        },
+        {
+          "words": ["pr", "new"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["-d", "--draft", "--no-maintainer-edit", "--dry-run"],
+          "valueFlags": ["-R", "--repo", "-t", "--title", "-B", "--base", "-H", "--head", "-l", "--label", "-r", "--reviewer", "-a", "--assignee", "-m", "--milestone", "-p", "--project"],
+          "positionals": 0
+        },
+        {
+          "words": ["pr", "edit"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["--remove-milestone"],
+          "valueFlags": ["-R", "--repo", "-t", "--title", "-B", "--base", "--add-label", "--remove-label", "--add-reviewer", "--remove-reviewer", "--add-assignee", "--remove-assignee", "--add-project", "--remove-project", "-m", "--milestone"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "comment"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["--edit-last", "--create-if-none"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "comment"],
+          "required": [["--delete-last"]],
+          "flags": ["--delete-last", "--yes"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "review"],
+          "required": [["-a", "--approve"]],
+          "flags": ["-a", "--approve"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "review"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "required": [["-a", "--approve", "-r", "--request-changes", "-c", "--comment"]],
+          "flags": ["-a", "--approve", "-r", "--request-changes", "-c", "--comment"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "merge"],
+          "flags": ["-s", "--squash", "-m", "--merge", "-r", "--rebase", "-d", "--delete-branch", "--auto", "--disable-auto", "--admin"],
+          "valueFlags": ["-R", "--repo", "-t", "--subject", "--match-head-commit", "-A", "--author-email"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "merge"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["-s", "--squash", "-m", "--merge", "-r", "--rebase", "-d", "--delete-branch", "--auto", "--disable-auto", "--admin"],
+          "valueFlags": ["-R", "--repo", "-t", "--subject", "--match-head-commit", "-A", "--author-email"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "revert"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["-d", "--draft"],
+          "valueFlags": ["-R", "--repo", "-t", "--title"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "close"],
+          "payload": { "flags": ["-c", "--comment"], "from": "literal" },
+          "flags": ["-d", "--delete-branch"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr", "reopen"],
+          "payload": { "flags": ["-c", "--comment"], "from": "literal" },
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["issue", "comment"],
+          "payload": { "flags": ["-F", "--body-file"], "from": "file" },
+          "flags": ["--edit-last", "--create-if-none"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["issue", "comment"],
+          "required": [["--delete-last"]],
+          "flags": ["--delete-last", "--yes"],
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["issue", "close"],
+          "payload": { "flags": ["-c", "--comment"], "from": "literal" },
+          "valueFlags": ["-R", "--repo", "-r", "--reason"],
+          "positionals": 1
+        },
+        {
+          "words": ["issue", "reopen"],
+          "payload": { "flags": ["-c", "--comment"], "from": "literal" },
+          "valueFlags": ["-R", "--repo"],
+          "positionals": 1
+        },
+        {
+          "words": ["pr-review", "review"],
+          "payload": { "flags": ["--body"], "from": "literal" },
+          "required": [["--add-comment"]],
+          "flags": ["--add-comment"],
+          "valueFlags": ["-R", "--repo", "--pr", "--review-id", "--path", "--line", "--start-line", "--side", "--start-side"],
+          "positionals": 0
+        },
+        {
+          "words": ["pr-review", "review"],
+          "required": [["--submit"]],
+          "flags": ["--submit"],
+          "valueFlags": ["-R", "--repo", "--pr", "--review-id", "--event"],
+          "positionals": 0
+        },
+        {
+          "words": ["pr-review", "review"],
+          "payload": { "flags": ["--body"], "from": "literal" },
+          "required": [["--submit"]],
+          "flags": ["--submit"],
+          "valueFlags": ["-R", "--repo", "--pr", "--review-id", "--event"],
+          "positionals": 0
+        },
+        {
+          "words": ["pr-review", "comments", "reply"],
+          "payload": { "flags": ["--body"], "from": "literal" },
+          "valueFlags": ["-R", "--repo", "--pr", "--thread-id", "--review-id"],
+          "positionals": 0
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "slack_send_message_draft",
+      "payload": { "field": "message" },
+      "fields": ["channel_id", "message", "thread_ts"]
+    }
+  ]
+}

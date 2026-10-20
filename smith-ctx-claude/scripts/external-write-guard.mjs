@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import { git, readHookInput } from "../../smith-git/scripts/lib/hook-utils.mjs";
-import { GH_GLOBAL_VALUE_FLAGS, nonFlagTokensAfterGh } from "./lib/gh-command.mjs";
+import {
+  GH_BODY_VALUE_FLAGS,
+  GH_GLOBAL_VALUE_FLAGS,
+  GH_WRITE_VALUE_FLAGS,
+  ghApiArgs,
+  ghApiEndpointAndMethod,
+  isCloseOrReopen,
+  nonFlagTokensAfterGh,
+  withAttachedFlagsSplit,
+} from "./lib/gh-command.mjs";
+import { BOT_THREAD_REPLY, PR_REVIEW_PUBLISHING_FLAGS, flagTokens, ghExternalWriteCommand } from "./lib/gh-writes.mjs";
 import { commandExpands, contentLeaves, ghPayload, mcpPayload } from "./lib/write-payload.mjs";
 import { invokedShipOrReview, previewState } from "./lib/write-preview.mjs";
 
@@ -13,42 +23,8 @@ const PUBLIC_EXTERNAL_WRITE_PATTERNS = [
   /mcp__plugin_slack_slack__slack_(schedule_message|create_canvas|update_canvas|create_list|update_list|add_list_record|update_list_record|complete_file_upload|create_conversation)$/,
 ];
 
-const GH_API_METHOD_FLAGS = new Set(["-X", "--method"]);
-const GH_API_IMPLICIT_POST_FLAGS = new Set([
-  "-f",
-  "--raw-field",
-  "-F",
-  "--field",
-  "--input",
-]);
-const GH_API_FLAGS_TAKING_A_VALUE = new Set([
-  ...GH_GLOBAL_VALUE_FLAGS,
-  ...GH_API_METHOD_FLAGS,
-  ...GH_API_IMPLICIT_POST_FLAGS,
-  "-H",
-  "--header",
-  "-p",
-  "--preview",
-  "-q",
-  "--jq",
-  "-t",
-  "--template",
-  "--cache",
-]);
-const GH_SHORT_FLAGS_TAKING_A_VALUE = new Set(
-  [...GH_API_FLAGS_TAKING_A_VALUE, "-c"].filter((flag) => flag.length === 2),
-);
-const GH_API_WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const GH_API_COMMENTS_PATH = /\/(comments|reviews)(\/|\?|#|$)/i;
-const GH_GRAPHQL_WRITE_MUTATIONS =
-  /\bmutation\b[\s\S]*\b(addComment|addPullRequestReview|submitPullRequestReview|updatePullRequestReview|deletePullRequestReview|addPullRequestReviewComment|updatePullRequestReviewComment|addPullRequestReviewThread|addPullRequestReviewThreadReply|updateIssueComment|deleteIssueComment|addDiscussionComment|updateDiscussionComment|deleteDiscussionComment)\b/;
-const GH_REVIEW_SUBMIT_LONG_FLAGS = new Set(["--approve", "--comment", "--request-changes"]);
-const GH_REVIEW_SUBMIT_CHARS = new Set(["a", "c", "r"]);
 const DRAFT_VARIANT_HINT = "Prefer a *_draft variant where one exists.";
-const BOT_THREAD_REPLY = "gh pr-review comments reply";
-const GH_BODY_VALUE_FLAGS = ["-b", "--body", "-F", "--body-file"];
 const ATTACHED_SHORT_FLAG = /^-[A-Za-z]./;
-const SHORT_FLAG_LETTERS = /^-([A-Za-z]+)/;
 const FLAG_SHAPE = /^--?[A-Za-z]/;
 const REVIEW_ACTION_WORDS = {
   "-a": "approve",
@@ -59,7 +35,6 @@ const REVIEW_ACTION_WORDS = {
   "--comment": "comment",
 };
 const CLOSE_ACTION_WORDS = { "-d": "delete-branch", "--delete-branch": "delete-branch" };
-const GRAPHQL_ENDPOINT = /(^|\/)graphql\/?$/;
 const GH_TARGET_ENV = /\bGH_(REPO|HOST)=/;
 const MENTIONS_GH = /\bgh\b/;
 const HOST_QUALIFIED_REPO = /^[^/]+\/[^/]+\/[^/]+$/;
@@ -67,20 +42,11 @@ const THREAD_AUTHORS_QUERY =
   "query($id: ID!) { node(id: $id) { ... on PullRequestReviewThread { comments(first: 100) { totalCount nodes { author { __typename } } } } } }";
 const THREAD_AUTHOR_KINDS =
   '.data.node.comments as $c | if $c.totalCount > ($c.nodes | length) then "Unknown" else ([$c.nodes[] | (.author.__typename // "Unknown")] | unique | join(",")) end';
-const GH_WRITE_VALUE_FLAGS = new Set([
-  ...GH_API_FLAGS_TAKING_A_VALUE,
-  ...GH_BODY_VALUE_FLAGS,
-  "--reason",
-  "--duplicate-of",
-  "--pr",
-  "--thread-id",
-  "--review-id",
-]);
-const GH_CLOSE_VALUE_FLAGS = new Set([...GH_WRITE_VALUE_FLAGS, "-c", "--comment"]);
 const KNOWN_GH_WRITE_FLAGS = new Set([
   ...GH_WRITE_VALUE_FLAGS,
   ...Object.keys(REVIEW_ACTION_WORDS),
   ...Object.keys(CLOSE_ACTION_WORDS),
+  ...PR_REVIEW_PUBLISHING_FLAGS,
   "--paginate",
   "--silent",
   "-i",
@@ -120,63 +86,6 @@ function subagentReason(subject) {
   );
 }
 
-function withAttachedFlagsSplit(tokens) {
-  const valueFlags = valueFlagsFor(nonFlagTokensAfterGh(tokens)[1]);
-  const result = [];
-  for (const [index, token] of tokens.entries()) {
-    if (valueFlags.has(tokens[index - 1])) {
-      result.push(token);
-      continue;
-    }
-    if (token.startsWith("--") && token.includes("=")) {
-      const equalsIndex = token.indexOf("=");
-      result.push(token.slice(0, equalsIndex), token.slice(equalsIndex + 1));
-      continue;
-    }
-    const shortFlag = token.slice(0, 2);
-    if (token.length > 2 && GH_SHORT_FLAGS_TAKING_A_VALUE.has(shortFlag)) {
-      const remainder = token.slice(2);
-      result.push(shortFlag, remainder.startsWith("=") ? remainder.slice(1) : remainder);
-      continue;
-    }
-    result.push(token);
-  }
-  return result;
-}
-
-function hasReviewSubmitFlag(tokens) {
-  return tokens.some((token) => {
-    if (token.startsWith("--")) return GH_REVIEW_SUBMIT_LONG_FLAGS.has(token);
-    const letters = SHORT_FLAG_LETTERS.exec(token);
-    return letters !== null && [...letters[1]].some((char) => GH_REVIEW_SUBMIT_CHARS.has(char));
-  });
-}
-
-function ghApiArgs(normalized) {
-  return normalized.slice(normalized.indexOf("api") + 1);
-}
-
-function ghApiEndpointAndMethod(rest) {
-  let endpoint = null;
-  let method = null;
-  for (let index = 0; index < rest.length; index += 1) {
-    const token = rest[index];
-    if (GH_API_METHOD_FLAGS.has(token)) {
-      method = (rest[index + 1] || "").toUpperCase();
-      index += 1;
-      continue;
-    }
-    if (GH_API_FLAGS_TAKING_A_VALUE.has(token)) {
-      if (GH_API_IMPLICIT_POST_FLAGS.has(token) && method === null) method = "POST";
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("-")) continue;
-    if (endpoint === null) endpoint = token;
-  }
-  return { endpoint, method };
-}
-
 function flagValues(tokens, flags) {
   return tokens.flatMap((token, index) =>
     flags.includes(token) && tokens[index + 1] !== undefined ? [tokens[index + 1]] : [],
@@ -201,34 +110,22 @@ function positionalArgs(normalized, subcommand) {
   return result;
 }
 
-function isCloseOrReopen(subcommand) {
-  return subcommand === "close" || subcommand === "reopen";
-}
-
-function valueFlagsFor(subcommand) {
-  return isCloseOrReopen(subcommand) ? GH_CLOSE_VALUE_FLAGS : GH_WRITE_VALUE_FLAGS;
-}
-
-function flagTokens(tokens, subcommand) {
-  const valueFlags = valueFlagsFor(subcommand);
-  const result = [];
-  for (let index = 1; index < tokens.length; index += 1) {
-    const token = tokens[index];
-    if (!token.startsWith("-")) continue;
-    result.push(token);
-    if (valueFlags.has(token)) index += 1;
-  }
-  return result;
-}
-
 function ghActionWords(normalized) {
   const [resource, subcommand] = nonFlagTokensAfterGh(normalized);
   if (resource === "api") {
     const { method } = ghApiEndpointAndMethod(ghApiArgs(normalized));
     return method ? [method] : [];
   }
+  if (resource === "pr-review") {
+    return flagValues(normalized, ["--event"]).map((event) => event.toLowerCase());
+  }
   const words = subcommand === "review" ? REVIEW_ACTION_WORDS : CLOSE_ACTION_WORDS;
   return [...new Set(normalized.filter((token) => token in words).map((token) => words[token]))];
+}
+
+function prReviewPositionalArgs(normalized) {
+  const rest = normalized.slice(1);
+  return rest.filter((token, index) => !token.startsWith("-") && !GH_WRITE_VALUE_FLAGS.has(rest[index - 1]));
 }
 
 function ghTargets(normalized) {
@@ -237,6 +134,9 @@ function ghTargets(normalized) {
   if (resource === "api") {
     const { endpoint } = ghApiEndpointAndMethod(ghApiArgs(normalized));
     if (endpoint) targets.push(endpoint);
+  } else if (resource === "pr-review" && subcommand === "review") {
+    targets.push(...flagValues(normalized, ["--pr", "--review-id", "--path", "--line", "--start-line"]));
+    targets.push(...prReviewPositionalArgs(normalized).slice(2));
   } else if (resource === "pr-review") {
     targets.push(...flagValues(normalized, ["--pr", "--thread-id"]));
     targets.push(...positionalArgs(normalized, subcommand).slice(3));
@@ -244,47 +144,6 @@ function ghTargets(normalized) {
     targets.push(...positionalArgs(normalized, subcommand).slice(2));
   }
   return targets;
-}
-
-function ghExternalWriteCommand(tokens, expands) {
-  if (tokens[0] !== "gh") return null;
-  const normalized = withAttachedFlagsSplit(tokens);
-  const positional = nonFlagTokensAfterGh(normalized);
-  const [resource, subcommand] = positional;
-  const isPrOrIssue = resource === "pr" || resource === "issue";
-
-  if (isPrOrIssue && subcommand === "comment") {
-    return `gh ${resource} comment`;
-  }
-  if (
-    isPrOrIssue &&
-    isCloseOrReopen(subcommand) &&
-    flagTokens(normalized, subcommand).some((token) => token === "--comment" || /^-[A-Za-z]*c/.test(token))
-  ) {
-    return `gh ${resource} ${subcommand} --comment`;
-  }
-  if (resource === "pr" && subcommand === "review") {
-    return hasReviewSubmitFlag(normalized.slice(1)) ? "gh pr review" : null;
-  }
-  if (resource === "pr-review" && subcommand === "comments" && normalized.includes("reply")) {
-    return BOT_THREAD_REPLY;
-  }
-  if (resource === "api") {
-    const rest = ghApiArgs(normalized);
-    const { endpoint, method } = ghApiEndpointAndMethod(rest);
-    if (endpoint && GRAPHQL_ENDPOINT.test(endpoint)) {
-      const opaqueQuery = rest.some(
-        (token) => token.startsWith("query=@") || (expands && token.startsWith("query=") && /[$`]/.test(token)),
-      );
-      if (rest.includes("--input") || opaqueQuery) {
-        return "gh api graphql (query source opaque to the hook)";
-      }
-      return GH_GRAPHQL_WRITE_MUTATIONS.test(tokens.join(" ")) ? "gh api graphql" : null;
-    }
-    if (!endpoint || !GH_API_COMMENTS_PATH.test(endpoint)) return null;
-    return GH_API_WRITE_METHODS.has(method) ? `gh api ${endpoint}` : null;
-  }
-  return null;
 }
 
 function threadHasOnlyBotAuthors(threadId, cwd) {

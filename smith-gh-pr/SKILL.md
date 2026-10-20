@@ -25,6 +25,17 @@ Prefer the `gh pr-review` extension, `gh api`, or GraphQL queries over GitHub
 MCP tools (`mcp__github__*`) — they are hard to control pagination on (token
 waste), less complete than the CLI, and require a personal token.
 
+Post review comments only with `gh pr-review` (inline comments, thread
+replies, review submission) or `gh pr comment`/`gh pr review`; `gh api` stays
+for reads. The attribution guard (`smith-ctx-claude/scripts/attribution-guard.mjs`)
+allows a pull-request text write only when it matches a signature declared in
+`smith-style/scripts/attribution-signatures.json`: a `gh pr` or
+`gh issue comment` body goes through `--body-file «absolute path»` and a
+literal `--body` is blocked (the close/reopen `--comment` and
+`gh pr-review --body` are read as literal text), and every `gh api` write of pull request or comment text
+is blocked, pointing at `gh pr-review` or `gh pr create|edit|merge
+--body-file`.
+
 ## PR Title Format
 
 Follow conventional commits format. See `@smith-style/SKILL.md` for details.
@@ -123,18 +134,20 @@ Before drafting any PR review comment:
 
 1. Get attribution from script:
    ```bash
-   ~/.smith/smith-ctx-claude/scripts/attribution.sh
+   ~/.smith/smith-style/scripts/attribution.sh
    ```
 
 2. Validate format:
-   - PASS: Matches `Assisted-by: Claude:claude-(sonnet|opus|haiku|fable)-[0-9]+(-[0-9]+)?(-[0-9]+)?`
-   - PASS: Model ID is valid session model (sonnet|opus|haiku|fable)
+   - PASS: The line is exactly what `attribution.sh` printed: `Assisted-by: Claude:«session-model-id»`, the id as the session reports it, provider prefix included (e.g. `claude-opus-4-8`, `us.anthropic.claude-opus-4-8`)
    - FAIL: "on behalf of" anywhere in comment
    - FAIL: hand-typed model IDs
 
 3. Append to comment body:
    - Blank line before attribution
    - Attribution as last line of comment body
+   - With `--body-file`, append it with `attribution.sh >> «file»`; with
+     `gh pr-review`, which has no `--body-file`, paste the printed line
+     unchanged at the end of a single-quoted `--body '…'`
 
 ## Review Convergence & Auto-Fix
 
@@ -232,7 +245,7 @@ Review Findings").
 
 **Create PR:**
 ```shell
-gh pr create --title "feat: add feature" --body "..." --assignee @me
+gh pr create --title "feat: add feature" --body-file «draft file» --assignee @me
 ```
 
 **Merge PR:**
