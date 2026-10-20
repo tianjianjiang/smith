@@ -48,7 +48,7 @@ ExitPlanMode rejection has three scenarios -- handle each differently:
    - This is a known Claude Code issue where ExitPlanMode bounces back
    - Do NOT enter an infinite edit-and-retry loop
    - Use AskUserQuestion to tell the user: "ExitPlanMode was silently redirected.
-     Please exit plan mode manually (Escape or Shift+Tab), then tell me to proceed."
+     Please exit plan mode manually (Escape or Shift+Tab), then say to proceed."
 
 3. **Session ends after ExitPlanMode** (auto-accept and clear):
    - User clicked "auto-accept and clear context" -- session is killed

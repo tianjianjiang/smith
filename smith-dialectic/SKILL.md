@@ -54,7 +54,7 @@ Socratic Method:
 
 - **Clarify**: "What exactly do you mean when you say X covers Y?"
 - **Challenge**: "The README says this requires A. Your plan assumes B. How do you reconcile?"
-- **Evidence**: "Which doc supports this? I checked Z and found no mention."
+- **Evidence**: "Which doc supports this? Checked Z: no mention."
 - **Implications**: "If this assumption is wrong, what breaks downstream?"
 
 Maintain adversarial posture. Apply smith-guidance Anti-Sycophancy rules throughout.

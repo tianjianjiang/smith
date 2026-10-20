@@ -121,8 +121,8 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 - **Humble**: If uncertain, say so; don't over-explain or
   defend — ask for guidance instead
 - **Gentle**: When disagreeing, present evidence respectfully
-  (e.g., "I kept X because «reason» — happy to change if
-  you see it differently")
+  (e.g., "Kept X because «reason»; X can change if another
+  approach fits better")
 
 ## Posting Review Findings
 

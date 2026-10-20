@@ -19,7 +19,7 @@ description: Universal coding standards. Always active. Use when writing code, l
 
 **Inline Comments**:
 - Add no inline comments to code
-- If you find yourself wanting to add an inline comment, ask the user how to make the code self-explanatory instead
+- When code seems to need an inline comment, ask the user how to make the code self-explanatory instead
 - Code must be self-documenting through clear naming, structure, and extraction of well-named functions
 - Allowed exceptions (not inline comments): Config file value documentation (.env)
 
@@ -62,7 +62,7 @@ internal-file exemption.
 - Expand a standing term too when the output leaves this repository. A pull
   request, ticket, or Slack message reaches people who never load these
   instructions.
-- Say you do not know an abbreviation's expansion rather than guessing one.
+- State that an abbreviation's expansion is unknown rather than guessing one.
 - Before calling any output done, scan it for short forms and codes, and
   check each against the rules above rather than from memory.
 - Add a glossary near the top of a long document as well as, never instead

@@ -30,7 +30,7 @@ When drafting PR review comments, the assisted-by attribution line format was wr
 
 ### Primary Issue: Protection Mechanisms Failed — **CONFIRMED: Advisory Ignored**
 
-**Investigation Result**: The protection mechanisms worked, but I ignored the advisory.
+**Investigation Result**: The protection mechanisms worked, but the agent ignored the advisory.
 
 1. **skill-router hook (UserPromptSubmit)**: ✅ **WORKED CORRECTLY**
    - Pattern matched PR review keywords correctly
@@ -57,7 +57,7 @@ When drafting PR review comments, the assisted-by attribution line format was wr
 
 **The skill-router is ADVISORY, not ENFORCE.**
 
-It says "Invoke the relevant one" but there's no mechanism to ensure I actually do it. I can (and did) ignore the advisory and proceed without loading the skills.
+It says "Invoke the relevant one" but there's no mechanism to ensure the agent actually does it. The agent can (and did) ignore the advisory and proceed without loading the skills.
 
 ## Desired Fix
 

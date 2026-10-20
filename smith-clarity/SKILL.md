@@ -57,7 +57,7 @@ Seeking info that confirms existing beliefs.
 
 Over-relying on first piece of information.
 
-**Mitigation**: "What if my first hypothesis is completely wrong?"
+**Mitigation**: "What if the first hypothesis is completely wrong?"
 
 ### Premature Closure
 
@@ -92,7 +92,7 @@ Work expands to fill the time available for completion.
 ## Cognitive Forcing Strategies
 
 1. **Cognitive timeout**: Pause before finalizing any solution
-2. **Metacognition**: "What am I assuming? What could I be missing?"
+2. **Metacognition**: "What is being assumed? What could be missing?"
 3. **Forced alternatives**: Generate 2-3 options before committing
 
 **Implementation for agents**:
@@ -100,13 +100,13 @@ Work expands to fill the time available for completion.
 1. Before proposing solution: Generate alternatives
 2. Before implementing: Ask "What could go wrong?"
 3. After fixing bug: Verify fix addresses root cause, not symptom
-4. When user agrees: Ask "Are there downsides we haven't considered?"
+4. When user agrees: Ask "Are there downsides not yet considered?"
 
 ## Before You Finish
 
 **When making decisions or evaluating reasoning:**
 1. Pause before finalizing (Cognitive timeout)
-2. Ask "What am I assuming? What could go wrong?"
+2. Ask "What is being assumed? What could go wrong?"
 3. Generate 2-3 alternatives before committing
 4. Seek disconfirming evidence, not confirming evidence
 

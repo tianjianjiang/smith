@@ -157,7 +157,8 @@ checked is recorded as such and fails that check rather than passing quietly.
   opposite — its final text IS the tool result — so this trap belongs to the
   default spawn mode, not to every spawn.
 - Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
-  output alone does not reach me" — rather than chasing a round trip later.
+  output alone does not reach the main thread" — rather than chasing a
+  round trip later.
 - Treat an idle notification as "ready to be asked", never as "clean".
   Silence is a missing signal, not a passing one (`@smith-validation`).
 - The `summary` on an idle notification goes STALE — it echoes the agent's

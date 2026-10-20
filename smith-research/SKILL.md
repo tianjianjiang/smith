@@ -17,7 +17,7 @@ description: Proactive research protocol. Use when a question involves library o
 - Best practices queries ("recommended way in «current year»")
 - Technology assessment ("should I use X or Y")
 - Unfamiliar technology (not in training data)
-- **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — MUST load this skill + `@smith-validation/SKILL.md` (falsify-before-present) and verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; claims need evidence — do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way I think" — that reframe is the trigger.
+- **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — MUST load this skill + `@smith-validation/SKILL.md` (falsify-before-present) and verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; claims need evidence — do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way it is assumed" — that reframe is the trigger.
 
 ## Research Methods (Priority Order)
 
@@ -55,7 +55,7 @@ the date.
 **Confidence indicators:**
 - High: "Per official documentation..."
 - Medium: "Based on recent community discussion..."
-- Low: "My training data suggests X, but couldn't verify..."
+- Low: "Training data suggests X; not verified..."
 
 ## Paywall Workarounds
 
@@ -81,8 +81,8 @@ the date.
 - About to claim certainty about a version (verify first)
 
 **Inform user:**
-- "I checked the current documentation..."
-- "I couldn't fetch latest info, but based on training..."
+- "Checked against the current documentation..."
+- "The latest information could not be fetched; based on training data..."
 
 ## Related
 

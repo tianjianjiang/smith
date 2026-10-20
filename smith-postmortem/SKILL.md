@@ -126,7 +126,7 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 
 **Core principle**: Focus on systems, not people. Incidents are system failures; blame prevents learning.
 
-**Guidelines**: Use "we" not "they". Focus on "what" and "why" not "who".
+**Guidelines**: In causal explanations, name systems and roles, not individuals. Focus on "what" and "why" not "who"; action items still name an individual or team owner.
 
 ### Avoid
 
