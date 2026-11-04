@@ -159,7 +159,8 @@ Behind base + no conflicts + explicit "update" → AUTO-REBASE. Full tree in `re
 
 ## Merge Strategies
 
-**Merge commit**: Feature branches, **Squash**: Small fixes, **Rebase**: Linear history
+Squash only: every PR squash-merges (`gh pr merge --squash`; a native stack
+uses `gh stack merge --squash`).
 
 
 ## /ultrareview — Cloud Deep-Review
@@ -253,16 +254,16 @@ gh pr create --title "feat: add feature" --body-file «draft file» --assignee @
 gh pr merge {PR} --squash
 ```
 
-Options: `--squash`, `--merge`, or `--rebase`
-
 **Post-merge cleanup** (use the repo's DEFAULT branch — `main`, `develop`, etc., never assume `main`), run from the PRIMARY checkout:
 ```shell
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git checkout "$DEFAULT_BRANCH" && git fetch --prune origin && git pull --ff-only
-git branch -d feat/my-feature
 ```
-`--ff-only` is mandatory: it refuses to create a stray merge commit if local has
-diverged (e.g. after a squash-merge), surfacing the problem instead of hiding it.
+`--ff-only` is mandatory: it refuses to create a stray merge commit if the local
+default branch has diverged from origin, surfacing the problem instead of
+hiding it.
+A squash-merged branch is an orphan that `git branch -d` refuses; clear it per
+`@smith-worktree/SKILL.md` Sync-After-Squash-Merge Protocol.
 
 Inside a worktree session this block cannot run as written: the default branch
 is checked out in the primary checkout, so `git checkout` fails, `git fetch

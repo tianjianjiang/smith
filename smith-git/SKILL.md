@@ -128,7 +128,6 @@ on the command line but not read from config files.
 
 - **`-u`**: Use on first push to set upstream tracking
 - **`--force-with-lease`**: Safe force push for personal branches - required for stacked PRs after rebase, see `@smith-gh-pr/SKILL.md` Stacked PRs
-- **`--no-ff`**: Preserve merge commit for feature branches (maintains history)
 - **`-S`**: GPG sign commits
 
 ## Status Output Semantics
@@ -213,11 +212,6 @@ git push -u origin feat/my-feature
 **Safe force push (personal branches only):**
 ```shell
 git push --force-with-lease origin feat/my-feature
-```
-
-**Feature merge (preserve history):**
-```shell
-git merge --no-ff feat/my-feature
 ```
 
 **Interactive rebase (local commits only):**
