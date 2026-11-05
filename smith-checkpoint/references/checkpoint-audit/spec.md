@@ -60,21 +60,23 @@ directory, the current directory.
   must also read back exactly the document written, leading and trailing
   newlines aside (only newline characters; a line holding spaces or tabs
   still counts): Serena's `memories read` prints the stored file with
-  one extra trailing newline, and Basic-Memory's `read-note` returns the
-  note body after its frontmatter verbatim, which can open with the blank
-  line that separates the two.
+  one extra trailing newline, and Basic-Memory's
+  `tool read --no-include-frontmatter` returns the note body after its
+  frontmatter verbatim, which can open with the blank line that separates
+  the two.
 - **Restore.** On a failed check, or when the write itself fails, the
   backup is written back and read again. The restore holds only when that
   write succeeded and the document read back equals the backup, leading
   and trailing newlines aside. With no backup (a label's first
   checkpoint) the document this checkpoint created is deleted instead:
-  Serena with `memories delete «label»`, Basic-Memory with `tool
-  delete-note «permalink»` using the permalink its write returned, and the
-  removal is confirmed by reading it back (Basic-Memory by both permalink
-  and title, since `delete-note` exits 0 on an identifier it cannot
-  find). Basic-Memory is never deleted by title, since title lookup can
-  resolve to a same-titled note in another project; without a permalink
-  nothing is deleted and the message says so. The script exits 1 naming
+  Serena with `memories delete «label»`, Basic-Memory with
+  `tool delete --identifier «permalink»` using the permalink its write
+  returned, and the removal is confirmed by reading it back (Basic-Memory
+  by both permalink and title, since the exit status of `delete` alone
+  does not show that no note remains). Basic-Memory is never deleted by
+  title, since title lookup can resolve to a same-titled note in another
+  project; without a permalink nothing is deleted and the message says
+  so. The script exits 1 naming
   the backend and the outcome: "restored from «backup»", "restore failed;
   its prior document is preserved at «backup»" (that backup is renamed,
   when the rename succeeds, to `…-restore-failed.md` so pruning never

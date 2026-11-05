@@ -20,9 +20,10 @@ choose, set, or compare a config directory.
   a `--project <name>` argument, and the script contains no reference to
   `BASIC_MEMORY_CONFIG_DIR` or `BASIC_MEMORY_HOME` other than the check in
   §S2
-- And every such call goes through `basic_memory_tool`, which runs
-  `uvx --prerelease=allow basic-memory tool`; `SKILL.md` Runtime
-  prerequisites "Basic-Memory release channel" documents that channel
+- And every such call goes through `basic_memory_tool`, which runs the
+  installed `basic-memory tool`, never `uvx`; `SKILL.md` Runtime
+  prerequisites "Basic-Memory version" documents that install and its 1.0
+  minimum
 
 ## §S1 project-from-settings
 
@@ -42,8 +43,9 @@ call.
   `settings.local.json` with `primaryProject: "smith"` and `settings.json`
   with `primaryProject: "other"`
 - When the script runs from the worktree
-- Then `bm_read.argv` and `bm.argv` (the `uvx` shim's recordings) both
-  contain `--project smith`
+- Then `bm_read.argv` and `bm.argv` (recordings of the test shim that
+  stands in for the `basic-memory` executable) both contain
+  `--project smith`
 - Given a repository with neither key
 - When the script runs
 - Then no `--project` argument is passed and the Reload block reports
