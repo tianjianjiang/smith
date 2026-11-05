@@ -164,7 +164,7 @@ Protocol:
 2. From the primary working copy: `git fetch --prune origin && git pull --ff-only`. This catches the new commit and removes the stale remote-tracking ref.
 3. Only if a branch survived step 1 (you exited with `keep`, renamed it, or created it outside the tool): `git branch -D «branch»` to clear the squash-merge orphan (`git branch -d` refuses it as "not fully merged").
 
-If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the merge commit). Clean up:
+If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the squash commit). Clean up:
 
 ```shell
 git checkout -- «tracked-files-from-the-PR»

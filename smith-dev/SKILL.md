@@ -50,17 +50,12 @@ This document defines development workflow standards and code quality requiremen
 
 ## Pre-PR Quality Gates
 
-Run the gates below first, then ship through `/smith-ship`
-(`@smith-ship/SKILL.md`): it runs `/smith-preflight`, the `/smith-review`
-loop, commit, push and pull request in order. A task list or plan names
-that one step instead of listing commit and push itself.
-
-Before creating a pull request:
-
-- MUST run all formatters and linters (see language-specific skills)
-- MUST run all tests
-- MUST ensure branch is up-to-date with base branch
-- MUST review your own changes first (`git diff`)
+Run steps 1-3 of `@smith-gh-pr/SKILL.md` "Pre-PR checklist" (lint and
+format, tests, rebase onto the parent branch) first, then ship through
+`/smith-ship` (`@smith-ship/SKILL.md`): it runs `/smith-preflight`, the
+`/smith-review` loop, commit, push and pull request in order, which covers
+the checklist's remaining steps. A task list or plan names that one step
+instead of listing commit and push itself.
 
 **See**: `@smith-gh-pr/SKILL.md` - Pull request creation workflow
 **See**: `@smith-gh-cli/SKILL.md` - GitHub-specific PR commands

@@ -243,9 +243,7 @@ URL patterns map to API endpoints:
 
 ## Merge Strategies
 
-**Merge commit**: Feature branches with meaningful history
-**Squash**: Small fixes, docs, single logical change
-**Rebase**: Linear history required, clean commits
+Squash only; the rule lives in `smith-gh-pr/SKILL.md` Merge Strategies.
 
 ## /ultrareview — Cloud Deep-Review
 
@@ -293,10 +291,8 @@ above for decide-vs-ask criteria and convergence rules):
    and post it only on a yes (`@smith-ctx-claude` External Writes)
 5. Re-check after CI passes
 
-**Proactive self-review** — before reviewer sees changes:
-- Run CodeRabbit review via configured integration (e.g. `coderabbit:review` skill or GitHub App) after pushing
-- Address mechanical feedback (lint, naming, tests)
-  before human review begins
+**Proactive self-review**: review to convergence before the first push
+(`smith-gh-pr/SKILL.md` Pre-PR checklist step 0).
 
 **`/autofix-pr` — cloud auto-fix loop**
 

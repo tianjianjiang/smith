@@ -39,8 +39,8 @@ and it automates most of the manual dance documented below:
   GitHub without local tracking; a stack number as the first argument appends
   to that stack; it writes to GitHub, so run it only inside a ship the user
   invoked or on the user's instruction to link
-- `gh stack merge` — merge the chain bottom-up; only inside a ship the user
-  invoked or after the user said to merge
+- `gh stack merge --squash` — merge the chain bottom-up; only inside a ship
+  the user invoked or after the user said to merge
 - `gh stack view` inspects; `modify` / `unstack` restructure or dissolve the
   stack on GitHub, only on the user's instruction for that action
 
@@ -172,7 +172,7 @@ branch counts as mechanics only inside that transaction.
 4. Retarget PR #3 (feat/auth-oauth) onto main (before merging PR #2)
 5. Merge PR #2 → main
 6. Rebase PR #3 onto main
-7. Merge PR #3 → main (can squash this one)
+7. Merge PR #3 → main
 ```
 
 ## Rebasing after a parent merges
@@ -191,16 +191,18 @@ git push --force-with-lease
 **Why `--onto`**: only transplants commits unique to the child branch,
 avoiding duplicate commits.
 
-**Before** (parent merged as M):
+**Before** (parent P1–P2 squash-merged as S):
 ```text
-main ──●──●──●──M
-                 \
-feat/auth-login ──A──B──C (still based on old parent)
+main ──●──●──●──S
+        \
+         P1──P2 (old feat/auth-base)
+               \
+                A──B──C (feat/auth-login, still based on P2)
 ```
 
 **After `git rebase --onto origin/main feat/auth-base`**:
 ```text
-main ──●──●──●──M
+main ──●──●──●──S
                  \
                   └──A'──B'──C' (rebased)
 ```
@@ -212,7 +214,8 @@ ship the user invoked, or else each on the user's instruction for that action
 (`@smith-guidance` External writes); `--force-with-lease` to your own
 branch counts as mechanics only inside that transaction.
 
-Squash merge IS allowed if the branch-deletion process is followed.
+Every stack PR squash-merges (`smith-gh-pr/SKILL.md` Merge Strategies);
+follow the branch-deletion process below.
 
 Delete a parent branch only AFTER its child is retargeted, and delete it
 manually (`git push origin --delete`), never with `gh pr merge
@@ -225,12 +228,12 @@ its branch immediately and GitHub auto-CLOSES (does not retarget) any child
 still based on it; recovery is reopen/recreate. Pre-retargeting avoids the
 race.
 
-**Merge strategy by PR position**:
-- **Parent / middle (has children)**: squash OK with the process above;
-  delete only after the child base is updated
-- **Final (leaf)**: squash OK, immediate deletion OK
+**Branch deletion by PR position**:
+- **Parent / middle (has children)**: delete only after the child base is
+  updated
+- **Final (leaf)**: immediate deletion OK
 
-**Why squash needs the extra steps**: squash creates a single commit,
+**Why the extra steps**: squash creates a single commit,
 destroying commit ancestry; child branches still contain the parent's
 original commits, causing duplicate commits, rebase conflicts, and Git
 failing to recognize commits already merged.
