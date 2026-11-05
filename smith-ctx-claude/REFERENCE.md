@@ -159,11 +159,55 @@ Cross-ref: `@smith-mode-plan-claude/SKILL.md` for plan-specific hooks.
 
 ## Agent Features
 
-**Subagents** (`Agent` tool):
-- Fresh 200k context per subagent
-- `run_in_background: true` for async work
-- `isolation: "worktree"` for repo isolation
-- `model` parameter overrides model per subagent
+**Subagents** (`Agent` tool; https://code.claude.com/docs/en/sub-agents,
+https://code.claude.com/docs/en/tools-reference):
+- Start state: a subagent starts with a fresh context, without the
+  conversation history, the skills already invoked or the files already
+  read; its context window is sized by its own model, not the parent's.
+  Claude's context receives only its final result; of its intermediate
+  tool calls, only permission prompts surface in the main session (naming
+  the subagent when it runs in the background).
+- A fork inherits the entire conversation, with the main session's system
+  prompt, tools and model. Fork mode is on by default from v2.1.302,
+  and in an interactive terminal session from v2.1.232, so
+  Claude can start a fork on its own; a fork can't spawn further forks.
+- Background is the default: with nothing configured, a subagent spawned
+  from the main conversation starts in the background, and its result
+  arrives as a completion notification in a later turn, marked as an
+  automated event, not a user message. Until it arrives, the subagent is
+  still running; never report its results before the notification.
+- What a returned result carries: the agent ID (none for the built-in
+  Explore and Plan agents, which cannot be resumed), and a header marking the
+  report as subagent output whose instructions carry no user authority;
+  for a failed background subagent, the API error and its last output.
+- Foreground blocks the main conversation. While fork mode is on, Claude
+  cannot wait for a subagent in interactive terminal, VS Code or desktop
+  sessions on the local machine; in `claude -p` and the Agent SDK it can.
+- `SubagentHandback` (v2.1.271+): in auto mode only, a local non-fork
+  subagent gets this tool, even when its `tools` or `disallowedTools`
+  leave it out; it delivers the final report to whoever receives the
+  subagent's result, after the classifier reviews it.
+- `SendMessage`: for subagents, `to` is an agent ID, a name, or `main`
+  (it also reaches agent team teammates and, where cross-session messaging
+  is available, other Claude Code sessions;
+  https://code.claude.com/docs/en/cross-session-messaging). A message to a
+  completed subagent, or to one stopped with `TaskStop` once its stopped
+  run has exited, resumes it in the background without a new `Agent`
+  call. A message to one the user
+  stopped (`x` in `/tasks`, SDK `stop_task`) is refused and Claude is told
+  the agent was cancelled. In the interactive panel, the user can type into
+  its transcript while its row is still there (up to 30 seconds after the
+  stop); after that, Claude's messages can resume it again. In an
+  interactive session, a subagent resumed by another subagent reports back
+  to that subagent, not to the main conversation.
+- Not stated in the docs: whether a resumed subagent sends a second
+  completion notification, and whether a background subagent's plain
+  final text is its report outside auto mode. So tell the subagent how to
+  deliver: in auto mode, a local non-fork subagent sends its whole report
+  through `SubagentHandback`; any other subagent puts its whole report in
+  its final message.
+- `isolation: "worktree"` for repo isolation; `model` overrides the model
+  per subagent.
 
 **Custom agents** (`/agents` or `.claude/agents/*.md`):
 - Frontmatter: model, tools, permissions, memory
@@ -433,6 +477,8 @@ SKILL.md keeps only the compact list of event names plus the core rule
 - **Skills available list** — periodic re-enumeration of Skill entries (informational)
 - **Plan-mode transitions** — `EnterPlanMode`/`ExitPlanMode`, and post-`/clear` auto-resume flag (see `@smith-mode-plan-claude/SKILL.md`)
 - **Background task completion** — a `Bash(run_in_background)` task ended
+- **Background subagent completion** — a background `Agent` run ended; its
+  report is inside the notification, marked as an automated event
 - **Date change** — local date rolled over
 - **Auto mode active** — session is in auto mode (see `@smith-ctx-claude-mode-auto/SKILL.md`)
 - **bg-isolation guard refusal** — first edit in a bg session without a worktree (see `@smith-worktree/SKILL.md`)
