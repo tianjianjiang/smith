@@ -439,7 +439,7 @@ serena_memories() {
 }
 
 basic_memory_tool() {
-    uvx --prerelease=allow basic-memory tool "$@"
+    basic-memory tool "$@"
 }
 
 read_serena_memory() {
@@ -600,7 +600,7 @@ restore_basic_memory() {
         echo "Error: Basic-Memory held no prior document and returned no permalink for this write, so nothing was deleted (deleting by title could hit a same-titled note elsewhere); check Basic-Memory for this checkpoint's entry" >&2
         return 0
     else
-        basic_memory_tool delete-note "$permalink" ${bm_project:+--project "$bm_project"} >&2 && written=1
+        basic_memory_tool delete --identifier "$permalink" ${bm_project:+--project "$bm_project"} >&2 && written=1
         restored=$(read_basic_memory_content "$permalink" "$bm_project") || written=0
         restored+=$(read_basic_memory_content "$title" "$bm_project") || written=0
     fi
@@ -651,19 +651,18 @@ run_audit() {
 }
 
 is_basic_memory_note_not_found() {
-    local result="$1" error_output="$2"
-    [[ "$(jq -r '.error // empty' <<<"$result" 2>/dev/null)" == "NOTE_NOT_FOUND" ]] \
-        || grep -qE '^Error: Note not found: ' <<<"$error_output"
+    local error_output="$1"
+    [[ "$(sed -n 's/^Error: //p' <<<"$error_output" | jq -r '.error // empty' 2>/dev/null)" == "NOT_FOUND" ]]
 }
 
 read_basic_memory_note_json() {
     local title="$1" bm_project="$2"
     local result error_file error_output
     error_file=$(mktemp)
-    if ! result=$(basic_memory_tool read-note "$title" ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
+    if ! result=$(basic_memory_tool read "$title" --json --no-include-frontmatter ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
         error_output=$(cat "$error_file")
         rm -f "$error_file"
-        if is_basic_memory_note_not_found "$result" "$error_output"; then
+        if is_basic_memory_note_not_found "$error_output"; then
             printf '{}'
             return 0
         fi
@@ -677,7 +676,7 @@ read_basic_memory_note_json() {
 extract_basic_memory_content() {
     local result="$1" title="$2" content
     if ! content=$(jq -r '.content // empty' <<<"$result" 2>&1); then
-        echo "Error: could not parse Basic-Memory read-note output for ${title}: ${content}" >&2
+        echo "Error: could not parse Basic-Memory read output for ${title}: ${content}" >&2
         return 1
     fi
     printf '%s' "$content"
@@ -718,10 +717,11 @@ write_basic_memory_document() {
     local folder="$2"
     local bm_project="$3"
     local document="$4"
-    basic_memory_tool write-note \
+    basic_memory_tool write \
+        --json \
         --title "${title}" \
-        --folder "${folder}" \
-        --type guide \
+        --directory "${folder}" \
+        --note-type guide \
         --tags checkpoint \
         --overwrite \
         ${bm_project:+--project "$bm_project"} \
@@ -812,6 +812,14 @@ main() {
         echo "Error: jq is required (used to parse Basic-Memory CLI output)" >&2
         exit 1
     }
+    command -v basic-memory &>/dev/null || {
+        echo "Error: the basic-memory executable is not on PATH; install it with uv tool install basic-memory, the same install the Basic-Memory MCP server runs, so both use one version. Nothing was written." >&2
+        exit 1
+    }
+    basic_memory_tool read --help &>/dev/null || {
+        echo "Error: basic-memory 1.0 or later is required (found: $(basic-memory --version 2>&1)); upgrade it with uv tool upgrade basic-memory and restart the Basic-Memory MCP server. Nothing was written." >&2
+        exit 1
+    }
     local plan_path=$(extract_arg plan)
     [[ -z "$plan_path" ]] && plan_path=$(detect_active_plan)
     local body_path=""
@@ -854,7 +862,7 @@ main() {
 
     local permalink
     if ! permalink=$(jq -r '.permalink // empty' <<<"$bm_result" 2>&1); then
-        echo "Warning: could not parse Basic-Memory permalink from write-note output: ${permalink}" >&2
+        echo "Warning: could not parse Basic-Memory permalink from write output: ${permalink}" >&2
         permalink=""
     fi
 

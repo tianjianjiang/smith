@@ -14,7 +14,7 @@ leaked_real_flags() { grep -lF -- "$SUITE_MARKER" "$HOME/.claude/plans"/.pending
 
 cat > "$SHIM/uvx" <<'EOF'
 #!/bin/sh
-argv="$*"
+argv="$(basename "$0") $*"
 
 value_after() {
   token="$1"; shift
@@ -73,8 +73,17 @@ case "$argv" in
     drop_history "$content" "${SERENA_WRITE_DROPS_HISTORY:-0}" > "$store"
     exit 0
     ;;
-  *"basic-memory tool read-note"*)
-    title=$(value_after read-note "$@")
+  "uvx "*"basic-memory"*)
+    printf '%s\n' "$argv" >> "$UVX_LOG_DIR/uvx_bm.argv"
+    echo "basic-memory must run from the installed tool, not uvx" >&2
+    exit 1
+    ;;
+  *"basic-memory tool read --help"*)
+    [ "${BM_LEGACY:-0}" = "1" ] && { echo "Error: No such command 'read'." >&2; exit 2; }
+    exit 0
+    ;;
+  *"basic-memory tool read "*)
+    title=$(value_after read "$@")
     title="${title##*/}"
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     folder_store="$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
@@ -83,40 +92,58 @@ case "$argv" in
       echo "connection reset by peer" >&2
       exit 1
     fi
-    if [ -f "$store" ]; then
-      [ "${BM_READ_NOISE:-0}" = "1" ] && echo "Resolved 1 package in 3ms" >&2
-      if [ -f "$folder_store" ]; then
-        folder=$(cat "$folder_store")
+    if [ "${BM_READ_MISSING:-note}" = "project" ]; then
+      echo "Error: Project not found: 'nosuch'" >&2
+      exit 1
+    fi
+    if [ "${BM_READ_MISSING:-note}" = "json-other" ]; then
+      echo 'Error: {"error": "INTERNAL_ERROR", "message": "database is locked"}' >&2
+      exit 1
+    fi
+    case " $* " in *" --json "*) json=1 ;; *) json=0 ;; esac
+    case " $* " in *" --no-include-frontmatter "*) frontmatter=0 ;; *) frontmatter=1 ;; esac
+    if [ ! -f "$store" ]; then
+      if [ "$json" = "1" ]; then
+        printf 'Error: {"error": "NOT_FOUND", "message": "No note matches %s in project main.", "try_instead": "bm_search(query=%s, project=main)"}\n' "$title" "$title" >&2
       else
-        folder="projects/$(basename "$PWD")"
+        printf 'Error: NOT_FOUND: No note matches %s in project main.\n' "$title" >&2
       fi
-      lead=""
-      [ "${BM_READ_LEADING_BLANK:-0}" = "1" ] && lead="$(printf '\n\n.')" && lead="${lead%.}"
-      jq -Rs --arg title "$title" --arg file_path "$folder/$title.md" --arg lead "$lead" '{title: $title, file_path: $file_path, content: ($lead + .)}' < "$store"
-    elif [ "${BM_READ_MISSING:-current}" = "legacy" ]; then
-      printf '{"title": null, "file_path": null, "content": null}\n'
-    elif [ "${BM_READ_MISSING:-current}" = "stderr-only" ]; then
-      echo "Error: Note not found: $title" >&2
       exit 1
+    fi
+    [ "${BM_READ_NOISE:-0}" = "1" ] && echo "Resolved 1 package in 3ms" >&2
+    if [ -f "$folder_store" ]; then
+      folder=$(cat "$folder_store")
     else
-      printf '{"title": null, "permalink": null, "file_path": null, "content": null, "frontmatter": null, "error": "NOTE_NOT_FOUND", "message": "Note not found: %s"}\n' "$title"
-      echo "Error: Note not found: $title" >&2
-      exit 1
+      folder="projects/$(basename "$PWD")"
+    fi
+    lead=""
+    [ "${BM_READ_LEADING_BLANK:-0}" = "1" ] && lead="$(printf '\n\n.')" && lead="${lead%.}"
+    frontmatter_text=""
+    [ "$frontmatter" = "1" ] && frontmatter_text="$(printf -- '---\ntitle: %s\ntype: guide\n---\n.' "$title")" && frontmatter_text="${frontmatter_text%.}"
+    if [ "$json" = "1" ]; then
+      jq -Rs --arg title "$title" --arg file_path "$folder/$title.md" --arg lead "$frontmatter_text$lead" '{title: $title, file_path: $file_path, content: ($lead + .)}' < "$store"
+    else
+      printf '%s' "$frontmatter_text$lead"
+      cat "$store"
     fi
     exit 0
     ;;
-  *"basic-memory tool write-note"*)
+  *"basic-memory tool write "*)
+    case " $* " in *" --folder "*|*" --type "*) echo "No such option: --folder / --type" >&2; exit 2 ;; esac
     title=$(value_after --title "$@")
-    folder=$(value_after --folder "$@")
+    folder=$(value_after --directory "$@")
     content=$(value_after --content "$@")
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     folder_store="$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
     printf '%s\n' "$argv" > "$UVX_LOG_DIR/bm.argv"
     printf '%s' "$content" > "$UVX_LOG_DIR/bm.content"
-    [ "${BM_FAIL:-0}" = "1" ] && { echo "write-note failed" >&2; exit 1; }
+    [ "${BM_FAIL:-0}" = "1" ] && { echo "write failed" >&2; exit 1; }
     drop_history "$content" "${BM_WRITE_DROPS_HISTORY:-0}" > "$store"
     printf '%s' "$folder" > "$folder_store"
-    printf '{"permalink": "%s/%s"}\n' "$folder" "$(store_key "$title")"
+    case " $* " in
+      *" --json "*) printf '{"action": "updated", "permalink": "%s/%s"}\n' "$folder" "$(store_key "$title")" ;;
+      *) printf 'Updated %s/%s.md\npermalink: %s/%s\n' "$folder" "$title" "$folder" "$(store_key "$title")" ;;
+    esac
     exit 0
     ;;
   *"serena memories delete"*)
@@ -125,17 +152,21 @@ case "$argv" in
     rm -f "$UVX_LOG_DIR/store_serena_$(store_key "$label")"
     exit 0
     ;;
-  *"basic-memory tool delete-note"*)
-    title=$(value_after delete-note "$@")
+  *"basic-memory tool delete "*)
+    title=$(value_after --identifier "$@")
+    [ -n "$title" ] || { echo "Missing option --identifier" >&2; exit 2; }
     title="${title##*/}"
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_delete.argv"
-    rm -f "$UVX_LOG_DIR/store_bm_$(store_key "$title")" "$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
+    store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
+    [ -f "$store" ] || { printf 'Error: {"error": "NOT_FOUND", "message": "No note matches %s"}\n' "$title" >&2; exit 1; }
+    rm -f "$store" "$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
     exit 0
     ;;
 esac
 exit 0
 EOF
 chmod +x "$SHIM/uvx"
+ln -s uvx "$SHIM/basic-memory"
 export PATH="$SHIM:$PATH"
 export UVX_LOG_DIR="$SHIM"
 
@@ -170,16 +201,20 @@ run_script_from_tree() {
 
 reset_logs
 out=$(run_script test_label_success "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "success path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write-note argv must pass --overwrite so it succeeds whether or not the note already exists: $(cat "$SHIM/bm.argv")"
-head -n 1 "$SHIM/bm.argv" | grep -q '^--prerelease=allow basic-memory tool write-note ' || fail "write-note must run on the prerelease channel SKILL.md asks the MCP server to use, or it cannot open a database migrated by a prerelease carrying a newer migration: $(cat "$SHIM/bm.argv")"
-[ -s "$SHIM/bm_read.argv" ] && ! grep -qv '^--prerelease=allow basic-memory tool read-note ' "$SHIM/bm_read.argv" || fail "every read-note must run on the prerelease channel SKILL.md asks the MCP server to use, or it cannot open a database migrated by a prerelease carrying a newer migration: $(cat "$SHIM/bm_read.argv")"
+grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "write argv must pass --overwrite so it succeeds whether or not the note already exists: $(cat "$SHIM/bm.argv")"
+head -n 1 "$SHIM/bm.argv" | grep -q '^basic-memory tool write ' || fail "the write must run the installed basic-memory executable (the same version as the MCP server) with the 1.0 tool write command: $(cat "$SHIM/bm.argv")"
+grep -q -- ' --json' "$SHIM/bm.argv" || fail "the write must pass --json, or basic-memory 1.0 prints text the permalink cannot be parsed from: $(cat "$SHIM/bm.argv")"
+grep -q -- '--note-type guide' "$SHIM/bm.argv" || fail "the write must set the note type with the 1.0 --note-type option: $(cat "$SHIM/bm.argv")"
+[ -s "$SHIM/bm_read.argv" ] && ! grep -qv '^basic-memory tool read ' "$SHIM/bm_read.argv" || fail "every read must run the installed basic-memory executable with the 1.0 tool read command: $(cat "$SHIM/bm_read.argv")"
+! grep -qvE -- ' --json( |$)' "$SHIM/bm_read.argv" && ! grep -qvE -- ' --no-include-frontmatter( |$)' "$SHIM/bm_read.argv" || fail "every read must pass --json and --no-include-frontmatter, or basic-memory 1.0 returns plain text with the frontmatter prepended: $(cat "$SHIM/bm_read.argv")"
+[ ! -e "$SHIM/uvx_bm.argv" ] || fail "basic-memory must never run through uvx, whose cached version can differ from the MCP server's: $(cat "$SHIM/uvx_bm.argv")"
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "fresh checkpoint: Serena and Basic-Memory must receive identical content"
 [ -s "$SHIM/serena.content" ] || fail "content passed to backends is empty"
 [ "$(grep -c '^# test_label_success$' "$SHIM/serena.content")" = 1 ] || fail "fresh checkpoint must carry exactly one title line"
 echo "$out" | grep -qF -- "Basic-Memory: projects/$(basename "$SHIM")/Test_Label_Success" || fail "reload block missing permalink: $out"
 
 reset_logs
-( export BM_FAIL=1; run_script test_label_failure >/dev/null 2>"$SHIM/stderr" ) && fail "failure path: script exited zero when write-note failed"
+( export BM_FAIL=1; run_script test_label_failure >/dev/null 2>"$SHIM/stderr" ) && fail "failure path: script exited zero when the Basic-Memory write failed"
 grep -q 'Basic-Memory write failed' "$SHIM/stderr" || fail "failure path: missing error message: $(cat "$SHIM/stderr")"
 grep -qF 'Error: Serena held no prior document, so the one this checkpoint created was removed' "$SHIM/stderr" || fail "failure path: a first checkpoint's Serena memory must be removed when Basic-Memory fails: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/store_serena_test_label_failure" ] || fail "failure path: Serena must not keep an entry Basic-Memory lacks"
@@ -192,11 +227,11 @@ grep -q 'Serena write failed' "$SHIM/stderr" || fail "Serena failure path: missi
 reset_logs
 printf '## Completed\n- [x] first session thing\n' > "$SHIM/body1.md"
 run_script test_label_accumulate "body=$SHIM/body1.md" >/dev/null 2>"$SHIM/stderr1" || fail "accumulate first call: script exited non-zero: $(cat "$SHIM/stderr1")"
-grep -q 'write-note' "$SHIM/bm.argv" || fail "accumulate first call must write via write-note: $(cat "$SHIM/bm.argv")"
+grep -q 'basic-memory tool write ' "$SHIM/bm.argv" || fail "accumulate first call must write via tool write: $(cat "$SHIM/bm.argv")"
 
 printf '## Completed\n- [x] second session thing\n' > "$SHIM/body2.md"
 run_script test_label_accumulate "body=$SHIM/body2.md" >/dev/null 2>"$SHIM/stderr2" || fail "accumulate second call: script exited non-zero: $(cat "$SHIM/stderr2")"
-grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "second checkpoint must still pass --overwrite to write-note: $(cat "$SHIM/bm.argv")"
+grep -q -- '--overwrite' "$SHIM/bm.argv" || fail "second checkpoint must still pass --overwrite to tool write: $(cat "$SHIM/bm.argv")"
 grep -qF -- 'first session thing' "$SHIM/serena.content" || fail "accumulation must not drop the first checkpoint's facts from Serena: $(cat "$SHIM/serena.content")"
 grep -qF -- 'second session thing' "$SHIM/serena.content" || fail "accumulation must include the new checkpoint's facts in Serena"
 [ "$(grep -c '^# test_label_accumulate$' "$SHIM/serena.content")" = 1 ] || fail "accumulated Serena document must carry exactly one title line, not one per checkpoint: $(cat "$SHIM/serena.content")"
@@ -219,7 +254,7 @@ assert_existing_note_folder_reused() {
   printf '# %s\n- [x] prior fact from folder %s\n' "$label" "$seeded_folder" > "$SHIM/store_bm_${title_key}"
   printf '%s' "$seeded_folder" > "$SHIM/store_bm_folder_${title_key}"
   run_script "$label" >/dev/null 2>"$SHIM/stderr" || fail "$label: script exited non-zero: $(cat "$SHIM/stderr")"
-  grep -qF -- "--folder $seeded_folder" "$SHIM/bm.argv" || fail "$label: an existing note's own folder ($seeded_folder) must be reused, not the default projects/<project> scheme: $(cat "$SHIM/bm.argv")"
+  grep -qF -- "--directory $seeded_folder" "$SHIM/bm.argv" || fail "$label: an existing note's own folder ($seeded_folder) must be reused, not the default projects/<project> scheme: $(cat "$SHIM/bm.argv")"
   grep -qF -- "prior fact from folder $seeded_folder" "$SHIM/bm.content" || fail "$label: prior content must still be merged in: $(cat "$SHIM/bm.content")"
 }
 
@@ -228,11 +263,11 @@ assert_existing_note_folder_reused test_label_rootfolder Test_Label_Rootfolder .
 
 assert_existing_note_folder_reused test_label_folderaccumulate Test_Label_Folderaccumulate smith
 run_script test_label_folderaccumulate >/dev/null 2>"$SHIM/stderr" || fail "folder-accumulate second call: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -qF -- '--folder smith' "$SHIM/bm.argv" || fail "a second checkpoint on a custom-folder note must not drift back to the default projects/<project> folder: $(cat "$SHIM/bm.argv")"
+grep -qF -- '--directory smith' "$SHIM/bm.argv" || fail "a second checkpoint on a custom-folder note must not drift back to the default projects/<project> folder: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 run_script test_label_newnote >/dev/null 2>"$SHIM/stderr" || fail "new-note path: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -qF -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "a brand-new note with no prior folder must still default to projects/<project>: $(cat "$SHIM/bm.argv")"
+grep -qF -- "--directory projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "a brand-new note with no prior folder must still default to projects/<project>: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 printf '# test_label_titleonly\n' > "$SHIM/store_serena_test_label_titleonly"
@@ -295,9 +330,23 @@ ln -s "$SHIM/uvx" "$FAKE_PATH_NO_JQ/uvx"
 grep -qi 'jq is required' "$SHIM/stderr" || fail "a missing jq dependency must be reported: $(cat "$SHIM/stderr")"
 
 reset_logs
+FAKE_PATH_NO_BM="$SHIM/no-basic-memory-path"
+mkdir -p "$FAKE_PATH_NO_BM"
+ln -s "$SHIM/uvx" "$FAKE_PATH_NO_BM/uvx"
+ln -s "$(command -v jq)" "$FAKE_PATH_NO_BM/jq"
+(PATH="$FAKE_PATH_NO_BM" "$BASH_BIN" "$SCRIPT" test_label_nobm) >/dev/null 2>"$SHIM/stderr" && fail "a missing basic-memory executable must make the script exit non-zero"
+grep -qF 'uv tool install basic-memory' "$SHIM/stderr" || fail "a missing basic-memory executable must be reported with how to install it: $(cat "$SHIM/stderr")"
+[ -e "$SHIM/serena.argv" ] || [ -e "$SHIM/serena_read.argv" ] || [ -e "$SHIM/uvx_bm.argv" ] && fail "a missing basic-memory executable must stop the script before any backend is touched"
+
+reset_logs
+( export BM_LEGACY=1; run_script test_label_legacybm ) >/dev/null 2>"$SHIM/stderr" && fail "a basic-memory older than 1.0 must make the script exit non-zero"
+grep -qF 'basic-memory 1.0 or later is required' "$SHIM/stderr" || fail "a basic-memory older than 1.0 must be reported as a version problem: $(cat "$SHIM/stderr")"
+[ -e "$SHIM/serena.argv" ] || [ -e "$SHIM/serena_read.argv" ] && fail "a basic-memory older than 1.0 must stop the script before any backend is touched"
+
+reset_logs
 run_script test_label_outside_git "plan=/tmp/plan.md" >/dev/null 2>"$SHIM/stderr" || fail "outside-git path: script exited non-zero: $(cat "$SHIM/stderr")"
 grep -q -- 'serena memories write test_label_outside_git --content' "$SHIM/serena.argv" || fail "outside git: serena argv should carry no project: $(cat "$SHIM/serena.argv")"
-grep -qF -- "--folder projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "outside git: folder should default to the current directory name: $(cat "$SHIM/bm.argv")"
+grep -qF -- "--directory projects/$(basename "$SHIM")" "$SHIM/bm.argv" || fail "outside git: folder should default to the current directory name: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 REPO="$SHIM/primary-repo"
@@ -307,7 +356,7 @@ PRIMARY="$(cd "$REPO" && pwd -P)"
 wt_out=$(cd "$REPO/.claude/worktrees/wt" && bash "$SCRIPT" test_label_worktree "plan=/tmp/plan.md" 2>"$SHIM/stderr") || fail "worktree path: script exited non-zero: $(cat "$SHIM/stderr")"
 echo "$wt_out" | grep -qF -- "- Serena: $PRIMARY/.serena/memories/test_label_worktree.md" || fail "reload block must name the Serena memory file by absolute path: $wt_out"
 grep -qF -- "serena memories write test_label_worktree $PRIMARY --content" "$SHIM/serena.argv" || fail "worktree: serena argv should name the primary checkout: $(cat "$SHIM/serena.argv")"
-grep -q -- '--folder projects/primary-repo' "$SHIM/bm.argv" || fail "worktree: folder should use the primary checkout name: $(cat "$SHIM/bm.argv")"
+grep -q -- '--directory projects/primary-repo' "$SHIM/bm.argv" || fail "worktree: folder should use the primary checkout name: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 PLAN="$SHIM/groovy-greeting-pearl.md"
@@ -458,18 +507,28 @@ out=$(run_script_from_tree "$TREE_WRITTEN" test_label_written "plan=$PLAN" "body
 echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
 [ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
 grep -q '^test_label_written$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
-for missing_style in current stderr-only legacy; do
-  reset_logs
-  rm -f "$RELOAD_FLAG_LOG"
-  label="test_label_brand_new_$(printf '%s' "$missing_style" | tr -c 'a-z' '_')"
-  out=$( export BM_READ_MISSING="$missing_style"; run_script_from_tree "$TREE_WRITTEN" "$label" "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr" ) || fail "brand-new label ($missing_style): a Basic-Memory 'Note not found' read must start a new note, not fail the checkpoint: $(cat "$SHIM/stderr")"
-  grep -q 'rolling Serena back' "$SHIM/stderr" && fail "brand-new label ($missing_style): Serena must not be rolled back: $(cat "$SHIM/stderr")"
-  [ "$(grep -cE '^## [0-9]{4}-' "$SHIM/serena.content")" = 1 ] || fail "brand-new label ($missing_style): Serena must hold exactly one entry: $(cat "$SHIM/serena.content")"
-  cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "brand-new label ($missing_style): both backends must hold the same single entry"
-  grep -q "^${label}\$" "$RELOAD_FLAG_LOG" 2>/dev/null || fail "brand-new label ($missing_style): the reload flag must be written: $out"
-done
+reset_logs
+rm -f "$RELOAD_FLAG_LOG"
+label="test_label_brand_new"
+out=$( run_script_from_tree "$TREE_WRITTEN" "$label" "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr" ) || fail "brand-new label: a Basic-Memory 'Note not found' read must start a new note, not fail the checkpoint: $(cat "$SHIM/stderr")"
+grep -q 'rolling Serena back' "$SHIM/stderr" && fail "brand-new label: Serena must not be rolled back: $(cat "$SHIM/stderr")"
+[ "$(grep -cE '^## [0-9]{4}-' "$SHIM/serena.content")" = 1 ] || fail "brand-new label: Serena must hold exactly one entry: $(cat "$SHIM/serena.content")"
+cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "brand-new label: both backends must hold the same single entry"
+grep -q "^${label}\$" "$RELOAD_FLAG_LOG" 2>/dev/null || fail "brand-new label: the reload flag must be written: $out"
 unset RELOAD_FLAG_LOG
 rm -rf "$TREE_WRITTEN"
+
+reset_logs
+(BM_READ_MISSING=project run_script test_label_bm_noproject "body=$BODY") >/dev/null 2>"$SHIM/stderr" && fail "missing project: a Basic-Memory read error other than a missing note must fail the checkpoint"
+grep -qF "Project not found" "$SHIM/stderr" || fail "missing project: the read error must be reported: $(cat "$SHIM/stderr")"
+grep -q 'rolling Serena back' "$SHIM/stderr" || fail "missing project: Serena must be rolled back: $(cat "$SHIM/stderr")"
+[ -e "$SHIM/bm.argv" ] && fail "missing project: no Basic-Memory write may run after a failed read: $(cat "$SHIM/bm.argv")"
+
+reset_logs
+(BM_READ_MISSING=json-other run_script test_label_bm_jsonerror "body=$BODY") >/dev/null 2>"$SHIM/stderr" && fail "structured read error: a JSON error other than NOT_FOUND must fail the checkpoint, not start a new note"
+grep -qF "INTERNAL_ERROR" "$SHIM/stderr" || fail "structured read error: the read error must be reported: $(cat "$SHIM/stderr")"
+grep -q 'rolling Serena back' "$SHIM/stderr" || fail "structured read error: Serena must be rolled back: $(cat "$SHIM/stderr")"
+[ -e "$SHIM/bm.argv" ] && fail "structured read error: no Basic-Memory write may run, or --overwrite would replace the note's history: $(cat "$SHIM/bm.argv")"
 
 reset_logs
 TREE_SUPERSEDE="$SHIM/tree-supersede"
@@ -571,8 +630,8 @@ echo "$out" | grep -qF -- 'project: locked (locked by BASIC_MEMORY_MCP_PROJECT)'
 reset_logs
 set_primary_project "$R1" settings.json other
 run_script_in "$R1" test_label_projectlocal "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T4: script exited non-zero: $(cat "$SHIM/stderr")"
-grep -q -- '--project alpha' "$SHIM/bm_read.argv" || fail "T4: read-note must carry --project from settings.local.json: $(cat "$SHIM/bm_read.argv")"
-grep -q -- '--project alpha' "$SHIM/bm.argv" || fail "T4: write-note must carry --project from settings.local.json: $(cat "$SHIM/bm.argv")"
+grep -q -- '--project alpha' "$SHIM/bm_read.argv" || fail "T4: read must carry --project from settings.local.json: $(cat "$SHIM/bm_read.argv")"
+grep -q -- '--project alpha' "$SHIM/bm.argv" || fail "T4: write must carry --project from settings.local.json: $(cat "$SHIM/bm.argv")"
 grep -q -- '--project other' "$SHIM/bm.argv" && fail "T4: settings.local.json must win over settings.json: $(cat "$SHIM/bm.argv")"
 reset_logs
 out=$(run_script_in "$R3" test_label_projectdefault "body=$BODY" 2>"$SHIM/stderr") || fail "T4: default-project script exited non-zero: $(cat "$SHIM/stderr")"
@@ -1009,12 +1068,12 @@ reset_logs
 grep -qF 'Error: Serena held no prior document, so the one this checkpoint created was removed' "$SHIM/stderr" || fail "first-bm-fail: Serena's new memory must be removed: $(cat "$SHIM/stderr")"
 grep -qF 'serena memories delete test_label_bmfail_first' "$SHIM/serena_delete.argv" || fail "first-bm-fail: the delete must target the label: $(cat "$SHIM/serena_delete.argv")"
 grep -qF 'returned no permalink for this write, so nothing was deleted' "$SHIM/stderr" || fail "first-bm-fail: without a permalink Basic-Memory must not be deleted by title: $(cat "$SHIM/stderr")"
-[ -e "$SHIM/bm_delete.argv" ] && fail "first-bm-fail: no delete-note may run without a permalink: $(cat "$SHIM/bm_delete.argv")"
+[ -e "$SHIM/bm_delete.argv" ] && fail "first-bm-fail: no delete may run without a permalink: $(cat "$SHIM/bm_delete.argv")"
 
 reset_logs
 rm -f "$SHIM/bm_delete.argv"
 (BM_WRITE_DROPS_HISTORY=empty run_script test_label_bmverify_first "body=$AUDIT_OK_BODY") >/dev/null 2>"$SHIM/stderr" && fail "first-bm-verify: a first Basic-Memory write that fails its readback must fail"
-grep -qE "basic-memory tool delete-note projects/[^ ]+/Test_Label_Bmverify_First( |$)" "$SHIM/bm_delete.argv" || fail "first-bm-verify: the delete must use the permalink, never the bare title: $(cat "$SHIM/bm_delete.argv" 2>&1)"
+grep -qE "basic-memory tool delete --identifier projects/[^ ]+/Test_Label_Bmverify_First( |$)" "$SHIM/bm_delete.argv" || fail "first-bm-verify: the delete must use the permalink, never the bare title: $(cat "$SHIM/bm_delete.argv" 2>&1)"
 grep -qF 'Error: Basic-Memory held no prior document, so the one this checkpoint created was removed' "$SHIM/stderr" || fail "first-bm-verify: the removal must be verified and reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/store_bm_Test_Label_Bmverify_First" ] || fail "first-bm-verify: the note this checkpoint created must be gone"
 [ ! -e "$SHIM/store_serena_test_label_bmverify_first" ] || fail "first-bm-verify: Serena's first memory must be removed too"

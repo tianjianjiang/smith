@@ -142,8 +142,8 @@ leaving it at the top.
    worktree's directory resolves to. It exits the same way when the
    memories are the worktree's own and the primary directory cannot be
    created. Repair the path and rerun.
-2. **Basic-Memory** (`basic-memory tool read-note` + `write-note --overwrite`,
-   on the channel in Runtime prerequisites "Basic-Memory release channel"
+2. **Basic-Memory** (`basic-memory tool read` + `tool write --overwrite`,
+   from the install in Runtime prerequisites "Basic-Memory version"
    below): a note titled from the label, type `guide`, tag `checkpoint`, in
    the project selected per Runtime prerequisites "Backend selection" below
    (`--project <name>` on both calls when a project is configured and no
@@ -152,7 +152,7 @@ leaving it at the top.
    write (nothing to conflict with) and a re-checkpoint (the payload is
    already the full merged document, so there is nothing to lose). The
    folder is taken from the existing note's own `file_path` (from the same
-   `read-note` call) when one is found, so a re-checkpoint lands back in
+   `read` call) when one is found, so a re-checkpoint lands back in
    whatever folder the note already lives in rather than being force-moved;
    only a brand-new note falls back to the project folder (primary checkout
    name, else the current directory name when outside git).
@@ -197,8 +197,8 @@ step 3 below:
   changed since the last checkpoint.
 - Without a plan file (or if unsure the heading is unchanged), check for an
   existing checkpoint first: `serena memories list` (grep for a name
-  matching the current work topic) and/or Basic-Memory `search-notes` /
-  `read-note` on the candidate title. If a match is found, reuse ITS exact
+  matching the current work topic) and/or Basic-Memory `bm_search` /
+  `bm_read` on the candidate title. If a match is found, reuse ITS exact
   name — do not derive a new one.
 - Only fall back to deriving a fresh label (below) when no existing
   checkpoint for this work is found.
@@ -236,7 +236,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 3. **Look up existing checkpoint identity before naming** (see Naming
    strategy above): with a plan file, its heading already pins the label; without
-   one, check `serena memories list` / Basic-Memory `search-notes` for a
+   one, check `serena memories list` / Basic-Memory `bm_search` for a
    match on the current work topic and reuse its exact name if found.
 
 4. **Infer label automatically** (only when step 3 found no existing
@@ -382,19 +382,22 @@ writes succeed (the skill reports which failed rather than claiming success),
 and reload degrades:
 
 - **MCP servers** — the lifecycle writes and reads through them: **Serena**
-  (`write_memory`/`read_memory`), **Basic-Memory** (`write_note` / note search).
+  (`write_memory`/`read_memory`), **Basic-Memory** (`bm_write` / `bm_read` /
+  `bm_search`, 1.0 tool names).
   Both are **local-only** in a default setup (Serena memories live under
   `.serena/memories`, typically gitignored; Basic-Memory is a local SQLite DB
   unless Basic-Memory Cloud is enabled).
-- **Basic-Memory release channel** — `write-checkpoint.sh` runs the CLI as
-  `uvx --prerelease=allow basic-memory`, so launch the MCP server the same
-  way: `uvx --prerelease=allow basic-memory mcp`. The CLI and the server
-  share one SQLite database, and each runs pending migrations when it first
-  opens it; a build that does not know the database's newest migration fails
-  with `Can't locate revision`. A stable-only server is therefore broken by a
-  checkpoint that resolved a prerelease carrying a newer migration, and a
-  stable-only CLI by a server running such a prerelease. After a newer build
-  migrates the database, restart any process still running an older one.
+- **Basic-Memory version** — `write-checkpoint.sh` runs the installed
+  `basic-memory` executable (`uv tool install basic-memory`, 1.0 or later)
+  and exits before any write when it is not on `PATH` or lacks the 1.0
+  `tool read` command; launch the MCP server
+  from the same install (`basic-memory mcp`). The CLI and the server share
+  one SQLite database, and each runs pending migrations when it first opens
+  it; a build that does not know the database's newest migration fails with
+  `Can't locate revision`, so one install keeps both on one version. After
+  upgrading it, restart the MCP server. The script reads with
+  `tool read --json --no-include-frontmatter` and treats only a `NOT_FOUND`
+  error as a brand-new note; any other read error fails the checkpoint.
 - **`jq`** — `write-checkpoint.sh` shells out to it to parse the Basic-Memory
   CLI's JSON output (note content on read, permalink on write) and the
   repository's `.claude/settings*.json`; not preinstalled on stock macOS.
@@ -420,8 +423,8 @@ and reload degrades:
   `.serena/memories/` (primary checkout, or `serena=`); worktree memories
   are always relocated to the primary checkout. When the current directory
   is itself a Serena project other than the resolved one, the script prints
-  a divergence warning with the `serena=` value to pass. Only `uvx` and
-  `jq` are required.
+  a divergence warning with the `serena=` value to pass. Only `uvx` (for
+  Serena), the installed `basic-memory` and `jq` are required.
 - **Reload-flag hook** — the memory-restore directive is injected as context on
   the next `/clear` only if the `smith-mode-plan-claude` **SessionStart:clear** hook
   (`on-session-clear.sh`) is registered. A restore is NOT guaranteed; the full
