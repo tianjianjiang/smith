@@ -1,5 +1,12 @@
 # Plan: Fix PR review comment assisted-by attribution format (from intent.md 2026-09-08)
 
+Status: only some of this plan still applies. The steps and the check
+marks below are the plan as first written; they are not results. The
+Attribution Validation Hook was replaced by
+`smith-ctx-claude/scripts/attribution-guard.sh`. The Skill Enforcement
+Hook, deferred under Future Work, was built later; see the status note in
+`spec.md`.
+
 ## Files that change
 
 **New files**:
