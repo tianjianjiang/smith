@@ -6,7 +6,8 @@ TMPD="$(mktemp -d)"
 trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
-FULL_RECEIPT='coderabbit ran · /code-review ran · pr-review-toolkit:review-pr ran · security-review NA:docs · code-simplifier NA:docs'
+receipt_with_review_pr() { printf 'coderabbit ran · /code-review ran · pr-review-toolkit:review-pr %s · security-review NA:docs · code-simplifier NA:docs' "$1"; }
+FULL_RECEIPT="$(receipt_with_review_pr 'ran:code-reviewer,comment-analyzer')"
 REPO="$TMPD/repo"
 git init -q --bare -b main "$TMPD/remote.git"
 git init -q -b main "$REPO"
@@ -28,6 +29,13 @@ expect_fail() {
   echo "$out" | grep -q "^review-converged FAIL" || fail "expected a FAIL line, got: $out"
 }
 
+expect_refused() {
+  receipt="$1"
+  problem="$2"
+  out=$(tool write "$receipt" 2>&1) && fail "expected a refusal naming '$problem', got: $out"
+  echo "$out" | grep -q -F -- "$problem" || fail "expected the refusal to name '$problem', got: $out"
+}
+
 commit_file base.txt 'base\n' base
 repo_git push -q -u origin main
 repo_git remote set-head origin main
@@ -37,10 +45,24 @@ commit_file feature.py 'def f():\n    return 1\n' feature
 expect_fail
 tool write 'coderabbit ran' >/dev/null 2>&1 && fail "an incomplete receipt line should be refused"
 tool write "$FULL_RECEIPT · security-review NA:" >/dev/null 2>&1 && fail "an entry without a reason should be refused"
+expect_refused "$(receipt_with_review_pr ran)" 'must name the agents that ran'
+expect_refused "$(receipt_with_review_pr ran:)" 'must name the agents that ran'
+expect_refused "$(receipt_with_review_pr ran:code-reviewer,nonsense-agent)" 'names unknown agent "nonsense-agent"'
+expect_refused "$(receipt_with_review_pr ran:comment-analyzer)" 'must include code-reviewer'
+expect_refused "$(receipt_with_review_pr ran:,code-reviewer)" 'has an empty agent name'
+out=$(tool write "$(receipt_with_review_pr ran:,,code-reviewer)" 2>&1)
+echo "$out" | grep -q -F 'names an agent twice' && fail "empty agent names should not be reported as a repeated agent, got: $out"
+expect_refused "$(receipt_with_review_pr ran:code-reviewer,code-reviewer)" 'names an agent twice'
+expect_refused "$(receipt_with_review_pr ran:code-reviewer,simplifier)" 'names unknown agent "simplifier"'
+expect_refused 'coderabbit ran · /code-review ran · security-review NA:docs · code-simplifier NA:docs' 'pr-review-toolkit:review-pr has no "ran:«agent,…»" or "NA:«reason»"'
+expect_refused 'coderabbit ran · /code-review ran:code-reviewer · pr-review-toolkit:review-pr ran:code-reviewer · security-review NA:docs · code-simplifier NA:docs' '/code-review takes plain "ran", not an agent list'
 echo dirty > "$REPO/untracked.txt"
 tool write "$FULL_RECEIPT" >/dev/null 2>&1 && fail "a receipt over a dirty tree should be refused"
 rm "$REPO/untracked.txt"
 
+tool write "$(receipt_with_review_pr NA:unavailable)" >/dev/null || fail "review-pr NA:«reason» over a clean tree should be written"
+expect_pass
+tool write "$(receipt_with_review_pr ran:code-reviewer,comment-analyzer,pr-test-analyzer,silent-failure-hunter,type-design-analyzer,code-simplifier)" >/dev/null || fail "review-pr naming all six toolkit agents, its code-simplifier included, should be written"
 tool write "$FULL_RECEIPT" >/dev/null || fail "a complete receipt over a clean tree should be written"
 expect_pass
 echo dirty > "$REPO/untracked.txt"
@@ -54,6 +76,8 @@ cp "$receipt_file" "$TMPD/saved"
 : > "$receipt_file"
 expect_fail
 printf '{"changeId":"%s","receipt":"coderabbit ran"}\n' "$change_id" > "$receipt_file"
+expect_fail
+printf '{"changeId":"%s","receipt":"%s"}\n' "$change_id" "$(receipt_with_review_pr ran)" > "$receipt_file"
 expect_fail
 printf '{"changeId":"another","receipt":"%s"}\n' "$FULL_RECEIPT" > "$receipt_file"
 expect_fail

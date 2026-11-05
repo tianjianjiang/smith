@@ -19,16 +19,26 @@ Review-only (no commit/push/merge). For the full pipeline use `/smith-ship`.
 **Plugin-pass receipt (every round).** A round MUST end with a one-line receipt
 naming each Claude Code review tool and whether it ran:
 `coderabbit [ran/NA] · /code-review [ran/NA] · pr-review-toolkit:review-pr
-[ran/NA] · security-review [ran/NA] · code-simplifier [ran/NA]`. `NA` needs a
-one-word reason (e.g. `NA:docs`). The change is NOT converged until the receipt
-shows every applicable tool ran. Disclosing a skipped tool is not a substitute
-for running it (`@smith-guidance` close-gaps). Resist the bias to "use fewer
-tools".
+[ran:«agents»/NA] · security-review [ran/NA] · code-simplifier [ran/NA]`.
+`NA` needs a one-word reason (e.g. `NA:docs`). The change is NOT converged
+until the receipt shows every applicable tool ran. Disclosing a skipped tool
+is not a substitute for running it (`@smith-guidance` close-gaps). Resist the
+bias to "use fewer tools".
 
 Mark `coderabbit` `ran` only on the evidence `@smith-gh-pr` "CodeRabbit fails
 OPEN" defines: a completed status over a non-empty file list. Every tool needs
 its own completion evidence (`@smith-validation`: a missing signal is never a
 passing one).
+
+Mark `pr-review-toolkit:review-pr` by the agents that ran, never by the tool
+name alone: `pr-review-toolkit:review-pr ran:code-reviewer,comment-analyzer,pr-test-analyzer`.
+Every agent the diff calls for is listed (comment-analyzer for any text
+change, pr-test-analyzer for any test change, silent-failure-hunter for error
+handling, type-design-analyzer for new types, code-reviewer always), or the
+line carries `NA:«reason»`. One agent is not the tool. The toolkit's own
+code-simplifier agent, when it ran, is listed here; the receipt's
+`code-simplifier` entry is the separate `code-simplifier:code-simplifier`
+plugin.
 
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
@@ -37,15 +47,15 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
   `@smith-style`, plus the language skills (`@smith-python`/`@smith-typescript`/
   `@smith-nuxt`/...) the diff touches.
 - Claude Code plugins/skills: `/code-review`, `/review-pr` (pr-review-toolkit;
-  its applicable agents), CodeRabbit, `code-simplifier`, and relevant reviewer
-  subagents.
+  its applicable agents), CodeRabbit, `code-simplifier:code-simplifier`, and
+  relevant reviewer subagents.
 
 1. **Self-audit** against the applicable smith conventions first (cheap, no
    API call).
 2. **Full automated pass** — run EVERY applicable tool above each round, not
-   CodeRabbit alone; for code-bearing diffs include `/review-pr`'s multi-agent
-   pass. Use the tools that fit the change; do not skip available reviewers to
-   save effort.
+   CodeRabbit alone; include `/review-pr` with every agent the diff calls for
+   (the receipt rule above), a docs-only diff included. Use the tools that fit
+   the change; do not skip available reviewers to save effort.
    
    **Effort level in iterative reviews**: Use LOW effort for all convergence rounds:
    - `/code-review low` — quick check sufficient for iterative rounds
@@ -87,10 +97,11 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    or the user), run `node «skills»/smith-review/scripts/review-receipt.mjs
    write "«plugin-pass receipt line»"` from the repository (add `--base
    «parent»` on a stacked branch). It refuses a dirty tree and a line that
-   leaves a tool without `ran` or `NA:«reason»`, and keys the receipt to the
-   combined diff of HEAD against its merge base with the default branch, so
-   a reword or a rebase that leaves that diff unchanged keeps it and any
-   change to the diff needs a new review. `/smith-preflight`'s
+   leaves a tool without `ran` or `NA:«reason»` or gives
+   `pr-review-toolkit:review-pr` a missing or malformed agent list, and keys
+   the receipt to the combined diff of HEAD against its merge base with the
+   default branch, so a reword or a rebase that leaves that diff unchanged
+   keeps it and any change to the diff needs a new review. `/smith-preflight`'s
    `review-converged` check reads it and gives `NO-GO` without it. Writing
    a receipt for a review that did not converge is a false report.
 
