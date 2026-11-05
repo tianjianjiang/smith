@@ -1,12 +1,12 @@
 ---
 name: smith-subagents
-description: Subagent spawning and return discipline. Use when about to spawn an Agent or Task subagent, delegate an investigation, or act on a subagent's report.
+description: Subagent spawning and return discipline. Use when about to spawn a subagent, delegate an investigation, or act on a subagent's report.
 ---
 
 # Subagent Discipline
 
-**Scope:** Spawning, scoping, and consuming Task/Agent subagents and
-workflow orchestration; what tools to grant and how to trust returns
+**Scope:** Spawning, scoping, and consuming subagents and workflow
+orchestration; what tools to grant and how to trust returns
 **Prerequisites:** @smith-guidance/SKILL.md and its
 `references/IN-BAND-PROGRESS.md` (in-band progress),
 @smith-ctx/SKILL.md (delegation, context isolation)
@@ -19,10 +19,17 @@ workflow orchestration; what tools to grant and how to trust returns
   report `file:line` facts, not fixes.
 - Treat every return as a CLAIM, not ground truth. Reconcile against live
   state before acting on it.
-- Subagents do NOT inherit skills, AGENTS.md, or memory. Pass the rules the
-  task needs INLINE in the prompt.
-- Restate a subagent's key findings in your own message — a reader (and the
-  classifier) sees only your text, never the subagent's return.
+- A subagent that is not a fork (a copy of the main session) starts without
+  the main session's conversation and the skills the main session invoked; which
+  instruction files, memories, skills and tools it gets depends on the
+  platform and its definition, so check before relying on them.
+- On top of the inline contract below, name in the prompt the skills most
+  relevant to the task and have the subagent invoke them and list the ones
+  it invoked. Inline the rules instead when no skill fits, and re-run with
+  them inline when a named skill was not invoked.
+- Restate a subagent's key findings in your own message — a reader (and
+  any classifier watching the session) sees only your text, never the
+  subagent's return.
 - Grant investigator/locator roles read-only tools; reserve write, commit,
   push, or external-API tools for a named editor role.
 - Keep mutation of shared artifacts (PR title/body, issue, remote branch,
@@ -30,8 +37,8 @@ workflow orchestration; what tools to grant and how to trust returns
   not apply the change itself.
 - Re-read the current state of anything a subagent described before acting on
   its summary.
-- Assume a subagent has NOT seen your conventions unless you passed them
-  inline — don't assume it follows them because you do.
+- Assume a subagent has NOT seen your conventions unless the prompt or its
+  platform passed them — don't assume it follows them because you do.
 - For a delegated diff, audit the EXECUTION PATH rather than approving on
   style/quality alone: does the fix run on the real failing input? (the
   test-masking trap: a delegated workflow's clean-looking diff fixed a dead
@@ -42,31 +49,40 @@ workflow orchestration; what tools to grant and how to trust returns
 - One concern per subagent. A locator finds; an editor changes one bounded
   thing; a reviewer critiques. Don't fuse roles.
 - A SKEPTIC role tries to REFUTE a finding under test — most often your own,
-  sometimes another agent's. Read-only tools like any reviewer; its contract
-  (what to withhold from it, and the verdict to ask for) is in
+  sometimes another agent's. Read-only tools like any reviewer; it is an
+  evaluator (below), and the verdict to ask it for is in
   `@smith-validation` Adversarial Verification.
+- An evaluator (reviewer, skeptic, grader) is blind: a new subagent, never a
+  fork, given only its object and the criteria. Its object is the artifact
+  with its stated intent (the PR description or a one-line goal, stripped of
+  review verdicts), or for a skeptic the finding and its evidence. The
+  prompt itself forbids reading any other judgment of that object (other
+  evaluators' findings, earlier rounds, the reasoning behind a finding)
+  wherever it is stored, and asks for the sources read. Re-run, as a new
+  blind subagent, any evaluator that saw another judgment of its object,
+  and report any evaluator the main thread could not keep blind (a tool
+  that writes its own prompts or reads its own threads).
 - Parallelize INDEPENDENT subagents in a single message (multiple tool calls).
   Serialize only when one's input depends on another's output.
-- Match the tool grant to the role: read-only (Read/Grep/Glob) for
-  investigation; add Edit/Write only for an editor with a named target.
+- Match the tool grant to the role: read-only tools for investigation;
+  add file-editing tools only for an editor with a named target.
 - Parallel file-mutating subagents need isolation — see
   `@smith-worktree/SKILL.md`. Read-only fan-out does not.
 
 ## Multi-Round Review Discipline
 
-For review tool spawning in iterative convergence loops: see 
-`@smith-review/SKILL.md` § Full automated pass "Effort level in iterative 
-reviews" and "One instance per tool per round" — that section is canonical 
-(owns the loop). Summary: LOW effort (`/code-review low`; explicit "use low 
-effort level" in pr-review-toolkit spawn prompts), exactly one instance per 
-tool per round (tools internally parallelize).
+For review tool spawning in iterative convergence loops: see
+`@smith-review/SKILL.md` § Full automated pass "Effort level in iterative
+reviews" and "One instance per tool per round" — that section is canonical
+(owns the loop) and names the tools. Summary: low effort, exactly one
+instance per tool per round (tools internally parallelize).
 
 ## Contract template: paste inline when spawning
 
-The rules above are principles; a subagent sees none of them unless you paste
-them. Drop this canonical block into an investigative prompt instead of
-re-deriving the contract each spawn (re-deriving it is a top cause of subagents
-that mutate shared state or return plans instead of findings):
+The rules above are principles a subagent might not load. Drop this
+canonical block into an investigative prompt instead of re-deriving the
+contract each spawn (re-deriving it is a top cause of subagents that mutate
+shared state or return plans instead of findings):
 
 > READ-ONLY investigation. Return FINDINGS ONLY — do NOT edit, write, commit,
 > push, or call any mutating / external-write tool. Report `file:line` facts and
@@ -78,8 +94,8 @@ that mutate shared state or return plans instead of findings):
 > config or the environment. If a service requires one, skip that service and
 > say so in your report.
 
-After pasting the contract above, add task-specific conventions inline —
-subagents inherit no skills, AGENTS.md, or memory.
+After pasting the contract above, name the skills to invoke or add the
+task's conventions inline (see "CRITICAL: Spawn Narrow, Trust Nothing").
 
 For a bounded EDITOR role the contract inverts: name the ONE artifact it may
 change and the single tool granted, and state that everything else stays
@@ -150,27 +166,19 @@ checked is recorded as such and fails that check rather than passing quietly.
 
 ## Delivery: a written report is not a delivered one
 
-- A BACKGROUND subagent's ordinary text output does NOT reach the main
-  thread; only a `SendMessage` addressed to `main` does, and the tool scopes
-  that address to background subagents alone. An agent that writes its
-  findings and stops has delivered nothing. A synchronous subagent is the
-  opposite — its final text IS the tool result — so this trap belongs to the
-  default spawn mode, not to every spawn.
-- Say so IN the spawn prompt — "reply via `SendMessage` to `main`; text
-  output alone does not reach the main thread" — rather than chasing a
-  round trip later.
-- Treat an idle notification as "ready to be asked", never as "clean".
+- Tell the subagent IN the spawn prompt how the platform expects its report
+  delivered; a report that never reached the main thread was not delivered.
+- Treat a subagent going idle as "ready to be asked", never as "clean".
   Silence is a missing signal, not a passing one (`@smith-validation`).
-- The `summary` on an idle notification goes STALE — it echoes the agent's
-  last delivered report, so it can show a verdict already fixed. Re-read the
-  message; never trust the summary line.
+- A summary can echo an earlier report and show a verdict already fixed.
+  Re-read the report itself; never trust the summary line.
 
 ## Reconcile vs live state
 
 - Between spawn and return, the world can change: a PR gets retitled, a file
   gets edited, a branch moves. The subagent's snapshot is already stale.
-- Re-pointing a long-running reviewer at an amended commit is required, not
-  optional: it reads the tree from when it started.
+- After an amended commit, spawn a new evaluator instead of re-pointing a
+  running one: it still holds what it read and judged before the amend.
 - Before mutating a shared artifact a subagent reported on, RE-READ its current
   state and merge — never overwrite from the subagent's snapshot.
 - A write from a stale read discards any intervening change (a PR title
@@ -182,7 +190,7 @@ checked is recorded as such and fails that check rather than passing quietly.
   `smith-guidance/references/IN-BAND-PROGRESS.md`
 - @smith-ctx/SKILL.md - Context isolation: keep findings, discard the noise
 - `@smith-ralph/SKILL.md` - Iterative orchestration patterns
-- `@smith-skills/SKILL.md` - Subagents don't auto-load skills; pass rules inline
+- `@smith-skills/SKILL.md` - Skill loading; what a subagent starts without
 - `@smith-worktree/SKILL.md` - Isolate parallel file-mutating subagents
 - `@smith-validation/SKILL.md` - Audit a delegated diff's execution path; adversarial verification of findings
 
@@ -190,8 +198,9 @@ checked is recorded as such and fails that check rather than passing quietly.
 
 **Before spawning:**
 1. Pick ONE concern; grant read-only tools unless it is a named bounded edit
-2. Inline the rules/conventions the task needs (no skill inheritance)
+2. Name the skills to invoke; inline the rules when none fits or loads
 3. State the expected return shape; forbid side effects if risky
+4. Evaluator? Blind: its object and criteria, no other judgment
 
 **On return:**
 1. Treat it as a claim — re-read live state for anything it will mutate

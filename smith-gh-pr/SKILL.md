@@ -70,8 +70,8 @@ it cannot read the file.
 ## PR Creation Workflow
 
 **Pre-PR checklist:**
-0. **Review to convergence FIRST** — run `/smith-review` (ALL applicable tools,
-   per-round receipt, clean final round) BEFORE the first push. Do NOT push a
+0. **Review to convergence FIRST** — run `/smith-review`
+   (`@smith-review/SKILL.md` Converge) BEFORE the first push. Do NOT push a
    code change and then react to one bot afterward — that inverts review-then-push
    and a single-tool pass (one reviewer alone) is NOT convergence.
 1. Run linter and formatter
@@ -167,7 +167,7 @@ Before drafting any PR review comment:
 
 ## Review Convergence & Auto-Fix
 
-Follow convergence protocol: fix high-confidence findings (commit message shown for a yes), and merge a user-authored PR on a clean review only inside a ship the user invoked or after the user said to merge. Full protocol in `references/REVIEW-WORKFLOW.md`.
+Follow convergence protocol: fix high-confidence findings (commit message shown for a yes), and merge a user-authored PR on a converged review only inside a ship the user invoked or after the user said to merge. Full protocol in `references/REVIEW-WORKFLOW.md`.
 
 ## Rebase Decision Tree
 

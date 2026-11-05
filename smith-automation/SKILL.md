@@ -118,7 +118,7 @@ For local-machine durable scheduling without a cloud account, use Desktop schedu
 
 **Loop / autonomous push discipline:**
 - In a loop or autonomous tick, "ready to merge / PR ready" means review-converged
-  via `/smith-review` (all applicable tools, clean final round) — NOT merely
+  via `/smith-review` (`@smith-review/SKILL.md` Converge) — NOT merely
   CI-green.
 - Never push the first version of a change from a loop tick without that review
   pass. A loop must not optimize for green CI by inverting review-then-push into
