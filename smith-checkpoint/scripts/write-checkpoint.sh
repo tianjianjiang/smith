@@ -650,6 +650,12 @@ run_audit() {
     AUDIT_STATUS="passed"
 }
 
+is_basic_memory_note_not_found() {
+    local result="$1" error_output="$2"
+    [[ "$(jq -r '.error // empty' <<<"$result" 2>/dev/null)" == "NOTE_NOT_FOUND" ]] \
+        || grep -qE '^Error: Note not found: ' <<<"$error_output"
+}
+
 read_basic_memory_note_json() {
     local title="$1" bm_project="$2"
     local result error_file error_output
@@ -657,6 +663,10 @@ read_basic_memory_note_json() {
     if ! result=$(basic_memory_tool read-note "$title" ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
         error_output=$(cat "$error_file")
         rm -f "$error_file"
+        if is_basic_memory_note_not_found "$result" "$error_output"; then
+            printf '{}'
+            return 0
+        fi
         echo "Error: could not read existing Basic-Memory note for ${title}: ${error_output}" >&2
         return 1
     fi
