@@ -114,17 +114,11 @@ main
            └── feat/auth-oauth (PR #3: OAuth integration)
 ```
 
-**PR description for stacked PRs**:
-```markdown
-## Stack
-- **Depends on**: #123 (feat/auth-base) ← must merge before this PR
-- **Blocks**: #125 (feat/auth-oauth) ← waits for this PR
-```
-
-Every stacked PR body also ends with the `Assisted-by:` line (see
-`@smith-style`). The stack's PR titles and bodies are payload: show them
-together and open on an explicit yes — reviewed together they count as one
-list whose every draft was shown (`@smith-guidance` Safety Rules).
+**PR description for stacked PRs**: follow `@smith-gh-pr` "PR Body Format",
+including its dependency lines. The stack's PR titles and bodies are
+payload: show them together and open on an explicit yes — reviewed
+together they count as one list whose every draft was shown
+(`@smith-guidance` Safety Rules).
 
 **Field meanings**:
 - `Depends on`: PRs that must merge before this one (upstream dependencies)
