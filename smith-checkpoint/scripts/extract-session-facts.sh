@@ -2,7 +2,13 @@
 
 set -euo pipefail
 
-TRANSCRIPT="${1:-}"
+resolve_session_transcript() {
+    local projects="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects"
+    [[ -n "${CLAUDE_CODE_SESSION_ID:-}" && -d "$projects" ]] || return 0
+    find "$projects" -maxdepth 2 -name "${CLAUDE_CODE_SESSION_ID}.jsonl" -print -quit || true
+}
+
+TRANSCRIPT="${1:-$(resolve_session_transcript)}"
 MAX_FILES=30
 
 if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then

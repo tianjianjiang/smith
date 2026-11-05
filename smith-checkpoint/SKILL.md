@@ -221,9 +221,13 @@ step 3 below:
 
 When invoked via `/smith-checkpoint` (no arguments required):
 
-1. **Extract deterministic facts** (if transcript available):
+1. **Extract deterministic facts** (if transcript available). Claude Code
+   hands `transcript_path` only to hooks, so without an argument the
+   script finds this session's transcript from `CLAUDE_CODE_SESSION_ID`
+   under `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects`; none found means
+   no transcript:
    ```bash
-   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/extract-session-facts.sh "$TRANSCRIPT_PATH"
+   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/extract-session-facts.sh
    ```
    Provides: completed tasks, file edits, PRs, commits, git state
 
@@ -277,26 +281,122 @@ When invoked via `/smith-checkpoint` (no arguments required):
 6. **Audit before writing.** After `/clear` the next session has only the
    body, the plan and what they point at; make them current, correct and
    complete first (checks and resolution rules:
-   `references/checkpoint-audit/spec.md`):
-   - Sync the plan file per `@smith-mode-plan/SKILL.md` Plan Sync Protocol:
-     checkboxes match what is done, `<- CURRENT` moved, superseded tasks
-     removed, a progress log entry added
-   - Re-verify every fact in the body against its source now (`git log`,
-     `gh pr view`, the file at that line), never from memory; fix or drop
-     what no longer holds
-   - Cold-reader test: from the body, the plan and the Related anchors
-     alone, could a fresh session name the goal, the current task, the next
-     action, the worktree and every open decision? Add what is missing;
-     completeness beats the ~400-token aim
-   - Remove contradictions: the plan owns task state, the body owns
-     decisions and context
-   - Run the scripted audit and fix every `FAIL`, judge every `WARN`:
-     ```bash
-     ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh "«body-file»" "plan=«path»"
-     ```
-     An anchor that fails to resolve is wrong for the next reader too: write
-     its path from the repository root, absolute, or add `roots=`; do not
-     reach for `audit=skip`
+   `references/checkpoint-audit/spec.md`). Run these in order:
+   1. Sync the plan file per `@smith-mode-plan/SKILL.md` Plan Sync
+      Protocol: checkboxes match what is done, `<- CURRENT` moved,
+      superseded tasks removed, a progress log entry added
+   2. Sweep the conversation for omissions, which only the main thread can
+      see: one row per user message, mid-turn messages and replies to
+      side-agent notes included, naming the request or decision it made
+      and the body or plan line that records it, or "not recorded"; add
+      every "not recorded" item that is durable per "What to capture" and
+      mark the others transient in the table
+   3. Remove contradictions: the plan owns task state, the body owns
+      decisions and context
+   4. Run the scripted audit and fix every `FAIL`, judge every `WARN`:
+      ```bash
+      ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh "«body-file»" "plan=«path»"
+      ```
+      An anchor that fails to resolve is wrong for the next reader too:
+      write its path from the repository root, absolute, or add `roots=`;
+      do not reach for `audit=skip`
+   5. Verify and validate double-blind, in rounds: the author of the body
+      never grades it. Both checkers are evaluators, blind per the
+      `@smith-subagents` evaluator rule (new subagents, never forks; a new
+      round never continues one with SendMessage, which carries the
+      earlier round). Each prompt carries the `@smith-subagents` contract
+      block, the body path and the plan path; the VERIFIER's prompt also
+      carries the worktree path and the base ref of the branch's commits
+      (such as `origin/main...HEAD`), which the COLD READER's prompt
+      leaves out, since it must find the worktree in the body (the
+      platform may still inject the working directory and git state,
+      which the quote rule below discounts). The prompt allows
+      reading only the body, the plan, the files the body and plan
+      anchors name, the Serena memories and Basic-Memory notes the
+      Related section names (read by those names), and any instruction
+      text that holds no judgment of the body (skill files, the
+      instruction files the platform loads at start, an MCP server's own
+      manual such as Serena's `initial_instructions`), and for the
+      VERIFIER also files in the worktree, `git` output and
+      `gh` metadata fields only (`gh pr view --json
+      state,headRefName,baseRefName,mergedAt`, never comments, reviews or
+      the PR body, which hold judgments); it forbids everything else:
+      judgments are stored in more places than a list could name (session
+      transcripts, background task output, earlier rounds, the expected
+      answers, review threads), and a transcript mixes evidence with
+      judgments (the main thread's reasoning, side-agent notes, subagent
+      returns). The allowed set overrides any skill, instruction-file or
+      MCP server rule that calls for wider reads (a whole memory set, a
+      workspace `AGENTS.md`, a search or listing call such as `bm_search`
+      or a recent-activity or memory listing, which can surface earlier
+      checkpoints); the checker reports such a rule instead of following
+      it. It forbids spawning
+      subagents, since each checker is itself the skeptic pass. It asks
+      for every source read: a read outside the allowed set by either
+      checker voids the whole round, which is re-run with both checkers
+      as new blind subagents and counts toward the limit of three rounds
+      below. It says how the platform expects the report delivered: a
+      round missing either report is void the same way, since an
+      undelivered report is a missing signal, never a pass
+      - Before the first round of the first run of this item, write the
+        expected answers (goal, current task, next action, worktree,
+        every open decision) to a new file, so they cannot be fitted to
+        the returns afterwards; the allowed set above already keeps both
+        checkers out of it. A rerun from item 6 reuses that file.
+        `mktemp "${TMPDIR:-/tmp}/checkpoint-expected.XXXXXX"` prints its
+        path; later Bash calls reuse that path as a literal string
+      - Each round spawns both checkers in one message:
+        - VERIFIER (verification: is what is written true?), SKEPTIC
+          role, named in its prompt to invoke `@smith-validation` and to
+          list the skills it invoked (re-run with the rules inline when
+          it did not): split the body and the plan into single claims (a
+          commit, a checkbox state, the `<- CURRENT` task, a `file:line`,
+          a PR state, a decision); for each, state its disproof and look
+          for it with a command that can be re-run (`git log`,
+          `gh pr view --json state`, `sed -n «N»p`); return refuted /
+          survived / insufficient evidence, or conversation-only for a
+          claim with no re-runnable source (a decision made only in
+          conversation), or not checkable: «source» out of reach when
+          the command that would check it is unavailable (no `gh`) or its
+          source lies outside the allowed set (a ticket status, a CI
+          result, a review approval), each with its locator and the
+          evidence that would have changed the verdict; then list branch
+          commits and plan tasks the body omits
+        - COLD READER (validation: can a fresh session resume from it?),
+          its rules inline and no skill named, since no skill fits (this
+          one would have it spawn checkers and write a checkpoint): from
+          the body, the plan and the Related anchors alone, answer,
+          quoting the line each answer came from, or "not stated": what
+          is the goal, what is the current task, what is the next action,
+          which worktree holds the work, and what decisions are open?
+      - After a round: fix every refuted claim by its locator, back an
+        insufficient one with a source or drop it, and keep every
+        conversation-only and not-checkable claim. Add every listed
+        omission that is durable per "What to capture" (git already
+        records the rest) and whatever the cold reader's answers miss or
+        contradict against the expected file; a cold-reader answer counts
+        only when its quote is found verbatim in the body, the plan or a
+        Related anchor, and otherwise counts as "not stated" (completeness
+        beats the ~400-token aim). Rewrite a changed plan item, never
+        append to it. If anything was changed, rerun the scripted audit of
+        item 4 and start a fresh round; the rounds end with a round in
+        which neither checker returns anything to change. When the third
+        round still returns changes, apply its fixes, stop, record
+        "double-blind audit did not converge after 3 rounds" in the body
+        and hand that round's findings to item 6. When the third round is
+        void, stop, record "double-blind audit void in round 3" and go to
+        item 6
+      - No subagent tool available: run both checks inline and record
+        "double-blind audit not run: «reason»" in the body
+   6. Show the user the conversation-only and not-checkable claims of the
+      last non-void round verbatim (a void round's returns are discarded;
+      when every round was void, say that no checker result stands), any
+      unconverged findings, and the sweep table, and wait for a
+      confirmation or correction: such a claim has no other checker than
+      the user. A correction is applied and written
+      into the expected-answers file where it changes an answer; then
+      item 5 runs again with a new count of at most three rounds, and
+      this item repeats. Step 7 starts only after a confirmation
 
 7. **Call write-checkpoint.sh**:
    ```bash
