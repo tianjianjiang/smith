@@ -63,17 +63,25 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
    (`@smith-validation` Bugfix Discipline, Adversarial Verification).
-4. **Fix & iterate** — apply high-confidence fixes; re-review with the full set.
+4. **Fix & iterate** — apply high-confidence fixes; re-review with the full
+   set, each reviewer blind per the `@smith-subagents` evaluator rule.
    Cost guard is bounded PER ROUND + verify findings (not fewer tools). Drive
    iteration as a `/loop`/ralph loop that re-shares the relevant skills + diff
    each round (`@smith-ralph`, `@smith-automation`).
 5. **Converge** — these criteria are canonical here (referenced from
-   `@smith-gh-pr` and `@smith-ship`): stop on a clean round (0 actionable) or
-   2 consecutive Info-only rounds, AND only once the latest round's plugin-pass
-   receipt shows no applicable tool skipped. A flip-flopping reviewer
-   (alternating contradicting verdicts without new evidence) is a terminal but
-   NON-converged state: escalate the trade-off to the user and stop iterating
-   — do not report converged. Report findings + verdict + the receipt in-band.
+   `@smith-gh-pr` and `@smith-ship`): stop on a clean round or 2 consecutive
+   Info-only rounds, AND only once no finding is open and the latest round's
+   plugin-pass receipt shows no applicable tool skipped. Convergence is the
+   main thread's call, never a reviewer's: each finding stays open until the
+   main thread marks it, in that round's report, fixed (verified), needing no
+   change, rejected with evidence, or deferred with the user's agreement; a
+   clean round has no finding the main thread verified as actionable, and an
+   Info-only round has none it verified above Info. A closed finding raised
+   again without new evidence stays closed. Contradicting verdicts across
+   rounds are settled on evidence; one the evidence cannot settle is a
+   flip-flop, a terminal but NON-converged state: escalate the trade-off to
+   the user and stop iterating — do not report converged. Report findings +
+   verdict + the receipt in-band.
 6. **Record the receipt** — on a converged verdict only, and once the
    reviewed change is committed exactly as reviewed (`/smith-ship` step 3,
    or the user), run `node «skills»/smith-review/scripts/review-receipt.mjs

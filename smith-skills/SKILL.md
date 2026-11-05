@@ -120,9 +120,9 @@ How Claude Code actually loads skills (non-obvious; governs why smith works):
   CLAUDE.md / AGENTS.md; skills load when invoked through the Skill tool.
   Reading the `SKILL.md` does not load it.
   Discovery works because `~/.smith` is symlinked to `~/.claude/skills`.
-- Auto-triggering is description/shape-match in the MAIN thread only.
-  Task/Workflow subagents do NOT auto-load skills or AGENTS.md — pass the
-  needed rules inline in the subagent prompt.
+- A subagent that is not a fork (a copy of the main session) starts without
+  the skills the main thread invoked — name them for it to invoke, or inline
+  their rules (`@smith-subagents/SKILL.md`).
 - Claude Code auto-loads `CLAUDE.md` (including nested CLAUDE.md) but NOT a
   bare `AGENTS.md`. A repo whose root ships only AGENTS.md silently fails to
   load its catalog in CC — keep a root `CLAUDE.md` -> `AGENTS.md` symlink

@@ -508,7 +508,7 @@ documentation and router-trigger design.
 
 **smith-prompts**: Prompt engineering standards. Use when writing or revising a prompt, system prompt or agent instruction file, or optimizing token and cache usage.
 
-**smith-subagents**: Subagent spawning and return discipline. Use when about to spawn an Agent or Task subagent, delegate an investigation, or act on a subagent's report.
+**smith-subagents**: Subagent spawning and return discipline. Use when about to spawn a subagent, delegate an investigation, or act on a subagent's report.
 
 **smith-ralph**: Ralph Loop patterns. Use when starting /ralph-loop, managing its iterations, or recovering a loop after a context reset.
 

@@ -85,9 +85,10 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   a ship or review the user invoked, reply "fixed in «SHA»" or a one-line
   decline, then resolve; any other reply is payload and needs a yes
 - After pushing a fix: re-run review immediately
-- 0 actionable findings on a user-authored PR, inside a ship the user invoked
-  or after the user said to merge: merge (`gh pr merge --squash
-  --delete-branch`); for a stacked PR with an open child, OMIT `--delete-branch`
+- A converged review (`@smith-review` Converge) on a user-authored PR, inside
+  a ship the user invoked or after the user said to merge: merge (`gh pr merge
+  --squash --delete-branch`); for a stacked PR with an open child, OMIT
+  `--delete-branch`
   (see "Stacked PRs" below)
 - Post-merge: `ExitWorktree action="remove"` → `git pull --ff-only`
   (see `@smith-worktree/SKILL.md` Sync-After-Squash-Merge)
@@ -107,10 +108,9 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
 - CI fails after a CodeRabbit-driven fix (regression vs flake ambiguity)
 - User explicitly said "pause" or "wait" in recent turns
 
-**Convergence criteria:** owned by `@smith-review` — a clean round or two
-consecutive Info-only rounds, with a complete plugin-pass receipt. "Ready to
-merge" here means that loop reported converged; a flip-flopping reviewer ends
-the loop WITHOUT convergence (escalated to the user, not merged).
+**Convergence criteria:** owned by `@smith-review` Converge. "Ready to merge"
+here means that loop reported converged; a flip-flop the evidence cannot
+settle ends the loop WITHOUT convergence (escalated to the user, not merged).
 
 **CodeRabbit fails OPEN — absence of review is NOT a pass.** One instance of
 `@smith-validation` "a missing signal is never a passing one":

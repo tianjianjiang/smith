@@ -65,10 +65,10 @@ be wrong about in front of whoever asked.
   looking for exactly that. It stays unproven until a search that should have
   surfaced the disproof comes back empty — not after a fixed number of passes.
 - **Red-team what qualifies.** Hand a read-only skeptic subagent
-  (`@smith-subagents` SKEPTIC role, contract pasted inline — subagents inherit
-  no skills) the claim and the evidence WITHOUT the reasoning that produced
-  them, so it cannot grade your argument; ask for a verdict of refuted /
-  survived / insufficient evidence, plus the evidence that would have changed
+  (`@smith-subagents` SKEPTIC role: contract pasted inline, blind per the
+  `@smith-subagents` evaluator rule) the claim and its evidence; ask for a
+  verdict of refuted / survived / insufficient evidence, plus the evidence
+  that would have changed
   it. No skeptic available? Record "not run" and why, then conclude — never
   promote it silently.
 - **Locator per claim.** Every claim carries a durable locator: a URL,
