@@ -42,12 +42,30 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
 
 ## PR Body Format
 
-**Structure:**
-- Summary of changes (What/Why)
-- Dependencies (if any, link to related PRs/issues)
-- End with `Assisted-by:` line (see `@smith-style`)
+The body has these parts, in this order:
+- **What/Why**: what changed and why, with the decisions and known
+  shortcomings the code does not show.
+- `Not touched: «area» («reason»)`, only when a neighbouring area is
+  deliberately left alone; it goes under What/Why, for example
+  `Not touched: smith-worktree sync protocol gaps (follow-ups)`.
+- `Testing: «how»`, one line on how the change was tested and which
+  evidence ran. Never paste results into the body. With required CI, the
+  results are the check runs beside the diff; without it, the line names
+  what ran locally and says no CI check backs it. For a document PR it
+  names the document checks that ran, such as `skill-lint`.
+- **How to revert**: how to undo the change.
+- `Depends on: «PR»` / `Blocks: «PR»`, only when there are dependencies.
+- The `Assisted-by:` line, last (see `@smith-style`).
 
-**NO Test plan section** — testing is verified in the pre-PR checklist (linter, formatter, tests). The PR body documents the change, not the verification process.
+Leave out a link to the plan, a deviations section, a reading guide, and any
+agent review receipt or session log.
+
+Check a drafted body before showing it:
+`sh «skills»/smith-gh-pr/scripts/check-pr-body.sh «body file»` names each
+missing, out-of-order, duplicated or extra part and exits 1; it exits 2 when
+it cannot read the file.
+
+**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, and fill the parts above. Generated or not, a title and description are payload — show them and open on an explicit yes (`@smith-guidance` Safety Rules).
 
 ## PR Creation Workflow
 
@@ -64,8 +82,6 @@ Follow conventional commits format. See `@smith-style/SKILL.md` for details.
    `@smith-ralph`) and, if the branch name was not user-specified, the branch
    name, and get an explicit yes to what was shown; then push per step 5
 5. Push to remote on the user's instruction (or inside `/smith-ship`)
-
-**AI-generated descriptions**: Analyze full diff, read ALL commits, identify tickets, generate structured summary (What/Why/Dependencies). End the body with the `Assisted-by:` line (see `@smith-style`). Generated or not, a title and description are payload — show them and open on an explicit yes (`@smith-guidance` Safety Rules).
 
 ## Working on Existing PRs
 
@@ -218,8 +234,8 @@ on a stack.
   branch directly) — cascade through each level in order, pushing only
   inside a ship the user invoked or on their instruction.
 - Keep stacks to 3-4 levels deep; one worktree per unit.
-- Every stacked PR body carries `Depends on:` / `Blocks:` and ends with the
-  `Assisted-by:` line; the stack's titles and bodies are shown together and
+- Every stacked PR body follows "PR Body Format", including its dependency
+  lines; the stack's titles and bodies are shown together and
   opened on one explicit yes (one list whose every draft was shown,
   `@smith-guidance` Safety Rules).
 - Before stack-wide operations on EXISTING branches, verify scope:

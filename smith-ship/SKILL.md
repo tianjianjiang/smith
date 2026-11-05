@@ -68,11 +68,10 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    yes; when every commit message was already approved and the user chose
    the branch name, push (`@smith-gh-pr` PR Creation Workflow step 4,
    `@smith-guidance` External writes);
-   `gh pr create --base <default> --assignee @me` with a What/Why
-   body ending with the `Assisted-by:`
-   line (`@smith-style`). Link issues only if real. The body and title are
-   payload: show them and create on an explicit yes (`@smith-guidance`
-   Safety Rules).
+   `gh pr create --base <default> --assignee @me` with a body per
+   `@smith-gh-pr` "PR Body Format". Link issues only if real. The body and
+   title are payload: show them and create on an explicit yes
+   (`@smith-guidance` Safety Rules).
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
    and the payload-vs-mechanics gate. Ship-specific: fix high-confidence
@@ -114,7 +113,8 @@ the stack) and `@smith-worktree`.
   verification in `@smith-gh-pr` Stacked PRs).
 - **Per unit, run phases 0-4 above** in that unit's own worktree, with two
   stack overrides: the PR base is the parent branch (not the default
-  branch), and the PR body carries `Depends on:` / `Blocks:`. Branch names
+  branch), and the PR body fills the dependency lines of `@smith-gh-pr`
+  "PR Body Format". Branch names
   follow `@smith-style`. The stack's PR titles and bodies are shown together
   and opened on one explicit yes (one list whose every draft was shown), so
   no unit opens its PR in phase 4 before every unit's draft is shown.
