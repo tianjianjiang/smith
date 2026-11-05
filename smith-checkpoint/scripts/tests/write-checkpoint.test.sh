@@ -93,8 +93,15 @@ case "$argv" in
       lead=""
       [ "${BM_READ_LEADING_BLANK:-0}" = "1" ] && lead="$(printf '\n\n.')" && lead="${lead%.}"
       jq -Rs --arg title "$title" --arg file_path "$folder/$title.md" --arg lead "$lead" '{title: $title, file_path: $file_path, content: ($lead + .)}' < "$store"
-    else
+    elif [ "${BM_READ_MISSING:-current}" = "legacy" ]; then
       printf '{"title": null, "file_path": null, "content": null}\n'
+    elif [ "${BM_READ_MISSING:-current}" = "stderr-only" ]; then
+      echo "Error: Note not found: $title" >&2
+      exit 1
+    else
+      printf '{"title": null, "permalink": null, "file_path": null, "content": null, "frontmatter": null, "error": "NOTE_NOT_FOUND", "message": "Note not found: %s"}\n' "$title"
+      echo "Error: Note not found: $title" >&2
+      exit 1
     fi
     exit 0
     ;;
@@ -451,6 +458,16 @@ out=$(run_script_from_tree "$TREE_WRITTEN" test_label_written "plan=$PLAN" "body
 echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
 [ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
 grep -q '^test_label_written$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
+for missing_style in current stderr-only legacy; do
+  reset_logs
+  rm -f "$RELOAD_FLAG_LOG"
+  label="test_label_brand_new_$(printf '%s' "$missing_style" | tr -c 'a-z' '_')"
+  out=$( export BM_READ_MISSING="$missing_style"; run_script_from_tree "$TREE_WRITTEN" "$label" "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr" ) || fail "brand-new label ($missing_style): a Basic-Memory 'Note not found' read must start a new note, not fail the checkpoint: $(cat "$SHIM/stderr")"
+  grep -q 'rolling Serena back' "$SHIM/stderr" && fail "brand-new label ($missing_style): Serena must not be rolled back: $(cat "$SHIM/stderr")"
+  [ "$(grep -cE '^## [0-9]{4}-' "$SHIM/serena.content")" = 1 ] || fail "brand-new label ($missing_style): Serena must hold exactly one entry: $(cat "$SHIM/serena.content")"
+  cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "brand-new label ($missing_style): both backends must hold the same single entry"
+  grep -q "^${label}\$" "$RELOAD_FLAG_LOG" 2>/dev/null || fail "brand-new label ($missing_style): the reload flag must be written: $out"
+done
 unset RELOAD_FLAG_LOG
 rm -rf "$TREE_WRITTEN"
 
