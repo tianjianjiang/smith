@@ -1,3 +1,9 @@
+## Reading a PR
+
+- Check each `Not touched:` line of the PR body against the diff. A
+  regression in an area the PR says it does not touch is a defect, even when
+  the rest of the change is correct.
+
 ## Posting Review Findings
 
 When Claude Code is the reviewer and an open PR exists (including self-review

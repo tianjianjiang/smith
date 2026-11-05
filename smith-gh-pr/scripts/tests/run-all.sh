@@ -2,7 +2,8 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
-  pr-body-template
+  pr-body-template \
+  media-and-reading
 do
   sh "$HERE/$check.test.sh" || status=1
 done
