@@ -8,7 +8,7 @@ When drafting PR review comments, the assisted-by attribution line format was wr
 
 1. **Wrong format #1 - "on behalf of" pattern**: "Posted by Claude Code on behalf of @username"
    - Source: basic-memory notes
-   - Violation: smith-gh-pr/SKILL.md:74 explicitly forbids: "No 'on behalf of' line"
+   - Violation: the Attribution bullet under Code Review Cycle in smith-gh-pr/SKILL.md explicitly forbids: "No 'on behalf of' line"
 
 2. **Wrong format #2 - missing model id entirely**: `Assisted-by: Claude` (without `:model-id`)
    - Used plain "Claude" without the required model identifier

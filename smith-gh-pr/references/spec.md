@@ -1,5 +1,17 @@
 # Spec: Fix PR review comment assisted-by attribution format
-Status: draft. Based on: `smith-gh-pr/references/intent.md`
+Status: only some of this spec still applies. The check marks under
+Success Criteria are targets, not results.
+- Attribution Validation Hook: replaced by
+  `smith-ctx-claude/scripts/attribution-guard.sh`. Later commits updated
+  some lines below; `git log -p` on this file shows which.
+- Skill Enforcement Hook: built as
+  `smith-ctx-claude/scripts/skill-load-gate.mjs`, with its rules in
+  `smith-ctx-claude/skill-gate.json`. It checks whether a skill was loaded
+  in the session, not in the turn, and its rules differ from the ones
+  below. It enforces nothing until it is registered in a `settings.json`
+  (`README.md` Hooks table).
+
+Based on: `smith-gh-pr/references/intent.md`
 
 ## Requirements
 
