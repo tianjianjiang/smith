@@ -47,7 +47,8 @@ The body has these parts, in this order:
   shortcomings the code does not show.
 - `Not touched: «area» («reason»)`, only when a neighbouring area is
   deliberately left alone; it goes under What/Why, for example
-  `Not touched: smith-worktree sync protocol gaps (follow-ups)`.
+  `Not touched: smith-worktree sync protocol gaps (follow-ups)`. Reviewers
+  check it (`references/REVIEW-WORKFLOW.md` "Reading a PR").
 - `Testing: «how»`, one line on how the change was tested and which
   evidence ran. Never paste results into the body. With required CI, the
   results are the check runs beside the diff; without it, the line names
@@ -59,6 +60,17 @@ The body has these parts, in this order:
 
 Leave out a link to the plan, a deviations section, a reading guide, and any
 agent review receipt or session log.
+
+Media: the body is text. A change to a user interface adds, under What/Why,
+a screenshot made by a script committed with the change, so it can be made
+again. A diagram, recording or HTML page made outside the diff is optional and
+the body never depends on it: it goes stale against later code and cannot be
+made again from the commit. A Mermaid diagram written in the body is text, not
+such an artifact, and is reviewed like the rest.
+Sources: explainers are made on demand because they reflect "the code as it
+is today" (https://claude.dev/blog/solving-code-review-at-anthropic/); rich
+media are discardable artifacts made on demand
+(https://x.com/karpathy/status/2105819303471976479).
 
 Check a drafted body before showing it:
 `sh «skills»/smith-gh-pr/scripts/check-pr-body.sh «body file»` names each
