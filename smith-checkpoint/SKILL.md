@@ -227,7 +227,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
    under `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects`; none found means
    no transcript:
    ```bash
-   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/extract-session-facts.sh
+   "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/extract-session-facts.sh"
    ```
    Provides: completed tasks, file edits, PRs, commits, git state
 
@@ -295,7 +295,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
       decisions and context
    4. Run the scripted audit and fix every `FAIL`, judge every `WARN`:
       ```bash
-      ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh "«body-file»" "plan=«path»"
+      "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh" "«body-file»" "plan=«path»"
       ```
       An anchor that fails to resolve is wrong for the next reader too:
       write its path from the repository root, absolute, or add `roots=`;
@@ -400,7 +400,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
 
 7. **Call write-checkpoint.sh**:
    ```bash
-   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/write-checkpoint.sh "«label»" "plan=«path»" "body=«body-file»"
+   "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/write-checkpoint.sh" "«label»" "plan=«path»" "body=«body-file»"
    ```
 
 8. The script (exit 0 on success):
