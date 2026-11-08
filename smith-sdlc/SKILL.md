@@ -1,6 +1,6 @@
 ---
 name: smith-sdlc
-description: AI-native software development lifecycle (SDLC) artifacts: intent.md, spec.md, plan.md, a per-subsystem design.md decision log, control-band maintenance. Use when scoping a new feature end to end, setting up a repository's SDLC artifacts or a decision log, or asked about the AI-native SDLC playbook.
+description: "AI-native software development lifecycle (SDLC) artifacts: intent.md, spec.md, plan.md, a per-subsystem design.md decision log, control-band maintenance. Use when scoping a new feature end to end, setting up a repository's SDLC artifacts or a decision log, or asked about the AI-native SDLC playbook."
 license: MIT
 metadata:
   version: "1.4.0"

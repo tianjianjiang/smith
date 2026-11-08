@@ -128,6 +128,22 @@ raw_skill nested-name '---' 'name: nested-name' 'description: A fixture skill. U
 passes nested-name
 raw_skill description-on-next-line '---' 'name: description-on-next-line' 'description:' '  A fixture skill. Use when testing the lint.' '---'
 passes description-on-next-line
+raw_skill unquoted-colon '---' 'name: unquoted-colon' 'description: A fixture skill: with a colon. Use when testing the lint.' '---'
+reports unquoted-colon frontmatter
+raw_skill trailing-colon '---' 'name: trailing-colon' 'description: A fixture skill. Use when testing the lint:' '---'
+reports trailing-colon frontmatter
+raw_skill unquoted-colon-other-key '---' 'name: unquoted-colon-other-key' 'description: A fixture skill. Use when testing the lint.' 'license: MIT: or not' '---'
+reports unquoted-colon-other-key frontmatter
+raw_skill double-quoted-colon '---' 'name: double-quoted-colon' 'description: "A fixture skill: with a colon. Use when testing the lint."' '---'
+passes double-quoted-colon
+raw_skill single-quoted-colon '---' 'name: single-quoted-colon' "description: 'A fixture skill: with a colon. Use when testing the lint.'" '---'
+passes single-quoted-colon
+raw_skill block-colon '---' 'name: block-colon' 'description: >' '  A fixture skill: with a colon.' '  Use when testing the lint.' '---'
+passes block-colon
+raw_skill url-colon '---' 'name: url-colon' 'description: A fixture skill from https://example.com/x. Use when testing the lint.' '---'
+passes url-colon
+raw_skill flow-colon '---' 'name: flow-colon' 'description: A fixture skill. Use when testing the lint.' 'argument-hint: [focus: area]' '---'
+passes flow-colon
 out=$(cd "$TMPD/clean" && node "$LINT" SKILL.md) || fail "a relative path must take its directory's name, got: $out"
 if [ "$(id -u)" = 0 ]; then
   echo "  SKIP unreachable skill file (root reads regardless of mode)"
