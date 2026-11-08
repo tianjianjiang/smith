@@ -63,6 +63,25 @@ Use this format in plan files for trackable progress:
 - Blockers: None
 ```
 
+## Checkpoint Label
+
+- A plan that continues a checkpointed work thread carries that thread's
+  label in one marker line, `<!-- checkpoint-label-v1: «label» -->`, with
+  the exact name of the memory the work was resumed from (ASCII letters,
+  digits, `.`, `_` and `-`, not starting with `.` or `-`). A new plan file
+  for the same thread copies the line; Claude Code plan mode opens a new
+  file each time, so the heading and filename cannot carry it.
+- Only a whole line of exactly that form counts; anything else, a
+  misspelled marker included, is ignored as no marker. A second exact
+  marker line, even inside a code fence, is refused.
+- `v1` means the value is the memory name used verbatim; a change of that
+  meaning bumps the version, and markers of another version are then
+  ignored, not reinterpreted.
+- A plan for new work leaves the marker out.
+  `smith-checkpoint/scripts/plan-label.sh` reads the marker, and
+  `@smith-checkpoint/SKILL.md` Naming strategy says what a checkpoint
+  does without one.
+
 ## Shipping Step
 
 - Write a plan's shipping as one task, `/smith-ship`, never as hand-written
