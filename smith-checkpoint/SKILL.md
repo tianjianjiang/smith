@@ -263,9 +263,18 @@ When invoked via `/smith-checkpoint` (no arguments required):
      script prints on stderr after relocation (a memory written by MCP into
      the worktree ends up in the primary checkout, possibly under a
      `__from_worktree_` suffix)
-   - Create file with Bash heredoc (Write tool requires Read first, even for new files):
+   - Create the body file with `new-body-file.sh`. It prints the path of a
+     new, empty, owner-only file in `CLAUDE_JOB_DIR`, else `TMPDIR`, else
+     `/tmp`. Reuse that printed path literally as `«body-file»` here and in
+     steps 6 and 7. If the script exits nonzero or prints nothing, stop and
+     report it; never write to the literal text `«body-file»`. The file is
+     left for the temporary directory's own cleanup:
      ```bash
-     cat > "${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md" <<'EOF'
+     "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/new-body-file.sh"
+     ```
+   - Fill it with a Bash heredoc (Write tool requires Read first, even for new files):
+     ```bash
+     cat > "«body-file»" <<'EOF'
      ## Completed
      - [x] ...
      
