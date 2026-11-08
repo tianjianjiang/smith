@@ -192,11 +192,15 @@ checkpoint risks fragmenting one thread's history across several
 similarly-named memories/notes (the read-then-merge behavior in `write-
 checkpoint.sh` only accumulates when the label is an exact repeat). Before
 step 3 below:
-- If a plan file is in play, its `# ` heading already pins one deterministic
-  label across checkpoints — no lookup needed unless the heading itself
-  changed since the last checkpoint.
-- Without a plan file (or if unsure the heading is unchanged), check for an
-  existing checkpoint first: `serena memories list` (grep for a name
+- If a plan file is in play, its one marker line
+  `<!-- checkpoint-label-v1: «label» -->` pins the label across
+  checkpoints and across plan files: a plan that continues a checkpointed
+  thread carries that thread's exact memory name there (marker rules in
+  `@smith-mode-plan/SKILL.md` "Checkpoint Label"). `plan-label.sh`
+  (Procedure step 3) reads it; with no marker it suggests the heading
+  slug (else the filename slug, else `plan_checkpoint`).
+- Without a plan file, or when the plan has no marker, check for
+  an existing checkpoint first: `serena memories list` (grep for a name
   matching the current work topic) and/or Basic-Memory `bm_search` /
   `bm_read` on the candidate title. If a match is found, reuse ITS exact
   name — do not derive a new one.
@@ -205,8 +209,9 @@ step 3 below:
 
 **Use semantic names based on checkpoint context, not generic labels:**
 
-- **With plan file**: slug of the plan's first `# ` heading (filename only
-  when the plan has no heading)
+- **With plan file**: the plan's marker value, else the slug of its
+  first `# ` heading (filename only when the plan has no heading), as
+  `plan-label.sh` prints them
   - Serena: snake_case (e.g., `fix_smith_checkpoint_basic_memory_note_already_exists`)
   - Basic-Memory: the same words in Title Case
 - **Without plan**: Use descriptive label from current work context
@@ -239,13 +244,23 @@ When invoked via `/smith-checkpoint` (no arguments required):
    plan is visibly in play.)
 
 3. **Look up existing checkpoint identity before naming** (see Naming
-   strategy above): with a plan file, its heading already pins the label; without
-   one, check `serena memories list` / Basic-Memory `bm_search` for a
-   match on the current work topic and reuse its exact name if found.
+   strategy above): with a plan file, run
+   ```bash
+   "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/plan-label.sh" "«plan path»"
+   ```
+   - Exit 0: its output is the label; skip step 4.
+   - Exit 3, or no plan file: check `serena memories list` / Basic-Memory
+     `bm_search` for a match on the current work topic and reuse its exact
+     name if found.
+   - Exit 1: stderr names the cause. Several markers are listed as
+     `«plan»:«line»:` (keep one and rerun); the others are a missing
+     argument, or a plan that is missing or cannot be read.
+     Any other exit is a script failure: report it instead of inventing a
+     label.
 
 4. **Infer label automatically** (only when step 3 found no existing
    checkpoint to reuse):
-   - If plan file exists: slug of its first heading (snake_case)
+   - If plan file exists: the suggestion `plan-label.sh` printed with exit 3
    - Otherwise: infer from current session's primary work
    - Follow Naming strategy above (semantic, descriptive)
 
