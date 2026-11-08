@@ -19,6 +19,8 @@ const PLACEHOLDER = /«[^»]*»/g;
 const QUOTED_VALUE = /^(["'])(.*)\1$/;
 const BLOCK_SCALAR_MARKER = /^[>|][+-]?$/;
 const INDENTED_LINE = /^\s/;
+const NON_PLAIN_SCALAR_START = /^["'[{>|]/;
+const MAPPING_INDICATOR = /:(?:\s|$)/;
 const NON_TICKET_PREFIXES = "ADR|ISO|UTF|SHA|RFC|GPT";
 const WHEN_TO_USE = /\buse (?:when|whenever|before|first|for)\b/i;
 
@@ -80,23 +82,34 @@ function indentedTextBelow(frontmatter, index) {
     .join(" ");
 }
 
+function isPlainScalarWithMappingIndicator(rawValue) {
+  return !NON_PLAIN_SCALAR_START.test(rawValue) && MAPPING_INDICATOR.test(rawValue);
+}
+
 function frontmatterFindings(lines, skillDirectoryName) {
   if (lines[0] !== "---") return [frontmatterFinding("file does not open with ---")];
   const closing = lines.indexOf("---", 1);
   if (closing === -1) return [frontmatterFinding("frontmatter is not closed with ---")];
   const fields = new Map();
+  const findings = [];
   const frontmatter = lines.slice(1, closing);
   frontmatter.forEach((line, index) => {
     const separator = line.indexOf(":");
     if (separator <= 0 || INDENTED_LINE.test(line)) return;
-    const value = unquoted(line.slice(separator + 1).trim());
+    const key = line.slice(0, separator).trim();
+    const rawValue = line.slice(separator + 1).trim();
+    if (isPlainScalarWithMappingIndicator(rawValue)) {
+      findings.push(
+        frontmatterFinding(`${key} value contains ": " or ends with ":" and must be quoted`),
+      );
+    }
+    const value = unquoted(rawValue);
     const textBelow = indentedTextBelow(frontmatter, index);
     const fieldValue = BLOCK_SCALAR_MARKER.test(value)
       ? textBelow
       : [value, textBelow].filter(Boolean).join(" ");
-    fields.set(line.slice(0, separator).trim(), fieldValue);
+    fields.set(key, fieldValue);
   });
-  const findings = [];
   if (fields.get("name") !== skillDirectoryName) {
     findings.push(frontmatterFinding(`name must be ${skillDirectoryName}`));
   }
