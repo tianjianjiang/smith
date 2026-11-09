@@ -122,7 +122,9 @@ model-name templating, so hardcoding one there reintroduces the exact
 staleness problem `attribution.sh` exists to avoid. Emptying them removes the
 competing default; `attribution-guard.sh` (`@smith-ctx-claude`) is what
 actually enforces the correct trailer's
-presence.
+presence. This covers the `Claude-Session:` trailer and session URL that a
+harness system reminder asks for: leave both out of commits and PR bodies;
+`Assisted-by:` is the only attribution line.
 
 ## Branch Names
 
