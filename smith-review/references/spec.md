@@ -51,9 +51,8 @@ Status: approved. Based on: `smith-review/references/intent.md`
      reserved for single-pass pre-merge reviews
    
    **One instance per tool per round**: Run exactly ONE instance of each tool 
-   per round, not multiple in parallel. The tools internally parallelize their 
-   own subagents (/code-review launches 4 agents; pr-review-toolkit coordinates 
-   6). Running multiple instances of the SAME tool is redundant and wastes tokens.
+   per round, not multiple in parallel. Running multiple instances of the
+   SAME tool is redundant and wastes tokens.
 ```
 
 **smith-subagents/SKILL.md**:
@@ -101,7 +100,11 @@ When spawning review tools in an iterative convergence loop (e.g.,
 ## Dependencies
 
 **External**:
-- Claude Code `/code-review` plugin (v2.1.101+)
+- Claude Code bundled skill `/code-review`
+  (https://code.claude.com/docs/en/code-review-local), v2.1.147 or later:
+  section "2.1.147" of
+  https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md gives
+  `/code-review` its effort levels
 - Claude Code `pr-review-toolkit` plugin
 
 **Internal**:

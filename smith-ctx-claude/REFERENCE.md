@@ -278,8 +278,13 @@ cross-repo sharing (see `@smith-tools/SKILL.md` for details).
 
 ## Plugin Discovery
 
+**Bundled skill:**
+- `/code-review` - review of the current branch's changes, committed or not,
+  or another target such as a pull request, at an effort level (`low` to
+  `max`; `ultra` runs the cloud ultrareview, or a local review where
+  ultrareview is unavailable); https://code.claude.com/docs/en/code-review-local
+
 **Available plugin commands:**
-- `/code-review` - Automated PR review with parallel agents
 - `/commit` - Auto-commit with message generation (commits before the message
   is shown; user-typed only, never an agent's substitute for a yes)
 - `/commit-push-pr` - Full PR workflow (not recommended: publishes the commit
