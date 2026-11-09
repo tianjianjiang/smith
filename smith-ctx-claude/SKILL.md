@@ -6,7 +6,7 @@ description: Claude Code context management. Use when context passes the warning
 # Claude Code Context Management
 
 **Prerequisites:** @smith-ctx/SKILL.md
-**Companion (Layer 3, read on demand):** `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.
+**Companion (Layer 3, read on demand):** `smith-ctx-claude/REFERENCE.md` — hooks, linting hooks, permission modes, agent features + dispatch, /goal, model routing, tool search, plugin and bundled-skill discovery, session analytics, moved trigger table + skill catalog. Read only when configuring those surfaces.
 
 ## CRITICAL: Context Commands
 

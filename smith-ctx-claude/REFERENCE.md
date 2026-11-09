@@ -276,7 +276,7 @@ cross-repo sharing (see `@smith-tools/SKILL.md` for details).
 - Up to 1M token context window (model-dependent)
 - Tool Search for on-demand tool loading
 
-## Plugin Discovery
+## Plugin and Bundled Skill Discovery
 
 **Bundled skill:**
 - `/code-review` - review of the current branch's changes, committed or not,

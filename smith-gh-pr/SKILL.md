@@ -206,8 +206,9 @@ showing them first (`@smith-guidance` Safety Rules).
 
 ## Claude Code Plugin Integration
 
-Prefer `/code-review` and `pr-review-toolkit:review-pr` (the single entry
-point for its own subagents) when available. `/commit-push-pr` is not
+Prefer `/code-review` (a bundled skill) and, when installed,
+`pr-review-toolkit:review-pr` (the single entry point for its own
+subagents). `/commit-push-pr` is not
 recommended: it commits, pushes and opens the PR without showing the commit
 message or PR text first; ship with `/smith-ship`. Details in
 `references/REVIEW-WORKFLOW.md`.

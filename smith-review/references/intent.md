@@ -37,7 +37,7 @@ maintaining convergence quality.
 ## Constraints
 - Must preserve review signal quality (low effort still catches high-confidence bugs)
 - Cannot reduce tool coverage (still run all applicable tools, just once each at low effort)
-- Must align with Claude Code's `/code-review` effort levels (low/medium/high/max/ultra per official docs)
+- Must align with Claude Code's `/code-review` effort levels (low/medium/high/xhigh/max/ultra per official docs; xhigh is model-dependent)
 - All rounds use low effort (strategy confirmed 2026-09-07)
 
 ## Open questions
