@@ -9,7 +9,7 @@ metadata:
 
 Capture what would otherwise be lost across sessions. Arguments:
 - `label`: short checkpoint label (required)
-- `plan=path`: plan file path (optional, provided by ctx-claude stop hook)
+- `plan=path`: plan file path (optional)
 - `body=path`: file holding the session body you drafted (see Procedure);
   without it the script records plan title, pending items and git state only
 - `serena=path`: directory of the Serena project to write to (optional;
@@ -217,8 +217,6 @@ step 3 below:
 - **Without plan**: Use descriptive label from current work context
   - Never use bare "context-limit" or standalone timestamps
   - Example: `feature_auth_implementation`, `bugfix_memory_leak`
-- **Label argument**: Passed from enforce-clear.sh: plan-title slug, else
-  `consolidated_plan_checkpoint`, else `«cwd»_checkpoint`
 
 **Consistency**: Same semantic name across label, Serena memory, Basic-Memory note (modulo format).
 

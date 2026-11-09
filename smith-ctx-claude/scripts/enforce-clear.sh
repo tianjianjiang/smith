@@ -110,12 +110,10 @@ fi
 
 # Create pending-reload flag
 TIMESTAMP=$(date +%Y-%m-%dT%H:%M:%S%z)
-COMPLETED_PLAN=""
 if [[ -n "$ACTIVE_PLAN" ]] && [[ $PENDING -gt 0 ]]; then
     FLAG_TYPE="plan-pending"
 elif [[ -n "$ACTIVE_PLAN" ]]; then
     FLAG_TYPE="plan-completed"
-    COMPLETED_PLAN="$ACTIVE_PLAN"
     ACTIVE_PLAN=""
 else
     FLAG_TYPE="no-plan"
@@ -127,15 +125,6 @@ printf '%s\n%s\n%s\n%s\n%s\n' "$ACTIVE_PLAN" "$SESSION_ID" "$TIMESTAMP" \
 if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; then
     save_state_file "$STATE_FILE" "$SESSION_ID" "$TRANSCRIPT_PATH" "$ACTIVE_PLAN" \
         "$(scope_key "${HOOK_CWD:-${PWD:-}}")"
-fi
-
-CHECKPOINT_LABEL=""
-if [[ -n "$ACTIVE_PLAN" ]]; then
-    CHECKPOINT_LABEL=$(checkpoint_label_from_plan "$ACTIVE_PLAN")
-elif [[ -n "$COMPLETED_PLAN" ]]; then
-    CHECKPOINT_LABEL=$(checkpoint_label_from_plan "$COMPLETED_PLAN")
-else
-    CHECKPOINT_LABEL=$(checkpoint_label_from_cwd "${HOOK_CWD:-${PWD:-}}")
 fi
 
 EXTRACT_FACTS_SCRIPT="${SCRIPT_DIR}/../../smith-checkpoint/scripts/extract-session-facts.sh"
@@ -163,27 +152,16 @@ fi
 case "$FLAG_TYPE" in
     plan-pending)
         STATUS="Context at ${CONTEXT_PCT}% (${PENDING} pending)"
-        PLAN_ARG="plan=${ACTIVE_PLAN}"
         ;;
     plan-completed)
         STATUS="Context at ${CONTEXT_PCT}% (plan completed)"
-        PLAN_ARG="plan=${COMPLETED_PLAN}"
         ;;
     *)
         STATUS="Context at ${CONTEXT_PCT}%"
-        PLAN_ARG=""
         ;;
 esac
 
 REASON="${STATUS}. Checkpoint this session, then /clear."
-
-CHECKPOINT_PARAMS="label=${CHECKPOINT_LABEL}"
-if [[ -n "$PLAN_ARG" ]]; then
-    CHECKPOINT_PARAMS="${CHECKPOINT_PARAMS}
-${PLAN_ARG}"
-fi
-CHECKPOINT_PARAMS="${CHECKPOINT_PARAMS}
-body=\${CLAUDE_JOB_DIR:-/tmp}/checkpoint-body.md"
 
 AGENT_CONTEXT=""
 [[ -n "$FACTS_SUMMARY" ]] && AGENT_CONTEXT="${FACTS_SUMMARY}
