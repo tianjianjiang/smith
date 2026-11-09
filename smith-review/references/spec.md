@@ -32,8 +32,8 @@ Status: approved. Based on: `smith-review/references/intent.md`
 - Change is effort level only, not tool selection
 
 **NFR3**: Align with Claude Code parameters
-- Use official effort level names: `low`, `medium`, `high`, `max`, `ultra`
-- Reference: https://code.claude.com/docs/en/code-review (retrieved 2026-09-07)
+- Use official effort level names: `low`, `medium`, `high`, `xhigh`, `max`, `ultra`
+- Reference: https://code.claude.com/docs/en/code-review-local (retrieved 2026-11-10)
 
 ## Design
 
@@ -123,9 +123,9 @@ When spawning review tools in an iterative convergence loop (e.g.,
 
 ## Evidence Base
 
-- [Code Review - Claude Code Docs](https://code.claude.com/docs/en/code-review) (retrieved 2026-09-07)
-  - Documents official effort levels: low, medium, high, max, ultra
-  - "At low and medium, the review reports only the findings it's most confident in"
+- [Review locally with /code-review - Claude Code Docs](https://code.claude.com/docs/en/code-review-local) (retrieved 2026-11-10)
+  - Documents effort levels `low` through `max`, plus `ultra`; `xhigh` per https://code.claude.com/docs/en/model-config#adjust-effort-level
+  - "At `low`, the review reports the findings it's most confident in, so you see fewer false positives."
 
 ## Impact
 
