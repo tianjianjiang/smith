@@ -36,8 +36,9 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
   `@smith-tests`, `@smith-subagents`, `@smith-skills`, `@smith-standards`,
   `@smith-style`, plus the language skills (`@smith-python`/`@smith-typescript`/
   `@smith-nuxt`/...) the diff touches.
-- Claude Code plugins/skills: `/code-review`, `/review-pr` (pr-review-toolkit;
-  its applicable agents), CodeRabbit, `code-simplifier`, and relevant reviewer
+- Claude Code bundled skill: `/code-review`.
+- Claude Code plugins and subagents: `/review-pr` (pr-review-toolkit; its
+  applicable agents), CodeRabbit, `code-simplifier`, and relevant reviewer
   subagents.
 
 1. **Self-audit** against the applicable smith conventions first (cheap, no
@@ -56,10 +57,10 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    - Before final merge: consider one HIGH/MAX effort pass for thorough verification
    
    **One instance per tool per round**: Run exactly ONE instance of each tool 
-   per round, not multiple in parallel. The tools internally parallelize their 
-   own subagents. Running multiple instances of the SAME tool is redundant and 
-   wastes tokens. This preserves tool coverage (step 2: "do not skip") while 
-   controlling cost through shallow effort depth, not fewer tools.
+   per round, not multiple in parallel. Running multiple instances of the
+   SAME tool is redundant and wastes tokens. This preserves tool coverage
+   (step 2: "do not skip") while controlling cost through shallow effort
+   depth, not fewer tools.
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
    (`@smith-validation` Bugfix Discipline, Adversarial Verification).

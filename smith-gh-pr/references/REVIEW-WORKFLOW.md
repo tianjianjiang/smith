@@ -314,9 +314,14 @@ Source: https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-req
 
 ## Claude Code Plugin Integration
 
+**Bundled skill:**
+
+- **`/code-review`**: reviews the current branch's changes, committed or
+  not, or another target such as a pull request, at an effort level
+  (https://code.claude.com/docs/en/code-review-local)
+
 **When plugins are available, prefer plugin commands:**
 
-- **`/code-review`**: Launches 4 parallel agents with confidence scoring (threshold 80)
 - **`/commit-push-pr`**: Not recommended: it commits, pushes and creates the
   PR in one step without showing the commit message or PR text first
   (`@smith-guidance` Safety Rules). Ship with `/smith-ship` instead
