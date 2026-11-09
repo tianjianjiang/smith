@@ -151,6 +151,24 @@ export function withAttachedFlagsSplit(tokens) {
   return result;
 }
 
+const REDIRECTION = /^(?:\d*(?:>>|<>|>\||[<>]&|[<>])|&>>?)/;
+
+export function withoutRedirections(normalized) {
+  const subcommand = nonFlagTokensAfterGh(normalized)[1];
+  const valueFlags = new Set([...valueFlagsFor(subcommand), ...ghNonBodyValueFlags(subcommand)]);
+  const result = [];
+  for (let index = 0; index < normalized.length; index += 1) {
+    const token = normalized[index];
+    const operator = token.match(REDIRECTION);
+    if (operator && !valueFlags.has(normalized[index - 1])) {
+      if (operator[0] === token) index += 1;
+      continue;
+    }
+    result.push(token);
+  }
+  return result;
+}
+
 export function ghApiArgs(normalized) {
   return normalized.slice(normalized.indexOf("api") + 1);
 }

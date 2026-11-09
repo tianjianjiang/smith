@@ -75,7 +75,7 @@ Decision per matched call:
 | Situation | Decision |
 | --- | --- |
 | Every payload leaf appears in a main-thread assistant message, or in a file such a message names, and the user replied after that message (a named file must be unchanged since the reply) | none (the call proceeds) |
-| A leaf never shown, or shown but not yet answered | `deny`, telling the agent to preview the missing part and wait |
+| A leaf never shown, or shown but not yet answered | `deny`, naming each missing part (a target with its flag, such as `--line 9`; the action or `gh api` method; the start of a text) and telling the agent to preview it and wait |
 | Called from a subagent (`agent_id` set) | `deny`: return the draft to the main thread |
 | A single-step `gh pr-review comments reply` with one inline body of exactly `fixed in «SHA»` and no extra positional argument, the SHA a commit in the working repository, no `GH_REPO`/`GH_HOST`, `--hostname` or host-qualified `-R`, a `/smith-ship` or `/smith-review` command the user typed in this session (a `Skill` call by the assistant does not count), and a `--thread-id` whose comments GitHub reports as all `Bot`-authored (one `gh api graphql` lookup; any failure counts as not) | none (mechanics, `@smith-guidance`) |
 | Cannot check: transcript missing or unreadable, body from stdin, `--input` or an unreadable file, a body, file path or target built by shell expansion, a body file read by a command with other steps, a short flag with letters or a value attached (`-cb`, `-bTEXT`, `-XPOST`, whose parsing the guard does not replicate), a `gh` flag outside the guard's known list (`KNOWN_GH_WRITE_FLAGS`), `GH_REPO`/`GH_HOST` set on the command line, a GraphQL query built by shell expansion, no text at all, or the hook failing after it matched the call | `ask` (fallback) |
@@ -127,7 +127,12 @@ opaque. A `$(cat <<'EOF' … EOF)` body with a quoted delimiter is read as
 literal text unless the delimiter line also appears inside it. A
 command whose subcommand or endpoint itself comes from expansion is not
 recognised as a write at all, the same command-substitution limitation
-described below. Matching is verbatim after whitespace is collapsed,
+described below. Shell redirections (`2>&1`, `> out.txt`, `2>/dev/null`,
+`&> log`) are not part of the write: they do not split the command and
+are not target leaves. Matching is verbatim after whitespace is collapsed,
+except that a review verdict or `--event` value matches in any letter
+case, so "event APPROVE" covers `--event APPROVE`; a `gh api` method keeps
+its case, so prose such as "it does not delete it" never covers `DELETE`,
 and a leaf that starts or ends with an ASCII letter or digit must not
 sit inside a longer run of them, so `o` or `1` does not match inside
 `hosts` or `x41`. Leaves may

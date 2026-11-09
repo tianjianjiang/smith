@@ -106,20 +106,23 @@ function messageTexts(message, cache, { answeredOnly }) {
   return [message.text, ...usableFiles.map((file) => file.text)];
 }
 
-function coversAll(messages, leaves, targets, cache, options) {
+function uncoveredLeaves(messages, leaves, { targets, anyCase }, cache, options) {
   const content = contentLeaves(leaves, targets);
   const views = messages.map((message) => messageTexts(message, cache, options));
-  const holds = (view, leaf) => view.some((text) => previewIncludes(text, leaf));
-  return leaves.every((leaf) =>
-    views.some(
-      (view) =>
-        holds(view, leaf) &&
-        (!targets.has(leaf) || content.length === 0 || content.some((part) => holds(view, part))),
-    ),
+  const includes = (text, leaf) =>
+    anyCase.has(leaf) ? previewIncludes(text.toLowerCase(), leaf.toLowerCase()) : previewIncludes(text, leaf);
+  const holds = (view, leaf) => view.some((text) => includes(text, leaf));
+  return leaves.filter(
+    (leaf) =>
+      !views.some(
+        (view) =>
+          holds(view, leaf) &&
+          (!targets.has(leaf) || content.length === 0 || content.some((part) => holds(view, part))),
+      ),
   );
 }
 
-export async function previewState(transcriptPath, leaves, { targets }) {
+export async function previewState(transcriptPath, leaves, { targets, anyCase = new Set() }) {
   const askToolUseIds = new Set();
   const messages = [];
   let pending = [];
@@ -146,8 +149,8 @@ export async function previewState(transcriptPath, leaves, { targets }) {
   }
   const cache = new Map();
   const answered = messages.filter((message) => message.replyMs !== null);
-  return {
-    previewed: coversAll(messages, leaves, targets, cache, { answeredOnly: false }),
-    replied: coversAll(answered, leaves, targets, cache, { answeredOnly: true }),
-  };
+  const kinds = { targets, anyCase };
+  const unshown = uncoveredLeaves(messages, leaves, kinds, cache, { answeredOnly: false });
+  const unanswered = uncoveredLeaves(answered, leaves, kinds, cache, { answeredOnly: true });
+  return { previewed: unshown.length === 0, replied: unanswered.length === 0, unshown, unanswered };
 }

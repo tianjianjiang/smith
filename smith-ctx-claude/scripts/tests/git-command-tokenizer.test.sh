@@ -18,6 +18,18 @@ assert_json "semicolon-chained segments" commandSegments '"git status; git branc
   '[["git","status"],["git","branch"]]'
 assert_json "double-ampersand-chained segments" commandSegments '"git status && git branch"' \
   '[["git","status"],["git","branch"]]'
+assert_json "the ampersand of 2>&1 does not split the segment" commandSegments '"git push 2>&1"' \
+  '[["git","push","2>&1"]]'
+assert_json "the ampersand of <&0 does not split the segment" commandSegments '"git push <&0"' \
+  '[["git","push","<&0"]]'
+assert_json "the ampersand of &> does not split the segment" commandSegments '"git push &> out.txt"' \
+  '[["git","push","&>","out.txt"]]'
+assert_json "a lone ampersand still splits the segment" commandSegments '"git status & git push"' \
+  '[["git","status"],["git","push"]]'
+assert_json "an escaped > before an ampersand still splits the segment" commandSegments '"echo \\>& git push"' \
+  '[["echo",">"],["git","push"]]'
+assert_json "a quoted > before an ampersand still splits the segment" commandSegments "\"echo '>'& git push\"" \
+  '[["echo",">"],["git","push"]]'
 assert_json "a separator character inside quotes does not split the segment" commandSegments \
   '"git commit -m \"fix; thing\""' \
   '[["git","commit","-m","fix; thing"]]'

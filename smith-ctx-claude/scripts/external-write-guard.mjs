@@ -10,6 +10,7 @@ import {
   isCloseOrReopen,
   nonFlagTokensAfterGh,
   withAttachedFlagsSplit,
+  withoutRedirections,
 } from "./lib/gh-command.mjs";
 import { BOT_THREAD_REPLY, PR_REVIEW_PUBLISHING_FLAGS, flagTokens, ghExternalWriteCommand } from "./lib/gh-writes.mjs";
 import { commandExpands, contentLeaves, ghPayload, mcpPayload } from "./lib/write-payload.mjs";
@@ -67,12 +68,26 @@ function unverifiableReason(subject, cause) {
   ].join(" ");
 }
 
-function previewMissingReason(subject, state) {
-  const missing = state.previewed
-    ? "part of its payload was shown but not yet answered by the user (or its preview file changed after the reply)"
-    : "part of its payload has not been shown in chat";
+const TEXT_LABEL_LENGTH = 40;
+
+function leafLabel(leaf, write) {
+  const label = write.labels?.get(leaf);
+  if (label) return label;
+  if (write.targets.has(leaf)) return `'${leaf}'`;
+  const start = leaf.length > TEXT_LABEL_LENGTH ? `${leaf.slice(0, TEXT_LABEL_LENGTH)}…` : leaf;
+  return `the text starting "${start}"`;
+}
+
+function partsList(leaves, write) {
+  return [...new Set(leaves)].map((leaf) => leafLabel(leaf, write)).join("; ");
+}
+
+function previewMissingReason(subject, state, write) {
+  const [missing, parts] = state.previewed
+    ? ["part of its payload was shown but not yet answered by the user (or its preview file changed after the reply)", state.unanswered]
+    : ["part of its payload has not been shown in chat", state.unshown];
   return (
-    `External write '${subject}' blocked: ${missing}. Show every text field and target it will ` +
+    `External write '${subject}' blocked: ${missing}: ${partsList(parts, write)}. Show every text field and target it will ` +
     "write, verbatim: short parts in chat, one part per turn; long text saved to a durable file " +
     "whose absolute path you give on a line that says 'preview'. Wait for the user's reply to each part, and call it again only " +
     "on a yes (@smith-guidance External writes)."
@@ -182,6 +197,25 @@ function isFixedInReply(payload, cwd, normalized, context) {
   );
 }
 
+function targetOccurrences(normalized, target) {
+  return normalized.flatMap((token, index) => {
+    if (token !== target) return [];
+    const flag = normalized[index - 1];
+    return [index > 0 && FLAG_SHAPE.test(flag) ? `${flag} ${target}` : `'${target}'`];
+  });
+}
+
+function labelLeaves(labels, normalized, payload, isApi) {
+  for (const word of payload.actions) {
+    labels.set(word, isApi ? `the method ${word}` : `the action ${word}`);
+  }
+  for (const target of payload.targets) {
+    if (labels.has(target)) continue;
+    const occurrences = [...new Set(targetOccurrences(normalized, target))];
+    if (occurrences.length > 0) labels.set(target, occurrences.join(" and "));
+  }
+}
+
 function unscannable(subject) {
   return { subject, leaves: [], opaque: "the command could not be fully scanned" };
 }
@@ -213,16 +247,20 @@ function bashExternalWrite(command, cwd, tokenizer, context = {}) {
   const subjects = [];
   const leaves = [];
   const targets = new Set();
+  const anyCase = new Set();
+  const labels = new Map();
   let opaque = null;
   for (const tokens of segments) {
     const matched = ghExternalWriteCommand(tokens, expands);
     if (!matched) continue;
-    const normalized = withAttachedFlagsSplit(tokens);
-    const subcommand = nonFlagTokensAfterGh(normalized)[1];
+    const normalized = withoutRedirections(withAttachedFlagsSplit(tokens));
+    const [resource, subcommand] = nonFlagTokensAfterGh(normalized);
+    const isApi = resource === "api";
     let payload;
     try {
       payload = ghPayload(normalized, cwd, ghTargets(normalized), expands);
-      payload.leaves.push(...ghActionWords(normalized));
+      payload.actions = ghActionWords(normalized);
+      payload.leaves.push(...payload.actions);
       if (flagTokens(tokens, subcommand).some((token) => ATTACHED_SHORT_FLAG.test(token))) {
         payload.opaque = payload.opaque || "a short flag with letters or a value attached, which gh may parse differently";
       }
@@ -233,7 +271,7 @@ function bashExternalWrite(command, cwd, tokenizer, context = {}) {
         payload.opaque = payload.opaque || `the flag '${unknownFlag}', which the guard does not parse`;
       }
     } catch {
-      payload = { leaves: [], targets: new Set(), opaque: "the hook failed while reading the command" };
+      payload = { leaves: [], targets: new Set(), actions: [], opaque: "the hook failed while reading the command" };
     }
     if (
       context.verifyThread &&
@@ -247,6 +285,8 @@ function bashExternalWrite(command, cwd, tokenizer, context = {}) {
     if (!subjects.includes(matched)) subjects.push(matched);
     leaves.push(...payload.leaves);
     payload.targets.forEach((target) => targets.add(target));
+    if (!isApi) payload.actions.forEach((word) => anyCase.add(word));
+    labelLeaves(labels, normalized, payload, isApi);
     opaque = opaque || payload.opaque;
     if (payload.readsFile && multiStep) {
       opaque = opaque || "a body file read by a command that also runs other steps, which may change it first";
@@ -256,7 +296,7 @@ function bashExternalWrite(command, cwd, tokenizer, context = {}) {
   if (setsGhTarget) {
     opaque = opaque || "GH_REPO or GH_HOST set on the command line, which changes the target unseen";
   }
-  return { subject: subjects.join(", "), leaves, targets, opaque };
+  return { subject: subjects.join(", "), leaves, targets, anyCase, labels, opaque };
 }
 
 function matchedWrite(input, toolName, tokenizer) {
@@ -292,9 +332,12 @@ async function judgeWrite(input, write) {
   if (typeof input.transcript_path !== "string") {
     return decide("ask", unverifiableReason(write.subject, "no transcript path"));
   }
-  const state = await previewState(input.transcript_path, write.leaves, { targets: write.targets });
+  const state = await previewState(input.transcript_path, write.leaves, {
+    targets: write.targets,
+    anyCase: write.anyCase,
+  });
   if (state.previewed && state.replied) return;
-  decide("deny", previewMissingReason(write.subject, state));
+  decide("deny", previewMissingReason(write.subject, state, write));
 }
 
 async function main() {
