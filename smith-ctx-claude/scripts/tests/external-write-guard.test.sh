@@ -15,7 +15,7 @@ silent() {
 }
 reason_includes() {
   out=$(run "$3") || fail "$1: hook crashed"
-  echo "$out" | grep -q "$2" || fail "$1: expected reason to include '$2', got: $out"
+  echo "$out" | grep -q -e "$2" || fail "$1: expected reason to include '$2', got: $out"
 }
 
 asks   "editJiraIssue"        '{"tool_name":"mcp__plugin_atlassian_atlassian__editJiraIssue","tool_input":{}}'
@@ -435,6 +435,45 @@ denies "an unshown comment anchor is denied"    "$(printf '{"tool_name":"mcp__pl
 denies "clearing a nested declared field is payload" "$(printf '{"tool_name":"mcp__plugin_atlassian_atlassian__updateConfluenceContent","transcript_path":"%s","tool_input":{"cloudId":"s","contentId":"ABC-12","title":"Done","body":null}}' "$MOVE")"
 asks   "a Confluence smart link cannot be checked" "$(printf '{"tool_name":"mcp__plugin_atlassian_atlassian__createConfluenceContent","transcript_path":"%s","tool_input":{"cloudId":"s","parent":{"spaceId":"1"},"contentType":"smart_link","title":"Done","body":{"format":"url","value":"https://example.com/x"}}}' "$MOVE")"
 denies "a Jira transition to an unshown issue"  "$(printf '{"tool_name":"mcp__plugin_atlassian_atlassian__transitionJiraIssue","transcript_path":"%s","tool_input":{"cloudId":"site-xyz.atlassian.net","issueIdOrKey":"ABC-99","transitionName":"Done"}}' "$MOVE")"
+
+silent "a previewed pr-review submit ending in 2>&1" "$(gh_call "$SUBMIT_EVENT" 'gh pr-review review --submit --pr 7 --review-id R --event APPROVE 2>&1')"
+silent "a previewed comment with output redirections" "$(gh_call "$GH" "gh pr comment 7 --body \"$BODY\" > out.txt 2>/dev/null")"
+silent "a previewed body file followed by 2>&1" "$(gh_call "$GH" 'gh pr comment 7 --body-file body.md 2>&1')"
+denies "an unpreviewed body followed by 2>&1"   "$(gh_call "$GH" 'gh pr comment 7 --body "Something else entirely." 2>&1')"
+denies "an unpreviewed PR number before 2>&1"   "$(gh_call "$GH" "gh pr comment 9 --body \"$BODY\" 2>&1")"
+asks   "a body fed from an input redirection"   "$(gh_call "$GH" 'gh pr comment 7 --body-file - < body.md')"
+
+REQUEST_UPPER=$(transcript requestupper "$(assistant a1 "Submit review R on PR 7 with event REQUEST_CHANGES.")" "$(human yes)")
+silent "an upper-case event previewed as written" "$(gh_call "$REQUEST_UPPER" 'gh pr-review review --submit --pr 7 --review-id R --event REQUEST_CHANGES')"
+SUBMIT_UPPER=$(transcript submitupper "$(assistant a1 "Submit review R on PR 7, event APPROVE.")" "$(human yes)")
+silent "an upper-case APPROVE previewed as written" "$(gh_call "$SUBMIT_UPPER" 'gh pr-review review --submit --pr 7 --review-id R --event APPROVE')"
+denies "a previewed approval does not cover REQUEST_CHANGES" "$(gh_call "$SUBMIT_UPPER" 'gh pr-review review --submit --pr 7 --review-id R --event REQUEST_CHANGES')"
+API_POST_WORD=$(transcript apipostword "$(assistant a1 "preview $WORK/body.md
+Post that file as a comment at repos/o/r/issues/7/comments.")" "$(human yes)")
+denies "gh api method previewed only as the word Post" "$(gh_call "$API_POST_WORD" 'gh api repos/o/r/issues/7/comments -F body=@body.md')"
+API_DELETE_PROSE=$(transcript apideleteprose "$(assistant a1 "Endpoint repos/o/r/issues/comments/9: this edits the comment text, it does not delete it.")" "$(human ok)")
+denies "a sentence saying it will not delete does not preview DELETE" "$(gh_call "$API_DELETE_PROSE" 'gh api -X DELETE repos/o/r/issues/comments/9')"
+API_NO_METHOD=$(transcript apinomethod "$(assistant a1 "preview $WORK/body.md
+That file goes to repos/o/r/issues/7/comments.")" "$(human yes)")
+denies "gh api method never previewed"          "$(gh_call "$API_NO_METHOD" 'gh api repos/o/r/issues/7/comments -F body=@body.md')"
+
+reason_includes "the deny reason names the method not shown" "has not been shown in chat: the method POST" "$(gh_call "$API_NO_METHOD" 'gh api repos/o/r/issues/7/comments -F body=@body.md')"
+reason_includes "the deny reason names the flag and target not shown" "has not been shown in chat: --line 9" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 9 --body \"$BODY\"")"
+reason_includes "the deny reason names the text not shown" 'has not been shown in chat: the text starting \\"Unpreviewed text\\"' "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 3 --body \"Unpreviewed text\"")"
+reason_includes "the deny reason names the positional target not shown" "has not been shown in chat: '9'" "$(gh_call "$GH" "gh pr comment 9 --body \"$BODY\"")"
+INLINE_NO_REPLY=$(transcript inlinenoreply "$(assistant a1 "Inline comment in review R on PR 7 at a.js line 3: $BODY")")
+INLINE_NO_REPLY_CALL=$(gh_call "$INLINE_NO_REPLY" "gh pr-review review --add-comment --pr 7 --review-id R --path a.js --line 3 --body \"$BODY\"")
+reason_includes "the not-answered reason says so" "shown but not yet answered by the user" "$INLINE_NO_REPLY_CALL"
+reason_includes "the not-answered reason names the parts" "--line 3" "$INLINE_NO_REPLY_CALL"
+reason_includes "a value under two flags is named with both" "--pr 9 and --line 9" "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 9 --review-id R --path a.js --line 9 --body \"$BODY\"")"
+
+QUOTE_BODY="> Quoted reply from the review."
+QUOTED=$(transcript quoted "$(assistant a1 "Comment to post on PR 7: $QUOTE_BODY")" "$(human yes)")
+silent "a previewed body starting with > is kept as the body" "$(gh_call "$QUOTED" "gh pr comment 7 --body \"$QUOTE_BODY\"")"
+denies "an unpreviewed body starting with > is still checked" "$(gh_call "$GH" "gh pr comment 7 --body \"$QUOTE_BODY\"")"
+denies "a target previewed in another letter case"         "$(gh_call "$INLINE" "gh pr-review review --add-comment --pr 7 --review-id R --path A.js --line 3 --body \"$BODY\"")"
+denies "a write after a redirected command is still checked" "$(gh_call "$GH" "git status 2>&1 && gh pr comment 9 --body \"$BODY\"")"
+denies "a write after >&2& is still checked"                "$(gh_call "$GH" "git status >&2& gh pr comment 9 --body \"$BODY\"")"
 
 mkfifo "$WORK/pipe.md"
 asks   "a FIFO body file is not read"           "$(gh_call "$GH" 'gh pr comment 7 --body-file pipe.md')"

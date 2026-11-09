@@ -27,13 +27,21 @@ export function globalOptionKind(token) {
   return "not-an-option";
 }
 
+function isRedirectionAmpersand(command, index, previousUnquotedChar) {
+  if (command[index] !== "&") return false;
+  return previousUnquotedChar === ">" || previousUnquotedChar === "<" || command[index + 1] === ">";
+}
+
 function segmentsRespectingQuotes(command) {
   const segments = [];
   let current = "";
   let quoteChar = null;
   let parenDepth = 0;
+  let previousUnquotedChar = null;
   for (let i = 0; i < command.length; i += 1) {
     const char = command[i];
+    const previous = previousUnquotedChar;
+    previousUnquotedChar = null;
     if (char === ESCAPE_CHAR && quoteChar !== "'" && i + 1 < command.length) {
       const next = command[i + 1];
       if (next !== "\n") current += char + next;
@@ -60,12 +68,13 @@ function segmentsRespectingQuotes(command) {
       current += char;
       continue;
     }
-    if (parenDepth === 0 && COMMAND_SEGMENT_SEPARATOR_CHAR.test(char)) {
+    if (parenDepth === 0 && COMMAND_SEGMENT_SEPARATOR_CHAR.test(char) && !isRedirectionAmpersand(command, i, previous)) {
       segments.push(current);
       current = "";
       continue;
     }
     current += char;
+    previousUnquotedChar = char;
   }
   segments.push(current);
   return segments;
