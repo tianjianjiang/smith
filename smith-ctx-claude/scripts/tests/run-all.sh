@@ -33,7 +33,6 @@ for check in \
   tool-output-hygiene \
   correction-census \
   skill-lint \
-  code-review-wording \
   skill-trigger-eval \
   on-session-compact
 do
