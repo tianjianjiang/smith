@@ -5,9 +5,10 @@ Claude Code without a human typing it. Each record holds the tool versions, a
 timestamp and the pass or fail of every check; raw streams and screens are not
 kept, because they carry local paths.
 
-Both evals call the Anthropic API through the logged-in `claude` command, so
-they are skipped unless `SMITH_LIVE_CONTEXT_RESET_EVAL=1` is set, and they are
-not part of `run-all.sh`.
+Every eval here drives a live app or a logged-in `claude` command, and all
+except the terminal identity eval call the Anthropic API, so each is skipped
+unless `SMITH_LIVE_CONTEXT_RESET_EVAL=1` is set, and none is part of
+`run-all.sh`.
 
 ## Host-sent `/clear` (stream-json)
 
@@ -105,12 +106,75 @@ records observations: its checks only confirm that the probe ran, and the
 - Manual part, Orca: the Orca command line cannot read or send to a chat tab.
   Type this in the chat tab after the script ran: "What is the second code
   word you were asked to remember? If you do not know, reply exactly
-  UNKNOWN." Observed by hand on 2026-11-15 with Orca 1.4.256: the chat
+  UNKNOWN." Observed by hand on 2026-11-15; the Orca version at that moment
+  was not read (1.4.256 earlier that night, 1.4.258 at the scripted run): the chat
   answered with the code word the command line had added; a later
   command-line resume still listed both code words; the chat tab drew a
   command-line turn, labelled "(Continued outside this chat)", only after a
   new message was sent from the tab, not on switching tabs or on resuming the
   session in a new tab.
+
+## What a process in an Orca terminal knows about its terminal
+
+Checks how a process started in an Orca terminal, such as a hook of a Claude
+Code session, can learn that it runs there and which terminal is its own.
+
+- Script: `../orca-terminal-identity.live-eval.mjs`
+- Record: `orca-terminal-identity.json`
+- Prerequisites: Orca running, and a folder Orca already knows as a workspace.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_ORCA_WORKTREE=path:«workspace folder» node smith-ctx-claude/scripts/tests/orca-terminal-identity.live-eval.mjs`
+- What it does: creates a terminal whose startup command writes the names of
+  its `ORCA_` variables, the values of `ORCA_TERMINAL_HANDLE`, `ORCA_TAB_ID`
+  and `ORCA_PANE_KEY`, and the reply of `orca terminal show` without a handle,
+  then closes the terminal. Values of the other variables are not read,
+  because one of them is a token.
+- Passing output: `ORCA_TERMINAL_HANDLE` equals the handle Orca returned when
+  it created the terminal, `ORCA_TAB_ID` equals its tab, `ORCA_PANE_KEY`
+  starts with that tab, and the variables the Orca-installed hook tests are
+  present.
+- Recorded observations, Orca 1.4.258: `orca terminal show` without a handle
+  named the terminal that was active before, not the terminal that called it,
+  so it cannot stand in for `ORCA_TERMINAL_HANDLE`. The script itself was run
+  from a Claude Code background job attached in an Orca terminal, and its
+  process had no `ORCA_TERMINAL_HANDLE`.
+- Optional parameter: `SMITH_PROBE_ORCA_SETTLE_TIMEOUT_MS`.
+
+## Conditions around a reset in an Orca terminal session
+
+Measures what a reset design must know about a Claude Code session started
+directly in an Orca terminal: what the session's Stop hook can see, whether
+the permission mode survives `/clear`, and what `/clear` does when text is
+already typed in the input box.
+
+- Script: `../orca-session-reset-conditions.live-eval.mjs`
+- Hook fixture: `../fixtures/orca-report-hook-environment.sh`
+- Record: `orca-session-reset-conditions.default-launch.json`
+- Prerequisites: Orca running, a logged-in `claude` on `PATH`, a folder Orca
+  knows as a workspace, and a folder Claude Code already trusts (a new folder
+  shows a trust menu, which refuses sent input).
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_ORCA_WORKTREE=path:«workspace folder» SMITH_PROBE_SESSION_FOLDER=«trusted folder» node smith-ctx-claude/scripts/tests/orca-session-reset-conditions.live-eval.mjs`
+- What it does: creates a terminal that starts Claude Code with a requested
+  permission mode and a `--settings` file registering the hook fixture under
+  `Stop`; the fixture writes the names of its `ORCA_` variables and the value
+  of `ORCA_TERMINAL_HANDLE`. The script gives a code word, reads the
+  permission mode from the screen, sends `/clear`, reads the mode again and
+  asks for the code word. It then gives a second code word, types text
+  without Enter, sends `/clear` on top of it, and asks again. The terminal is
+  closed at the end.
+- Passing output: the Stop hook's `ORCA_TERMINAL_HANDLE` is the session's own
+  terminal, the plain `/clear` resets the session, and the permission mode
+  shown is the same before and after the reset.
+- Recorded observation, Orca 1.4.258 with Claude Code 2.1.325: `/clear` sent
+  on top of half-typed text did not reset the session; Orca accepted the
+  input, the session still recalled the code word, and the typed text was
+  still on the screen. A reset sent this way must first deal with text in the
+  input box.
+- Not measured: a session started through a profile launcher
+  (`SMITH_PROBE_CLAUDE_COMMAND` and `SMITH_PROBE_RECORD_NAME` exist for that
+  run), and whether allowed tools survive the reset.
+- Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
+  `SMITH_PROBE_PERMISSION_MODE` (default `acceptEdits`),
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
 
 ## Integrity
 

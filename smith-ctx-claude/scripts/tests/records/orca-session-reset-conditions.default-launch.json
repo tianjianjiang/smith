@@ -1,0 +1,61 @@
+{
+  "recordedAt": "2026-11-15T03:55:18+09:00",
+  "orcaVersion": "1.4.258",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "launch": "default-launch",
+  "model": "haiku",
+  "requestedPermissionMode": "acceptEdits",
+  "checks": {
+    "sessionStarted": true,
+    "everyStepReachedIdle": true,
+    "stopHookReported": true,
+    "stopHookHandleIsTheSessionTerminal": true,
+    "plainClearResetTheSession": true,
+    "permissionModeUnchangedByReset": true
+  },
+  "observations": {
+    "stopHookOrcaVariableNames": [
+      "ORCA_AGENT_HOOK_ENDPOINT",
+      "ORCA_AGENT_HOOK_ENV",
+      "ORCA_AGENT_HOOK_OPENCODE_TUI",
+      "ORCA_AGENT_HOOK_PORT",
+      "ORCA_AGENT_HOOK_TOKEN",
+      "ORCA_AGENT_HOOK_TRANSPORT",
+      "ORCA_AGENT_HOOK_VERSION",
+      "ORCA_AGENT_PANE",
+      "ORCA_APP_VERSION",
+      "ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR",
+      "ORCA_CLAUDE_CONFIG_DIR",
+      "ORCA_CLAUDE_PROFILE_POINTER",
+      "ORCA_CLI_BIN_DIR",
+      "ORCA_IMAGE_PROTOCOL",
+      "ORCA_NODE_OPTIONS",
+      "ORCA_NODE_REPL_EXTERNAL_MODULE",
+      "ORCA_OPENCODE_AGENT",
+      "ORCA_PANE_KEY",
+      "ORCA_PI_SOURCE_AGENT_DIR",
+      "ORCA_RUNTIME_SOURCE_ID",
+      "ORCA_RUNTIME_SOURCE_INCARNATION",
+      "ORCA_RUNTIME_SOURCE_PROFILE_PATH",
+      "ORCA_TAB_ID",
+      "ORCA_TERMINAL_HANDLE",
+      "ORCA_USER_DATA_PATH",
+      "ORCA_WORKSPACE_ID",
+      "ORCA_WORKTREE_ID",
+      "ORCA_WSL_HOSTS_GATE_STATE"
+    ],
+    "stopHookRanInABackgroundJob": false,
+    "permissionModeBeforeReset": "accept edits on",
+    "permissionModeAfterReset": "accept edits on",
+    "clearReceiptStages": [
+      "input_accepted",
+      "turn_started"
+    ],
+    "clearOverHalfTypedTextReceiptStages": [
+      "input_accepted",
+      "turn_started"
+    ],
+    "clearOverHalfTypedTextResetTheSession": false,
+    "halfTypedTextStillOnScreenAfterClear": true
+  }
+}
