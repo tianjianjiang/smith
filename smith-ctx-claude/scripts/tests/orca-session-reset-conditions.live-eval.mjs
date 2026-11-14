@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -99,7 +99,7 @@ try {
   const clearStages = sendPrompt(terminal, "/clear");
   const clearSettled = waitIdle(terminal);
   const modeAfterReset = permissionModeLabel(screenText(terminal));
-  sendPrompt(terminal, "What code word did I ask you to remember? If you do not know, reply exactly UNKNOWN.");
+  const questionStages = sendPrompt(terminal, "What code word did I ask you to remember? If you do not know, reply exactly UNKNOWN.");
   const questionSettled = waitIdle(terminal);
   const screenAfterQuestion = screenText(terminal);
 
@@ -121,7 +121,8 @@ try {
     everyStepReachedIdle: firstTurnSettled && clearSettled && questionSettled && secondTurnSettled && clearOverDraftSettled && secondQuestionSettled,
     stopHookReported: hookReport.length > 0,
     stopHookHandleIsTheSessionTerminal: lineValue(hookReport, "handle") === terminal,
-    plainClearResetTheSession: clearStages.includes("input_accepted") && !screenAfterQuestion.includes(firstNonce),
+    plainClearResetTheSession: clearStages.includes("input_accepted") && questionStages.includes("input_accepted")
+      && /⏺\s*UNKNOWN/.test(screenAfterQuestion) && !screenAfterQuestion.includes(firstNonce),
     permissionModeUnchangedByReset: modeBeforeReset !== "none shown" && modeBeforeReset === modeAfterReset,
   };
   observations = {
@@ -142,7 +143,7 @@ try {
 const record = {
   recordedAt: localIsoTimestamp(),
   orcaVersion: execFileSync(ORCA, ["--version"], { encoding: "utf8" }).trim(),
-  claudeCodeVersion: execFileSync("claude", ["--version"], { encoding: "utf8" }).trim(),
+  claudeCodeVersion: execSync(`${CLAUDE_COMMAND} --version`, { encoding: "utf8" }).trim(),
   launch: RECORD_NAME,
   model: MODEL,
   requestedPermissionMode: PERMISSION_MODE,
