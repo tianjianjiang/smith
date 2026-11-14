@@ -45,8 +45,56 @@ read -r STOP_HOOK_ACTIVE SESSION_ID HOOK_CWD TRANSCRIPT_PATH < <(
     ] | @tsv' 2>/dev/null
 ) || { STOP_HOOK_ACTIVE="false"; SESSION_ID=""; HOOK_CWD=""; TRANSCRIPT_PATH=""; }
 
+auto_reset_dispatch_enabled() {
+    [[ "${CTX_AUTO_RESET_DISPATCH:-}" == "1" ]]
+}
+
+newest_matching_restore_flag() {
+    local pending_reload="$1" own_key="$2" physical_key="$3"
+    local flag key label newest=""
+    for flag in "${CTX_FLAGS_DIR}"/.pending-memory-restore-*; do
+        [[ -f "$flag" && "$flag" -nt "$pending_reload" ]] || continue
+        key=$(sed -n '5p' "$flag" 2>/dev/null)
+        [[ -n "$key" && ( "$key" == "$own_key" || "$key" == "$physical_key" ) ]] || continue
+        label=$(sed -n '4p' "$flag" 2>/dev/null)
+        [[ -n "$label" ]] || continue
+        [[ -z "$newest" || "$flag" -nt "$newest" ]] && newest="$flag"
+    done
+    printf '%s' "$newest"
+}
+
+json_system_message() {
+    jq -n --arg m "$1" '{systemMessage: $m}'
+}
+
+dispatch_successor_session() {
+    local hook_cwd="${HOOK_CWD:-${PWD:-}}"
+    local own_key physical_cwd physical_key pending_reload flag label name prompt mode output
+    own_key=$(session_key "" "$hook_cwd") || return 0
+    physical_cwd=$(cd -- "$hook_cwd" 2>/dev/null && pwd -P) || physical_cwd="$hook_cwd"
+    physical_key=$(session_key "" "$physical_cwd") || physical_key=""
+    pending_reload="${CTX_FLAGS_DIR}/.pending-reload-${own_key}"
+    [[ -f "$pending_reload" ]] || return 0
+    flag=$(newest_matching_restore_flag "$pending_reload" "$own_key" "$physical_key")
+    [[ -n "$flag" ]] || return 0
+    label=$(sed -n '4p' "$flag")
+    name="continue: ${label}"
+    prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."
+    mode=$(jq -r '.permission_mode // empty' <<<"$INPUT" 2>/dev/null)
+    local launch_options=(--bg --name "$name")
+    [[ -n "$mode" ]] && launch_options+=(--permission-mode "$mode")
+    output=$(cd -- "$hook_cwd" && claude "${launch_options[@]}" -- "$prompt" < /dev/null 2>&1)
+    if [[ "$output" =~ backgrounded\ ·\ ([0-9A-Za-z]+) ]]; then
+        rm -f "$flag"
+        json_system_message "Context reset: the work continues in background session ${BASH_REMATCH[1]} named \"${name}\"."
+    else
+        json_system_message "Context reset: dispatching a background session for checkpoint \"${label}\" failed; /clear still restores the checkpoint."
+    fi
+}
+
 # Official best practice: if already continuing from a stop hook, allow stop
 if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
+    auto_reset_dispatch_enabled && dispatch_successor_session
     exit 0
 fi
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
@@ -161,7 +209,11 @@ case "$FLAG_TYPE" in
         ;;
 esac
 
-REASON="${STATUS}. Checkpoint this session, then /clear."
+if auto_reset_dispatch_enabled; then
+    REASON="${STATUS}. Checkpoint this session; a fresh background session then continues from the checkpoint."
+else
+    REASON="${STATUS}. Checkpoint this session, then /clear."
+fi
 
 AGENT_CONTEXT=""
 [[ -n "$FACTS_SUMMARY" ]] && AGENT_CONTEXT="${FACTS_SUMMARY}

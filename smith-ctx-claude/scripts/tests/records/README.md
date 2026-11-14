@@ -241,6 +241,40 @@ session, which has a fresh context, continues from a file.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
 
+## Automatic continuation at the critical threshold (end to end)
+
+The acceptance eval of the opt-in automatic continuation in
+`../../enforce-clear.sh` (`CTX_AUTO_RESET_DISPATCH=1`): a real background
+session crosses a lowered threshold, writes a checkpoint flag, and must be
+followed by a new session that restores the checkpoint with no input from
+outside.
+
+- Script: `../auto-context-reset.live-eval.mjs`
+- Record: `auto-context-reset.json`
+- Prerequisites: Node.js, a logged-in `claude` on `PATH` with background
+  sessions enabled, and a folder Claude Code already trusts that is a Serena
+  project or may hold a `.serena/memories` folder.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_SESSION_FOLDER=«trusted folder» node smith-ctx-claude/scripts/tests/auto-context-reset.live-eval.mjs`
+- What it does: writes a memory file with a random label and code word; starts
+  a background session whose `--settings` file sets the switch, lowers the
+  threshold, registers this checkout's `enforce-clear.sh` under `Stop`, and
+  allows `write-reload-flag.sh`; the session is told to run that script when
+  asked to checkpoint. The eval then only watches: for a session named after
+  the label, and for its answer. A control run without the switch follows.
+  Sessions, flags and the memory file are removed at the end.
+- Passing output: the block reason names the background continuation; a
+  session named `continue: «label»` with another id appears, reports the
+  checkpoint's code word and does not know the first conversation's code
+  word; the restore flag is consumed; the control dispatches nothing and
+  shows today's reason.
+- Limit: an installed copy of `enforce-clear.sh` in the user settings also
+  blocks at the lowered threshold with today's reason, so the first session
+  sees both reasons; the new reason's presence, and its absence in the
+  control, is what tells the runs apart.
+- Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
+  `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with

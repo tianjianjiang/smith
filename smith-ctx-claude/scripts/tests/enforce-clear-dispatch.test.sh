@@ -179,6 +179,7 @@ while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 [ "${args[0]}" = --bg ] || fail "first argument should be --bg: ${args[*]}"
 [ "${args[1]}" = --name ] || fail "second argument should be --name: ${args[*]}"
 case "${args[2]}" in *"$LABEL"*) ;; *) fail "the name should contain the label: ${args[2]}" ;; esac
+[ "${args[2]}" = "continue: $LABEL" ] || fail "the name should be exactly continue: «label»: ${args[2]}"
 [ "${args[3]}" = --permission-mode ] && [ "${args[4]}" = acceptEdits ] || fail "the permission mode of the input should be passed on: ${args[*]}"
 [ "${args[5]}" = -- ] || fail "-- should follow the options: ${args[*]}"
 [ "$(cat "$CALLS_LOG.penultimate")" = -- ] || fail "-- should come immediately before the prompt: $(cat "$CALLS_LOG.penultimate")"
@@ -193,6 +194,7 @@ case "$(head -1 "$CALLS_LOG")" in *" stdin=character-device") ;; *) fail "claude
 [ ! -e "$OTHER_PROGRAMS_LOG" ] || fail "no program other than claude should be called: $(cat "$OTHER_PROGRAMS_LOG")"
 pass "dispatch runs claude --bg --name «name» --permission-mode «mode» -- «prompt» in the hook's cwd"
 [ ! -e "$RESTORE_FLAG" ] || fail "a successful dispatch should consume the restore flag"
+[ -f "$PENDING_RELOAD" ] || fail "a successful dispatch should leave the pending reload file alone"
 pass "a successful dispatch consumes the restore flag"
 [ "$(printf '%s' "$OUT" | jq -r 'has("decision")')" = false ] || fail "a dispatch must not block: $OUT"
 MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
@@ -216,6 +218,21 @@ while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 [ "${args[3]}" = -- ] || fail "without a permission mode in the input, -- should follow the name: ${args[*]}"
 grep -qx -- --permission-mode "$CALLS_LOG" && fail "without a permission mode in the input none should be passed: ${args[*]}"
 pass "a flag keyed over the hook cwd dispatches, without --permission-mode when the input has none"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+NEWEST_FLAG="$TMP/plans/.pending-memory-restore-20260101T020000-2"
+printf 'smith-checkpoint\n2026-01-01T02:00:00+0000\n%s\nzq_newest_label\n%s\n' "$PHYSICAL_TMP" "$PHYSICAL_KEY" > "$NEWEST_FLAG"
+touch -t 202601010200.00 "$NEWEST_FLAG"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "several matching flags should dispatch once, got $(call_count) calls: $OUT"
+args=()
+while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
+[ "${args[2]}" = "continue: zq_newest_label" ] || fail "the newest matching flag should win: ${args[2]}"
+[ ! -e "$NEWEST_FLAG" ] || fail "the dispatched flag should be consumed"
+[ -f "$RESTORE_FLAG" ] || fail "the older flag should stay"
+pass "the newest of several matching fresh flags is dispatched and consumed"
 
 reset_state
 write_pending_reload
