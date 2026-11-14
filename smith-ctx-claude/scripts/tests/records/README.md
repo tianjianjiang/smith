@@ -50,6 +50,30 @@ command writes input into a live terminal (`orca terminal send --help`).
 - Limit: this eval has no session without `/clear`; the host eval above holds
   the control that shows the question does recall the code word.
 
+## Fresh context in a T3 Code thread
+
+T3 Code is a desktop and web interface for coding agents
+(https://github.com/pingdotgg/t3code); it runs Claude through the Claude Agent
+SDK in its own chat threads, and its `t3 thread` command talks to the running
+server.
+
+- Script: `../t3-fresh-context.live-eval.mjs`
+- Record: `t3-fresh-context.json`
+- Prerequisites: the T3 Code server running, `t3` on `PATH`, a Claude provider
+  signed in, and a project added with `t3 project add «path»`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_T3_PROJECT=«project id» node smith-ctx-claude/scripts/tests/t3-fresh-context.live-eval.mjs`
+- What it does: starts a thread with a random code word and asks for it back
+  as the control; sends `/clear` with `t3 thread send` and asks again; then
+  gives a second code word and tells the thread's own agent to call its
+  `t3_thread_send` tool on the same thread with `freshContext` set to true and
+  the question as the message.
+- Passing output: the control recalls the code word, the answer after the
+  command-line `/clear` is `UNKNOWN`, the agent has the send tool, the
+  self-sent question arrives as a new turn, and its answer is `UNKNOWN`.
+- Optional parameters: `SMITH_PROBE_T3_PROVIDER` (default `claudeAgent`),
+  `SMITH_PROBE_T3_MODEL` (default `claude-haiku-5-5`),
+  `SMITH_PROBE_T3_SELF_SEND_SETTLE_MS`.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with
