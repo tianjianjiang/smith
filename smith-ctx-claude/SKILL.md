@@ -106,6 +106,13 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
    the hook's invoke directive
 5. smith-checkpoint outputs Reload block with actual memory names
 
+**Automatic continuation (opt-in, `CTX_AUTO_RESET_DISPATCH=1` in a settings
+`env` block):** once the checkpoint is written, the hook starts a background
+session named `continue: «label»` that restores it, so no `/clear` is typed.
+Checkpoint as above, then stop; do not tell the user to `/clear`. Conditions
+and limits: `smith-mode-plan-claude/references/HOOKS.md` "enforce-clear.sh
+(Stop)".
+
 ### Flag File and Injection Points
 
 Flag-based auto-reload mechanism for plan and state restoration after `/clear`:

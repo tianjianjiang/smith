@@ -154,9 +154,38 @@ from `on-plan-exit.sh` matches the session.
 When blocking, it writes the `.pending-reload-<CWD_KEY>` flag, refreshes the
 plan state file, and returns the session facts as additional context.
 
+**Automatic continuation (opt-in).** With `CTX_AUTO_RESET_DISPATCH=1` in the
+`env` block of a settings file (a variable exported by the launching shell
+does not reach a background session's hooks), the block reason ends "a fresh
+background session then continues from the checkpoint" instead of "then
+/clear". On the next stop, the one with `stop_hook_active` true, the hook
+looks for a `.pending-memory-restore-*` flag that carries this session's key
+and is newer than the `.pending-reload-<CWD_KEY>` flag, that is, a checkpoint
+written after the block. If it finds one it runs `claude --bg --name
+"continue: «label»"`, with the session's permission mode when the hook input
+carries one, and a prompt that restores that checkpoint; on success it
+deletes the flag and reports the new session in a `systemMessage`. Nothing is
+typed into a terminal. Limits:
+
+- No dispatch without a checkpoint written after the block; the session then
+  stops as before and `/clear` still works.
+- A failed dispatch keeps the flag and says so; `/clear` still restores the
+  checkpoint.
+- The earlier session stays in the session list, and a terminal showing it
+  does not switch to the new one.
+- Needs background sessions: with `disableAgentView` or
+  `CLAUDE_CODE_DISABLE_AGENT_VIEW` set, `claude --bg` is refused and the
+  dispatch fails.
+- The new session takes its model and allowed tools from its own settings,
+  not from the earlier session.
+
+Tests: `tests/enforce-clear-dispatch.test.sh`; live eval and record:
+`smith-ctx-claude/scripts/tests/records/README.md`.
+
 **Input JSON fields used:**
 - `transcript_path` - Path to JSONL transcript file
 - `session_id` - Current session identifier (for flag file)
+- `permission_mode` - Passed to the dispatched session when present
 
 ### on-plan-exit.sh (PostToolUse: ExitPlanMode)
 
