@@ -75,4 +75,77 @@ pass "deleted plan reason names no plan"
 [ "$(sed -n 5p "$FLAG_FILE")" = no-plan ] || fail "deleted plan reload flag type: $(cat "$FLAG_FILE")"
 pass "deleted plan reload flag type is no-plan"
 
+reset_flags() { rm -f "$STATE_FILE" "$FLAG_FILE" "$FLAG_FILE.exit-marker"; }
+readonly NO_PLAN_REASON="Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear."
+
+reset_flags
+make_transcript "$DEFAULT_CRITICAL_PCT"
+OUT=$(run_hook)
+STATUS=$?
+[ "$STATUS" -eq 0 ] || fail "a block should exit 0, got $STATUS"
+[ "$(printf '%s' "$OUT" | jq -c 'keys')" = '["decision","hookSpecificOutput","reason"]' ] || fail "unexpected block keys: $OUT"
+[ "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.hookEventName)" = Stop ] || fail "block should name the Stop event: $OUT"
+case "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.additionalContext)" in
+  "Session: "*) ;;
+  *) fail "additional context should open with the session summary: $OUT" ;;
+esac
+pass "block exits 0 with decision, reason and a session summary"
+
+[ "$(sed -n 2p "$FLAG_FILE")" = s1 ] || fail "reload flag should name the session: $(cat "$FLAG_FILE")"
+sed -n 3p "$FLAG_FILE" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{4}$' || fail "reload flag timestamp: $(cat "$FLAG_FILE")"
+[ "$(sed -n 4p "$FLAG_FILE")" = "$TMP" ] || fail "reload flag should name the working directory: $(cat "$FLAG_FILE")"
+pass "reload flag names the session, a timestamp and the working directory"
+ls "$TMP"/session-facts-*.md >/dev/null 2>&1 || fail "a block should write the session facts file into the job folder"
+pass "block writes the session facts file"
+
+reset_flags
+OUT=$(printf '%s' "{\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | bash "$HOOK")
+STATUS=$?
+[ "$STATUS" -eq 0 ] && [ -z "$OUT" ] || fail "a missing transcript should be silent with exit 0: status $STATUS, $OUT"
+[ ! -e "$FLAG_FILE" ] || fail "a missing transcript should leave no reload flag"
+pass "missing transcript silent, no reload flag"
+
+OUT=$(printf '%s' "{\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | bash "$HOOK")
+STATUS=$?
+[ "$STATUS" -eq 0 ] && [ -z "$OUT" ] || fail "an input without a transcript path should be silent with exit 0: status $STATUS, $OUT"
+pass "no transcript path silent"
+
+reset_flags
+make_transcript "$DEFAULT_CRITICAL_PCT"
+printf '\ns1\n' > "$FLAG_FILE"
+: > "$FLAG_FILE.exit-marker"
+OUT=$(run_hook)
+[ -z "$OUT" ] || fail "an exit marker of the same session should allow the stop: $OUT"
+[ ! -e "$FLAG_FILE.exit-marker" ] || fail "the exit marker should be consumed"
+pass "exit marker of the same session allows the stop once"
+
+printf '\nother-session\n' > "$FLAG_FILE"
+: > "$FLAG_FILE.exit-marker"
+OUT=$(run_hook)
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "$NO_PLAN_REASON" ] || fail "an exit marker of another session should still block: $OUT"
+[ ! -e "$FLAG_FILE.exit-marker" ] || fail "the exit marker of another session should be consumed"
+pass "exit marker of another session still blocks"
+
+reset_flags
+readonly LOWERED_PCT=$((DEFAULT_CRITICAL_PCT - 10))
+readonly RAISED_PCT=$((DEFAULT_CRITICAL_PCT + 10))
+make_transcript "$LOWERED_PCT"
+OUT=$(CTX_CONTEXT_CRITICAL_PCT=$LOWERED_PCT run_hook)
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "Context at ${LOWERED_PCT}%. Checkpoint this session, then /clear." ] || fail "a lowered threshold should block at its own value: $OUT"
+make_transcript "$DEFAULT_CRITICAL_PCT"
+OUT=$(CTX_CONTEXT_CRITICAL_PCT=$RAISED_PCT run_hook)
+[ -z "$OUT" ] || fail "a raised threshold should be silent at the default value: $OUT"
+pass "threshold follows CTX_CONTEXT_CRITICAL_PCT"
+
+reset_flags
+mkdir -p "$TMP/bin"
+printf '#!/bin/sh\necho "$@" >> "%s"\n' "$TMP/orca-calls.log" > "$TMP/bin/orca"
+chmod +x "$TMP/bin/orca"
+make_transcript "$DEFAULT_CRITICAL_PCT"
+OUT=$(PATH="$TMP/bin:$PATH" ORCA_TERMINAL_HANDLE=term_characterization run_hook)
+[ "$(printf '%s' "$OUT" | jq -r .decision)" = block ] || fail "inside an Orca terminal the critical threshold should still block: $OUT"
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "$NO_PLAN_REASON" ] || fail "inside an Orca terminal the reason should be unchanged: $OUT"
+[ ! -e "$TMP/orca-calls.log" ] || fail "the hook should not call orca: $(cat "$TMP/orca-calls.log")"
+pass "inside an Orca terminal the block is unchanged and orca is not called"
+
 echo "PASS: enforce-clear"
