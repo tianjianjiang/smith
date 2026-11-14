@@ -60,9 +60,13 @@ async function waitFor(read, timeoutMilliseconds = TURN_TIMEOUT_MS) {
   return undefined;
 }
 
+let answeredSessionListings = 0;
+
 function listedSessions() {
   try {
-    return JSON.parse(claude(["agents", "--json", "--all"]));
+    const sessions = JSON.parse(claude(["agents", "--json", "--all"]));
+    answeredSessionListings += 1;
+    return sessions;
   } catch {
     return [];
   }
@@ -230,10 +234,13 @@ try {
     const session = listedSession(controlId);
     return session && /DONE/.test(lastAssistantText(session.sessionId)) ? session : undefined;
   }) : undefined;
+  const listingsAnsweredBeforeTheControlWait = answeredSessionListings;
   const controlSuccessor = await waitFor(() => sessionNamedAfter(controlLabel, [controlId]), CONTROL_WAIT_MS);
+  const controlWaitReadTheSessionList = answeredSessionListings > listingsAnsweredBeforeTheControlWait;
   controlSuccessorId = controlSuccessor?.id;
   const controlTranscript = transcriptText(control?.sessionId ?? listedSession(controlId)?.sessionId);
 
+  const controlWroteARestoreFlag = restoreFlagsLabelled(controlLabel).length > 0;
   checks = {
     firstSessionStarted: Boolean(firstId),
     blockReasonNamedTheBackgroundContinuation: firstTranscript.includes(DISPATCH_REASON),
@@ -243,7 +250,7 @@ try {
     successorDoesNotKnowTheConversation: Boolean(successor) && !transcriptText(successor.sessionId).includes(conversationWord),
     dispatchConsumedTheRestoreFlag: restoreFlagsLabelled(label).length === 0,
     controlSessionStarted: Boolean(controlId),
-    controlDispatchedNoSuccessor: Boolean(controlId) && !controlSuccessorId,
+    controlDispatchedNoSuccessor: Boolean(control) && controlWroteARestoreFlag && controlWaitReadTheSessionList && !controlSuccessorId,
     controlBlockReasonUnchanged: controlTranscript.includes(UNCHANGED_REASON) && !controlTranscript.includes(DISPATCH_REASON),
   };
   observations = {
@@ -251,11 +258,13 @@ try {
     firstSessionStateAfterDispatch: first?.state ?? "not listed",
     successorRunsInTheSameFolder: Boolean(successor) && successor.cwd === first?.cwd,
     firstSessionTranscriptAlsoHoldsTheUnchangedReason: firstTranscript.includes(UNCHANGED_REASON),
-    controlSessionWroteARestoreFlag: restoreFlagsLabelled(controlLabel).length > 0,
+    controlSessionWroteARestoreFlag: controlWroteARestoreFlag,
     firstSessionLaunchFlagNames: launchFlagNames(firstId),
     successorLaunchFlagNames: launchFlagNames(successorId),
   };
 } finally {
+  successorId ??= sessionNamedAfter(label, [firstId])?.id;
+  controlSuccessorId ??= sessionNamedAfter(controlLabel, [controlId])?.id;
   const sessionIds = [firstId, successorId, controlId, controlSuccessorId]
     .map((shortId) => (shortId ? listedSession(shortId)?.sessionId : undefined))
     .filter(Boolean);
