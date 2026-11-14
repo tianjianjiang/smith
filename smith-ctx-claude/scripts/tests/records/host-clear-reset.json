@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-11-15T06:18:20+09:00",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "model": "haiku",
+  "checks": {
+    "controlRecallsCodeWord": true,
+    "clearedSessionDoesNotRecall": true,
+    "sessionStartHookSawClear": true,
+    "clearedQuestionTurnReadsFewerInputTokens": true
+  },
+  "observations": {
+    "sessionIdChangedAfterClear": true,
+    "clearProducedResultMessage": true,
+    "messageTypesAfterClear": [
+      "conversation_reset",
+      "system:background_tasks_changed",
+      "system:hook_started",
+      "system:hook_response",
+      "system:init",
+      "result:success"
+    ],
+    "sessionStartSourcesControl": [
+      "startup"
+    ],
+    "sessionStartSourcesCleared": [
+      "startup",
+      "clear"
+    ]
+  }
+}

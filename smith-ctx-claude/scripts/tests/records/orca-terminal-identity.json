@@ -1,0 +1,47 @@
+{
+  "recordedAt": "2026-11-15T03:44:31+09:00",
+  "orcaVersion": "1.4.258",
+  "checks": {
+    "terminalReported": true,
+    "handleVariableIsTheCreatedHandle": true,
+    "tabVariableIsTheCreatedTab": true,
+    "paneKeyStartsWithTheTabId": true,
+    "hookVariablesPresent": true
+  },
+  "observations": {
+    "orcaVariableNames": [
+      "ORCA_AGENT_HOOK_ENDPOINT",
+      "ORCA_AGENT_HOOK_ENV",
+      "ORCA_AGENT_HOOK_OPENCODE_TUI",
+      "ORCA_AGENT_HOOK_PORT",
+      "ORCA_AGENT_HOOK_TOKEN",
+      "ORCA_AGENT_HOOK_TRANSPORT",
+      "ORCA_AGENT_HOOK_VERSION",
+      "ORCA_AGENT_PANE",
+      "ORCA_APP_VERSION",
+      "ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR",
+      "ORCA_CLAUDE_CONFIG_DIR",
+      "ORCA_CLAUDE_PROFILE_POINTER",
+      "ORCA_CLI_BIN_DIR",
+      "ORCA_IMAGE_PROTOCOL",
+      "ORCA_NODE_OPTIONS",
+      "ORCA_NODE_REPL_EXTERNAL_MODULE",
+      "ORCA_OPENCODE_AGENT",
+      "ORCA_PANE_KEY",
+      "ORCA_PI_SOURCE_AGENT_DIR",
+      "ORCA_RUNTIME_SOURCE_ID",
+      "ORCA_RUNTIME_SOURCE_INCARNATION",
+      "ORCA_RUNTIME_SOURCE_PROFILE_PATH",
+      "ORCA_TAB_ID",
+      "ORCA_TERMINAL_HANDLE",
+      "ORCA_USER_DATA_PATH",
+      "ORCA_WORKSPACE_ID",
+      "ORCA_WORKTREE_ID",
+      "ORCA_WSL_HOSTS_GATE_STATE"
+    ],
+    "showWithoutHandleNamedTheCallingTerminal": false,
+    "showWithoutHandleNamedTheTerminalActiveBefore": true,
+    "thisProcessHasTheHandleVariable": false,
+    "thisProcessIsAClaudeCodeBackgroundJob": true
+  }
+}

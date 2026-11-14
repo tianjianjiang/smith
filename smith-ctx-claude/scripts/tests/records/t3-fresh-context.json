@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-11-15T02:04:47+09:00",
+  "t3Version": "t3 v0.1.9",
+  "provider": "claudeAgent",
+  "model": "claude-haiku-5-5",
+  "checks": {
+    "controlRecallsCodeWord": true,
+    "commandLineClearCompleted": true,
+    "answerAfterCommandLineClearIsUnknown": true,
+    "agentHadTheSendTool": true,
+    "selfSentQuestionArrivedAsNewTurn": true,
+    "answerAfterSelfSentFreshContextIsUnknown": true
+  }
+}

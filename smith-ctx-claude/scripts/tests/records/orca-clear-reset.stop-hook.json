@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-11-15T00:48:57+09:00",
+  "orcaVersion": "1.4.256",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "resetVia": "stop-hook",
+  "checks": {
+    "everyStepReachedIdle": true,
+    "clearInputAccepted": true,
+    "codeWordGoneFromScreenAfterClear": true,
+    "answerDoesNotRecallCodeWord": true,
+    "answerIsUnknown": true
+  },
+  "observations": {
+    "clearReceiptStages": [
+      "input_accepted"
+    ]
+  }
+}

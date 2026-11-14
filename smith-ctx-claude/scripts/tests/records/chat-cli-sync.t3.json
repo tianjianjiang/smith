@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-11-15T02:58:26+09:00",
+  "host": "t3",
+  "hostVersion": "t3 v0.1.9",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "checks": {
+    "chatWroteNativeSessionFile": true,
+    "commandLineResumedSameSession": true
+  },
+  "observations": {
+    "commandLineKnowsChatTurn": true,
+    "chatShowsCommandLineTurn": false,
+    "chatKnowsCommandLineTurn": false,
+    "commandLineKnowsLaterChatTurn": true,
+    "commandLineTurnStillInConversationAfterChatTurn": false
+  }
+}
