@@ -239,7 +239,8 @@ session, which has a fresh context, continues from a file.
   `--settings`, the permission mode of the new session, and what the first
   session should do after the dispatch.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
-  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
+  `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
 ## Automatic continuation at the critical threshold (end to end)
 
@@ -275,7 +276,8 @@ outside.
   control, is what tells the runs apart.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
-  `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`.
+  `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
+  `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
 ## Integrity
 

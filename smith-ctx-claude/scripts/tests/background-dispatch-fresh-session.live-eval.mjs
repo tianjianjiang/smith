@@ -10,6 +10,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SESSION_FOLDER = process.env.SMITH_PROBE_SESSION_FOLDER;
 const MODEL = process.env.SMITH_LIVE_CONTEXT_RESET_MODEL ?? "haiku";
 const TURN_TIMEOUT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS ?? 180000);
+const CLAUDE_COMMAND_TIMEOUT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS ?? 60000);
 const CONFIG_FOLDER = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 const RECORD_PATH = join(HERE, "records", "background-dispatch-fresh-session.json");
 const HOOK_FIXTURE = join(HERE, "fixtures", "dispatch-background-session-on-stop.sh");
@@ -34,7 +35,7 @@ function localIsoTimestamp(date = new Date()) {
 
 function claude(args, options = {}) {
   try {
-    return execFileSync("claude", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...options });
+    return execFileSync("claude", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: CLAUDE_COMMAND_TIMEOUT_MS, ...options });
   } catch (error) {
     return `${error.stdout ?? ""}${error.stderr ?? ""}`;
   }
