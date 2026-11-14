@@ -87,6 +87,22 @@ first_output_line() {
     done <<<"$1"
 }
 
+context_still_critical() {
+    local cwd_key="$1"
+    [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]] || return 1
+    [[ $(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key") -ge $CRITICAL_PCT ]]
+}
+
+remove_abandoned_attempt_markers() {
+    local own_key="$1" marker marker_key
+    while IFS= read -r marker; do
+        [[ -n "$marker" ]] || continue
+        marker_key="${marker##*/.auto-reset-attempt-}"
+        [[ "$marker_key" == "$own_key" || -f "${CTX_FLAGS_DIR}/.pending-reload-${marker_key}" ]] && continue
+        rm -f "$marker"
+    done < <(find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' -mmin +60 2>/dev/null)
+}
+
 dispatch_successor_session() {
     local hook_cwd="${HOOK_CWD:-${PWD:-}}"
     local own_key physical_cwd physical_key pending_reload attempt_marker
@@ -97,11 +113,12 @@ dispatch_successor_session() {
     physical_key=$(session_key "" "$physical_cwd") || physical_key=""
     pending_reload="${CTX_FLAGS_DIR}/.pending-reload-${own_key}"
     attempt_marker="${CTX_FLAGS_DIR}/.auto-reset-attempt-${own_key}"
-    find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' ! -name ".auto-reset-attempt-${own_key}" -mmin +60 -delete 2>/dev/null || true
+    remove_abandoned_attempt_markers "$own_key"
     if [[ ! -f "$pending_reload" ]]; then
         rm -f "$attempt_marker"
         return 0
     fi
+    context_still_critical "$own_key" || return 0
     eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
     flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then

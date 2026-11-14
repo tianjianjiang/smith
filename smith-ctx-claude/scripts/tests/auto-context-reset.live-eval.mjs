@@ -140,19 +140,17 @@ function restoreFlagsLabelled(label) {
   return flagNames(".pending-memory-restore-").filter((name) => flagLines(name)[3] === label);
 }
 
+const PENDING_RELOAD_NAME = /^\.pending-reload-([0-9a-f]+)$/;
+
 function removeFlagsOfTheProbe(labels, sessionIds) {
-  const probeFlags = [
+  const probePendingReloads = flagNames(".pending-reload-").filter((name) => sessionIds.includes(flagLines(name)[1]));
+  const probeKeys = probePendingReloads.map((name) => name.match(PENDING_RELOAD_NAME)?.[1]).filter(Boolean);
+  const probeFiles = [
     ...labels.flatMap(restoreFlagsLabelled),
-    ...flagNames(".pending-reload-").filter((name) => sessionIds.includes(flagLines(name)[1])),
+    ...probePendingReloads,
+    ...probeKeys.map((key) => `.auto-reset-attempt-${key}`),
   ];
-  for (const name of probeFlags) rmSync(join(FLAGS_FOLDER, name), { force: true });
-}
-
-const attemptMarkersBeforeTheProbe = new Set(flagNames(".auto-reset-attempt-"));
-
-function removeAttemptMarkersOfTheProbe() {
-  const added = flagNames(".auto-reset-attempt-").filter((name) => !attemptMarkersBeforeTheProbe.has(name));
-  for (const name of added) rmSync(join(FLAGS_FOLDER, name), { force: true });
+  for (const name of probeFiles) rmSync(join(FLAGS_FOLDER, name), { force: true });
 }
 
 function createMemoryFile(label, codeWord) {
@@ -265,7 +263,6 @@ try {
   removeSession(successorId);
   removeSession(firstId);
   removeFlagsOfTheProbe([label, controlLabel], sessionIds);
-  removeAttemptMarkersOfTheProbe();
   removeMemoryFile(memory);
   rmSync(scratchFolder, { recursive: true, force: true });
 }

@@ -103,6 +103,7 @@ write_restore_flag() {
 
 reset_state() {
   rm -f "$TMP"/plans/.[!.]* "$CALLS_LOG" "$CALLS_LOG.last" "$CALLS_LOG.penultimate" "$OTHER_PROGRAMS_LOG"
+  make_transcript "$DEFAULT_CRITICAL_PCT"
 }
 
 call_count() {
@@ -468,5 +469,83 @@ OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 [ -f "$OWN_MARKER" ] || fail "this session's old marker should stay while its pending reload file exists"
 [ "$(call_count)" -eq 1 ] || fail "the failed flag should not be tried again after the sweep, got $(call_count) calls: $OUT"
 pass "the hourly sweep deletes old markers of other keys and keeps this session's own"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "below the threshold with a matching fresh flag" "$OUT" "$STATUS"
+[ -f "$RESTORE_FLAG" ] || fail "below the threshold the restore flag should stay"
+rm -f "$RESTORE_FLAG"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "below the threshold without a flag" "$OUT" "$STATUS"
+pass "a continuing stop below the critical threshold neither dispatches nor prints a notice"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"permission_mode\":\"acceptEdits\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "no transcript path with a matching fresh flag" "$OUT" "$STATUS"
+[ -f "$RESTORE_FLAG" ] || fail "without a transcript path the restore flag should stay"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "missing transcript file with a matching fresh flag" "$OUT" "$STATUS"
+rm -f "$RESTORE_FLAG"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "no transcript path without a flag" "$OUT" "$STATUS"
+pass "a continuing stop without a readable transcript neither dispatches nor prints a notice"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "at the critical threshold a continuing stop should still dispatch, got $(call_count) calls: $OUT"
+pass "at the critical threshold a continuing stop still dispatches"
+
+reset_state
+write_pending_reload
+printf '%s\n' "$TMP/plans/.pending-memory-restore-from-an-earlier-block" > "$OWN_MARKER"
+touch -t 202512312300.00 "$OWN_MARKER"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_checkpoint_notice "attempt marker older than the pending reload file" "$OUT" "$STATUS"
+pass "an attempt marker from an earlier block does not silence the no-checkpoint notice"
+
+reset_state
+write_pending_reload
+printf '%s\n' "$TMP/plans/.pending-memory-restore-of-another-session" > "$OTHER_MARKER"
+FIVE_MINUTES_AGO=$(date -v-5M +%Y%m%d%H%M.%S 2>/dev/null || date -d '-5 minutes' +%Y%m%d%H%M.%S)
+touch -t "$FIVE_MINUTES_AGO" "$OTHER_MARKER"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ -f "$OTHER_MARKER" ] || fail "a fresh attempt marker of another key should survive a stop"
+pass "a fresh attempt marker of another key survives the sweep"
+
+reset_state
+write_pending_reload
+OTHER_PENDING_RELOAD="$TMP/plans/.pending-reload-notmykey12345678"
+printf '\ns2\n2026-01-01T00:00:00+0000\n%s\nno-plan\n' "$TMP" > "$OTHER_PENDING_RELOAD"
+printf '%s\n' "$TMP/plans/.pending-memory-restore-of-another-session" > "$OTHER_MARKER"
+touch -t 202601010030.00 "$OTHER_MARKER"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ -f "$OTHER_MARKER" ] || fail "an old attempt marker of another key should survive while that key's pending reload file exists"
+pass "an old attempt marker of another key survives while its pending reload file exists"
+
+mkdir -p "$TMP/odd-id-bin"
+readonly ODD_BACKGROUND_ID=Ab_12-cd
+write_fake_claude "$TMP/odd-id-bin" 0 "backgrounded · $ODD_BACKGROUND_ID"
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/odd-id-bin:$PATH" run_continuing_stop acceptEdits)
+case "$(printf '%s' "$OUT" | jq -r .systemMessage)" in
+  *"background session $ODD_BACKGROUND_ID named"*) ;;
+  *) fail "the success message should carry the whole id with uppercase letters, underscores and hyphens: $OUT" ;;
+esac
+pass "an id with uppercase letters, an underscore and a hyphen is reported whole"
 
 echo "PASS: enforce-clear-dispatch"
