@@ -80,7 +80,7 @@ function shellQuote(text) {
 const scratchFolder = mkdtempSync(join(tmpdir(), "smith-orca-conditions-"));
 const reportPath = join(scratchFolder, "hook-report.txt");
 const settingsPath = join(scratchFolder, "settings.json");
-writeFileSync(settingsPath, `${JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: "command", command: HOOK_FIXTURE }] }] } })}\n`);
+writeFileSync(settingsPath, `${JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: "command", command: shellQuote(HOOK_FIXTURE) }] }] } })}\n`);
 const startCommand = [
   `cd ${shellQuote(SESSION_FOLDER)}`,
   `SMITH_PROBE_REPORT_FILE=${shellQuote(reportPath)} ${CLAUDE_COMMAND} --model ${shellQuote(MODEL)} --permission-mode ${shellQuote(PERMISSION_MODE)} --settings ${shellQuote(settingsPath)}`,

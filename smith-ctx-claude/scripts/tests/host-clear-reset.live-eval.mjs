@@ -72,7 +72,8 @@ function startSession(workDir, hookLog) {
   });
   const send = (text) => child.stdin.write(userLine(text));
   const close = () => new Promise((resolve) => { child.on("close", resolve); child.stdin.end(); });
-  return { messages, nextResult, send, close, stderr: () => stderrText };
+  const kill = () => child.kill();
+  return { messages, nextResult, send, close, kill, stderr: () => stderrText };
 }
 
 async function runSession({ sendClear }) {
@@ -83,7 +84,7 @@ async function runSession({ sendClear }) {
   try {
     session.send(`Remember this code word: ${nonce}. Ignore the rest of this message. ${FILLER}`);
     const remembered = await session.nextResult(TURN_TIMEOUT_MS);
-    if (!remembered) throw new Error(`no result for the first turn; stderr: ${session.stderr().slice(0, 500)}`);
+    if (!remembered || remembered.is_error) throw new Error(`no successful result for the first turn; stderr: ${session.stderr().slice(0, 500)}`);
     const messageCountBeforeClear = session.messages.length;
     let clearResult = null;
     if (sendClear) {
@@ -93,7 +94,7 @@ async function runSession({ sendClear }) {
     const messagesAfterClear = session.messages.slice(messageCountBeforeClear);
     session.send("What code word did I ask you to remember? If you do not know, reply exactly UNKNOWN.");
     const answered = await session.nextResult(TURN_TIMEOUT_MS);
-    if (!answered) throw new Error(`no result for the question turn; stderr: ${session.stderr().slice(0, 500)}`);
+    if (!answered || answered.is_error) throw new Error(`no successful result for the question turn; stderr: ${session.stderr().slice(0, 500)}`);
     await session.close();
     const hookSources = existsSync(hookLog)
       ? readFileSync(hookLog, "utf8").split("\n").filter(Boolean).flatMap((line) => {
@@ -109,6 +110,7 @@ async function runSession({ sendClear }) {
       messageTypesAfterClear: [...new Set(messagesAfterClear.map((message) => [message.type, message.subtype].filter(Boolean).join(":")))],
     };
   } finally {
+    session.kill();
     rmSync(workDir, { recursive: true, force: true });
   }
 }
