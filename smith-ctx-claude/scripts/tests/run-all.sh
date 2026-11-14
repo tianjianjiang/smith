@@ -4,6 +4,7 @@ status=0
 for check in \
   context-warning \
   enforce-clear \
+  enforce-clear-dispatch \
   checkpoint-label \
   external-write-guard \
   askuserquestion-arity \

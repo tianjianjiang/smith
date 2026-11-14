@@ -154,9 +154,48 @@ from `on-plan-exit.sh` matches the session.
 When blocking, it writes the `.pending-reload-<CWD_KEY>` flag, refreshes the
 plan state file, and returns the session facts as additional context.
 
+**Automatic continuation of background sessions.** In a background session
+(`CLAUDE_JOB_DIR` set), unless `CTX_AUTO_RESET_DISPATCH=0` is in the `env`
+block of a settings file (a variable exported by the launching shell does
+not reach a background session's hooks), the block reason ends "a fresh
+background session then continues from the checkpoint" instead of "then
+/clear". A session that its terminal hosts is not affected, and neither is
+any session when `lib-plan.sh`, which holds the restore wording, is missing.
+On the next stop, the one with `stop_hook_active` true, and only while the
+context is still at or above the threshold, the hook looks for a
+`.pending-memory-restore-*` flag that carries this session's key and is
+newer than the `.pending-reload-<CWD_KEY>` flag, that is, a checkpoint
+written after the block. If it finds one it runs `claude --bg --name
+"continue: «label»"`, with the session's permission mode when the hook input
+carries one, and a prompt that restores that checkpoint; on success it
+deletes the flag and reports the new session in a `systemMessage`. Nothing is
+typed into a terminal. Limits:
+
+- No dispatch without a checkpoint written after the block; the hook says so
+  in a `systemMessage`, the session stops as before and `/clear` still works.
+- A failed dispatch keeps the flag and reports the first line of the
+  command's output; `/clear` still restores the checkpoint.
+- One attempt per checkpoint: `.auto-reset-attempt-<CWD_KEY>` lists every
+  flag that was tried or was superseded by a newer one at that moment, so a
+  later stop never tries one of them, while a flag written afterwards is
+  still tried. On such a stop the hook removes this marker when no
+  `.pending-reload` file is left, and another session's marker older than an
+  hour once that session's `.pending-reload` file is gone.
+- The earlier session stays in the session list, and a terminal showing it
+  does not switch to the new one.
+- Needs background sessions: with `disableAgentView` or
+  `CLAUDE_CODE_DISABLE_AGENT_VIEW` set, `claude --bg` is refused and the
+  dispatch fails.
+- The new session takes its model and allowed tools from its own settings,
+  not from the earlier session.
+
+Tests: `tests/enforce-clear-dispatch.test.sh`; live eval and record:
+`smith-ctx-claude/scripts/tests/records/README.md`.
+
 **Input JSON fields used:**
 - `transcript_path` - Path to JSONL transcript file
 - `session_id` - Current session identifier (for flag file)
+- `permission_mode` - Passed to the dispatched session when present
 
 ### on-plan-exit.sh (PostToolUse: ExitPlanMode)
 

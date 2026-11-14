@@ -17,8 +17,9 @@ dropped decision or a lost prior entry becomes confusion or lost work.
   file, have double-blind independent subagents verify each
   source-verifiable fact in the body and plan against a re-runnable source
   and run a cold-reader test, sweep the conversation for unrecorded
-  decisions, show the user the conversation-only and not-checkable claims
-  and the sweep table to confirm before the write, and remove
+  decisions, record the conversation-only and not-checkable claims and the
+  sweep table in the body as not confirmed by the user and show them,
+  without waiting for an answer before the write, and remove
   contradictions between body and plan.
 - A read-only `audit-checkpoint.sh` checks what a script can decide, and
   `write-checkpoint.sh` runs it before any backend write; a failure writes

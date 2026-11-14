@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-11-15T07:56:24+09:00",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "model": "haiku",
+  "checks": {
+    "firstSessionStarted": true,
+    "blockReasonNamedTheBackgroundContinuation": true,
+    "successorWithTheLabelInItsNameAppeared": true,
+    "successorIsAnotherSession": true,
+    "successorReportedTheCheckpointCodeWord": true,
+    "successorDoesNotKnowTheConversation": true,
+    "dispatchConsumedTheRestoreFlag": true,
+    "controlSessionStarted": true,
+    "controlDispatchedNoSuccessor": true,
+    "controlBlockReasonUnchanged": true
+  },
+  "observations": {
+    "successorNamePattern": "continue: «label»",
+    "firstSessionStateAfterDispatch": "done",
+    "successorRunsInTheSameFolder": true,
+    "firstSessionTranscriptAlsoHoldsTheUnchangedReason": true,
+    "controlSessionWroteARestoreFlag": true,
+    "firstSessionLaunchFlagNames": [
+      "--permission-mode",
+      "--settings",
+      "--model"
+    ],
+    "successorLaunchFlagNames": [
+      "--name",
+      "--permission-mode",
+      "--model"
+    ]
+  }
+}
