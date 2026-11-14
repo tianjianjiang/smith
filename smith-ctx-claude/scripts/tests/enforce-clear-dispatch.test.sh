@@ -240,6 +240,7 @@ while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 PROMPT=$(cat "$CALLS_LOG.last")
 case "$PROMPT" in *"$LABEL"*) ;; *) fail "the prompt should name the label: $PROMPT" ;; esac
 case "$PROMPT" in *"$CHECKPOINT_READ_ONE_BACKEND"*) ;; *) fail "the prompt should carry the shared one-backend wording: $PROMPT" ;; esac
+case "$PROMPT" in *"continue the work thread.") ;; *) fail "the prompt should end by telling the session to continue the work thread: $PROMPT" ;; esac
 case "$(head -1 "$CALLS_LOG")" in
   "call cwd=$TMP "*|"call cwd=$PHYSICAL_TMP "*) ;;
   *) fail "claude should run in the hook's cwd: $(head -1 "$CALLS_LOG")" ;;
