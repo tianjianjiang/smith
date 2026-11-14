@@ -11,7 +11,8 @@ const TERMINAL = process.env.SMITH_PROBE_TERMINAL;
 const RESET_VIA = process.env.SMITH_ORCA_RESET_VIA ?? "outside-send";
 const ARM_FILE = process.env.SMITH_PROBE_ARM_FILE;
 const TURN_TIMEOUT_MS = String(process.env.SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS ?? 120000);
-const RECORD_PATH = join(HERE, "records", `orca-clear-reset.${RESET_VIA}.json`);
+const RECORD_LABEL = process.env.SMITH_PROBE_RECORD_LABEL;
+const RECORD_PATH = join(HERE, "records", `orca-clear-reset.${RESET_VIA}${RECORD_LABEL ? `.${RECORD_LABEL}` : ""}.json`);
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
   console.log("SKIP: set SMITH_LIVE_CONTEXT_RESET_EVAL=1 to run the live Orca /clear eval");

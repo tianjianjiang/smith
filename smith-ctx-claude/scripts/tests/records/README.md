@@ -50,6 +50,11 @@ command writes input into a live terminal (`orca terminal send --help`).
   session answers `UNKNOWN`.
 - Limit: this eval has no session without `/clear`; the host eval above holds
   the control that shows the question does recall the code word.
+- Optional parameter: `SMITH_PROBE_RECORD_LABEL` adds a label to the record's
+  file name. `orca-clear-reset.outside-send.background-session.json` is the
+  outside-send run against a session opened from agent view, which the Claude
+  Code supervisor hosts and the terminal only displays; the `/clear` reset it
+  too.
 
 ## Fresh context in a T3 Code thread
 
@@ -175,6 +180,32 @@ already typed in the input box.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_PROBE_PERMISSION_MODE` (default `acceptEdits`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
+
+## Which `claude` launch hosts the session in the terminal
+
+With the `defaultToAgentsView` setting on, checks which ways of starting
+`claude` in an Orca terminal make the terminal's own process host the
+session. Such a process inherits the terminal's `ORCA_` variables; a session
+opened from agent view runs under the Claude Code supervisor instead and has
+none of them.
+
+- Script: `../orca-launch-variants.live-eval.mjs`
+- Record: `orca-launch-variants.json`
+- Prerequisites: Orca running, a logged-in `claude` on `PATH`, a folder Orca
+  knows as a workspace, and a folder Claude Code already trusts.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_ORCA_WORKTREE=path:«workspace folder» SMITH_PROBE_SESSION_FOLDER=«trusted folder» node smith-ctx-claude/scripts/tests/orca-launch-variants.live-eval.mjs`
+- What it does: starts `claude` in a new terminal once with no argument and
+  once each with only `--model`, only `--permission-mode` and only
+  `--settings`; finds the `claude` process whose environment names that
+  terminal, reads whether it has child processes, and closes the terminal. No
+  prompt is sent.
+- Passing output: every launch with an argument shows the session banner and
+  its process has child processes.
+- Recorded observation, Orca 1.4.258 with Claude Code 2.1.325 and
+  `defaultToAgentsView` on: the launch with no argument had no child process.
+  The official page (https://code.claude.com/docs/en/agent-view) documents
+  only a prompt argument as the way to a regular session while the setting is
+  on; the flags are measured here, not documented there.
 
 ## Integrity
 
