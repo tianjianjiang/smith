@@ -410,10 +410,11 @@ When invoked via `/smith-checkpoint` (no arguments required):
         item 6
       - No subagent tool available: run both checks inline and record
         "double-blind audit not run: «reason»" in the body
-   6. Record in the body's `## Audit` section, marked "not confirmed by
-      the user", the conversation-only and not-checkable claims of the
-      last non-void round verbatim (a void round's returns are discarded;
-      when every round was void, say that no checker result stands), any
+   6. Add an `## Audit` section to the body and record in it, marked "not
+      confirmed by the user", the conversation-only and not-checkable
+      claims of the last non-void round verbatim (a void round's returns
+      are discarded; when every round was void, say that no checker
+      result stands), any
       unconverged findings, and the sweep table; show the same to the
       user, and go on to step 7 without waiting. Such a claim has no
       other checker than the user, but a checkpoint that waits for an
