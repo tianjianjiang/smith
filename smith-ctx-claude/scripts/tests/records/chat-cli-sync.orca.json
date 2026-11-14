@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-11-15T02:59:08+09:00",
+  "host": "orca",
+  "hostVersion": "1.4.258",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "checks": {
+    "chatWroteNativeSessionFile": true,
+    "commandLineResumedSameSession": true
+  },
+  "observations": {
+    "commandLineKnowsChatTurn": true,
+    "searchIndexLinksCommandLineTurnToTheChat": true,
+    "chatSideOfTheTestIsManual": true
+  }
+}

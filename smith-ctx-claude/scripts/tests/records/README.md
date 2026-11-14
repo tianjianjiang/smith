@@ -74,6 +74,44 @@ server.
   `SMITH_PROBE_T3_MODEL` (default `claude-haiku-5-5`),
   `SMITH_PROBE_T3_SELF_SEND_SETTLE_MS`.
 
+## Sync between a chat thread and the Claude Code command line
+
+Checks whether a chat thread in T3 Code or in Orca and `claude --resume` on
+the command line share one conversation. Unlike the evals above, this one
+records observations: its checks only confirm that the probe ran, and the
+`observations` block states which directions carried over.
+
+- Script: `../chat-cli-sync.live-eval.mjs`
+- Records: `chat-cli-sync.t3.json`, `chat-cli-sync.orca.json`
+- Prerequisites: the host app running, a logged-in `claude` on `PATH`, and a
+  folder the host already knows (a T3 Code project, or an Orca workspace).
+- Replay, T3 Code:
+  `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_SYNC_HOST=t3 SMITH_PROBE_SYNC_FOLDER=«project folder» node smith-ctx-claude/scripts/tests/chat-cli-sync.live-eval.mjs`
+- Replay, Orca:
+  `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_SYNC_HOST=orca SMITH_PROBE_SYNC_FOLDER=«workspace folder» SMITH_PROBE_ORCA_WORKTREE=«workspace selector» node smith-ctx-claude/scripts/tests/chat-cli-sync.live-eval.mjs`
+- What it does: the chat is told a code word; the script finds the session
+  file the chat wrote under the Claude Code configuration folder and resumes
+  it with `claude -p --resume`, asking for the code word and adding a second
+  one. For T3 Code it then reads the thread, asks the thread for the second
+  code word while adding a third, and resumes from the command line once more
+  to list every code word. For Orca it then searches Orca's session index for
+  the second code word.
+- Recorded result, T3 Code v0.1.9: the command line knows the chat's turns;
+  the thread neither shows nor knows the command-line turn; after the thread's
+  next turn the command-line turn is no longer part of the conversation the
+  command line resumes.
+- Recorded result, Orca 1.4.258: the command line knows the chat's turn, and
+  the session index links the command-line turn to the same chat session.
+- Manual part, Orca: the Orca command line cannot read or send to a chat tab.
+  Type this in the chat tab after the script ran: "What is the second code
+  word you were asked to remember? If you do not know, reply exactly
+  UNKNOWN." Observed by hand on 2026-11-15 with Orca 1.4.256: the chat
+  answered with the code word the command line had added; a later
+  command-line resume still listed both code words; the chat tab drew a
+  command-line turn, labelled "(Continued outside this chat)", only after a
+  new message was sent from the tab, not on switching tabs or on resuming the
+  session in a new tab.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with
