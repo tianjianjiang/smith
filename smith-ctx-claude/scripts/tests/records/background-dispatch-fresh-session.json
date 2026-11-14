@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-11-15T04:39:14+09:00",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "model": "haiku",
+  "checks": {
+    "firstSessionStarted": true,
+    "stopHookDispatchedASession": true,
+    "successorIsAnotherSession": true,
+    "successorAnswered": true,
+    "successorDoesNotKnowTheConversation": true,
+    "successorReadTheCheckpoint": true
+  },
+  "observations": {
+    "stopHookRanInABackgroundJob": true,
+    "variableOfTheStartingShellReachedTheHook": false,
+    "firstSessionStateAfterDispatch": "done",
+    "successorRunsInTheSameFolder": true,
+    "firstSessionLaunchFlagNames": [
+      "--settings",
+      "--model"
+    ],
+    "successorLaunchFlagNames": [
+      "--add-dir",
+      "--model"
+    ]
+  }
+}

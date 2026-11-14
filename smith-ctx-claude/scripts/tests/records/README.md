@@ -207,6 +207,40 @@ none of them.
   only a prompt argument as the way to a regular session while the setting is
   on; the flags are measured here, not documented there.
 
+## A fresh background session dispatched by a Stop hook
+
+Checks a reset that types into no terminal: the Stop hook of a background
+session starts a new background session with `claude --bg`, and the new
+session, which has a fresh context, continues from a file.
+
+- Script: `../background-dispatch-fresh-session.live-eval.mjs`
+- Hook fixture: `../fixtures/dispatch-background-session-on-stop.sh`
+- Record: `background-dispatch-fresh-session.json`
+- Prerequisites: Node.js, a logged-in `claude` on `PATH` with background
+  sessions enabled, and a folder Claude Code already trusts.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_SESSION_FOLDER=«trusted folder» node smith-ctx-claude/scripts/tests/background-dispatch-fresh-session.live-eval.mjs`
+- What it does: starts a background session with a code word and a
+  `--settings` file that registers the hook fixture under `Stop`. When that
+  session's first turn ends, the fixture runs `claude --bg` with a prompt
+  asking for the code word of the conversation and for a second code word
+  written in a file. The script reads the new session's answer from its
+  transcript, then stops and removes both sessions.
+- Passing output: the hook dispatched a session with another id, and that
+  session answered `UNKNOWN` for the conversation's code word and gave the
+  code word from the file.
+- Recorded observations, Claude Code 2.1.325: the hook ran inside a background
+  job; a variable exported by the shell that started the first session did
+  not reach its hook; the new session ran in the same folder; the first
+  session stayed listed, in state `done`.
+- Found while building it: `--add-dir` takes several values, so a prompt
+  placed after it is read as one more folder and the session starts idle
+  without a prompt; the fixture puts `--` before the prompt.
+- Not measured: a session whose hooks come from the user settings instead of
+  `--settings`, the permission mode of the new session, and what the first
+  session should do after the dispatch.
+- Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with
