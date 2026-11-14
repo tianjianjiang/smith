@@ -14,8 +14,8 @@
 # Env vars:
 #   CTX_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
 #   CONTEXT_WINDOW_TOKENS - Fallback context window size (default: 200000)
-#   CTX_AUTO_RESET_DISPATCH - "1" starts a background session from the
-#     checkpoint on the stop after a block (default: off)
+#   CTX_AUTO_RESET_DISPATCH - "0" turns the automatic continuation of
+#     background sessions off (default: on)
 #
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -48,20 +48,29 @@ read -r STOP_HOOK_ACTIVE SESSION_ID HOOK_CWD TRANSCRIPT_PATH < <(
 ) || { STOP_HOOK_ACTIVE="false"; SESSION_ID=""; HOOK_CWD=""; TRANSCRIPT_PATH=""; }
 
 auto_reset_dispatch_enabled() {
-    [[ "${CTX_AUTO_RESET_DISPATCH:-}" == "1" ]]
+    [[ -n "${CLAUDE_JOB_DIR:-}" && "${CTX_AUTO_RESET_DISPATCH:-}" != "0" && -n "${CHECKPOINT_READ_ONE_BACKEND:-}" ]]
 }
 
-newest_matching_restore_flag() {
-    local pending_reload="$1" own_key="$2" physical_key="$3" attempted_flag="$4"
-    local flag key label newest=""
+eligible_restore_flags() {
+    local pending_reload="$1" own_key="$2" physical_key="$3" attempt_marker="$4"
+    local flag key label
     for flag in "${CTX_FLAGS_DIR}"/.pending-memory-restore-*; do
-        [[ -f "$flag" && "$flag" -nt "$pending_reload" && "$flag" != "$attempted_flag" ]] || continue
+        [[ -f "$flag" && "$flag" -nt "$pending_reload" ]] || continue
+        [[ -f "$attempt_marker" ]] && grep -qxF -- "$flag" "$attempt_marker" && continue
         key=$(sed -n '5p' "$flag" 2>/dev/null)
         [[ -n "$key" && ( "$key" == "$own_key" || "$key" == "$physical_key" ) ]] || continue
         label=$(sed -n '4p' "$flag" 2>/dev/null)
         [[ -n "$label" ]] || continue
-        [[ -z "$newest" || "$flag" -nt "$newest" ]] && newest="$flag"
+        printf '%s\n' "$flag"
     done
+}
+
+newest_file_of() {
+    local file newest=""
+    while IFS= read -r file; do
+        [[ -n "$file" ]] || continue
+        [[ -z "$newest" || "$file" -nt "$newest" ]] && newest="$file"
+    done <<<"$1"
     printf '%s' "$newest"
 }
 
@@ -80,27 +89,27 @@ first_output_line() {
 
 dispatch_successor_session() {
     local hook_cwd="${HOOK_CWD:-${PWD:-}}"
-    local own_key physical_cwd physical_key pending_reload attempt_marker attempted_flag=""
-    local flag label name prompt mode output reason
+    local own_key physical_cwd physical_key pending_reload attempt_marker
+    local eligible_flags flag label name prompt mode output reason
     local launch_options=()
     own_key=$(session_key "" "$hook_cwd") || return 0
     physical_cwd=$(cd -- "$hook_cwd" 2>/dev/null && pwd -P) || physical_cwd="$hook_cwd"
     physical_key=$(session_key "" "$physical_cwd") || physical_key=""
     pending_reload="${CTX_FLAGS_DIR}/.pending-reload-${own_key}"
     attempt_marker="${CTX_FLAGS_DIR}/.auto-reset-attempt-${own_key}"
-    find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' -mmin +60 -delete 2>/dev/null || true
+    find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' ! -name ".auto-reset-attempt-${own_key}" -mmin +60 -delete 2>/dev/null || true
     if [[ ! -f "$pending_reload" ]]; then
         rm -f "$attempt_marker"
         return 0
     fi
-    [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && attempted_flag=$(sed -n '1p' "$attempt_marker" 2>/dev/null)
-    flag=$(newest_matching_restore_flag "$pending_reload" "$own_key" "$physical_key" "$attempted_flag")
+    eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
+    flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then
-        [[ -n "$attempted_flag" ]] && return 0
+        [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && return 0
         json_system_message "Context reset: no checkpoint was written after the block, so no background session was started. Checkpoint this session, or type /clear."
         return 0
     fi
-    printf '%s\n' "$flag" > "$attempt_marker"
+    printf '%s\n' "$eligible_flags" >> "$attempt_marker"
     label=$(sed -n '4p' "$flag")
     name="continue: ${label}"
     prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."

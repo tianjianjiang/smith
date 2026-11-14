@@ -55,7 +55,19 @@ write_fake_other_program() {
 write_fake_claude "$TMP/bin" 0 "backgrounded · $BACKGROUND_ID"
 write_fake_claude "$TMP/failing-bin" 1 "error: background sessions are unavailable"
 write_fake_claude "$TMP/silent-bin" 0 "started"
-for folder in "$TMP/bin" "$TMP/failing-bin" "$TMP/silent-bin"; do
+mkdir -p "$TMP/scripted-bin"
+FAKE_STDOUT="$TMP/fake-stdout"
+FAKE_STDERR="$TMP/fake-stderr"
+cat > "$TMP/scripted-bin/claude" <<EOF
+#!/bin/bash
+printf 'call cwd=%s\n' "\$PWD" >> "$CALLS_LOG"
+printf '%s\n' "\$@" >> "$CALLS_LOG"
+[ -f "$FAKE_STDOUT" ] && cat "$FAKE_STDOUT"
+[ -f "$FAKE_STDERR" ] && cat "$FAKE_STDERR" >&2
+exit 1
+EOF
+chmod +x "$TMP/scripted-bin/claude"
+for folder in "$TMP/bin" "$TMP/failing-bin" "$TMP/silent-bin" "$TMP/scripted-bin"; do
   for program in orca osascript tmux; do write_fake_other_program "$folder" "$program"; done
 done
 
@@ -65,15 +77,17 @@ make_transcript() {
   printf '%s\n' "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"model\":\"claude-sonnet-4-20250514\",\"usage\":{\"input_tokens\":$tokens,\"output_tokens\":0}}}" > "$TMP/transcript.jsonl"
 }
 
+HOOK_ENV=()
+
 run_hook() {
-  printf '%s' "{\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/transcript.jsonl\"}" | bash "$HOOK"
+  printf '%s' "{\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/transcript.jsonl\"}" | env "${HOOK_ENV[@]}" bash "$HOOK"
 }
 
 run_continuing_stop() {
   local permission_mode=${1:-}
   local mode_field=""
   [ -n "$permission_mode" ] && mode_field=",\"permission_mode\":\"$permission_mode\""
-  printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/transcript.jsonl\"$mode_field}" | bash "$HOOK"
+  printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/transcript.jsonl\"$mode_field}" | env "${HOOK_ENV[@]}" bash "$HOOK"
 }
 
 write_pending_reload() {
@@ -122,25 +136,51 @@ expect_no_checkpoint_notice() {
   esac
 }
 
-reset_state
-make_transcript "$DEFAULT_CRITICAL_PCT"
-write_pending_reload
-write_restore_flag "$LABEL" "$PHYSICAL_KEY"
-OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
-STATUS=$?
-expect_no_dispatch "switch absent" "$OUT" "$STATUS"
-[ -f "$RESTORE_FLAG" ] || fail "switch absent: the restore flag should stay"
-pass "switch absent: a matching fresh flag dispatches nothing and stays silent"
+readonly UNCHANGED_REASON="Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear."
+readonly MISSING_PLAN_LIB="$TMP/missing-lib-plan.sh"
 
-for value in 0 true yes; do
-  OUT=$(PATH="$TMP/bin:$PATH" CTX_AUTO_RESET_DISPATCH=$value run_continuing_stop acceptEdits)
+expect_step_off() {
+  local description=$1
+  shift
+  HOOK_ENV=("$@")
+  reset_state
+  make_transcript "$DEFAULT_CRITICAL_PCT"
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
   STATUS=$?
-  expect_no_dispatch "switch set to $value" "$OUT" "$STATUS"
-  [ -f "$RESTORE_FLAG" ] || fail "switch set to $value: the restore flag should stay"
-done
-pass "switch values other than 1 dispatch nothing"
+  expect_no_dispatch "$description, matching fresh flag" "$OUT" "$STATUS"
+  [ -f "$RESTORE_FLAG" ] || fail "$description: the restore flag should stay"
+  rm -f "$RESTORE_FLAG"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_no_dispatch "$description, no checkpoint after the block" "$OUT" "$STATUS"
+  OUT=$(PATH="$TMP/bin:$PATH" run_hook)
+  [ "$(printf '%s' "$OUT" | jq -r .reason)" = "$UNCHANGED_REASON" ] || fail "$description: the block reason should be unchanged: $OUT"
+  [ "$(call_count)" -eq 0 ] || fail "$description: a block should not call claude"
+  rm -f "/tmp/session-facts-$CWD_KEY.md"
+  HOOK_ENV=()
+}
 
-export CTX_AUTO_RESET_DISPATCH=1
+expect_step_off "foreground session" -u CLAUDE_JOB_DIR
+pass "a foreground session dispatches nothing, keeps the block reason and prints no notice"
+expect_step_off "background session with the switch set to 0" CTX_AUTO_RESET_DISPATCH=0
+pass "the switch set to 0 turns the step off in a background session"
+expect_step_off "missing plan library" SMITH_PLAN_LIB="$MISSING_PLAN_LIB"
+pass "without the shared restore wording the step stays off"
+
+for value in "" 1 true; do
+  reset_state
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  if [ -z "$value" ]; then
+    OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  else
+    OUT=$(PATH="$TMP/bin:$PATH" CTX_AUTO_RESET_DISPATCH=$value run_continuing_stop acceptEdits)
+  fi
+  [ "$(call_count)" -eq 1 ] || fail "switch ${value:-unset}: a background session should dispatch, got $(call_count) calls: $OUT"
+done
+pass "unset, 1 and true all leave the step on in a background session"
 
 reset_state
 make_transcript "$DEFAULT_CRITICAL_PCT"
@@ -242,9 +282,11 @@ write_named_flag() {
   printf 'smith-checkpoint\n2026-01-01T00:00:00+0000\n%s\n%s\n%s\n' "$PHYSICAL_TMP" "$label" "$key" > "$path"
   touch -t "$stamp" "$path"
 }
-NEWEST_FLAG="$TMP/plans/.pending-memory-restore-20260101T000000-1"
+FIRST_IN_GLOB_ORDER_FLAG="$TMP/plans/.pending-memory-restore-20260101T000000-1"
+write_named_flag "$FIRST_IN_GLOB_ORDER_FLAG" zq_first_in_glob_order_label "$PHYSICAL_KEY" 202601010130.00
+NEWEST_FLAG="$TMP/plans/.pending-memory-restore-20260101T040000-4"
 write_named_flag "$NEWEST_FLAG" zq_newest_label "$PHYSICAL_KEY" 202601010200.00
-write_named_flag "$TMP/plans/.pending-memory-restore-20260101T050000-5" zq_other_session_label notmykey12345678 202601010300.00
+write_named_flag "$TMP/plans/.pending-memory-restore-20260101T030000-3" zq_other_session_label notmykey12345678 202601010300.00
 write_named_flag "$TMP/plans/.pending-memory-restore-20260101T060000-6" "" "$PHYSICAL_KEY" 202601010400.00
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 [ "$(call_count)" -eq 1 ] || fail "several matching flags should dispatch once, got $(call_count) calls: $OUT"
@@ -252,8 +294,21 @@ args=()
 while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 [ "${args[2]}" = "continue: zq_newest_label" ] || fail "the newest matching flag should win over glob order and over newer flags that do not match: ${args[2]}"
 [ ! -e "$NEWEST_FLAG" ] || fail "the dispatched flag should be consumed"
-[ -f "$OLDER_MATCHING_FLAG" ] || fail "the older flag should stay"
+[ -f "$OLDER_MATCHING_FLAG" ] && [ -f "$FIRST_IN_GLOB_ORDER_FLAG" ] || fail "the older flags should stay"
 pass "the newest of several matching fresh flags is dispatched and consumed"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "older flags superseded by a dispatched one should not start a second continuation, got $(call_count) calls: $OUT"
+[ -f "$OLDER_MATCHING_FLAG" ] && [ -f "$FIRST_IN_GLOB_ORDER_FLAG" ] || fail "superseded older flags should stay in place"
+pass "older fresh flags are superseded by the dispatched newest one"
+
+reset_state
+write_pending_reload
+write_named_flag "$RESTORE_FLAG" "$LABEL" "" "$NEWER"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_checkpoint_notice "fresh flag with an empty session key" "$OUT" "$STATUS"
+[ -f "$RESTORE_FLAG" ] || fail "a fresh flag with an empty session key should stay"
+pass "a fresh flag with an empty session key never dispatches"
 
 reset_state
 write_pending_reload
@@ -332,5 +387,86 @@ OUT=$(PATH="$TMP/bin:$PATH" CTX_AUTO_RESET_DISPATCH=0 run_continuing_stop accept
 STATUS=$?
 expect_no_dispatch "switch off, pending reload file without a restore flag" "$OUT" "$STATUS"
 pass "switch off: a pending reload file without a restore flag stays silent"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "flag A should be tried once, got $(call_count): $OUT"
+FLAG_B="$TMP/plans/.pending-memory-restore-20260101T000000-0"
+write_named_flag "$FLAG_B" zq_flag_b_label "$PHYSICAL_KEY" 202601010200.00
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 2 ] || fail "a newer flag B after a failed flag A should be tried, got $(call_count) calls: $OUT"
+[ "$(grep -c '^continue: zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "the second call should be for flag B: $(cat "$CALLS_LOG")"
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 2 ] || fail "after A and B both failed, a later stop should make no call, got $(call_count) calls: $OUT"
+[ -f "$RESTORE_FLAG" ] && [ -f "$FLAG_B" ] || fail "both failed flags should stay for /clear"
+pass "every failed flag is skipped later, and a newer flag is still tried"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+write_named_flag "$FLAG_B" zq_flag_b_label "$PHYSICAL_KEY" 202601010200.00
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] && [ "$(grep -c '^continue: zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "with two eligible flags the first stop should try B only: $(cat "$CALLS_LOG")"
+for later_stop in second third; do
+  OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+  [ "$(call_count)" -eq 1 ] || fail "the $later_stop stop after B failed should make no call, got $(call_count) calls: $OUT"
+done
+[ -f "$RESTORE_FLAG" ] && [ -f "$FLAG_B" ] || fail "both flags should stay for /clear"
+pass "with two eligible flags a failed attempt on the newest supersedes the older one"
+
+expect_failure_reason() {
+  local description=$1 expected=$2
+  reset_state
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  OUT=$(PATH="$TMP/scripted-bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  [ "$STATUS" -eq 0 ] || fail "$description: exit status should be 0, got $STATUS"
+  MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
+  [ "$MESSAGE" = "Context reset: dispatching a background session for checkpoint \"$LABEL\" failed${expected}; /clear still restores the checkpoint." ] || fail "$description: unexpected failure message: $MESSAGE"
+  rm -f "$FAKE_STDOUT" "$FAKE_STDERR"
+}
+
+printf 'error: written to stderr only\n' > "$FAKE_STDERR"
+expect_failure_reason "stderr only" " (error: written to stderr only)"
+pass "a failure written only to stderr is reported"
+
+printf '\n   \n   padded reason with spaces   \nsecond line\n' > "$FAKE_STDOUT"
+expect_failure_reason "leading blank lines" " (padded reason with spaces)"
+pass "the reported line skips blank lines and is trimmed"
+
+LONG_LINE=$(printf 'x%.0s' $(seq 1 250))
+printf '%s\n' "$LONG_LINE" > "$FAKE_STDOUT"
+expect_failure_reason "long line" " (${LONG_LINE:0:200})"
+pass "a reported line longer than 200 characters is cut to 200"
+
+expect_failure_reason "empty output" ""
+pass "an empty output gives the failure message without an empty parenthesis"
+
+OWN_MARKER="$TMP/plans/.auto-reset-attempt-$CWD_KEY"
+OTHER_MARKER="$TMP/plans/.auto-reset-attempt-notmykey12345678"
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+[ -f "$OWN_MARKER" ] || fail "a failed dispatch should leave this session's attempt marker: $(ls -a "$TMP/plans")"
+rm -f "$PENDING_RELOAD"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ ! -e "$OWN_MARKER" ] || fail "a stop without a pending reload file should remove this session's marker"
+pass "a stop without a pending reload file removes this session's marker"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
+printf '%s\n' "$TMP/plans/.pending-memory-restore-gone" > "$OTHER_MARKER"
+touch -t 202601010030.00 "$OWN_MARKER" "$OTHER_MARKER"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ ! -e "$OTHER_MARKER" ] || fail "an attempt marker of another key older than an hour should be deleted"
+[ -f "$OWN_MARKER" ] || fail "this session's old marker should stay while its pending reload file exists"
+[ "$(call_count)" -eq 1 ] || fail "the failed flag should not be tried again after the sweep, got $(call_count) calls: $OUT"
+pass "the hourly sweep deletes old markers of other keys and keeps this session's own"
 
 echo "PASS: enforce-clear-dispatch"

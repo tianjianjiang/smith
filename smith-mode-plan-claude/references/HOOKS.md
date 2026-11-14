@@ -154,11 +154,12 @@ from `on-plan-exit.sh` matches the session.
 When blocking, it writes the `.pending-reload-<CWD_KEY>` flag, refreshes the
 plan state file, and returns the session facts as additional context.
 
-**Automatic continuation (opt-in).** With `CTX_AUTO_RESET_DISPATCH=1` in the
-`env` block of a settings file (a variable exported by the launching shell
-does not reach a background session's hooks), the block reason ends "a fresh
+**Automatic continuation of background sessions.** In a background session
+(`CLAUDE_JOB_DIR` set), unless `CTX_AUTO_RESET_DISPATCH=0` is in the `env`
+block of a settings file (a variable exported by the launching shell does
+not reach a background session's hooks), the block reason ends "a fresh
 background session then continues from the checkpoint" instead of "then
-/clear". On the next stop, the one with `stop_hook_active` true, the hook
+/clear". A session that its terminal hosts is not affected. On the next stop, the one with `stop_hook_active` true, the hook
 looks for a `.pending-memory-restore-*` flag that carries this session's key
 and is newer than the `.pending-reload-<CWD_KEY>` flag, that is, a checkpoint
 written after the block. If it finds one it runs `claude --bg --name
@@ -171,10 +172,11 @@ typed into a terminal. Limits:
   in a `systemMessage`, the session stops as before and `/clear` still works.
 - A failed dispatch keeps the flag and reports the first line of the
   command's output; `/clear` still restores the checkpoint.
-- One attempt per flag: `.auto-reset-attempt-<CWD_KEY>` names the flag that
-  was tried, so a later stop does not try it again. The hook removes the
-  marker when no `.pending-reload` file is left, and any such marker older
-  than an hour.
+- One attempt per checkpoint: `.auto-reset-attempt-<CWD_KEY>` lists every
+  flag that was tried or was superseded by a newer one at that moment, so a
+  later stop never tries one of them, while a flag written afterwards is
+  still tried. The hook removes this marker when no `.pending-reload` file
+  is left, and other sessions' markers older than an hour.
 - The earlier session stays in the session list, and a terminal showing it
   does not switch to the new one.
 - Needs background sessions: with `disableAgentView` or

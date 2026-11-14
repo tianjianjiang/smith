@@ -148,6 +148,13 @@ function removeFlagsOfTheProbe(labels, sessionIds) {
   for (const name of probeFlags) rmSync(join(FLAGS_FOLDER, name), { force: true });
 }
 
+const attemptMarkersBeforeTheProbe = new Set(flagNames(".auto-reset-attempt-"));
+
+function removeAttemptMarkersOfTheProbe() {
+  const added = flagNames(".auto-reset-attempt-").filter((name) => !attemptMarkersBeforeTheProbe.has(name));
+  for (const name of added) rmSync(join(FLAGS_FOLDER, name), { force: true });
+}
+
 function createMemoryFile(label, codeWord) {
   const memoriesFolder = join(SESSION_FOLDER, ".serena", "memories");
   const createdFolders = [join(SESSION_FOLDER, ".serena"), memoriesFolder].filter((folder) => !existsSync(folder));
@@ -199,8 +206,8 @@ const controlLabel = `zq_probe_${randomBytes(6).toString("hex")}`;
 const conversationWord = `zq${randomBytes(6).toString("hex")}`;
 const checkpointWord = `zq${randomBytes(6).toString("hex")}`;
 const controlConversationWord = `zq${randomBytes(6).toString("hex")}`;
-writeSettings(dispatchSettingsPath, { CTX_AUTO_RESET_DISPATCH: "1", CTX_CONTEXT_CRITICAL_PCT: "1" });
-writeSettings(controlSettingsPath, { CTX_CONTEXT_CRITICAL_PCT: "1" });
+writeSettings(dispatchSettingsPath, { CTX_CONTEXT_CRITICAL_PCT: "1" });
+writeSettings(controlSettingsPath, { CTX_AUTO_RESET_DISPATCH: "0", CTX_CONTEXT_CRITICAL_PCT: "1" });
 
 let memory;
 let firstId;
@@ -258,6 +265,7 @@ try {
   removeSession(successorId);
   removeSession(firstId);
   removeFlagsOfTheProbe([label, controlLabel], sessionIds);
+  removeAttemptMarkersOfTheProbe();
   removeMemoryFile(memory);
   rmSync(scratchFolder, { recursive: true, force: true });
 }

@@ -14,6 +14,7 @@ mkdir -p "$TMP/plans"
 export CLAUDE_CONFIG_DIR="$TMP"
 export _SMITH_PPID=12345
 export CLAUDE_JOB_DIR="$TMP"
+export CTX_AUTO_RESET_DISPATCH=0
 unset CTX_CONTEXT_CRITICAL_PCT
 
 make_transcript() {
