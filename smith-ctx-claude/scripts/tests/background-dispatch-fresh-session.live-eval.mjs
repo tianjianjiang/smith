@@ -14,7 +14,7 @@ const CLAUDE_COMMAND_TIMEOUT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_CO
 const CONFIG_FOLDER = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 const RECORD_PATH = join(HERE, "records", "background-dispatch-fresh-session.json");
 const HOOK_FIXTURE = join(HERE, "fixtures", "dispatch-background-session-on-stop.sh");
-const BACKGROUNDED = /backgrounded · ([0-9a-f]+)/;
+const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
   console.log("SKIP: set SMITH_LIVE_CONTEXT_RESET_EVAL=1 to run the live background dispatch eval");

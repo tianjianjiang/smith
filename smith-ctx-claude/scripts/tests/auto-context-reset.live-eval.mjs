@@ -17,7 +17,7 @@ const FLAGS_FOLDER = join(CONFIG_FOLDER, "plans");
 const RECORD_PATH = join(HERE, "records", "auto-context-reset.json");
 const ENFORCE_CLEAR = resolve(HERE, "..", "enforce-clear.sh");
 const WRITE_RELOAD_FLAG = resolve(HERE, "..", "write-reload-flag.sh");
-const BACKGROUNDED = /backgrounded · ([0-9a-f]+)/;
+const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
 const DISPATCH_REASON = "a fresh background session then continues from the checkpoint";
 const UNCHANGED_REASON = "Checkpoint this session, then /clear.";
 
