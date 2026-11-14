@@ -410,15 +410,18 @@ When invoked via `/smith-checkpoint` (no arguments required):
         item 6
       - No subagent tool available: run both checks inline and record
         "double-blind audit not run: «reason»" in the body
-   6. Show the user the conversation-only and not-checkable claims of the
+   6. Record in the body's `## Audit` section, marked "not confirmed by
+      the user", the conversation-only and not-checkable claims of the
       last non-void round verbatim (a void round's returns are discarded;
       when every round was void, say that no checker result stands), any
-      unconverged findings, and the sweep table, and wait for a
-      confirmation or correction: such a claim has no other checker than
-      the user. A correction is applied and written
-      into the expected-answers file where it changes an answer; then
-      item 5 runs again with a new count of at most three rounds, and
-      this item repeats. Step 7 starts only after a confirmation
+      unconverged findings, and the sweep table; show the same to the
+      user, and go on to step 7 without waiting. Such a claim has no
+      other checker than the user, but a checkpoint that waits for an
+      answer cannot be written while nobody is there. A correction the
+      user gives afterwards, in this session or the one that resumes, is
+      applied and written into the expected-answers file where it changes
+      an answer; then item 5 runs again with a new count of at most three
+      rounds, and the checkpoint is written again
 
 7. **Call write-checkpoint.sh**:
    ```bash
