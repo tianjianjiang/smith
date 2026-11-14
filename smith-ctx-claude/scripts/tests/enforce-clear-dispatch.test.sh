@@ -484,6 +484,30 @@ STATUS=$?
 expect_no_dispatch "below the threshold without a flag" "$OUT" "$STATUS"
 pass "a continuing stop below the critical threshold neither dispatches nor prints a notice"
 
+readonly RAISED_CRITICAL_PCT=$((DEFAULT_CRITICAL_PCT + 20))
+readonly LOWERED_CRITICAL_PCT=$((DEFAULT_CRITICAL_PCT - 20))
+HOOK_ENV=(CTX_CONTEXT_CRITICAL_PCT=$RAISED_CRITICAL_PCT)
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+make_transcript "$DEFAULT_CRITICAL_PCT"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "raised threshold, context at the default threshold" "$OUT" "$STATUS"
+[ -f "$RESTORE_FLAG" ] || fail "below a raised threshold the restore flag should stay"
+make_transcript "$RAISED_CRITICAL_PCT"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "at a raised threshold a continuing stop should dispatch, got $(call_count) calls: $OUT"
+HOOK_ENV=(CTX_CONTEXT_CRITICAL_PCT=$LOWERED_CRITICAL_PCT)
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ "$(call_count)" -eq 1 ] || fail "at a lowered threshold a continuing stop below the default should dispatch, got $(call_count) calls: $OUT"
+HOOK_ENV=()
+pass "a continuing stop compares the context with the configured critical threshold"
+
 reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
