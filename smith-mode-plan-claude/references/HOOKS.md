@@ -143,12 +143,16 @@ Fires on every prompt. Three main paths:
 
 ### enforce-clear.sh (Stop)
 
-Fires when agent attempts to stop. Blocks stop if ALL conditions met:
-1. No `.pending-reload-<CWD_KEY>` flag (clear not yet initiated)
-2. Transcript size > threshold
-3. Active plan has pending `- [ ]` tasks
+Fires when agent attempts to stop. Blocks the stop when the context
+percentage read from the transcript's token usage is at or above
+`CTX_CONTEXT_CRITICAL_PCT` (default 60).
 
-When blocking, the hook **auto-creates the `.pending-reload` flag** before returning the block. This breaks the infinite loop: on the first stop attempt, the agent is blocked and gets one turn to save state. On the second stop attempt, the flag exists and the stop is allowed.
+It allows the stop without blocking when `stop_hook_active` is true, which
+is what prevents a loop; when no transcript exists; or when an exit marker
+from `on-plan-exit.sh` matches the session.
+
+When blocking, it writes the `.pending-reload-<CWD_KEY>` flag, refreshes the
+plan state file, and returns the session facts as additional context.
 
 **Input JSON fields used:**
 - `transcript_path` - Path to JSONL transcript file
