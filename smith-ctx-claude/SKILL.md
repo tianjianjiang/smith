@@ -131,9 +131,10 @@ acknowledgements or replies. Respond to the underlying event only when action
 is required.
 
 Events: task-tools idle nudge, file-modification notice, skills-available list,
-plan-mode transitions, background-task completion, date
-change, auto-mode active, bg-isolation guard refusal. Full descriptions (with
-the relevant skill cross-refs) in `smith-ctx-claude/REFERENCE.md`
+plan-mode transitions, background-task completion, background-subagent
+completion, date change, auto-mode active, bg-isolation guard refusal.
+Full descriptions (with the relevant skill cross-refs) in
+`smith-ctx-claude/REFERENCE.md`
 "System-Reminder Event Taxonomy".
 
 ## Active Plugin Side-Effects
