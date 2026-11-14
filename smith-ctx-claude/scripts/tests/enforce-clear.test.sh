@@ -79,6 +79,7 @@ reset_flags() { rm -f "$STATE_FILE" "$FLAG_FILE" "$FLAG_FILE.exit-marker"; }
 readonly NO_PLAN_REASON="Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear."
 
 reset_flags
+rm -f "$TMP"/session-facts-*.md
 make_transcript "$DEFAULT_CRITICAL_PCT"
 OUT=$(run_hook)
 STATUS=$?

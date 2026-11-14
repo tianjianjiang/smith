@@ -88,7 +88,7 @@ write_restore_flag() {
 }
 
 reset_state() {
-  rm -f "$TMP"/plans/.pending-* "$TMP"/plans/.plan-state-* "$CALLS_LOG" "$CALLS_LOG.last" "$CALLS_LOG.penultimate" "$OTHER_PROGRAMS_LOG"
+  rm -f "$TMP"/plans/.[!.]* "$CALLS_LOG" "$CALLS_LOG.last" "$CALLS_LOG.penultimate" "$OTHER_PROGRAMS_LOG"
 }
 
 call_count() {
@@ -106,6 +106,20 @@ expect_no_dispatch() {
   [ -z "$output" ] || fail "$description: should print nothing: $output"
   [ "$(call_count)" -eq 0 ] || fail "$description: claude should not be called: $(cat "$CALLS_LOG")"
   [ ! -e "$OTHER_PROGRAMS_LOG" ] || fail "$description: no other program should be called: $(cat "$OTHER_PROGRAMS_LOG")"
+}
+
+expect_no_checkpoint_notice() {
+  local description=$1 output=$2 status=$3
+  [ "$status" -eq 0 ] || fail "$description: exit status should be 0, got $status"
+  [ "$(call_count)" -eq 0 ] || fail "$description: claude should not be called: $(cat "$CALLS_LOG")"
+  [ ! -e "$OTHER_PROGRAMS_LOG" ] || fail "$description: no other program should be called: $(cat "$OTHER_PROGRAMS_LOG")"
+  [ "$(printf '%s' "$output" | jq -r 'has("decision")' 2>/dev/null)" = false ] || fail "$description: the notice must not block: $output"
+  local message
+  message=$(printf '%s' "$output" | jq -r '.systemMessage // empty' 2>/dev/null)
+  case "$message" in
+    *"no checkpoint"*"/clear"*) ;;
+    *) fail "$description: should say that no checkpoint was written and that /clear still works: $output" ;;
+  esac
 }
 
 reset_state
@@ -178,7 +192,6 @@ args=()
 while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 [ "${args[0]}" = --bg ] || fail "first argument should be --bg: ${args[*]}"
 [ "${args[1]}" = --name ] || fail "second argument should be --name: ${args[*]}"
-case "${args[2]}" in *"$LABEL"*) ;; *) fail "the name should contain the label: ${args[2]}" ;; esac
 [ "${args[2]}" = "continue: $LABEL" ] || fail "the name should be exactly continue: «label»: ${args[2]}"
 [ "${args[3]}" = --permission-mode ] && [ "${args[4]}" = acceptEdits ] || fail "the permission mode of the input should be passed on: ${args[*]}"
 [ "${args[5]}" = -- ] || fail "-- should follow the options: ${args[*]}"
@@ -222,16 +235,24 @@ pass "a flag keyed over the hook cwd dispatches, without --permission-mode when 
 reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
-NEWEST_FLAG="$TMP/plans/.pending-memory-restore-20260101T020000-2"
-printf 'smith-checkpoint\n2026-01-01T02:00:00+0000\n%s\nzq_newest_label\n%s\n' "$PHYSICAL_TMP" "$PHYSICAL_KEY" > "$NEWEST_FLAG"
-touch -t 202601010200.00 "$NEWEST_FLAG"
+OLDER_MATCHING_FLAG="$TMP/plans/.pending-memory-restore-20260101T090000-9"
+mv "$RESTORE_FLAG" "$OLDER_MATCHING_FLAG"
+write_named_flag() {
+  local path=$1 label=$2 key=$3 stamp=$4
+  printf 'smith-checkpoint\n2026-01-01T00:00:00+0000\n%s\n%s\n%s\n' "$PHYSICAL_TMP" "$label" "$key" > "$path"
+  touch -t "$stamp" "$path"
+}
+NEWEST_FLAG="$TMP/plans/.pending-memory-restore-20260101T000000-1"
+write_named_flag "$NEWEST_FLAG" zq_newest_label "$PHYSICAL_KEY" 202601010200.00
+write_named_flag "$TMP/plans/.pending-memory-restore-20260101T050000-5" zq_other_session_label notmykey12345678 202601010300.00
+write_named_flag "$TMP/plans/.pending-memory-restore-20260101T060000-6" "" "$PHYSICAL_KEY" 202601010400.00
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 [ "$(call_count)" -eq 1 ] || fail "several matching flags should dispatch once, got $(call_count) calls: $OUT"
 args=()
 while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
-[ "${args[2]}" = "continue: zq_newest_label" ] || fail "the newest matching flag should win: ${args[2]}"
+[ "${args[2]}" = "continue: zq_newest_label" ] || fail "the newest matching flag should win over glob order and over newer flags that do not match: ${args[2]}"
 [ ! -e "$NEWEST_FLAG" ] || fail "the dispatched flag should be consumed"
-[ -f "$RESTORE_FLAG" ] || fail "the older flag should stay"
+[ -f "$OLDER_MATCHING_FLAG" ] || fail "the older flag should stay"
 pass "the newest of several matching fresh flags is dispatched and consumed"
 
 reset_state
@@ -239,18 +260,18 @@ write_pending_reload
 write_restore_flag "$LABEL" notmykey12345678
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
-expect_no_dispatch "flag of another session" "$OUT" "$STATUS"
+expect_no_checkpoint_notice "flag of another session" "$OUT" "$STATUS"
 [ -f "$RESTORE_FLAG" ] || fail "flag of another session should stay"
-pass "a flag of another session key dispatches nothing"
+pass "a flag of another session key dispatches nothing and the notice says no checkpoint was written"
 
 reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY" 202512312300.00
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
-expect_no_dispatch "flag older than the pending reload file" "$OUT" "$STATUS"
+expect_no_checkpoint_notice "flag older than the pending reload file" "$OUT" "$STATUS"
 [ -f "$RESTORE_FLAG" ] || fail "an older flag should stay"
-pass "a flag older than the pending reload file dispatches nothing"
+pass "a flag older than the pending reload file dispatches nothing and the notice says no checkpoint was written"
 
 reset_state
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
@@ -265,9 +286,9 @@ write_pending_reload
 write_restore_flag "" "$PHYSICAL_KEY"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
-expect_no_dispatch "empty label" "$OUT" "$STATUS"
+expect_no_checkpoint_notice "empty label" "$OUT" "$STATUS"
 [ -f "$RESTORE_FLAG" ] || fail "a flag with an empty label should stay"
-pass "a flag with an empty label dispatches nothing"
+pass "a flag with an empty label dispatches nothing and the notice says no checkpoint was written"
 
 for variant in failing-bin silent-bin; do
   reset_state
@@ -279,11 +300,37 @@ for variant in failing-bin silent-bin; do
   [ "$(call_count)" -eq 1 ] || fail "$variant: claude should be tried once, got $(call_count)"
   [ -f "$RESTORE_FLAG" ] || fail "$variant: a failed dispatch should keep the restore flag"
   [ "$(printf '%s' "$OUT" | jq -r 'has("decision")')" = false ] || fail "$variant: a failed dispatch must not block: $OUT"
-  case "$(printf '%s' "$OUT" | jq -r .systemMessage)" in
+  MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
+  case "$MESSAGE" in
     *"/clear"*) ;;
     *) fail "$variant: the system message should say that /clear still restores the checkpoint: $OUT" ;;
   esac
+  case "$MESSAGE" in *"$LABEL"*) ;; *) fail "$variant: the system message should name the label: $OUT" ;; esac
+  case "$variant" in
+    failing-bin) FIRST_OUTPUT_LINE="error: background sessions are unavailable" ;;
+    silent-bin) FIRST_OUTPUT_LINE="started" ;;
+  esac
+  case "$MESSAGE" in *"$FIRST_OUTPUT_LINE"*) ;; *) fail "$variant: the system message should carry the first line of the claude output: $OUT" ;; esac
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  [ "$STATUS" -eq 0 ] || fail "$variant: a later stop after a failed dispatch should exit 0, got $STATUS"
+  [ "$(call_count)" -eq 1 ] || fail "$variant: a later stop should not try the same flag again, got $(call_count) calls: $OUT"
+  [ -f "$RESTORE_FLAG" ] || fail "$variant: the flag should stay after the later stop so /clear can restore it"
+  [ "$(printf '%s' "$OUT" | jq -r 'has("decision")' 2>/dev/null)" != true ] || fail "$variant: a later stop must not block: $OUT"
 done
-pass "a failing claude or one that prints no id keeps the flag and reports that /clear still restores it"
+pass "a failing claude or one that prints no id keeps the flag and reports the label, the first output line and that /clear still restores it"
+pass "a flag whose dispatch failed is not tried again on a later stop and stays for /clear"
+
+reset_state
+write_pending_reload
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_checkpoint_notice "pending reload file without a restore flag" "$OUT" "$STATUS"
+pass "a continuing stop after a block without a new checkpoint says no background session was started"
+
+OUT=$(PATH="$TMP/bin:$PATH" CTX_AUTO_RESET_DISPATCH=0 run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "switch off, pending reload file without a restore flag" "$OUT" "$STATUS"
+pass "switch off: a pending reload file without a restore flag stays silent"
 
 echo "PASS: enforce-clear-dispatch"

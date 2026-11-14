@@ -14,6 +14,8 @@
 # Env vars:
 #   CTX_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
 #   CONTEXT_WINDOW_TOKENS - Fallback context window size (default: 200000)
+#   CTX_AUTO_RESET_DISPATCH - "1" starts a background session from the
+#     checkpoint on the stop after a block (default: off)
 #
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -50,10 +52,10 @@ auto_reset_dispatch_enabled() {
 }
 
 newest_matching_restore_flag() {
-    local pending_reload="$1" own_key="$2" physical_key="$3"
+    local pending_reload="$1" own_key="$2" physical_key="$3" attempted_flag="$4"
     local flag key label newest=""
     for flag in "${CTX_FLAGS_DIR}"/.pending-memory-restore-*; do
-        [[ -f "$flag" && "$flag" -nt "$pending_reload" ]] || continue
+        [[ -f "$flag" && "$flag" -nt "$pending_reload" && "$flag" != "$attempted_flag" ]] || continue
         key=$(sed -n '5p' "$flag" 2>/dev/null)
         [[ -n "$key" && ( "$key" == "$own_key" || "$key" == "$physical_key" ) ]] || continue
         label=$(sed -n '4p' "$flag" 2>/dev/null)
@@ -67,28 +69,51 @@ json_system_message() {
     jq -n --arg m "$1" '{systemMessage: $m}'
 }
 
+first_output_line() {
+    local line
+    while IFS= read -r line; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -n "$line" ]] && { printf '%s' "${line:0:200}"; return; }
+    done <<<"$1"
+}
+
 dispatch_successor_session() {
     local hook_cwd="${HOOK_CWD:-${PWD:-}}"
-    local own_key physical_cwd physical_key pending_reload flag label name prompt mode output
+    local own_key physical_cwd physical_key pending_reload attempt_marker attempted_flag=""
+    local flag label name prompt mode output reason
+    local launch_options=()
     own_key=$(session_key "" "$hook_cwd") || return 0
     physical_cwd=$(cd -- "$hook_cwd" 2>/dev/null && pwd -P) || physical_cwd="$hook_cwd"
     physical_key=$(session_key "" "$physical_cwd") || physical_key=""
     pending_reload="${CTX_FLAGS_DIR}/.pending-reload-${own_key}"
-    [[ -f "$pending_reload" ]] || return 0
-    flag=$(newest_matching_restore_flag "$pending_reload" "$own_key" "$physical_key")
-    [[ -n "$flag" ]] || return 0
+    attempt_marker="${CTX_FLAGS_DIR}/.auto-reset-attempt-${own_key}"
+    find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' -mmin +60 -delete 2>/dev/null || true
+    if [[ ! -f "$pending_reload" ]]; then
+        rm -f "$attempt_marker"
+        return 0
+    fi
+    [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && attempted_flag=$(sed -n '1p' "$attempt_marker" 2>/dev/null)
+    flag=$(newest_matching_restore_flag "$pending_reload" "$own_key" "$physical_key" "$attempted_flag")
+    if [[ -z "$flag" ]]; then
+        [[ -n "$attempted_flag" ]] && return 0
+        json_system_message "Context reset: no checkpoint was written after the block, so no background session was started. Checkpoint this session, or type /clear."
+        return 0
+    fi
+    printf '%s\n' "$flag" > "$attempt_marker"
     label=$(sed -n '4p' "$flag")
     name="continue: ${label}"
     prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."
     mode=$(jq -r '.permission_mode // empty' <<<"$INPUT" 2>/dev/null)
-    local launch_options=(--bg --name "$name")
+    launch_options=(--bg --name "$name")
     [[ -n "$mode" ]] && launch_options+=(--permission-mode "$mode")
     output=$(cd -- "$hook_cwd" && claude "${launch_options[@]}" -- "$prompt" < /dev/null 2>&1)
-    if [[ "$output" =~ backgrounded\ ·\ ([0-9A-Za-z]+) ]]; then
+    if [[ "$output" =~ backgrounded\ ·\ ([0-9A-Za-z_-]+) ]]; then
         rm -f "$flag"
         json_system_message "Context reset: the work continues in background session ${BASH_REMATCH[1]} named \"${name}\"."
     else
-        json_system_message "Context reset: dispatching a background session for checkpoint \"${label}\" failed; /clear still restores the checkpoint."
+        reason=$(first_output_line "$output")
+        json_system_message "Context reset: dispatching a background session for checkpoint \"${label}\" failed${reason:+ (${reason})}; /clear still restores the checkpoint."
     fi
 }
 

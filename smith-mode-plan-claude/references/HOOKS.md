@@ -167,10 +167,14 @@ carries one, and a prompt that restores that checkpoint; on success it
 deletes the flag and reports the new session in a `systemMessage`. Nothing is
 typed into a terminal. Limits:
 
-- No dispatch without a checkpoint written after the block; the session then
-  stops as before and `/clear` still works.
-- A failed dispatch keeps the flag and says so; `/clear` still restores the
-  checkpoint.
+- No dispatch without a checkpoint written after the block; the hook says so
+  in a `systemMessage`, the session stops as before and `/clear` still works.
+- A failed dispatch keeps the flag and reports the first line of the
+  command's output; `/clear` still restores the checkpoint.
+- One attempt per flag: `.auto-reset-attempt-<CWD_KEY>` names the flag that
+  was tried, so a later stop does not try it again. The hook removes the
+  marker when no `.pending-reload` file is left, and any such marker older
+  than an hour.
 - The earlier session stays in the session list, and a terminal showing it
   does not switch to the new one.
 - Needs background sessions: with `disableAgentView` or
