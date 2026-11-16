@@ -1,0 +1,43 @@
+title: An author who changes a skill's body text protects, fails first, then changes, and says how it passes
+description: >
+  Claim: goal. The with-change smith-skills states the quality assurance
+  steps for a skill change, so an agent asked to add a rule to
+  smith-guidance writes a failing behaviour eval case before the text, keeps
+  a case for behaviour that must stay, and gives the two-version command and
+  the goal rule; the baseline smith-skills only points to where behaviour
+  evals live, though its workspace holds the same runner, README and
+  smith-guidance evals folder, so it can pass.
+  Experiment variable: the section "Quality Assurance for a Skill Change" of
+  smith-skills/SKILL.md, present in the with-change arm and absent in the
+  baseline arm, which is the version just before that section was added.
+  Control variables: the prompt, the judge, the model, the image, and the
+  workspace, which is the whole tracked tree of the arm's ref.
+input:
+  prompt: |
+    Use the smith-skills skill for this task.
+
+    Add a rule to the section "Communication Standards" of
+    smith-guidance/SKILL.md: the first line of every reply states the
+    conclusion, and the explanation follows it.
+    Make the change the way this repository expects a change to a skill to
+    be made. No API key and no Docker are available here, so do not try to
+    run an eval. When you are done, tell me what you changed and the
+    commands I should run to check it.
+context:
+  repo_fixture: evals/fixtures/repos/smith
+judge:
+  type: agent_judge
+  model: anthropic/claude-fable-5-2
+  pass_threshold: 1.0
+  context:
+    profile: standard
+    final_message: include
+    transcript: file_ref
+    workspace_diff: file_ref
+  criteria:
+    - "The workspace diff adds to the section \"Communication Standards\" of smith-guidance/SKILL.md a rule that the first line of every reply states the conclusion and the explanation follows it."
+    - "The workspace diff adds a behaviour eval case under smith-guidance/evals/cases/ whose judge checks that the first line of the agent's reply states the conclusion, so that the version of smith-guidance before the change would fail it."
+    - "The new case is listed under cases.files in smith-guidance/evals/eval.yaml, or in another eval file that the diff adds, so that a run would execute it."
+    - "The transcript shows the new case written before smith-guidance/SKILL.md was edited."
+    - "The final message or the diff names a case of smith-guidance for behaviour that must stay (an existing case such as conflict-listed or no-conflict, or a new one) and says it must pass on both versions."
+    - "The final message gives a command that runs smith-skills/scripts/behaviour-eval.mjs on smith-guidance with --source for the change and --baseline for the version before it, and says the change passes only when every run with the change passes every judge while some run of the version before it fails."

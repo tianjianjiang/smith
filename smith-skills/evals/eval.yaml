@@ -16,6 +16,7 @@ engine:
 cases:
   files:
     - evals/cases/cited-section-gets-anchor.yaml
+    - evals/cases/skill-change-follows-quality-assurance.yaml
   defaults:
     timeout_seconds: 900
     max_turns: 40
