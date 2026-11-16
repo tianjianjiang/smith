@@ -146,6 +146,18 @@ request and record stands alone:
 **When something fails:** try one alternative; if that fails too, stop and
 offer options instead of chaining workarounds.
 
+**When a loop of rounds fixes what each round finds** (review rounds,
+behaviour-eval runs, test-and-fix cycles):
+
+- Before the first round, state the stopping rule and get the user's yes:
+  what counts as passing, the most rounds allowed, and which misses get
+  fixed
+- Fix a miss that recurs across rounds, runs or models, or one whose cause
+  lies outside the agent under test, such as a wrong document or a judge
+  defect; record a miss seen once and move on
+- When the round limit is reached without a pass, stop, report the result
+  as measured, and ask before another round
+
 **Estimates:** relative sizes (S/M/L/XL) or plain comparisons, never
 invented numbers; describe what each approach requires and let the user
 judge value.
