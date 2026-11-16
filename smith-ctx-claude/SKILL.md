@@ -108,8 +108,9 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 
 **Automatic continuation (background sessions; `CTX_AUTO_RESET_DISPATCH=0`
 in a settings `env` block turns it off):** once the checkpoint is written,
-the hook starts a background session named `continue: «label»` that restores
-it, so no `/clear` is typed. The block reason says which case applies.
+the hook starts a background session that restores it, so no `/clear` is
+typed; the session is named `«time» «label»`, where «time» is the
+checkpoint's time to the minute. The block reason says which case applies.
 Checkpoint as above, then stop; do not tell the user to `/clear` unless the
 hook then reports that no session was started; every notice of the hook
 starts with a `[SMITH_CTX_«reason»]` code and says why. Conditions and limits:

@@ -267,7 +267,7 @@ outside.
   Sessions, flags and the memory file are removed at the end.
 - Passing output: a `stop_hook_summary` of the first session holds an error
   starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `; a
-  session named `continue: «label»` with another id appears, reports the
+  session whose name holds «label» appears with another id, reports the
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason, with no code. The record's observation

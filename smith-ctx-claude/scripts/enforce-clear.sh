@@ -201,7 +201,7 @@ remove_abandoned_attempt_markers() {
 dispatch_successor_session() {
     local hook_cwd="${HOOK_CWD:-${PWD:-}}"
     local own_key physical_cwd physical_key pending_reload attempt_marker
-    local eligible_flags flag label name prompt mode output reason
+    local eligible_flags flag label checkpoint_time name prompt mode output reason
     local launch_options=()
     own_key=$(session_key "" "$hook_cwd") || return 0
     physical_cwd=$(cd -- "$hook_cwd" 2>/dev/null && pwd -P) || physical_cwd="$hook_cwd"
@@ -228,7 +228,8 @@ dispatch_successor_session() {
     fi
     printf '%s\n' "$eligible_flags" >> "$attempt_marker"
     label=$(sed -n '4p' "$flag")
-    name="continue: ${label}"
+    checkpoint_time=$(sed -n '2p' "$flag")
+    name="${checkpoint_time:0:16} ${label}"
     prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."
     mode=$(jq -r '.permission_mode // empty' <<<"$INPUT" 2>/dev/null)
     launch_options=(--bg --name "$name")

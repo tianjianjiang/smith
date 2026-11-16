@@ -234,7 +234,7 @@ args=()
 while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
 [ "${args[0]}" = --bg ] || fail "first argument should be --bg: ${args[*]}"
 [ "${args[1]}" = --name ] || fail "second argument should be --name: ${args[*]}"
-[ "${args[2]}" = "continue: $LABEL" ] || fail "the name should be exactly continue: «label»: ${args[2]}"
+[ "${args[2]}" = "2026-01-01T01:00 $LABEL" ] || fail "the name should be exactly the checkpoint time to the minute, then the label: ${args[2]}"
 [ "${args[3]}" = --permission-mode ] && [ "${args[4]}" = acceptEdits ] || fail "the permission mode of the input should be passed on: ${args[*]}"
 [ "${args[5]}" = -- ] || fail "-- should follow the options: ${args[*]}"
 [ "$(cat "$CALLS_LOG.penultimate")" = -- ] || fail "-- should come immediately before the prompt: $(cat "$CALLS_LOG.penultimate")"
@@ -296,7 +296,7 @@ OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 [ "$(call_count)" -eq 1 ] || fail "several matching flags should dispatch once, got $(call_count) calls: $OUT"
 args=()
 while IFS= read -r line; do args+=("$line"); done < <(call_arguments)
-[ "${args[2]}" = "continue: zq_newest_label" ] || fail "the newest matching flag should win over glob order and over newer flags that do not match: ${args[2]}"
+[ "${args[2]}" = "2026-01-01T00:00 zq_newest_label" ] || fail "the newest matching flag should win over glob order and over newer flags that do not match: ${args[2]}"
 [ ! -e "$NEWEST_FLAG" ] || fail "the dispatched flag should be consumed"
 [ -f "$OLDER_MATCHING_FLAG" ] && [ -f "$FIRST_IN_GLOB_ORDER_FLAG" ] || fail "the older flags should stay"
 pass "the newest of several matching fresh flags is dispatched and consumed"
@@ -402,7 +402,7 @@ FLAG_B="$TMP/plans/.pending-memory-restore-20260101T000000-0"
 write_named_flag "$FLAG_B" zq_flag_b_label "$PHYSICAL_KEY" 202601010200.00
 OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
 [ "$(call_count)" -eq 2 ] || fail "a newer flag B after a failed flag A should be tried, got $(call_count) calls: $OUT"
-[ "$(grep -c '^continue: zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "the second call should be for flag B: $(cat "$CALLS_LOG")"
+[ "$(grep -c '^2026-01-01T00:00 zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "the second call should be for flag B: $(cat "$CALLS_LOG")"
 OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
 [ "$(call_count)" -eq 2 ] || fail "after A and B both failed, a later stop should make no call, got $(call_count) calls: $OUT"
 [ -f "$RESTORE_FLAG" ] && [ -f "$FLAG_B" ] || fail "both failed flags should stay for /clear"
@@ -413,7 +413,7 @@ write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 write_named_flag "$FLAG_B" zq_flag_b_label "$PHYSICAL_KEY" 202601010200.00
 OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
-[ "$(call_count)" -eq 1 ] && [ "$(grep -c '^continue: zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "with two eligible flags the first stop should try B only: $(cat "$CALLS_LOG")"
+[ "$(call_count)" -eq 1 ] && [ "$(grep -c '^2026-01-01T00:00 zq_flag_b_label$' "$CALLS_LOG")" -eq 1 ] || fail "with two eligible flags the first stop should try B only: $(cat "$CALLS_LOG")"
 for later_stop in second third; do
   OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
   [ "$(call_count)" -eq 1 ] || fail "the $later_stop stop after B failed should make no call, got $(call_count) calls: $OUT"
