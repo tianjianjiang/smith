@@ -10,9 +10,7 @@ silent_count=0
 fail() { echo "FAIL: $1"; exit 1; }
 run() { printf '%s' "$1" | node "$HOOK"; }
 asks() { run "$2" | grep -q '"permissionDecision":"ask"' || fail "$1: expected ask"; }
-json_string() {
-  printf '%s' "$1" | awk 'BEGIN { printf "\"" } { gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); gsub(/\r/, "\\r"); printf "%s%s", (NR > 1 ? "\\n" : ""), $0 } END { printf "\"" }'
-}
+. "$HERE/lib/json-string.sh"
 silent_inputs_are_json() {
   node -e '
     const fs = require("fs");

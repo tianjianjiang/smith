@@ -28,9 +28,7 @@ printf '%s\n' \
   '{"type":"assistant","message":{"content":[{"type":"text","text":"working"}]}}' \
   > "$NOTHING_LOADED"
 
-json_string() {
-  printf '%s' "$1" | awk 'BEGIN { printf "\"" } { gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); gsub(/\r/, "\\r"); printf "%s%s", (NR > 1 ? "\\n" : ""), $0 } END { printf "\"" }'
-}
+. "$HERE/lib/json-string.sh"
 
 extra_fields() {
   fields="${1#\{}"
