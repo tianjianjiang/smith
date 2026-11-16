@@ -73,6 +73,13 @@ out=$(sh "$dir/run-all.sh" 2>&1) && fail "a failing test must still fail the sui
 printf '%s\n' "$out" | grep -q 'FAIL.*gamma-breaks' || fail "the report must name the failing test file, got: $out"
 printf '%s\n' "$out" | grep -q 'boom' || fail "the failing test's own output must be shown, got: $out"
 
+dir=$(suite stderr-failure)
+printf '#!/bin/sh\necho oops >&2\nexit 3\n' > "$dir/delta-stderr.test.sh"
+fake_test "$dir" echo-passes 0
+out=$(sh "$dir/run-all.sh" 2>&1) && fail "a test exiting 3 must fail the suite"
+printf '%s\n' "$out" | grep -q 'FAIL.*delta-stderr' || fail "a test exiting 3 must be named as failed, got: $out"
+printf '%s\n' "$out" | grep -q 'oops' || fail "a failing test's stderr must be shown, got: $out"
+
 dir=$(suite "folder with spaces")
 fake_test "$dir" alpha-spaced 0
 out=$(sh "$dir/run-all.sh" 2>&1) || fail "a folder path with spaces must still run its tests, got: $out"
@@ -89,5 +96,14 @@ fake_test "$dir" alpha-serial 0
 fake_test "$dir" beta-serial 0
 out=$(RUN_ALL_JOBS=1 sh "$dir/run-all.sh" 2>&1) || fail "RUN_ALL_JOBS=1 must still run the suite, got: $out"
 [ -f "$dir/alpha-serial.ran" ] && [ -f "$dir/beta-serial.ran" ] || fail "RUN_ALL_JOBS=1 must run every test"
+
+dir=$(suite bad-jobs)
+fake_test "$dir" alpha-jobs 0
+for jobs in abc 0 -2; do
+  out=$(RUN_ALL_JOBS=$jobs sh "$dir/run-all.sh" 2>&1) && fail "RUN_ALL_JOBS=$jobs must fail the suite"
+  printf '%s\n' "$out" | grep -q 'RUN_ALL_JOBS must be a positive whole number' ||
+    fail "RUN_ALL_JOBS=$jobs must be reported as the cause, got: $out"
+done
+[ ! -f "$dir/alpha-jobs.ran" ] || fail "an invalid RUN_ALL_JOBS must run no test"
 
 echo "PASS: run-all"

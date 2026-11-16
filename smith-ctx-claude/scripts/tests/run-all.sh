@@ -1,15 +1,19 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
 JOBS="${RUN_ALL_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
+case "$JOBS" in
+  '' | *[!0-9]* | 0)
+    echo "RUN_ALL_JOBS must be a positive whole number, got: $JOBS"
+    exit 1
+    ;;
+esac
 LOGS="$(mktemp -d)"
 trap 'rm -rf "$LOGS"' EXIT
-found=0
 for test_file in "$HERE"/*.test.sh; do
   [ -f "$test_file" ] || continue
-  found=1
   printf '%s\n' "$test_file"
 done > "$LOGS/tests"
-if [ "$found" = 0 ]; then
+if [ ! -s "$LOGS/tests" ]; then
   echo "NO TESTS FOUND in $HERE"
   exit 1
 fi
