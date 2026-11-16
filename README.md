@@ -113,7 +113,7 @@ smith/
 | Category | Skills |
 |----------|--------|
 | **Core** | `smith-principles`, `smith-standards`, `smith-guidance` |
-| **Commands** (`/smith-X`) | `smith-ship`, `smith-review`, `smith-preflight`, `smith-checkpoint`, `smith-recon`, `smith-tickets` |
+| **Commands** (`/smith-X`) | `smith-ship`, `smith-review`, `smith-preflight`, `smith-checkpoint`, `smith-recon`, `smith-tickets`, `smith-vet` |
 | **Context** | `smith-ctx`, `smith-ctx-claude`, `smith-ctx-kiro`, `smith-ctx-cursor`, `smith-serena` |
 | **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-verification`, `smith-validation`, `smith-postmortem`, `smith-dialectic` |
 | **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |

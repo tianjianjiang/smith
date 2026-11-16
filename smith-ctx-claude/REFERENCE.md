@@ -380,6 +380,9 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-checkpoint" description="/smith-checkpoint — save session state to all 3 memory systems in their formats">`@smith-checkpoint/SKILL.md`</skill>
 <skill name="smith-recon" description="/smith-recon — guided, bounded multi-source investigation; asks sources, cross-verifies, evidence-linked brief">`@smith-recon/SKILL.md`</skill>
 <skill name="smith-tickets" description="/smith-tickets — create Jira tickets by convention (Job Story, Japanese desc, correct parent Epic)">`@smith-tickets/SKILL.md`</skill>
+
+<!-- User-invoked commands (invoke with /name only; model invocation disabled) -->
+<skill name="smith-vet" description="/smith-vet — the user's instruction for independent subagent lenses, with pointers to each lens skill">`@smith-vet/SKILL.md`</skill>
 </available_skills>
 ```
 
@@ -503,6 +506,8 @@ documentation and router-trigger design.
 **smith-analysis**: Reasoning frameworks, problem decomposition and cause finding. Use when planning an implementation, estimating scope, breaking down a complex task, assessing risk, debugging, or when a bug or test failure is reported.
 
 **smith-dialectic**: Socratic interview that stress-tests a plan. Use when the user asks to grill, challenge, interrogate or stress-test a plan, to play devil's advocate, or wants shared understanding before implementing.
+
+**smith-vet**: Independent subagent lenses on a plan, design or change. Use when the user runs /smith-vet.
 
 ### Language-Specific
 
