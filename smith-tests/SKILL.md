@@ -14,7 +14,10 @@ description: Testing standards and test-driven development (TDD). Use when writi
 - Separate unit (`tests/unit/`) and integration (`tests/integration/`) tests
 - Use the virtual env runner for pytest (`poetry run` or `uv run`)
 - Write tests before implementation (TDD)
-- Run the full test suite proactively after code changes — do not wait for the user to ask
+- Run proactively after code changes, without waiting to be asked, every
+  changed test and every test that depends, directly or transitively, on the
+  changed code; run the full suite only when that set cannot be determined
+  for certain
 - Run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
 - Run explicit test paths instead of `pytest -m "not integration"` when the folder structure is mirrored — that flag causes import conflicts
 - Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
@@ -69,7 +72,14 @@ See `@smith-ralph/SKILL.md` for full patterns.
 
 ## Before You Finish
 
-**Run tests** (use project's virtual env runner):
+**Run tests** with the project's virtual env runner: every changed test and
+every test that depends, directly or transitively, on the changed code, or
+the project's full suite when that set cannot be determined for certain:
+```shell
+VENV_RUNNER pytest «reachable unit test paths» -v
+VENV_RUNNER pytest «reachable integration test paths» -v
+```
+In the usual layout the full suite is both folders:
 ```shell
 VENV_RUNNER pytest tests/unit/ -v
 VENV_RUNNER pytest tests/integration/ -v
