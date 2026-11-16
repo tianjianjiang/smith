@@ -97,6 +97,14 @@ fake_test "$dir" beta-serial 0
 out=$(RUN_ALL_JOBS=1 sh "$dir/run-all.sh" 2>&1) || fail "RUN_ALL_JOBS=1 must still run the suite, got: $out"
 [ -f "$dir/alpha-serial.ran" ] && [ -f "$dir/beta-serial.ran" ] || fail "RUN_ALL_JOBS=1 must run every test"
 
+dir=$(suite odd-entries)
+fake_test "$dir" alpha-real 0
+mkdir "$dir/beta-folder.test.sh"
+ln -s "$dir/nowhere" "$dir/gamma-dangling.test.sh"
+out=$(sh "$dir/run-all.sh" 2>&1) && fail "a *.test.sh that is not a runnable file must fail the suite, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL.*beta-folder' || fail "a folder named *.test.sh must be named as failed, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL.*gamma-dangling' || fail "a dangling *.test.sh link must be named as failed, got: $out"
+
 dir=$(suite bad-jobs)
 fake_test "$dir" alpha-jobs 0
 for jobs in abc 0 -2; do
