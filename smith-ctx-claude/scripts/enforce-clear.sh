@@ -102,17 +102,21 @@ transcript_readable() {
 }
 
 stop_hook_records() {
-    jq -R -c 'fromjson? | select(type == "object")
+    jq -R -c 'def attachment_errors:
+            if .type != "hook_blocking_error" then []
+            elif (.blockingError | type) == "object" and (.blockingError.blockingError | type) == "string" then [.blockingError.blockingError]
+            else null end;
+        fromjson? | select(type == "object")
         | if .type == "system" and .subtype == "stop_hook_summary" and (has("hookLabel") | not) then {id: .toolUseID, errors: .hookErrors}
           elif .type == "attachment" and (.attachment | type) == "object" and .attachment.hookEvent == "Stop" then
-            {id: .attachment.toolUseID, errors: (if .attachment.type == "hook_blocking_error" then [.attachment.blockingError.blockingError?] else [] end)}
+            {id: .attachment.toolUseID, errors: (.attachment | attachment_errors)}
           else empty end' "$TRANSCRIPT_PATH"
 }
 
 latest_stop_batch_verdict() {
     local records
     records=$(stop_hook_records 2>/dev/null) || { printf 'unknown'; return; }
-    jq -r -s --arg code "[${AUTO_RESET_BLOCKED}] " '
+    jq -r -s --arg code "$(coded "$AUTO_RESET_BLOCKED" "")" '
         if length == 0 then "unknown" else
           last.id as $id
           | (if $id == null then [last] else map(select(.id == $id)) end) as $batch
@@ -151,11 +155,17 @@ report_unreadable_transcript() {
 }
 
 context_still_critical() {
-    local cwd_key="$1" percentage
+    local cwd_key="$1" pending_reload="$2" attempt_marker="$3" percentage verdict
     percentage=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key")
     [[ "$percentage" =~ ^[0-9]+$ ]] || percentage=0
     [[ $percentage -ge $CRITICAL_PCT ]] && return 0
-    [[ "$(latest_stop_batch_verdict)" == blocked ]] || return 1
+    verdict=$(latest_stop_batch_verdict)
+    if [[ "$verdict" == unknown ]] && pending_reload_names_this_session "$pending_reload" && ! block_already_attempted "$attempt_marker" "$pending_reload"; then
+        stopped_without_successor SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "the transcript ${TRANSCRIPT_PATH} holds no stop hook record in a known format, and .pending-reload-${cwd_key} records a block of this session that no attempt has handled"
+        return 1
+    fi
+    [[ "$verdict" == blocked ]] || return 1
+    block_already_attempted "$attempt_marker" "$pending_reload" && return 1
     if [[ $percentage -eq 0 ]]; then
         stopped_without_successor SMITH_CTX_CONTEXT_UNMEASURED "after this hook blocked the stop, the context level could not be measured from the transcript ${TRANSCRIPT_PATH}"
     else
@@ -208,7 +218,7 @@ dispatch_successor_session() {
         report_unreadable_transcript "$own_key" "$pending_reload" "$attempt_marker"
         return 0
     fi
-    context_still_critical "$own_key" || return 0
+    context_still_critical "$own_key" "$pending_reload" "$attempt_marker" || return 0
     eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
     flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then

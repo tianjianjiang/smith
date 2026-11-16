@@ -196,7 +196,7 @@ typed into a terminal. Limits:
   `[SMITH_CTX_NO_CHECKPOINT]`, `[SMITH_CTX_PENDING_RELOAD_MISSING]`,
   `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`,
   `[SMITH_CTX_CONTEXT_UNMEASURED]` and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
-- The hook knows it blocked this session from the latest Stop batch in the
+- The hook takes the evidence that it blocked this session from the latest Stop batch in the
   transcript (records sharing one `toolUseID`): an error of its
   `stop_hook_summary` or its `hook_blocking_error` attachment starting with
   `[SMITH_CTX_AUTO_RESET_BLOCKED] `. The summary can be skipped

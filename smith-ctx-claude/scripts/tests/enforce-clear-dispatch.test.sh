@@ -478,6 +478,7 @@ reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+printf '%s\n' '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"],"toolUseID":"batch-other-hook"}' >> "$TMP/transcript.jsonl"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "below the threshold with a matching fresh flag" "$OUT" "$STATUS"
@@ -495,6 +496,7 @@ reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 make_transcript "$DEFAULT_CRITICAL_PCT"
+printf '%s\n' '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"],"toolUseID":"batch-other-hook"}' >> "$TMP/transcript.jsonl"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "raised threshold, context at the default threshold" "$OUT" "$STATUS"
@@ -799,6 +801,43 @@ expect_explained_stop "a context level that cannot be measured after this hook's
 [ -f "$RESTORE_FLAG" ] || fail "an unmeasured context level: the restore flag should stay"
 case "$OUT" in *"none is needed"*) fail "an unmeasured context level must not be reported as no longer critical: $OUT" ;; esac
 pass "a context level that cannot be measured is not reported as 0% and no longer critical"
+
+for transcript_kind in measured unmeasured; do
+  reset_state
+  if [ "$transcript_kind" = measured ]; then make_transcript $((DEFAULT_CRITICAL_PCT - 1)); else : > "$TMP/transcript.jsonl"; fi
+  append_stop_hook_summary "$BLOCK_REASON"
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  touch -t "$NEWER" "$OWN_MARKER"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_no_dispatch "this hook's block already attempted, $transcript_kind context below the threshold" "$OUT" "$STATUS"
+done
+pass "below the threshold, a block of this hook that was already attempted stays silent"
+
+for transcript_kind in measured unmeasured; do
+  reset_state
+  if [ "$transcript_kind" = measured ]; then make_transcript $((DEFAULT_CRITICAL_PCT - 1)); else : > "$TMP/transcript.jsonl"; fi
+  append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hook_errors":["renamed"],"toolUseID":"batch-renamed"}'
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_explained_stop "an unknown record format with a fresh pending reload file, $transcript_kind context" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format, and \.pending-reload-$CWD_KEY records a block of this session"
+  touch -t "$NEWER" "$OWN_MARKER"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_no_dispatch "an unknown record format with a handled pending reload file, $transcript_kind context" "$OUT" "$STATUS"
+done
+pass "below the threshold, an unknown record format is reported while this session's block is unhandled"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"attachment","attachment":{"type":"hook_blocking_error","hookEvent":"Stop","toolUseID":"batch-no-error","blockingError":{"command":"x"}}}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a blocking error attachment without its error" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format"
+pass "a blocking error attachment without its error text is an unknown format, as a summary without errors is"
 
 reset_state
 write_pending_reload

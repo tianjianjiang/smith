@@ -271,7 +271,7 @@ outside.
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason, with no code. The record's observation
-  `ranInTheDefaultProfile` says whether `CLAUDE_CONFIG_DIR` was left unset.
+  `ranInTheDefaultProfile` says whether the eval used `~/.claude`.
 - Limit: a copy of `enforce-clear.sh` that the profile's user settings
   register also runs. Run in the default profile, an installed older copy
   blocks with today's reason beside the new one; the new reason's presence,
@@ -279,8 +279,8 @@ outside.
   profile of the conditions eval below (`CLAUDE_CONFIG_DIR` set to it and
   `SMITH_PROBE_SESSION_FOLDER` a new folder under its `probes`), that
   profile registers this checkout's copy, so the first session's Stop hook
-  records list it twice with the same reason, and the control's twice with
-  today's reason. The recorded run of 2026-11-16 used the eval profile.
+  records list it more than once with the same reason, and the control's
+  with today's reason. The recorded run of 2026-11-16 used the eval profile.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
