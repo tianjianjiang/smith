@@ -1,0 +1,29 @@
+{
+  "skill": "smith-validation",
+  "should_trigger": [
+    "Here is the latest revision of the onboarding plan. Check it against what the product owner actually asked for in the kickoff thread, word by word, before I send it back.",
+    "My request said to compare perspectives on the migration. The new draft talks about options instead. Does it still answer what I asked?",
+    "Before this design doc goes to the platform team, have someone who has never seen our discussion read it and tell me which terms and decisions they cannot follow.",
+    "The client asked for a short summary with a recommendation and its cost. Does the deliverable in docs/summary.md serve that, or did we drift?",
+    "You rewrote my instruction into a task list. Did any part of the original sentence get lost on the way?",
+    "Is this README fit for a new contributor who only wants to run the tests locally, or is it written for us?",
+    "Compare the final report with the stakeholder's original brief and mark each thing they asked for as delivered, missing or changed.",
+    "The decision memo asks the director to pick a vendor. Could a reader with only this page actually make that choice?",
+    "We keep rewriting the release notes. Check that the latest version still covers everything the support lead asked for in the original message.",
+    "Before I hand this proposal to finance, check that it answers the question they asked rather than a question we found more interesting.",
+    "The export feature meets every line of its spec, but the finance team asked for it so they can close the month without spreadsheets. Check whether it actually serves that use in their real month-end workflow.",
+    "The onboarding checklist in docs/onboarding.md passed review, but the request was that a new hire can get a working laptop on the first day. Walk through it as that new hire and tell me whether it really gets them there."
+  ],
+  "should_not_trigger": [
+    "Login fails intermittently in production, maybe one request in fifty. Don't guess a fix; work out what's actually causing it.",
+    "You said the cache isn't the cause because grep for `cache.invalidate` in the logs returned nothing. How sure are you that the search itself was working?",
+    "Validate that config/pipelines.yaml matches the JSON schema in schemas/pipeline.json and list every violation.",
+    "Add zod validation to the request body of POST /api/orders so a missing `customerId` is rejected.",
+    "Poke holes in my plan to move the auth module into its own service. Interview me until the weak assumptions come out.",
+    "Write the postmortem for last week's checkout outage in the blameless template.",
+    "Add pytest coverage for utils/dates.py and run it with uv.",
+    "Break down the problem of reducing our cloud bill into non-overlapping categories.",
+    "Research what the vector database docs say about multi-tenant index limits and cite the sources.",
+    "Run the full multi-reviewer pass on this branch and keep going until no new findings come back."
+  ]
+}

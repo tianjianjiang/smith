@@ -331,7 +331,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-clarity" description="Cognitive traps, logic fallacies">`@smith-clarity/SKILL.md`</skill>
 <skill name="smith-design" description="SOLID principles, architecture">`@smith-design/SKILL.md`</skill>
 <skill name="smith-verification" description="Verification of claims, findings, status reports and requirements">`@smith-verification/SKILL.md`</skill>
-<skill name="smith-validation" description="Stub that forwards to smith-verification and smith-analysis">`@smith-validation/SKILL.md`</skill>
+<skill name="smith-validation" description="Fitness for intended use, in the stakeholder's own words">`@smith-validation/SKILL.md`</skill>
 <skill name="smith-postmortem" description="Incident postmortem methodology">`@smith-postmortem/SKILL.md`</skill>
 <skill name="smith-dialectic" description="Socratic plan interview against project docs and code">`@smith-dialectic/SKILL.md`</skill>
 
@@ -524,7 +524,7 @@ documentation and router-trigger design.
 
 **smith-verification**: Verification of claims, findings, status reports and requirements. Use when a finding, a status or a count is about to be reported as fact, when a claim needs its evidence or a disproof attempt, when a surprising result may contradict a recorded decision, or when checking that work meets every part of its requirement as its author stated it.
 
-**smith-validation**: Stub that forwards to smith-verification and smith-analysis. Use when a reference names smith-validation; load smith-verification for claims, findings, status reports and requirements, or smith-analysis for debugging and cause finding.
+**smith-validation**: Validation of fitness for intended use, in the stakeholder's own words. Use when checking a plan, document, deliverable or revision against the request it answers, when a revision may have dropped or replaced part of that request, or before handing a page to a reader who has not seen the work. Whether the work meets its specification and its claims hold is the separate question of verification; load smith-verification for it.
 
 **smith-automation**: Claude Code scheduling primitives (/loop, cron, ScheduleWakeup, Monitor, /schedule). Use when setting up a recurring or scheduled task, polling, or a reminder.
 

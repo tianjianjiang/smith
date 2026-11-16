@@ -154,6 +154,9 @@ Handbook, revision 2
 - @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, making changes
 - `@smith-analysis/SKILL.md#hypothesis-testing-v1` - Strong Inference and
   falsification, which claim checks apply
+- `@smith-validation/SKILL.md` - Fitness for intended use; run it too
+  when the object answers a stakeholder's request, and report each
+  result under its own name
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies, confirmation bias, premature closure
 - `@smith-subagents/SKILL.md` - Read-only skeptic role, blind evaluator
 - `@smith-research/SKILL.md` - Source-citation format for evidence per claim
