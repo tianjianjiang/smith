@@ -1,0 +1,66 @@
+title: A revision that drops a requested element is reported as a fitness defect
+description: >
+  Goal eval. The request sits inside a chat thread export, with a later
+  follow-up request; the revision drops the owner of each step that the first
+  version carried, without the requester's approval. The with-change
+  smith-validation quotes the request verbatim with a locator and gives each
+  requested element a verdict; the baseline (origin/main) is a hypothesis
+  testing and root cause skill with no such rule.
+input:
+  prompt: |
+    Use the smith-validation skill to check whether docs/release-plan-v2.md
+    still serves what was asked in notes/release-thread.md.
+    docs/release-plan-v1.md is the previous version.
+context:
+  files:
+    "notes/release-thread.md": |
+      # release-payments-api thread export
+
+      2026-11-02T10:14:03+09:00 Dana: Morning. payments-api 4.2 has to ship before the holiday freeze.
+      2026-11-02T10:15:40+09:00 Dana: Can you write up the release plan for payments-api 4.2? It needs the rollback steps and the owner of each step, so on-call knows who to page.
+      2026-11-02T10:21:12+09:00 Lee: I can take the database migration step.
+      2026-11-03T09:02:55+09:00 Dana: One more thing: put the code-freeze date in the plan too, it is 2026-12-15.
+      2026-11-03T09:05:10+09:00 Lee: ack
+    "docs/release-plan-v1.md": |
+      # payments-api 4.2 release plan
+
+      Code freeze: 2026-12-15.
+
+      | Step | Owner | Rollback |
+      |---|---|---|
+      | Run the database migration 0042 | Lee | Run migration 0042 down; restore the snapshot taken before the step |
+      | Deploy api 4.2 to canary | Dana | Shift canary traffic back to 4.1 |
+      | Promote 4.2 to all regions | Dana | Redeploy the 4.1 image to every region |
+    "docs/release-plan-v2.md": |
+      # payments-api 4.2 release plan
+
+      Revised for readability.
+
+      Code freeze: 2026-12-15.
+
+      1. Run the database migration 0042.
+         Rollback: run migration 0042 down and restore the snapshot taken before the step.
+      2. Deploy api 4.2 to canary.
+         Rollback: shift canary traffic back to 4.1.
+      3. Promote 4.2 to all regions.
+         Rollback: redeploy the 4.1 image to every region.
+judges:
+  - id: locator
+    type: script
+    script_path: evals/fixtures/scripts/check-locator.sh
+    timeout_seconds: 30
+  - id: fitness
+    type: agent_judge
+    model: anthropic/claude-fable-5-2
+    pass_threshold: 1.0
+    context:
+      profile: standard
+      final_message: include
+      transcript: include
+      workspace_diff: omit
+    criteria:
+      - "The agent's own messages (not tool output) quote Dana's request from notes/release-thread.md word for word, including the words asking for the rollback steps and for the owner of each step, and give that quote a locator in the thread file."
+      - "The agent's own messages (not tool output) also quote the later request for the code-freeze date and judge it."
+      - "The agent's own messages (not tool output) give each requested element (the release plan, the rollback steps, the owner of each step, the code-freeze date) a verdict of served, not served or changed, and back each verdict with evidence from docs/release-plan-v2.md."
+      - "The agent's own messages (not tool output) report the missing owner of each step as a defect of docs/release-plan-v2.md and as a regression, because docs/release-plan-v1.md had an owner for every step."
+      - "The agent's own messages (not tool output) do not treat 'Revised for readability' or any other note in the revision as the requester's approval of dropping the owners."

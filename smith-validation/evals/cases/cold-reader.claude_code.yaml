@@ -1,0 +1,58 @@
+title: A page is checked by a fresh subagent that sees only the page
+description: >
+  Goal eval, Claude Code only (the script judge reads Claude Code's Agent tool
+  calls). The reviewer may not edit the page. The page leaves the term BRT
+  undefined and gives no threshold for the rollback decision it asks of its
+  reader. The with-change smith-validation hands the page alone to a fresh
+  subagent and reports what it could not resolve; the baseline (origin/main)
+  has no cold reader method.
+input:
+  prompt: |
+    Use the smith-validation skill to review docs/oncall-rollback.md for
+    fitness before it goes to new on-call engineers. The request it answers
+    is in notes/request.md. Do not edit the page; report your findings.
+context:
+  files:
+    "notes/request.md": |
+      # Request from the payments team lead, 2026-11-04
+
+      Write one page that lets a new on-call engineer decide alone, at night,
+      whether to roll back a payments deploy, without waking anyone up.
+    "docs/oncall-rollback.md": |
+      # Rolling back a payments deploy
+
+      Deploys go out through the canary (the first 5% of traffic, served by
+      the payments-canary pool) and are promoted to all regions after 30
+      minutes.
+
+      ## When to roll back
+
+      Roll back when the error budget is at risk. If you are unsure, keep
+      the canary running and watch the payments dashboard.
+
+      ## How to roll back
+
+      1. Run the BRT check from the on-call laptop.
+      2. Shift canary traffic back to the previous release in the deploy
+         console (Deploys, then payments-api, then Roll back).
+      3. Post the deploy id and the time of the rollback in the payments
+         on-call channel.
+judges:
+  - id: blind-spawn
+    type: script
+    script_path: evals/fixtures/scripts/check-cold-reader.sh
+    timeout_seconds: 30
+  - id: findings
+    type: agent_judge
+    model: anthropic/claude-fable-5-2
+    pass_threshold: 1.0
+    context:
+      profile: standard
+      final_message: include
+      transcript: omit
+      workspace_diff: omit
+    criteria:
+      - "The reply reports that the page uses the term BRT (the BRT check) without saying what it is or how to run it."
+      - "The reply reports that the rollback decision cannot be made from the page alone because 'the error budget is at risk' has no threshold or measure a new engineer could check."
+      - "The reply states the purpose a reader takes from the page and compares it with the request in notes/request.md, which asks for a page that lets a new on-call engineer decide alone at night."
+      - "The reply presents these as findings for the page's author and does not claim to have changed the page."
