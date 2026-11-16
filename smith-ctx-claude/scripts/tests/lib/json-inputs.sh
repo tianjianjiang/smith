@@ -20,7 +20,7 @@ json_files_are_valid() {
         text = fs.readFileSync(`${dir}/${name}`, "utf8");
         JSON.parse(text);
       } catch (error) {
-        broken.push(`${name}: ${text ?? error.message}`);
+        broken.push(`${name}: ${error.message}${text === undefined ? "" : ` in ${JSON.stringify(text)}`}`);
       }
     }
     if (broken.length > 0) {
