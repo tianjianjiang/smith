@@ -198,6 +198,8 @@ instructions with embedded data, e.g. subagent prompts.)
 ## Related
 
 - `@smith-xml/SKILL.md` - XML tags for runtime prompts (not SKILL.md bodies)
+- Behaviour evals for a skill live in its `evals/` folder;
+  `smith-skills/scripts/behaviour-eval.mjs` runs them
 - @smith-ctx/SKILL.md - Context management strategies
 - @smith-principles/SKILL.md - Core coding principles
 
