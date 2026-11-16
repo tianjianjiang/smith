@@ -1267,6 +1267,9 @@ read the prior model, and each session leaves a small
 Each ships a self-check (fixture JSON → stdin, assert exit code + stdout):
 `smith-ctx-claude` hooks under `smith-ctx-claude/scripts/tests/run-all.sh`,
 `smith-standards` hooks under `smith-standards/scripts/tests/run-all.sh`.
+The `smith-ctx-claude` runner runs every `*.test.sh` in its folder in name
+order and fails when it finds none, so adding a test means adding the file;
+`run-all.test.sh` checks that behaviour.
 
 ## Registration
 

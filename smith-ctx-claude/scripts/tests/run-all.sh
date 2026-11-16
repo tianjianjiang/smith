@@ -1,43 +1,15 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
-for check in \
-  context-warning \
-  enforce-clear \
-  enforce-clear-dispatch \
-  checkpoint-label \
-  external-write-guard \
-  askuserquestion-arity \
-  volatile-artifact-guard \
-  branch-rename-open-pr \
-  coined-shorthand-lint \
-  review-orchestration-guard \
-  skill-read-substitution-guard \
-  skill-claim-lint \
-  skills-invoked \
-  skill-load-gate \
-  skill-router \
-  gh-stack-guard \
-  attribution \
-  attribution-guard \
-  git-command-tokenizer \
-  transcript-turns \
-  exit-plan-mode-guard \
-  amend-shared-commit-guard \
-  stack-merge-guard \
-  rtk-find-symlink-guard \
-  subagent-contract-guard \
-  personal-data-guard \
-  spawn-ledger-report \
-  post-merge-pull-reminder \
-  coderabbit-status-check \
-  tool-output-hygiene \
-  correction-census \
-  skill-lint \
-  skill-trigger-eval \
-  on-session-compact
-do
-  bash "$HERE/$check.test.sh" || status=1
+found=0
+for test_file in "$HERE"/*.test.sh; do
+  [ -f "$test_file" ] || continue
+  found=1
+  bash "$test_file" || status=1
 done
+if [ "$found" = 0 ]; then
+  echo "NO TESTS FOUND in $HERE"
+  exit 1
+fi
 [ "$status" = 0 ] && echo "ALL PASS" || echo "SOME FAILED"
 exit "$status"
