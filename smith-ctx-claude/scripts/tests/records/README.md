@@ -343,7 +343,8 @@ are not measured here.
   links the profile's `skills` to this checkout and writes its
   `settings.json`: the Stop hook is this checkout's `enforce-clear.sh`
   through that link, the permission rules are the default profile's with
-  its folder replaced by the eval profile's, and `SERENA_HOME` points at
+  its folder replaced by the eval profile's and without the allow rules
+  that still name the installed copy, and `SERENA_HOME` points at
   the run's own folder. Each measurement starts one background session in
   a new folder under `probes`, outside any repository; the folder lowers
   the threshold, is a Serena project of that `SERENA_HOME`, and names a
@@ -362,15 +363,16 @@ are not measured here.
   `probes`, remove the `zq-eval-` project with `basic-memory project
   remove`, and delete the flag files in the profile's `plans`.
 - Passing output: the eval profile is logged in, uses its own folder and
-  trusts `probes`; its skills are this checkout and its Stop hook is this
-  checkout's with the dispatch step; the first session's block reason
+  trusts `probes`; its skills are this checkout, its Stop hook is this
+  checkout's with the dispatch step, and no allow rule names the
+  installed copy; the first session's block reason
   names the continuation, its checkpoint is a memory of the folder's
   Serena project, and a second session in the folder starts with the
   hook's restore prompt. With the launch refused, no other session
   appears, the restore flag stays, the attempt is recorded, and the first
   session's transcript holds the hook's failure message naming the switch.
   No probe session ran a command on a path of the installed copy
-  (`$HOME/.claude/` or `~/.smith/`), no flag of the runner's own profile
+  (`$HOME/.claude/`, `~/.claude/` or `~/.smith/`), no flag of the runner's own profile
   names the run folder, and the Basic-Memory project is no longer listed.
 - A run fails, and is rerun, when a probe session types a path of the
   installed copy itself (`$HOME/.claude/skills/...`) instead of the
@@ -380,6 +382,10 @@ are not measured here.
   printed nothing and no second session started, while a later run with
   the same settings, and a run of the hook under a shell trace, continued
   the session.
+- The record names the Serena version that `uvx` resolved
+  (`serenaVersion`); the eval takes the same unpinned Serena that
+  `smith-checkpoint/scripts/write-checkpoint.sh` runs, so the probe
+  projects match what the checkpoint writes into.
 - Optional parameters: `SMITH_EVAL_CONFIG_DIR`,
   `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,

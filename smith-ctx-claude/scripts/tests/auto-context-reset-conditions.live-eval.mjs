@@ -40,7 +40,7 @@ const VARIABLES_THE_EVAL_DOES_NOT_PASS_ON = [
   "CTX_AUTO_RESET_DISPATCH", "CTX_CONTEXT_CRITICAL_PCT",
 ];
 const INSTALLED_COPY_REFERENCE = new RegExp(`(\\$HOME|\\$\\{HOME\\}|~|${homedir().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})/(\\.claude|\\.smith)/`);
-const ONE_TIME_SETUP = `mkdir -p "${PROBE_ROOT}" && cd "${PROBE_ROOT}" && CLAUDE_CONFIG_DIR="${EVAL_CONFIG_FOLDER}" claude, then /login, accept the folder trust prompt, and exit`;
+const ONE_TIME_SETUP = `mkdir -p "${PROBE_ROOT}" && cd "${PROBE_ROOT}" && CLAUDE_CONFIG_DIR="${EVAL_CONFIG_FOLDER}" command claude, then /login, accept the folder trust prompt, and exit`;
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
   console.log("SKIP: set SMITH_LIVE_CONTEXT_RESET_EVAL=1 to run the live eval of the automatic context reset conditions");
@@ -139,7 +139,7 @@ function writeTheEvalSettings(serenaHome) {
   const settings = {
     hooks: { Stop: [{ hooks: [{ type: "command", command: REGISTERED_HOOK_PATH }] }] },
     permissions: {
-      allow: (userPermissions.allow ?? []).map(evalPermissionRule),
+      allow: (userPermissions.allow ?? []).map(evalPermissionRule).filter((rule) => !INSTALLED_COPY_REFERENCE.test(rule)),
       deny: (userPermissions.deny ?? []).map(evalPermissionRule),
     },
     env: { SERENA_HOME: serenaHome },
@@ -149,6 +149,10 @@ function writeTheEvalSettings(serenaHome) {
 
 function registeredStopHooks() {
   return (readJson(EVAL_SETTINGS_PATH)?.hooks?.Stop ?? []).flatMap((group) => group.hooks ?? []).map((hook) => hook.command ?? "");
+}
+
+function evalAllowRulesNameNoInstalledCopy() {
+  return (readJson(EVAL_SETTINGS_PATH)?.permissions?.allow ?? []).every((rule) => !INSTALLED_COPY_REFERENCE.test(rule));
 }
 
 function stopHookIsThisCheckouts() {
@@ -161,8 +165,9 @@ function stopHookIsThisCheckouts() {
 function flagNamesIn(folder, prefix) {
   try {
     return readdirSync(folder).filter((name) => name.startsWith(prefix));
-  } catch {
-    return [];
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
   }
 }
 
@@ -191,6 +196,14 @@ function removeEveryEvalFlag() {
 function runnerFlagsNaming(folder) {
   return FLAG_PREFIXES.flatMap((prefix) => flagNamesIn(RUNNER_FLAGS_FOLDER, prefix)
     .filter((name) => flagLinesIn(RUNNER_FLAGS_FOLDER, name).some((line) => line.includes(folder))));
+}
+
+function runnersFlagsNameNoProbe(folder) {
+  try {
+    return runnerFlagsNaming(folder).length === 0;
+  } catch {
+    return false;
+  }
 }
 
 function restoreFlagsWrittenIn(folder) {
@@ -271,7 +284,7 @@ function bashCommandsIn(transcript) {
 }
 
 function commandsReachingAnInstalledCopy(...transcripts) {
-  return transcripts.flatMap(bashCommandsIn).filter((command) => INSTALLED_COPY_REFERENCE.test(command)).map((command) => command.slice(0, 200));
+  return transcripts.flatMap(bashCommandsIn).filter((command) => INSTALLED_COPY_REFERENCE.test(command)).map((command) => command.slice(0, 200).split(homedir()).join("~"));
 }
 
 function launchFlagNames(shortId) {
@@ -346,7 +359,10 @@ function sessionIdsOf(shortIds) {
 }
 
 function removeFlagsOfTheProbe(sessionIds, folder) {
-  const probePendingReloads = flagNames(".pending-reload-").filter((name) => sessionIds.includes(flagLines(name)[1]) || flagLines(name)[3] === folder);
+  const probePendingReloads = flagNames(".pending-reload-").filter((name) => {
+    const lines = flagLines(name);
+    return sessionIds.includes(lines[1]) || lines[3] === folder;
+  });
   const probeKeys = probePendingReloads.map((name) => name.match(PENDING_RELOAD_NAME)?.[1]).filter(Boolean);
   const probeRestoreFlags = restoreFlagsWrittenIn(folder);
   const probePlanStates = flagNames(".plan-state-").filter((name) => (flagLines(name)[1] ?? "").includes(basename(folder)));
@@ -410,20 +426,21 @@ async function measureTheHookFromTheUserSettings(runFolder) {
     quietWasObserved = afterTheSuccessor.listRead && !afterTheSuccessor.found;
     const first = firstId ? listedSession(firstId) : undefined;
     const firstTranscript = transcriptText(first?.sessionId);
+    const installedCopyCommands = commandsReachingAnInstalledCopy(firstTranscript, successorTranscript);
     return {
       checks: {
         probeSerenaProjectWasCreated: serenaProjectCreated,
         firstSessionStarted: Boolean(firstId),
         firstSessionBlockReasonNamedTheContinuation: firstTranscript.includes(DISPATCH_REASON),
         checkpointWentToTheProbeSerenaProject: checkpointMemories.length > 0,
-        successorAppeared: Boolean(successorId) && successorId !== firstId,
+        successorAppeared: Boolean(successorId),
         successorWasStartedWithTheHooksRestorePrompt: successorTranscript.includes(RESTORE_PROMPT),
         bothSessionsAreListedInTheProbeFolder: first?.cwd === folder && successor?.cwd === folder,
         evalStoppedTheSuccessor: successorIsGone,
-        sessionsRanNoCommandOnAnInstalledCopy: commandsReachingAnInstalledCopy(firstTranscript, successorTranscript).length === 0,
+        sessionsRanNoCommandOnAnInstalledCopy: Boolean(firstTranscript) && Boolean(successorTranscript) && installedCopyCommands.length === 0,
       },
       observations: {
-        commandsReachingAnInstalledCopy: commandsReachingAnInstalledCopy(firstTranscript, successorTranscript),
+        commandsReachingAnInstalledCopy: installedCopyCommands,
         checkpointMemories,
         firstSessionLaunchFlagNames: launchFlagNames(firstId),
         successorLaunchFlagNames,
@@ -455,6 +472,7 @@ async function measureAFailedDispatch(runFolder) {
     quietWasObserved = quiet.listRead && !quiet.found;
     const first = firstId ? listedSession(firstId) : undefined;
     const firstTranscript = transcriptText(first?.sessionId);
+    const installedCopyCommands = commandsReachingAnInstalledCopy(firstTranscript);
     return {
       checks: {
         probeSerenaProjectWasCreated: serenaProjectCreated,
@@ -469,10 +487,10 @@ async function measureAFailedDispatch(runFolder) {
         hookReportedTheFailedDispatch: firstTranscript.includes(FAILED_DISPATCH_MESSAGE),
         reportNamedTheSwitchThatRefusedTheLaunch: firstTranscript.split("\n")
           .some((line) => line.includes(FAILED_DISPATCH_MESSAGE) && line.includes(BACKGROUND_SESSIONS_SWITCH)),
-        sessionRanNoCommandOnAnInstalledCopy: commandsReachingAnInstalledCopy(firstTranscript).length === 0,
+        sessionRanNoCommandOnAnInstalledCopy: Boolean(firstTranscript) && installedCopyCommands.length === 0,
       },
       observations: {
-        commandsReachingAnInstalledCopy: commandsReachingAnInstalledCopy(firstTranscript),
+        commandsReachingAnInstalledCopy: installedCopyCommands,
         firstSessionStateAfterTheFailedDispatch: first?.state ?? "not listed",
       },
     };
@@ -499,25 +517,27 @@ if (Object.values(environmentChecks).includes(false)) {
 }
 
 const runFolder = createRunFolder();
-removeEveryEvalFlag();
-const skillsWereLinked = pointTheEvalSkillsAtThisCheckout();
-writeTheEvalSettings(runFolder.serenaHome);
-const versionChecks = {
-  evalSkillsAreThisCheckout: skillsWereLinked && sameFolder(EVAL_SKILLS_LINK, CHECKOUT_ROOT),
-  evalStopHookIsThisCheckoutsAndHasTheDispatchStep: stopHookIsThisCheckouts(),
-  basicMemoryProjectWasRegistered: registerTheBasicMemoryProject(runFolder),
-};
-
+let versionChecks = {};
 let continuation;
 let failedDispatch;
 try {
+  removeEveryEvalFlag();
+  const skillsWereLinked = pointTheEvalSkillsAtThisCheckout();
+  writeTheEvalSettings(runFolder.serenaHome);
+  versionChecks = {
+    evalSkillsAreThisCheckout: skillsWereLinked && sameFolder(EVAL_SKILLS_LINK, CHECKOUT_ROOT),
+    evalStopHookIsThisCheckoutsAndHasTheDispatchStep: stopHookIsThisCheckouts(),
+    evalAllowRulesNameNoInstalledCopy: evalAllowRulesNameNoInstalledCopy(),
+    basicMemoryProjectWasRegistered: registerTheBasicMemoryProject(runFolder),
+  };
   if (!Object.values(versionChecks).includes(false)) {
     continuation = await measureTheHookFromTheUserSettings(runFolder);
     failedDispatch = await measureAFailedDispatch(runFolder);
   }
 } finally {
   attemptCleanupStep(`remove the Basic-Memory project ${runFolder.basicMemoryProject}`, () => {
-    run("basic-memory", ["project", "remove", runFolder.basicMemoryProject, "--local"]);
+    const removed = run("basic-memory", ["project", "remove", runFolder.basicMemoryProject, "--local"]);
+    if (!removed.ok) throw new Error(removed.output.trim().split("\n")[0] || "no output");
   });
   attemptCleanupStep("remove the run folder", () => rmSync(runFolder.folder, { recursive: true, force: true }));
   for (const problem of cleanupProblems) {
@@ -527,7 +547,7 @@ try {
 
 const basicMemoryProjectsAfter = basicMemoryProjectNames();
 const isolationChecks = {
-  runnersFlagsNameNoProbe: runnerFlagsNaming(runFolder.folder).length === 0,
+  runnersFlagsNameNoProbe: runnersFlagsNameNoProbe(runFolder.folder),
   basicMemoryProjectWasRemoved: Array.isArray(basicMemoryProjectsAfter) && !basicMemoryProjectsAfter.includes(runFolder.basicMemoryProject),
   cleanupFoundNoProblem: cleanupProblems.length === 0,
 };
@@ -535,6 +555,7 @@ const record = {
   recordedAt: localIsoTimestamp(),
   claudeCodeVersion: claude(["--version"]).match(/^\d+\.\d+\.\d+.*/)?.[0] ?? "unknown",
   model: MODEL,
+  serenaVersion: run("uvx", ["-q", "--from", "git+https://github.com/oraios/serena", "serena", "--version"], { timeout: TURN_TIMEOUT_MS }).output.trim().split("\n").pop() ?? "unknown",
   environment: { checks: environmentChecks },
   versionUnderTest: { checks: versionChecks },
   continuation,

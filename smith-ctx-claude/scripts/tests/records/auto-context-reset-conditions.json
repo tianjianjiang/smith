@@ -1,7 +1,8 @@
 {
-  "recordedAt": "2026-11-16T17:38:40+09:00",
+  "recordedAt": "2026-11-16T17:58:34+09:00",
   "claudeCodeVersion": "2.1.325 (Claude Code)",
   "model": "haiku",
+  "serenaVersion": "Serena 2.1.1.dev0",
   "environment": {
     "checks": {
       "evalFolderIsNotTheRunnersConfiguration": true,
@@ -14,6 +15,7 @@
     "checks": {
       "evalSkillsAreThisCheckout": true,
       "evalStopHookIsThisCheckoutsAndHasTheDispatchStep": true,
+      "evalAllowRulesNameNoInstalledCopy": true,
       "basicMemoryProjectWasRegistered": true
     }
   },
@@ -32,7 +34,7 @@
     "observations": {
       "commandsReachingAnInstalledCopy": [],
       "checkpointMemories": [
-        "session_ok_ack_context_checkpoint.md"
+        "zq_probe_session_checkpoint.md"
       ],
       "firstSessionLaunchFlagNames": [
         "--permission-mode",
