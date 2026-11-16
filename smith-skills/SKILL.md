@@ -147,12 +147,26 @@ safer cross-platform default. (Checked against
 platform.claude.com's Skill authoring best-practices page and OpenAI's
 GPT-5.5 model guidance — see `@smith-xml/SKILL.md` for the narrower case
 where XML content-tags are still the right tool: runtime prompts that mix
-instructions with embedded data, e.g. subagent prompts.)
+instructions with embedded data, e.g. subagent prompts.) One tag is
+allowed in a SKILL.md body: an empty anchor `<a name="«label»-v«N»"></a>`
+on the line above a heading that other files cite as
+`@«skill»/SKILL.md#«label»-v«N»`; it labels a section without wrapping
+it, a change of the section's meaning bumps `N`, and
+`smith-ctx-claude/scripts/tests/anchors.test.sh` checks every anchor
+against `smith-ctx-claude/anchors.lock`.
 
 **Structure:**
 - `##` headers name the topic — a header like "## Branch Naming" already
   signals scope; state each rule plainly with its reason instead of
   relying on a wrapper tag or capitalised MUST/ALWAYS/NEVER.
+- When another file points its readers at one section of a SKILL.md,
+  anchor that section and cite the anchor: put
+  `<a name="«label»-v«N»"></a>` on the line above the section's heading,
+  write the pointer as `@«skill»/SKILL.md#«label»-v«N»`, and add the lock
+  row with `sh smith-ctx-claude/scripts/anchors-lock.sh --accept-new`. A
+  pointer by heading text breaks without notice when the heading is
+  reworded; an anchor with its lock row makes the anchors test fail
+  instead.
 - Prefer telling the agent what to do over what not to do. Rewrite
   prohibitions as affirmative statements and fold them into the normal
   bullet list — "Only commit when the user explicitly asks" carries the
@@ -169,7 +183,7 @@ instructions with embedded data, e.g. subagent prompts.)
 - Don't invent placeholder-style tags (`<type>`, `<scope>`) when writing
   runtime-prompt content per `@smith-xml/SKILL.md` — that guidance is
   scoped to actual runtime prompts, not SKILL.md bodies, which don't use
-  tags at all.
+  XML content tags at all.
 
 ## Token Budget Guidelines
 
