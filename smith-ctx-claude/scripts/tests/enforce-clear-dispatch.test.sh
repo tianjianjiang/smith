@@ -131,6 +131,7 @@ expect_no_checkpoint_notice() {
   [ "$(printf '%s' "$output" | jq -r 'has("decision")' 2>/dev/null)" = false ] || fail "$description: the notice must not block: $output"
   local message
   message=$(printf '%s' "$output" | jq -r '.systemMessage // empty' 2>/dev/null)
+  case "$message" in "[SMITH_CTX_NO_CHECKPOINT] "*) ;; *) fail "$description: the notice should start with its code: $output" ;; esac
   case "$message" in
     *"no checkpoint"*"/clear"*) ;;
     *) fail "$description: should say that no checkpoint was written and that /clear still works: $output" ;;
@@ -189,7 +190,7 @@ OUT=$(PATH="$TMP/bin:$PATH" run_hook)
 STATUS=$?
 [ "$STATUS" -eq 0 ] || fail "switch on, block should exit 0, got $STATUS"
 [ "$(printf '%s' "$OUT" | jq -r .decision)" = block ] || fail "switch on, the critical threshold should still block: $OUT"
-[ "$(printf '%s' "$OUT" | jq -r .reason)" = "Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, unexpected reason: $OUT"
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "[SMITH_CTX_AUTO_RESET_BLOCKED] Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, unexpected reason: $OUT"
 [ "$(printf '%s' "$OUT" | jq -c 'keys')" = '["decision","hookSpecificOutput","reason"]' ] || fail "switch on, unexpected block keys: $OUT"
 [ -f "$PENDING_RELOAD" ] || fail "switch on, a block should still write the pending reload flag"
 [ "$(call_count)" -eq 0 ] || fail "switch on, a block should not call claude: $(cat "$CALLS_LOG")"
@@ -201,10 +202,10 @@ open_items=("- [ ] top-level open" "  - [ ] nested open")
 { printf '# Plan\n\n- [x] done\n'; printf '%s\n' "${open_items[@]}"; } > "$TMP/plan.md"
 printf 's1\n%s\n0\n\n%s\n' "$TMP/transcript.jsonl" "$TMP/plan.md" > "$STATE_FILE"
 OUT=$(PATH="$TMP/bin:$PATH" run_hook)
-[ "$(printf '%s' "$OUT" | jq -r .reason)" = "Context at ${DEFAULT_CRITICAL_PCT}% (${#open_items[@]} pending). Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, pending plan reason: $OUT"
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "[SMITH_CTX_AUTO_RESET_BLOCKED] Context at ${DEFAULT_CRITICAL_PCT}% (${#open_items[@]} pending). Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, pending plan reason: $OUT"
 printf '# Plan\n\n- [x] done\n' > "$TMP/plan.md"
 OUT=$(PATH="$TMP/bin:$PATH" run_hook)
-[ "$(printf '%s' "$OUT" | jq -r .reason)" = "Context at ${DEFAULT_CRITICAL_PCT}% (plan completed). Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, completed plan reason: $OUT"
+[ "$(printf '%s' "$OUT" | jq -r .reason)" = "[SMITH_CTX_AUTO_RESET_BLOCKED] Context at ${DEFAULT_CRITICAL_PCT}% (plan completed). Checkpoint this session; a fresh background session then continues from the checkpoint." ] || fail "switch on, completed plan reason: $OUT"
 pass "switch on: the plan forms of the status stay as today"
 
 reset_state
@@ -253,6 +254,7 @@ pass "dispatch runs claude --bg --name «name» --permission-mode «mode» -- «
 pass "a successful dispatch consumes the restore flag"
 [ "$(printf '%s' "$OUT" | jq -r 'has("decision")')" = false ] || fail "a dispatch must not block: $OUT"
 MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
+case "$MESSAGE" in "[SMITH_CTX_CONTINUED] "*) ;; *) fail "the system message should start with its code: $OUT" ;; esac
 case "$MESSAGE" in *"$BACKGROUND_ID"*) ;; *) fail "the system message should name the background session id: $OUT" ;; esac
 case "$MESSAGE" in *"${args[2]}"*) ;; *) fail "the system message should name the session name: $OUT" ;; esac
 pass "a successful dispatch reports the id and the name in a system message"
@@ -331,6 +333,7 @@ expect_no_checkpoint_notice "flag older than the pending reload file" "$OUT" "$S
 pass "a flag older than the pending reload file dispatches nothing and the notice says no checkpoint was written"
 
 reset_state
+printf '%s\n' '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"],"toolUseID":"batch-other-hook"}' >> "$TMP/transcript.jsonl"
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
@@ -427,7 +430,7 @@ expect_failure_reason() {
   STATUS=$?
   [ "$STATUS" -eq 0 ] || fail "$description: exit status should be 0, got $STATUS"
   MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
-  [ "$MESSAGE" = "Context reset: dispatching a background session for checkpoint \"$LABEL\" failed${expected}; /clear still restores the checkpoint." ] || fail "$description: unexpected failure message: $MESSAGE"
+  [ "$MESSAGE" = "[SMITH_CTX_DISPATCH_FAILED] Context reset: dispatching a background session for checkpoint \"$LABEL\" failed${expected}; /clear still restores the checkpoint." ] || fail "$description: unexpected failure message: $MESSAGE"
   rm -f "$FAKE_STDOUT" "$FAKE_STDERR"
 }
 
@@ -475,6 +478,7 @@ reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+printf '%s\n' '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"],"toolUseID":"batch-other-hook"}' >> "$TMP/transcript.jsonl"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "below the threshold with a matching fresh flag" "$OUT" "$STATUS"
@@ -492,6 +496,7 @@ reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 make_transcript "$DEFAULT_CRITICAL_PCT"
+printf '%s\n' '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"],"toolUseID":"batch-other-hook"}' >> "$TMP/transcript.jsonl"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "raised threshold, context at the default threshold" "$OUT" "$STATUS"
@@ -512,18 +517,35 @@ pass "a continuing stop compares the context with the configured critical thresh
 reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+expect_unreadable_transcript_notice() {
+  local description=$1 output=$2 status=$3 shown_path=$4
+  [ "$status" -eq 0 ] || fail "$description: exit status should be 0, got $status"
+  [ "$(call_count)" -eq 0 ] || fail "$description: claude should not be called: $(cat "$CALLS_LOG")"
+  [ "$(printf '%s' "$output" | jq -r '.systemMessage // empty' 2>/dev/null)" = "[SMITH_CTX_TRANSCRIPT_UNREADABLE] Context reset: the transcript $shown_path cannot be read, and .pending-reload-$CWD_KEY records a block of this session that no attempt has handled. No background session was started; checkpoint this session if it has not been checkpointed, then type /clear." ] || fail "$description: unexpected notice: $output"
+}
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"permission_mode\":\"acceptEdits\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
-expect_no_dispatch "no transcript path with a matching fresh flag" "$OUT" "$STATUS"
+expect_unreadable_transcript_notice "no transcript path with a matching fresh flag" "$OUT" "$STATUS" "(no path given)"
 [ -f "$RESTORE_FLAG" ] || fail "without a transcript path the restore flag should stay"
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
-expect_no_dispatch "missing transcript file with a matching fresh flag" "$OUT" "$STATUS"
-rm -f "$RESTORE_FLAG"
+expect_unreadable_transcript_notice "missing transcript file with a matching fresh flag" "$OUT" "$STATUS" "$TMP/missing.jsonl"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s2\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "missing transcript file, pending reload file of another session" "$OUT" "$STATUS"
+touch -t "$NEWER" "$OWN_MARKER"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "missing transcript file, block already attempted" "$OUT" "$STATUS"
+rm -f "$OWN_MARKER" "$RESTORE_FLAG"
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
-expect_no_dispatch "no transcript path without a flag" "$OUT" "$STATUS"
-pass "a continuing stop without a readable transcript neither dispatches nor prints a notice"
+expect_unreadable_transcript_notice "no transcript path without a flag" "$OUT" "$STATUS" "(no path given)"
+rm -f "$PENDING_RELOAD"
+OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
+STATUS=$?
+expect_no_dispatch "no transcript path without a pending reload file" "$OUT" "$STATUS"
+pass "an unreadable transcript is reported only while this session's block is unhandled; a stale pending reload file stays silent"
 
 reset_state
 write_pending_reload
@@ -572,5 +594,256 @@ case "$(printf '%s' "$OUT" | jq -r .systemMessage)" in
   *) fail "the success message should carry the whole id with uppercase letters, underscores and hyphens: $OUT" ;;
 esac
 pass "an id with uppercase letters, an underscore and a hyphen is reported whole"
+
+readonly BLOCK_REASON="[SMITH_CTX_AUTO_RESET_BLOCKED] Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session; a fresh background session then continues from the checkpoint."
+
+STOP_BATCH=0
+
+append_stop_hook_summary() {
+  STOP_BATCH=$((STOP_BATCH + 1))
+  jq -cn --arg error "$1" --arg command "$HOOK" --arg id "batch-$STOP_BATCH" '{type:"system",subtype:"stop_hook_summary",hookInfos:[{command:$command}],hookErrors:[$error],stopReason:"",level:"suggestion",toolUseID:$id}' >> "$TMP/transcript.jsonl"
+}
+
+append_blocking_error_attachment() {
+  STOP_BATCH=$((STOP_BATCH + 1))
+  jq -cn --arg error "$1" --arg command "$HOOK" --arg id "batch-$STOP_BATCH" '{type:"attachment",attachment:{type:"hook_blocking_error",hookEvent:"Stop",hookName:"Stop",toolUseID:$id,blockingError:{blockingError:$error,command:$command}}}' >> "$TMP/transcript.jsonl"
+}
+
+append_transcript_entry() {
+  printf '%s\n' "$1" >> "$TMP/transcript.jsonl"
+}
+
+expect_explained_stop() {
+  local description=$1 output=$2 status=$3 code=$4 pattern=$5
+  [ "$status" -eq 0 ] || fail "$description: exit status should be 0, got $status"
+  [ "$(call_count)" -eq 0 ] || fail "$description: claude should not be called: $(cat "$CALLS_LOG")"
+  [ "$(printf '%s' "$output" | jq -r 'has("decision")' 2>/dev/null)" = false ] || fail "$description: the notice must not block: $output"
+  local message
+  message=$(printf '%s' "$output" | jq -r '.systemMessage // empty' 2>/dev/null)
+  case "$message" in "[$code] "*) ;; *) fail "$description: the notice should start with [$code]: $output" ;; esac
+  printf '%s' "$message" | grep -Eq "$pattern" || fail "$description: the notice should give the reason: $output"
+  case "$message" in *". No background session was started; checkpoint this session if it has not been checkpointed, then type /clear.") ;; *) fail "$description: the notice should say that nothing started and what to do: $output" ;; esac
+}
+
+OTHER_KEY=$(session_key 99999 "$TMP")
+
+reset_state
+append_stop_hook_summary "$BLOCK_REASON"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+printf '\ns1\n2026-01-01T00:00:00+0000\n%s\nno-plan\n' "$TMP" > "$TMP/plans/.pending-reload-$OTHER_KEY"
+touch -t "$OLDER" "$TMP/plans/.pending-reload-$OTHER_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "block filed under another key" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing.*filed under the session key $OTHER_KEY"
+pass "a blocked session whose pending reload file is under another key says so"
+
+reset_state
+append_stop_hook_summary "$BLOCK_REASON"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "block with a deleted pending reload file" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+case "$OUT" in *"filed under"*) fail "block with a deleted pending reload file: no other key exists to name: $OUT" ;; esac
+pass "a blocked session whose pending reload file was deleted says so"
+
+reset_state
+append_stop_hook_summary "another hook blocked this stop"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+printf '\ns1\n2026-01-01T00:00:00+0000\n%s\nno-plan\n' "$TMP" > "$TMP/plans/.pending-reload-$OTHER_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "no block in the transcript" "$OUT" "$STATUS"
+pass "a stop of a session this hook never blocked stays silent, whatever pending reload files exist"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry "$(jq -cn --arg text "$BLOCK_REASON" '{type:"assistant",message:{role:"assistant",content:[{type:"text",text:("フックの理由: " + $text)}]}}')"
+append_transcript_entry "$(jq -cn --arg text "$BLOCK_REASON" '{type:"user",message:{role:"user",content:[{type:"tool_result",content:$text}]}}')"
+append_stop_hook_summary "Stop hook said: $BLOCK_REASON"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "the code quoted by the model, a tool result or inside another error" "$OUT" "$STATUS"
+pass "only a stop hook summary whose error starts with the code counts as this hook's block"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_stop_hook_summary "$BLOCK_REASON"
+append_stop_hook_summary "another hook blocked this stop"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "an older block followed by another hook's block" "$OUT" "$STATUS"
+pass "only the latest stop hook summary counts"
+
+reset_state
+append_transcript_entry "not json"
+append_stop_hook_summary "$BLOCK_REASON"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a malformed transcript line" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+pass "a malformed transcript line does not hide the block"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"system","subtype":"stop_hook_record","errors":["[SMITH_CTX_AUTO_RESET_BLOCKED] Context at 60%."]}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a transcript with no stop hook record" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format"
+[ -f "$RESTORE_FLAG" ] || fail "a transcript with no stop hook record: the restore flag should stay"
+pass "a readable transcript with no stop hook record says the format is unknown instead of staying silent"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hookErrors":"[SMITH_CTX_AUTO_RESET_BLOCKED] Context at 60%.","toolUseID":"batch-string"}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "hookErrors that is not an array" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format"
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","toolUseID":"batch-renamed","hook_errors":["[SMITH_CTX_AUTO_RESET_BLOCKED] Context at 60%."]}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a renamed hookErrors field" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format"
+pass "a stop hook summary whose errors field is missing or not an array is reported as an unknown format"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_blocking_error_attachment "$BLOCK_REASON"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a block recorded only as an attachment" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+pass "a block whose stop hook summary was skipped is still found in its blocking error attachment"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry "$(jq -cn --arg error "$BLOCK_REASON" '{type:"system",subtype:"stop_hook_summary",hookErrors:["another hook warned", $error],toolUseID:"batch-two-errors"}')"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "the code in the second of several errors" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hookErrors":[],"hookAdditionalContext":["keep going"],"toolUseID":"batch-context"}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "another hook continuing with additional context" "$OUT" "$STATUS"
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_stop_hook_summary "another hook blocked this stop"
+append_transcript_entry "$(jq -cn --arg error "$BLOCK_REASON" '{type:"system",subtype:"stop_hook_summary",hookLabel:"PreToolUse",hookErrors:[$error],toolUseID:"batch-labelled"}')"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "a coded summary of another hook event" "$OUT" "$STATUS"
+pass "several errors, another hook's additional context and summaries of other hook events are read correctly"
+
+readonly CLAUDE_CODE_SAMPLE="$HERE/records/stop-hook-summary.claude-code-2.1.325.jsonl"
+[ "$(jq -r '.subtype' "$CLAUDE_CODE_SAMPLE")" = stop_hook_summary ] || fail "the recorded Claude Code sample should be a stop hook summary"
+reset_state
+jq -c --arg error "$BLOCK_REASON" '.hookErrors = [$error]' "$CLAUDE_CODE_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "the recorded Claude Code sample" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+pass "a stop hook summary in the recorded Claude Code format is read as this hook's block"
+
+reset_state
+cat "$CLAUDE_CODE_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "the recorded sample with its uncoded reason" "$OUT" "$STATUS"
+pass "the uncoded reason of the recorded sample does not count as this hook's block"
+
+readonly CLAUDE_CODE_ATTACHMENT_SAMPLE="$HERE/records/hook-blocking-error.claude-code-2.1.325.jsonl"
+[ "$(jq -r '.attachment.type' "$CLAUDE_CODE_ATTACHMENT_SAMPLE")" = hook_blocking_error ] || fail "the recorded attachment sample should be a blocking error"
+reset_state
+jq -c --arg error "$BLOCK_REASON" '.attachment.blockingError.blockingError = $error' "$CLAUDE_CODE_ATTACHMENT_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "the recorded attachment sample with the coded reason" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+reset_state
+cat "$CLAUDE_CODE_ATTACHMENT_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "the recorded attachment sample with its uncoded reason" "$OUT" "$STATUS"
+pass "a blocking error attachment in the recorded Claude Code format is read, and only its coded reason counts"
+
+reset_state
+make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+append_stop_hook_summary "$BLOCK_REASON"
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+[ "$STATUS" -eq 0 ] || fail "below the threshold after this hook's block: exit status should be 0, got $STATUS"
+[ "$(call_count)" -eq 0 ] || fail "below the threshold after this hook's block: claude should not be called"
+[ -f "$RESTORE_FLAG" ] || fail "below the threshold after this hook's block: the restore flag should stay"
+[ "$(printf '%s' "$OUT" | jq -r '.systemMessage // empty')" = "[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL] Context reset: after this hook blocked the stop, context is at $((DEFAULT_CRITICAL_PCT - 1))%, below the critical ${DEFAULT_CRITICAL_PCT}%, so no background session was started and none is needed." ] || fail "below the threshold after this hook's block: unexpected notice: $OUT"
+reset_state
+make_transcript $((DEFAULT_CRITICAL_PCT - 1))
+append_stop_hook_summary "another hook blocked this stop"
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "below the threshold after another hook's block" "$OUT" "$STATUS"
+pass "below the threshold, a block by this hook is explained and a stale pending reload file stays silent"
+
+reset_state
+: > "$TMP/transcript.jsonl"
+append_stop_hook_summary "$BLOCK_REASON"
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a context level that cannot be measured after this hook's block" "$OUT" "$STATUS" SMITH_CTX_CONTEXT_UNMEASURED "context level could not be measured"
+[ -f "$RESTORE_FLAG" ] || fail "an unmeasured context level: the restore flag should stay"
+case "$OUT" in *"none is needed"*) fail "an unmeasured context level must not be reported as no longer critical: $OUT" ;; esac
+pass "a context level that cannot be measured is not reported as 0% and no longer critical"
+
+for transcript_kind in measured unmeasured; do
+  reset_state
+  if [ "$transcript_kind" = measured ]; then make_transcript $((DEFAULT_CRITICAL_PCT - 1)); else : > "$TMP/transcript.jsonl"; fi
+  append_stop_hook_summary "$BLOCK_REASON"
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  touch -t "$NEWER" "$OWN_MARKER"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_no_dispatch "this hook's block already attempted, $transcript_kind context below the threshold" "$OUT" "$STATUS"
+done
+pass "below the threshold, a block of this hook that was already attempted stays silent"
+
+for transcript_kind in measured unmeasured; do
+  reset_state
+  if [ "$transcript_kind" = measured ]; then make_transcript $((DEFAULT_CRITICAL_PCT - 1)); else : > "$TMP/transcript.jsonl"; fi
+  append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hook_errors":["renamed"],"toolUseID":"batch-renamed"}'
+  write_pending_reload
+  write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_explained_stop "an unknown record format with a fresh pending reload file, $transcript_kind context" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format, and \.pending-reload-$CWD_KEY records a block of this session"
+  touch -t "$NEWER" "$OWN_MARKER"
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  expect_no_dispatch "an unknown record format with a handled pending reload file, $transcript_kind context" "$OUT" "$STATUS"
+done
+pass "below the threshold, an unknown record format is reported while this session's block is unhandled"
+
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry '{"type":"attachment","attachment":{"type":"hook_blocking_error","hookEvent":"Stop","toolUseID":"batch-no-error","blockingError":{"command":"x"}}}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a blocking error attachment without its error" "$OUT" "$STATUS" SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "no stop hook record in a known format"
+pass "a blocking error attachment without its error text is an unknown format, as a summary without errors is"
+
+reset_state
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+[ ! -e "$TMP/auto-reset.log" ] || fail "the hook should write no log file: $(cat "$TMP/auto-reset.log")"
+pass "the hook keeps no log file"
 
 echo "PASS: enforce-clear-dispatch"

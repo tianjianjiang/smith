@@ -265,19 +265,51 @@ outside.
   the label, and for its answer. A control run with the switch set to `0`
   follows.
   Sessions, flags and the memory file are removed at the end.
-- Passing output: the block reason names the background continuation; a
+- Passing output: a `stop_hook_summary` of the first session holds an error
+  starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `; a
   session named `continue: «label»` with another id appears, reports the
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
-  shows today's reason.
-- Limit: an installed copy of `enforce-clear.sh` in the user settings also
-  blocks at the lowered threshold with today's reason, so the first session
-  sees both reasons; the new reason's presence, and its absence in the
-  control, is what tells the runs apart.
+  shows today's reason, with no code. The record's observation
+  `ranInTheDefaultProfile` says whether the eval used `~/.claude`.
+- Limit: a copy of `enforce-clear.sh` that the profile's user settings
+  register also runs. Run in the default profile, an installed older copy
+  blocks with today's reason beside the new one; the new reason's presence,
+  and its absence in the control, tells the runs apart. Run in the eval
+  profile of the conditions eval below (`CLAUDE_CONFIG_DIR` set to it and
+  `SMITH_PROBE_SESSION_FOLDER` a new folder under its `probes`), that
+  profile registers this checkout's copy, so the first session's Stop hook
+  records list it more than once with the same reason, and the control's
+  with today's reason. The recorded run of 2026-11-16 used the eval profile.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
+
+## A Stop hook block as Claude Code writes it in the transcript
+
+The transcript format is not documented
+(https://code.claude.com/docs/en/hooks says only that the file "is written
+asynchronously and may lag the in-memory conversation"), so
+`../../enforce-clear.sh` reads its own earlier block from a recorded shape:
+the `stop_hook_summary` entry, or the `hook_blocking_error` attachment of
+the same `toolUseID` when the summary was skipped
+(https://github.com/anthropics/claude-code/issues/74648).
+
+- Records: `stop-hook-summary.claude-code-2.1.325.jsonl` and
+  `hook-blocking-error.claude-code-2.1.325.jsonl`, the first
+  `stop_hook_summary` entry and the `hook_blocking_error` attachment of the
+  same Stop batch of a real background session on Claude Code 2.1.325,
+  taken from a run of the conditions eval below (its folder is
+  `probes/zq-run-…/zq-probe-…`), with the home folder replaced by
+  `/Users/example`. Their reason predates the
+  `[SMITH_CTX_AUTO_RESET_BLOCKED]` code.
+- Used by: `../enforce-clear-dispatch.test.sh`, which reads each sample as
+  recorded and with the coded reason.
+- Refresh after a Claude Code upgrade: run the end-to-end eval above; its check
+  `blockRecordedInAStopHookSummaryWithItsCode` fails when the entry changes
+  shape. Then copy the new entry with the home folder replaced, under the new
+  version's name.
 
 ## Integrity
 

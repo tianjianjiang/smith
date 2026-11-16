@@ -18,7 +18,7 @@ const RECORD_PATH = join(HERE, "records", "auto-context-reset.json");
 const ENFORCE_CLEAR = resolve(HERE, "..", "enforce-clear.sh");
 const WRITE_RELOAD_FLAG = resolve(HERE, "..", "write-reload-flag.sh");
 const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
-const DISPATCH_REASON = "a fresh background session then continues from the checkpoint";
+const AUTO_RESET_BLOCKED_PREFIX = "[SMITH_CTX_AUTO_RESET_BLOCKED] ";
 const UNCHANGED_REASON = "Checkpoint this session, then /clear.";
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
@@ -87,6 +87,18 @@ function transcriptPath(sessionId) {
     if (existsSync(candidate)) return candidate;
   }
   return undefined;
+}
+
+function stopHookSummaryBlockedWithCode(text) {
+  return text.split("\n").some((line) => {
+    try {
+      const entry = JSON.parse(line);
+      if (entry?.type !== "system" || entry.subtype !== "stop_hook_summary" || !Array.isArray(entry.hookErrors)) return false;
+      return entry.hookErrors.some((error) => typeof error === "string" && error.startsWith(AUTO_RESET_BLOCKED_PREFIX));
+    } catch {
+      return false;
+    }
+  });
 }
 
 function transcriptText(sessionId) {
@@ -243,7 +255,7 @@ try {
   const controlWroteARestoreFlag = restoreFlagsLabelled(controlLabel).length > 0;
   checks = {
     firstSessionStarted: Boolean(firstId),
-    blockReasonNamedTheBackgroundContinuation: firstTranscript.includes(DISPATCH_REASON),
+    blockRecordedInAStopHookSummaryWithItsCode: stopHookSummaryBlockedWithCode(firstTranscript),
     successorWithTheLabelInItsNameAppeared: Boolean(successorId),
     successorIsAnotherSession: Boolean(successorId) && successorId !== firstId,
     successorReportedTheCheckpointCodeWord: Boolean(answered) && answer.includes(checkpointWord),
@@ -251,9 +263,10 @@ try {
     dispatchConsumedTheRestoreFlag: restoreFlagsLabelled(label).length === 0,
     controlSessionStarted: Boolean(controlId),
     controlDispatchedNoSuccessor: Boolean(control) && controlWroteARestoreFlag && controlWaitReadTheSessionList && !controlSuccessorId,
-    controlBlockReasonUnchanged: controlTranscript.includes(UNCHANGED_REASON) && !controlTranscript.includes(DISPATCH_REASON),
+    controlBlockReasonUnchanged: controlTranscript.includes(UNCHANGED_REASON) && !controlTranscript.includes(AUTO_RESET_BLOCKED_PREFIX),
   };
   observations = {
+    ranInTheDefaultProfile: CONFIG_FOLDER === join(homedir(), ".claude"),
     successorNamePattern: successor?.name?.replaceAll(label, "«label»") ?? "not listed",
     firstSessionStateAfterDispatch: first?.state ?? "not listed",
     successorRunsInTheSameFolder: Boolean(successor) && successor.cwd === first?.cwd,
