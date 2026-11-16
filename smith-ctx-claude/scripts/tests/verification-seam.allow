@@ -1,5 +1,4 @@
 smith-validation/
-smith-verification/SKILL.md
 smith-ctx-claude/references/instruction-enforcement/
 smith-ctx-claude/references/design.md#ADR-003
 smith-ctx-claude/scripts/tests/skill-claim-lint.test.sh
@@ -8,3 +7,4 @@ smith-ctx-claude/scripts/tests/verification-seam.allow
 README.md#Skills
 smith-ctx-claude/REFERENCE.md#Curated Skill Catalog (moved from AGENTS.md `<available_skills>`)
 smith-ctx-claude/REFERENCE.md#Skill Descriptions (Full Reference)
+smith-ctx-claude/scripts/tests/verification-move.test.sh

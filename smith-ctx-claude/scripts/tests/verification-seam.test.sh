@@ -3,7 +3,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 ALLOW="$HERE/verification-seam.allow"
 SEAM="$ROOT/smith-verification/SKILL.md"
-BODIES="$ROOT/smith-validation/SKILL.md"
+STUB="$ROOT/smith-validation/SKILL.md"
 status=0
 
 fail() { echo "FAIL: verification-seam: $1"; status=1; }
@@ -94,29 +94,15 @@ readme_missing "$WORK/README.md" | grep -qxF "$first_skill" ||
   fail "control: a README without the row of $first_skill was not reported"
 
 [ -f "$SEAM" ] || fail "smith-verification/SKILL.md missing"
-points_to_seam "$BODIES" ||
+points_to_seam "$STUB" ||
   fail "smith-validation description does not point to smith-verification"
 awk 'NR == 1, NR > 1 && $0 == "---" { if ($0 ~ /^description:/) { print "description: Technique bodies. Use when asked."; next } } { print }' \
-  "$BODIES" > "$WORK/bodies.md"
-printf 'description: see smith-verification\n' >> "$WORK/bodies.md"
-grep -qx 'description: Technique bodies. Use when asked.' "$WORK/bodies.md" ||
+  "$STUB" > "$WORK/stub.md"
+printf 'description: see smith-verification\n' >> "$WORK/stub.md"
+grep -qx 'description: Technique bodies. Use when asked.' "$WORK/stub.md" ||
   fail "control: the planted description was not written into the copy"
-points_to_seam "$WORK/bodies.md" &&
+points_to_seam "$WORK/stub.md" &&
   fail "control: a description without the pointer passed because a body line names smith-verification"
-
-forwarded=$(awk '/^## /{inside = ($0 == "## Where the Techniques Live"); next}
-  inside && /^- /' "$SEAM" 2>/dev/null | grep -o '\*\*[^*]*\*\*' | tr -d '*')
-[ -n "$forwarded" ] || fail "smith-verification forwards no section by name"
-printf '%s\n' "$forwarded" | while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  grep -q -e "^## $name\$" -e "^## $name:" "$BODIES" ||
-    echo "FAIL: verification-seam: forwarded section has no heading in smith-validation/SKILL.md: $name"
-done | grep . && status=1
-sed -n 's/^## \([^:]*\).*/\1/p' "$BODIES" | while IFS= read -r name; do
-  case "$name" in ("Before You Finish" | Related) continue ;; esac
-  printf '%s\n' "$forwarded" | grep -qxF "$name" ||
-    echo "FAIL: verification-seam: smith-validation/SKILL.md section not forwarded: $name"
-done | grep . && status=1
 
 [ "$status" = 0 ] && echo "PASS: verification-seam"
 exit "$status"

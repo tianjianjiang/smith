@@ -67,7 +67,7 @@ for prompt in "fix it" "merge it" "improve this" "that is solid" "access denied"
 done
 
 suggests "narrowed pattern: git commit" "write the git commit message" "$NOTHING_LOADED" smith-git
-suggests "narrowed pattern: fix the bug" "please fix the bug in the parser" "$NOTHING_LOADED" smith-verification
+suggests "narrowed pattern: fix the bug" "please fix the bug in the parser" "$NOTHING_LOADED" smith-analysis
 suggests "narrowed pattern: permission denied" "I got permission denied again" "$NOTHING_LOADED" smith-ctx-claude-mode-auto
 suggests "narrowed pattern: denied by the hook" "it was denied by the hook" "$NOTHING_LOADED" smith-ctx-claude-mode-auto
 suggests "narrowed pattern: subagents" "use subagents for this" "$NOTHING_LOADED" smith-subagents
