@@ -1,10 +1,11 @@
 {
-  "recordedAt": "2026-11-15T09:44:51+09:00",
+  "recordedAt": "2026-11-16T22:51:04+09:00",
   "claudeCodeVersion": "2.1.325 (Claude Code)",
   "model": "haiku",
   "checks": {
     "firstSessionStarted": true,
     "blockReasonNamedTheBackgroundContinuation": true,
+    "blockRecordedInAStopHookSummaryWithItsCode": true,
     "successorWithTheLabelInItsNameAppeared": true,
     "successorIsAnotherSession": true,
     "successorReportedTheCheckpointCodeWord": true,
@@ -28,8 +29,7 @@
     ],
     "successorLaunchFlagNames": [
       "--name",
-      "--permission-mode",
-      "--model"
+      "--permission-mode"
     ]
   }
 }

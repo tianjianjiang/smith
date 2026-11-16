@@ -286,6 +286,11 @@ outside.
   loads the user settings again. This checkout's hook registered in user
   settings is measured in "Conditions of the automatic continuation"
   below.
+- The recorded run of 2026-11-16 ran in the eval profile of that section
+  (`CLAUDE_CONFIG_DIR` set to it, `SMITH_PROBE_SESSION_FOLDER` a new folder
+  under its `probes`); each Stop hook record of the first session lists one
+  hook, although that profile's user settings register this checkout's
+  copy too.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
