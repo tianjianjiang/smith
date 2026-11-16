@@ -24,7 +24,8 @@ silent_inputs_are_json() {
 silent() {
   if [ "$1" != "malformed stdin" ]; then
     silent_count=$((silent_count + 1))
-    printf '%s' "$2" > "$WORK/silent-inputs/$silent_count-$(printf '%s' "$1" | tr '/' '_')"
+    printf '%s' "$2" > "$WORK/silent-inputs/$silent_count-$(printf '%s' "$1" | tr '/' '_')" ||
+      fail "$1: could not record the test input"
   fi
   out=$(run "$2") || fail "$1: hook crashed"
   [ -z "$out" ] || fail "$1: expected silent, got: $out"

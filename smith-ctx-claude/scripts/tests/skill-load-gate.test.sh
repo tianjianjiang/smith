@@ -36,9 +36,25 @@ extra_fields() {
   [ -n "$fields" ] && printf ',%s' "$fields"
 }
 
+mkdir "$TMPD/hook-inputs"
+
 run() {
+  input_file="$(mktemp "$TMPD/hook-inputs/input.XXXXXX")" || fail "could not create a hook input file"
   printf '{"hook_event_name":"PreToolUse","transcript_path":%s,"tool_name":%s,"tool_input":%s%s}' \
-    "$(json_string "$1")" "$(json_string "$2")" "$3" "$(extra_fields "$4")" | node "$HOOK"
+    "$(json_string "$1")" "$(json_string "$2")" "$3" "$(extra_fields "$4")" > "$input_file" ||
+    fail "could not record the hook input"
+  node "$HOOK" < "$input_file"
+}
+
+hook_inputs_are_json() {
+  node -e '
+    const fs = require("fs");
+    const dir = process.argv[1];
+    const broken = fs.readdirSync(dir).filter((name) => {
+      try { JSON.parse(fs.readFileSync(`${dir}/${name}`, "utf8")); return false; } catch { return true; }
+    });
+    if (broken.length > 0) { console.log(broken.map((name) => fs.readFileSync(`${dir}/${name}`, "utf8")).join("\n")); process.exit(1); }
+  ' "$TMPD/hook-inputs"
 }
 
 bash_command() { printf '{"command":%s}' "$(json_string "$1")"; }
@@ -419,4 +435,5 @@ out=$(run "$TMPD/does-not-exist.jsonl" Bash "$(bash_command 'git commit -m messa
 out=$(printf 'not json' | node "$HOOK") || fail "malformed stdin: hook crashed"
 [ -z "$out" ] || fail "malformed stdin should be silent"
 
+broken=$(hook_inputs_are_json) || fail "a hook input built by run() is not valid JSON: $broken"
 echo "PASS: skill-load-gate"

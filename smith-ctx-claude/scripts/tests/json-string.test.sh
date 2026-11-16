@@ -15,7 +15,7 @@ matches_node "backslashes" 'back\slash \\ two'
 matches_node "tab" "$(printf 'a\tb')"
 matches_node "carriage return" "$(printf 'a\rb')"
 matches_node "inner newlines" "$(printf 'line1\nline2\n\nline4')"
-matches_node "trailing newline" "$(printf 'cat <<EOF\nbody\nEOF\nX')"
+matches_node "heredoc text" "$(printf 'cat <<EOF\nbody\nEOF\nX')"
 matches_node "empty string" ''
 matches_node "shell syntax" '$(pwd) `x` ${y} it'"'"'s'
 matches_node "control characters" "$(printf 'a\001b\002c\033d\fe\bf\037g')"
