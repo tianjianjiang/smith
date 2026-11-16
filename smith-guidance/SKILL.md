@@ -139,6 +139,9 @@ request and record stands alone:
 - Decide when a convention answers, when the next step follows from the
   last within work the user already authorized, or when the user answered
   the same question in the last ~5 turns
+- **Two written rules that disagree are reconciled by
+  `references/RULE-CONFLICTS.md`, never by the main thread's choice:**
+  reconcile first, decide second, and the user approves every outcome
 
 **When something fails:** try one alternative; if that fails too, stop and
 offer options instead of chaining workarounds.
