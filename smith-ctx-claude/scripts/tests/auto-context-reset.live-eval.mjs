@@ -20,6 +20,7 @@ const WRITE_RELOAD_FLAG = resolve(HERE, "..", "write-reload-flag.sh");
 const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
 const AUTO_RESET_BLOCKED_PREFIX = "[SMITH_CTX_AUTO_RESET_BLOCKED] ";
 const UNCHANGED_REASON = "Checkpoint this session, then /clear.";
+const SETTING_SOURCES_WITHOUT_THE_USER = "project,local";
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
   console.log("SKIP: set SMITH_LIVE_CONTEXT_RESET_EVAL=1 to run the live automatic context reset eval");
@@ -207,7 +208,7 @@ function firstPrompt(conversationWord, label) {
 
 function startFirstSession(settingsPath, conversationWord, label) {
   const started = claude(
-    ["--bg", "--model", MODEL, "--permission-mode", "default", "--settings", settingsPath, "--", firstPrompt(conversationWord, label)],
+    ["--bg", "--model", MODEL, "--permission-mode", "default", "--setting-sources", SETTING_SOURCES_WITHOUT_THE_USER, "--settings", settingsPath, "--", firstPrompt(conversationWord, label)],
     { cwd: SESSION_FOLDER },
   );
   return started.match(BACKGROUNDED)?.[1];

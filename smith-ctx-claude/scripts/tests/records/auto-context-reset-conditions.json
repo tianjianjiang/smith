@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-11-16T17:38:40+09:00",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "model": "haiku",
+  "environment": {
+    "checks": {
+      "evalFolderIsNotTheRunnersConfiguration": true,
+      "evalProfileIsLoggedIn": true,
+      "evalProfileUsesTheEvalFolder": true,
+      "probeFolderIsTrustedInTheEvalProfile": true
+    }
+  },
+  "versionUnderTest": {
+    "checks": {
+      "evalSkillsAreThisCheckout": true,
+      "evalStopHookIsThisCheckoutsAndHasTheDispatchStep": true,
+      "basicMemoryProjectWasRegistered": true
+    }
+  },
+  "continuation": {
+    "checks": {
+      "probeSerenaProjectWasCreated": true,
+      "firstSessionStarted": true,
+      "firstSessionBlockReasonNamedTheContinuation": true,
+      "checkpointWentToTheProbeSerenaProject": true,
+      "successorAppeared": true,
+      "successorWasStartedWithTheHooksRestorePrompt": true,
+      "bothSessionsAreListedInTheProbeFolder": true,
+      "evalStoppedTheSuccessor": true,
+      "sessionsRanNoCommandOnAnInstalledCopy": true
+    },
+    "observations": {
+      "commandsReachingAnInstalledCopy": [],
+      "checkpointMemories": [
+        "session_ok_ack_context_checkpoint.md"
+      ],
+      "firstSessionLaunchFlagNames": [
+        "--permission-mode",
+        "--model"
+      ],
+      "successorLaunchFlagNames": [
+        "--name",
+        "--permission-mode"
+      ]
+    }
+  },
+  "failedDispatch": {
+    "checks": {
+      "probeSerenaProjectWasCreated": true,
+      "firstSessionStarted": true,
+      "firstSessionBlockReasonNamedTheContinuation": true,
+      "checkpointWentToTheProbeSerenaProject": true,
+      "firstSessionWroteItsCheckpointFlag": true,
+      "attemptWasRecorded": true,
+      "firstSessionIsListedInTheProbeFolder": true,
+      "noSuccessorAppeared": true,
+      "restoreFlagWasKept": true,
+      "hookReportedTheFailedDispatch": true,
+      "reportNamedTheSwitchThatRefusedTheLaunch": true,
+      "sessionRanNoCommandOnAnInstalledCopy": true
+    },
+    "observations": {
+      "commandsReachingAnInstalledCopy": [],
+      "firstSessionStateAfterTheFailedDispatch": "done"
+    }
+  },
+  "isolation": {
+    "checks": {
+      "runnersFlagsNameNoProbe": true,
+      "basicMemoryProjectWasRemoved": true,
+      "cleanupFoundNoProblem": true
+    }
+  }
+}
