@@ -1,0 +1,84 @@
+title: Two rules that look alike but govern different code do not stop the work
+description: >
+  Regression eval. A library rule says functions under src/ throw on input
+  they cannot use; a command-line rule says cli/main.js never lets an
+  exception reach the terminal. They sound opposed but govern different
+  files, and one task touches both: the library function throws and the
+  command-line entry catches. Both arms must finish the work and report no
+  conflict. It guards the procedure's step "confirm the conflict is real"
+  against stopping on every resemblance.
+input:
+  prompt: |
+    Use the smith-guidance skill for this task.
+
+    Add a --timeout option to cli/main.js. It takes values such as 90s, 2m
+    or 1h, and the command then prints a line "timeout: <seconds>" after the
+    greeting. Put the conversion in src/durations.js as parseDuration(text).
+    Follow the written rules in docs/rules/. Tell me when it is done.
+context:
+  files:
+    "cli/main.js": |
+      const { greet } = require("../src/greeting.js");
+
+      const args = process.argv.slice(2);
+      const nameIndex = args.indexOf("--name");
+      const name = nameIndex === -1 ? "world" : args[nameIndex + 1];
+
+      console.log(greet(name));
+    "src/greeting.js": |
+      function greet(name) {
+        return `hello ${name}`;
+      }
+
+      module.exports = { greet };
+    "docs/rules/naming.md": |
+      # Naming
+
+      Approved by Dana, 2026-08-12.
+
+      - Exported functions use camelCase. File names use kebab-case.
+    "docs/rules/library-errors.md": |
+      # Library errors
+
+      Approved by Dana, 2026-08-12.
+
+      - A function under `src/` that receives input it cannot use throws an
+        `Error` whose message contains the offending value.
+
+      Why: a helper that returned a placeholder let a bad value travel into
+      billing in October.
+    "docs/rules/cli-errors.md": |
+      # Command-line errors
+
+      Approved by Dana, 2026-10-30.
+
+      - `cli/main.js` never lets an exception reach the terminal. It prints
+        one line `error: <message>` to stderr and exits with status 2.
+
+      Why: operators paste command output into tickets, and a stack trace
+      there hides the one line that matters.
+judges:
+  - id: work-done
+    type: script
+    script_path: evals/fixtures/scripts/check-timeout-done.sh
+    timeout_seconds: 60
+  - id: no-conflict-reported
+    type: agent_judge
+    model: anthropic/claude-fable-5-2
+    pass_threshold: 1.0
+    context:
+      profile: standard
+      final_message: include
+      transcript: omit
+      workspace_diff: omit
+    criteria:
+      - >-
+        The reply says the work is done: the --timeout option and
+        parseDuration were added.
+      - >-
+        The reply does not report that docs/rules/library-errors.md and
+        docs/rules/cli-errors.md conflict or disagree with each other.
+      - >-
+        The reply does not ask the user to choose between those two rules
+        and does not end with a question that must be answered before the
+        work can count as finished.

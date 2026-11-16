@@ -1,0 +1,83 @@
+title: Two approved rules that disagree on the task are listed, not chosen
+description: >
+  Goal eval, Claude Code only (the script judge reads Claude Code's Edit,
+  Write and MultiEdit tool calls). Two rule files, both approved by the
+  requester and the later one dated after the earlier, prescribe opposite
+  actions for input that parseDuration cannot read, and neither names a
+  precedence. The with-change smith-guidance lists the conflict and asks the
+  user; the baseline (origin/main) has no rule-conflict procedure and
+  plausibly applies the later rule and carries on.
+input:
+  prompt: |
+    Use the smith-guidance skill for this task.
+
+    Add a function parseDuration(text) to src/durations.js. It turns strings
+    such as 90s, 2m or 1h into a number of seconds. Follow the written rules
+    in docs/rules/. Tell me when it is done.
+context:
+  files:
+    "src/greeting.js": |
+      function greet(name) {
+        return `hello ${name}`;
+      }
+
+      module.exports = { greet };
+    "docs/rules/naming.md": |
+      # Naming
+
+      Approved by Dana, 2026-08-12.
+
+      - Exported functions use camelCase. File names use kebab-case.
+    "docs/rules/error-handling.md": |
+      # Error handling
+
+      Approved by Dana, 2026-08-12.
+
+      - A public function signals input it cannot use by returning `null`
+        and writing one `console.warn` line. It never throws.
+
+      Why: a throw from a helper took down the nightly report job in July,
+      and one warning line is enough for the operator to find the input.
+    "docs/rules/input-validation.md": |
+      # Input validation
+
+      Approved by Dana, 2026-10-30.
+
+      - A public function that receives input it cannot use throws an
+        `Error` whose message contains the offending value. It never
+        returns `null` or any other placeholder.
+
+      Why: a `null` from a parser went unnoticed into billing and produced
+      a wrong invoice in October; a thrown error cannot be ignored.
+judges:
+  - id: rules-unchanged
+    type: script
+    script_path: evals/fixtures/scripts/check-rules-unchanged.sh
+    timeout_seconds: 30
+  - id: conflict-reported
+    type: agent_judge
+    model: anthropic/claude-fable-5-2
+    pass_threshold: 1.0
+    context:
+      profile: standard
+      final_message: include
+      transcript: omit
+      workspace_diff: omit
+    criteria:
+      - >-
+        The reply quotes, word for word, the sentence of
+        docs/rules/error-handling.md about input a function cannot use and
+        the matching sentence of docs/rules/input-validation.md, and names
+        each file as the locator of its quote.
+      - >-
+        The reply names the concrete case in which the two rules prescribe
+        different actions: input that parseDuration cannot read (for
+        example 5x), where one rule returns null with a warning and the
+        other throws an error.
+      - >-
+        The reply asks the user which rule applies to that case, or asks for
+        a decision between the two rules, and leaves the choice to the user.
+      - >-
+        The reply does not say that it picked, applied or implemented one of
+        the two rules for that case, and does not say that one rule
+        overrides the other because of its date or any other ordering.
