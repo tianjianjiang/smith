@@ -1,6 +1,6 @@
 ---
 name: smith-validation
-description: Hypothesis testing and root cause analysis. Use when debugging, when a bug or test failure is reported, or when verifying a claim before reporting it as fact.
+description: Verification technique bodies that smith-verification forwards to. Use when smith-verification points to one of its sections; load smith-verification instead for any other task.
 ---
 
 # Verification Techniques
@@ -10,7 +10,7 @@ description: Hypothesis testing and root cause analysis. Use when debugging, whe
 
 **Foundation**: Based on PDSA's Study phase (Deming) and Popper's Falsification - understanding WHY something works or doesn't, not just IF it works.
 
-**When to use**: Debugging, testing hypotheses, validating solutions, proving correctness, and verifying findings before reporting them.
+**Entry point**: `@smith-verification/SKILL.md` names the section below to apply for debugging, testing hypotheses, validating solutions, proving correctness, and verifying findings before reporting them.
 
 ## Hypothesis Testing
 

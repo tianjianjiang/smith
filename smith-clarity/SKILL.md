@@ -13,7 +13,7 @@ description: Cognitive trap and logical fallacy detection. Use when making or re
 **MECE relationship**:
 - `@smith-analysis/SKILL.md` - Constructive thinking (how to reason)
 - **smith-clarity** (this file) - Defensive thinking (what to avoid)
-- `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
+- `@smith-verification/SKILL.md` - Proving/testing (verifying correctness)
 
 ## Logic Fallacies
 
@@ -51,7 +51,7 @@ Mental fixation on familiar solutions.
 
 Seeking info that confirms existing beliefs.
 
-**Mitigation**: Actively seek disconfirming evidence (`@smith-validation` Adversarial Verification)
+**Mitigation**: Actively seek disconfirming evidence (`@smith-verification` Adversarial Verification)
 
 ### Anchoring
 
@@ -114,4 +114,4 @@ Work expands to fill the time available for completion.
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, making changes
 - `@smith-analysis/SKILL.md` - Pre-mortem analysis, constraint thinking
-- `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings
+- `@smith-verification/SKILL.md` - Hypothesis testing, adversarial verification of findings

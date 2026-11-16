@@ -1,5 +1,5 @@
 {
-  "skill": "smith-validation",
+  "skill": "smith-verification",
   "should_trigger": [
     "Login fails intermittently in production, maybe one request in fifty. Don't guess a fix; work out what's actually causing it.",
     "ruff is failing on `F841 local variable 'resp' is assigned to but never used` in sync/client.py. just add a noqa so CI goes green",

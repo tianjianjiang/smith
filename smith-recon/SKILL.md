@@ -29,7 +29,7 @@ this — no separate "resume" command is needed.
    prefer a few targeted reads (and, when iterating, a `/loop`/ralph loop that
    re-shares the relevant smith skills + topic + accumulated context —
    `@smith-ralph`, `@smith-automation`) over many one-shot parallel subagents.
-   Load `@smith-research`/`@smith-validation` (verify before asserting) and
+   Load `@smith-research`/`@smith-verification` (verify before asserting) and
    `@smith-subagents` (returns are claims; restate in-band).
 3. **Read bounded** — for noisy history use a scripted full scan (counts +
    denominator), not sampling (`@smith-guidance` Operating Discipline: close
@@ -37,7 +37,7 @@ this — no separate "resume" command is needed.
 4. **Cross-verify** — reconcile sources; flag contradictions; mark anything
    unverified explicitly. Verify suspicious claims before relying on them.
    Reconciling agreement between sources is not the same as trying to break a
-   finding — do both (`@smith-validation` Adversarial Verification).
+   finding — do both (`@smith-verification` Adversarial Verification).
 5. **Brief** — return a synthesis with evidence URLs/`file:line` for every
    claim, in the requested language. Note any source deliberately not covered
    and why (no silent omissions).

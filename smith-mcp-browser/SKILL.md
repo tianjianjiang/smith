@@ -147,7 +147,7 @@ abstractly or abandoning the task.
   login.
 - **Verify, don't assume.** After the user reports done, take a FRESH snapshot
   and confirm the post-login state before continuing — a cached pre-login view
-  is a common false positive (`@smith-validation`).
+  is a common false positive (`@smith-verification`).
 - **Know the session lifetime.** `--isolated` (required above) gives
   chrome-devtools-mcp a temporary user-data-dir "automatically cleaned up
   after the browser is closed" — the login survives only while that browser
@@ -205,7 +205,7 @@ only. Widening it is its own change.
 
 - `@smith-playwright/SKILL.md` - Playwright test triage
 - `@smith-tools/SKILL.md` - MCP server lifecycle
-- `@smith-validation/SKILL.md` - Root cause analysis
+- `@smith-verification/SKILL.md` - Root cause analysis
 
 ## Before You Finish
 

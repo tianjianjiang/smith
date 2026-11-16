@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **47 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
+Smith is a collection of skills for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -108,14 +108,14 @@ smith/
 └── ...
 ```
 
-### Skills (47 total)
+### Skills
 
 | Category | Skills |
 |----------|--------|
 | **Core** | `smith-principles`, `smith-standards`, `smith-guidance` |
 | **Commands** (`/smith-X`) | `smith-ship`, `smith-review`, `smith-preflight`, `smith-checkpoint`, `smith-recon`, `smith-tickets` |
 | **Context** | `smith-ctx`, `smith-ctx-claude`, `smith-ctx-kiro`, `smith-ctx-cursor`, `smith-serena` |
-| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem`, `smith-dialectic` |
+| **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-verification`, `smith-validation`, `smith-postmortem`, `smith-dialectic` |
 | **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
 | **Testing** | `smith-tests`, `smith-playwright`, `smith-mcp-browser` |
 | **Workflow** | `smith-ralph`, `smith-mode-plan`, `smith-mode-plan-claude`, `smith-sdlc`, `smith-subagents`, `smith-automation` |

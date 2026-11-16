@@ -265,7 +265,7 @@ on a stack.
 - `@smith-style/SKILL.md` - Conventional commits, branch naming
 - `@smith-tests/SKILL.md` - Testing standards (pre-PR checklist)
 - `@smith-research/SKILL.md` - Research best practices before implementing review feedback
-- `@smith-validation/SKILL.md` - Debugging, root cause analysis for review issues
+- `@smith-verification/SKILL.md` - Debugging, root cause analysis for review issues
 
 ## Before You Finish
 

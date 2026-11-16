@@ -15,7 +15,7 @@ description: Reasoning frameworks and problem decomposition. Use when planning a
 **MECE relationship**:
 - **smith-analysis** (this file) - Constructive thinking (how to reason)
 - `@smith-clarity/SKILL.md` - Defensive thinking (what to avoid)
-- `@smith-validation/SKILL.md` - Proving/testing (verifying correctness)
+- `@smith-verification/SKILL.md` - Proving/testing (verifying correctness)
 
 ## Reasoning Patterns
 
@@ -145,7 +145,7 @@ Think backward to avoid failure:
 - Avoid stupidity rather than seeking brilliance
 
 Inversion and pre-mortem stress-test a PLAN. To adversarially verify FINDINGS
-already in hand, see `@smith-validation` Adversarial Verification.
+already in hand, see `@smith-verification` Adversarial Verification.
 
 ## Comprehensive Review
 
@@ -172,4 +172,4 @@ Ensure coverage by examining from 6 perspectives:
 
 - @smith-guidance/SKILL.md - Anti-sycophancy, safety rules, making changes
 - `@smith-clarity/SKILL.md` - Cognitive guards, logic fallacies
-- `@smith-validation/SKILL.md` - Hypothesis testing, adversarial verification of findings
+- `@smith-verification/SKILL.md` - Hypothesis testing, adversarial verification of findings

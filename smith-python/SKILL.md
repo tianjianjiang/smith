@@ -21,7 +21,7 @@ description: Python development with uv, pytest and ruff. Use when writing or ru
 - Keep imports at module level, not inline within functions
 - Use a single package manager consistently within a project
 - Add `# noqa` to silence ruff/flake8 only when it meets the
-  exception criteria in `@smith-validation/SKILL.md`
+  exception criteria in `@smith-verification/SKILL.md`
 - Address F841 unused-variable warnings directly, rather than
   renaming to a `_` prefix to suppress them
 

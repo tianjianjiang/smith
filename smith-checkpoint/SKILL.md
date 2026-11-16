@@ -369,7 +369,7 @@ When invoked via `/smith-checkpoint` (no arguments required):
         path; later Bash calls reuse that path as a literal string
       - Each round spawns both checkers in one message:
         - VERIFIER (verification: is what is written true?), SKEPTIC
-          role, named in its prompt to invoke `@smith-validation` and to
+          role, named in its prompt to invoke `@smith-verification` and to
           list the skills it invoked (re-run with the rules inline when
           it did not): split the body and the plan into single claims (a
           commit, a checkbox state, the `<- CURRENT` task, a `file:line`,

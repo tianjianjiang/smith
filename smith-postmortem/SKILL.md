@@ -149,4 +149,4 @@ Identify: trigger events, cascade failures, response delays, resolution bottlene
 ## Related
 
 - `@smith-clarity/SKILL.md` - Root cause analysis techniques (Five Whys, fishbone)
-- `@smith-validation/SKILL.md` - Hypothesis testing
+- `@smith-verification/SKILL.md` - Hypothesis testing

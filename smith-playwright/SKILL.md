@@ -70,7 +70,7 @@ tools before first use.
 ## Related
 
 - `@smith-tests/SKILL.md` - Testing standards, TDD workflow
-- `@smith-validation/SKILL.md` - Root cause analysis
+- `@smith-verification/SKILL.md` - Root cause analysis
 - `@smith-nuxt/SKILL.md` - Nuxt testing patterns
 - `@smith-mcp-browser/SKILL.md` - Browser MCP plugin reliability (chrome-devtools-mcp, Playwright MCP)
 
