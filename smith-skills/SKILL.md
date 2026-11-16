@@ -209,11 +209,36 @@ against `smith-ctx-claude/anchors.lock`.
 - Kiro: 70% warning, 80% critical
 ```
 
+## Quality Assurance for a Skill Change
+
+- A change of a skill's body text changes what an agent does, so a
+  behaviour eval checks it: cases in `«skill»/evals/`, run by
+  `smith-skills/scripts/behaviour-eval.mjs` once on the change (`--source`)
+  and once on the version before it (`--baseline`). Write both cases
+  below before the first edit of the SKILL.md.
+  - Protect first: a case for behaviour that must stay, which every run of
+    both versions passes (the regression rule).
+  - Then a failing check: a case for the new behaviour that the version
+    before the change fails.
+  - Then the change. It passes when every run with the change passes every
+    judge while some run of the version before it fails (the goal rule);
+    one passing run among failing ones does not count. A report of the
+    result states this rule in full, not only its name.
+    `behaviour-eval-summary.mjs` prints both rules per case and marks a
+    case with an error or a missing version incomplete.
+- A change of a frontmatter `description` changes when the skill loads:
+  measure it on both versions with
+  `smith-ctx-claude/scripts/skill-trigger-eval.mjs` (`run`, then `compare`).
+- A script or hook that a skill tells agents to run is code: a shell test
+  in `«skill»/scripts/tests/`, listed in that folder's `run-all.sh`, fails
+  before the change and passes after it. A behaviour eval does not check a
+  script.
+- Commands, prerequisites and what a run leaves:
+  `smith-skills/scripts/README.md`.
+
 ## Related
 
 - `@smith-xml/SKILL.md` - XML tags for runtime prompts (not SKILL.md bodies)
-- Behaviour evals for a skill live in its `evals/` folder;
-  `smith-skills/scripts/behaviour-eval.mjs` runs them
 - @smith-ctx/SKILL.md - Context management strategies
 - @smith-principles/SKILL.md - Core coding principles
 

@@ -19,6 +19,7 @@ description: Testing standards and test-driven development (TDD). Use when writi
 - Run explicit test paths instead of `pytest -m "not integration"` when the folder structure is mirrored — that flag causes import conflicts
 - Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-validation/SKILL.md` Bugfix Discipline)
 - For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing — write the test to match the real bug, not to fit the fix
+- For a change to a SKILL.md, or to a script or hook a skill tells agents to run, the tests that come first are the quality assurance steps of `@smith-skills/SKILL.md` — load that skill and follow them instead of the pytest workflow below
 
 ## Test Organization
 
