@@ -1,0 +1,41 @@
+schema_version: v1alpha1
+environment:
+  type: docker
+  image: node:24-bookworm-slim
+skills:
+  - source: local_path
+    path: .
+    include:
+      - SKILL.md
+  - source: local_path
+    path: ../smith-analysis
+  - source: local_path
+    path: ../smith-clarity
+  - source: local_path
+    path: ../smith-dialectic
+  - source: local_path
+    path: ../smith-research
+  - source: local_path
+    path: ../smith-validation
+  - source: local_path
+    path: ../smith-verification
+  - source: local_path
+    path: ../smith-subagents
+engine:
+  name: claude_code
+  version: 2.1.321
+  model:
+    provider: anthropic
+    name: claude-sonnet-5-5
+cases:
+  files:
+    - evals/cases/one-blind-subagent-per-skill.claude_code.yaml
+    - evals/cases/quick-check-keeps-lenses-separate.claude_code.yaml
+    - evals/cases/returns-go-to-an-aggregator.claude_code.yaml
+  defaults:
+    timeout_seconds: 900
+    max_turns: 40
+  parallelism: 1
+report:
+  formats: [json, html]
+  artifacts: [transcript]

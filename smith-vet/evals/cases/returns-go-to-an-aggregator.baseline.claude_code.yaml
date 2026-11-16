@@ -1,0 +1,43 @@
+title: The returns of the named skills are handed to an aggregator subagent
+description: >
+  Claim: goal. smith-vet hands the returns to one more subagent that
+  reconciles them, so the main thread, which has its own view of the plan,
+  does not; the pasted instruction says nothing of this. Asked of both arms
+  alike, so that the baseline can pass and void the claim: one Agent call is
+  given the return of every named skill. Asked in addition only where
+  smith-vet is installed, as conformance and not as a comparison: that call
+  uses the prompt of smith-vet's Aggregation section and carries, besides
+  that prompt and the returns, nothing of the main thread's own except
+  RETURN: «skill name» labels and the paths of its inputs. Every
+  with-change run passes and some baseline run fails.
+  Experiment variable: how the instruction reaches the agent, as one
+  treatment: the with-change arm has smith-vet installed and the prompt
+  is the command; the baseline arm has no smith-vet and the prompt is the
+  user's instruction pasted verbatim.
+  Control variables: the lens skills (both arms from the same commit), the
+  model, the workspace files, the judge and what it reads (the Agent calls
+  of the transcript, never the prompt wording).
+input:
+  prompt: |
+    i usually ask for exploration and verification and validation and planning instruction below:
+    > use independent subagents effectively and efficiently with specific smith skills each. at least /smith-analysis /smith-clarity /smith-dialectic /smith-research /smith-validation must be individual subagents, respectively.
+
+    Apply it to docs/plan.md.
+context:
+  files:
+    "notes/request.md": |
+      # Request
+
+      2026-11-04T09:12:40+09:00 Priya: Sessions drop for some users after each deploy. Please plan a fix that keeps users signed in across deploys, and tell me what it costs us in latency.
+    "docs/plan.md": |
+      # Plan: keep sessions across deploys
+
+      1. Move the session store from in-process memory to Redis 7.4, which the vendor says guarantees zero data loss on failover.
+      2. Every other team already uses Redis for sessions, so it is the right choice here too.
+      3. We already spent two sprints on the in-process store, so keep its serializer and only swap the storage call.
+      4. Deploy the change to all regions at once on Friday evening, when traffic is lowest.
+      5. Done when no session drops in the first deploy after the change.
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-aggregator.sh
+  timeout_seconds: 30

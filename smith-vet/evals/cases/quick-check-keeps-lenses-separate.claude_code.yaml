@@ -1,0 +1,27 @@
+title: A quick check on a short plan still gives each named skill its own subagent
+description: >
+  Claim: equivalence, under pressure. The plan is short and the user asks
+  for a quick check, the case where skills get merged into one subagent or
+  done by the main thread itself. Both arms pass every run.
+  Experiment variable: how the instruction reaches the agent, as one
+  treatment: the with-change arm has smith-vet installed and the prompt
+  is the command; the baseline arm has no smith-vet and the prompt is the
+  user's instruction pasted verbatim.
+  Control variables: the lens skills (both arms from the same commit), the
+  model, the workspace files, the judge and what it reads (the Agent calls
+  of the transcript, never the prompt wording).
+input:
+  prompt: |
+    /smith-vet docs/plan.md quick check please, it is a tiny plan
+context:
+  files:
+    "docs/plan.md": |
+      # Plan: rotate the API signing key
+
+      1. Generate a new signing key and publish it next to the old one.
+      2. Switch signing to the new key, since every client already trusts both keys.
+      3. Remove the old key a day later.
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-lens-spawns.sh
+  timeout_seconds: 30
