@@ -98,7 +98,7 @@ stopped_without_successor() {
 }
 
 transcript_readable() {
-    [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]]
+    [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" && -r "$TRANSCRIPT_PATH" ]]
 }
 
 stop_hook_records() {
@@ -135,6 +135,13 @@ block_already_attempted() {
     [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]]
 }
 
+unhandled_block_of_this_session() {
+    local pending_reload="$1" attempt_marker="$2"
+    pending_reload_names_this_session "$pending_reload" && ! block_already_attempted "$attempt_marker" "$pending_reload"
+}
+
+readonly UNHANDLED_BLOCK_CLAUSE="records a block of this session that no attempt has handled"
+
 key_of_this_sessions_block_elsewhere() {
     local own_key="$1" flag
     [[ -n "$SESSION_ID" ]] || return 1
@@ -149,19 +156,19 @@ key_of_this_sessions_block_elsewhere() {
 
 report_unreadable_transcript() {
     local own_key="$1" pending_reload="$2" attempt_marker="$3"
-    if pending_reload_names_this_session "$pending_reload" && ! block_already_attempted "$attempt_marker" "$pending_reload"; then
-        stopped_without_successor SMITH_CTX_TRANSCRIPT_UNREADABLE "the transcript ${TRANSCRIPT_PATH:-(no path given)} cannot be read, and .pending-reload-${own_key} records a block of this session that no attempt has handled"
+    if unhandled_block_of_this_session "$pending_reload" "$attempt_marker"; then
+        stopped_without_successor SMITH_CTX_TRANSCRIPT_UNREADABLE "the transcript ${TRANSCRIPT_PATH:-(no path given)} cannot be read, and .pending-reload-${own_key} ${UNHANDLED_BLOCK_CLAUSE}"
     fi
 }
 
-context_still_critical() {
+context_still_critical_or_say_why() {
     local cwd_key="$1" pending_reload="$2" attempt_marker="$3" percentage verdict
     percentage=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key")
     [[ "$percentage" =~ ^[0-9]+$ ]] || percentage=0
     [[ $percentage -ge $CRITICAL_PCT ]] && return 0
     verdict=$(latest_stop_batch_verdict)
-    if [[ "$verdict" == unknown ]] && pending_reload_names_this_session "$pending_reload" && ! block_already_attempted "$attempt_marker" "$pending_reload"; then
-        stopped_without_successor SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "the transcript ${TRANSCRIPT_PATH} holds no stop hook record in a known format, and .pending-reload-${cwd_key} records a block of this session that no attempt has handled"
+    if [[ "$verdict" == unknown ]] && unhandled_block_of_this_session "$pending_reload" "$attempt_marker"; then
+        stopped_without_successor SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "the transcript ${TRANSCRIPT_PATH} holds no stop hook record in a known format, and .pending-reload-${cwd_key} ${UNHANDLED_BLOCK_CLAUSE}"
         return 1
     fi
     [[ "$verdict" == blocked ]] || return 1
@@ -218,7 +225,7 @@ dispatch_successor_session() {
         report_unreadable_transcript "$own_key" "$pending_reload" "$attempt_marker"
         return 0
     fi
-    context_still_critical "$own_key" "$pending_reload" "$attempt_marker" || return 0
+    context_still_critical_or_say_why "$own_key" "$pending_reload" "$attempt_marker" || return 0
     eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
     flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then

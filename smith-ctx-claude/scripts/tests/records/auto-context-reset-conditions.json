@@ -1,0 +1,78 @@
+{
+  "recordedAt": "2026-11-17T03:28:04+09:00",
+  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "model": "haiku",
+  "serenaVersion": "Serena 2.1.1.dev0",
+  "environment": {
+    "checks": {
+      "evalFolderIsNotTheRunnersConfiguration": true,
+      "evalProfileIsLoggedIn": true,
+      "evalProfileUsesTheEvalFolder": true,
+      "probeFolderIsTrustedInTheEvalProfile": true,
+      "evalSettingsFileIsNotALink": true,
+      "evalFlagsFolderIsNotALink": true
+    }
+  },
+  "versionUnderTest": {
+    "checks": {
+      "evalSkillsAreThisCheckout": true,
+      "evalStopHookIsThisCheckoutsAndHasTheDispatchStep": true,
+      "evalAllowRulesNameNoInstalledCopy": true,
+      "basicMemoryProjectWasRegistered": true
+    }
+  },
+  "continuation": {
+    "checks": {
+      "probeSerenaProjectWasCreated": true,
+      "firstSessionStarted": true,
+      "firstSessionBlockedWithTheCode": true,
+      "checkpointWentToTheProbeSerenaProject": true,
+      "successorAppeared": true,
+      "successorWasStartedWithTheHooksRestorePrompt": true,
+      "bothSessionsAreListedInTheProbeFolder": true,
+      "evalStoppedTheSuccessor": true,
+      "sessionsRanNoCommandOnAnInstalledCopy": true
+    },
+    "observations": {
+      "commandsReachingAnInstalledCopy": [],
+      "checkpointMemories": [
+        "zq_probe_session_checkpoint.md"
+      ],
+      "firstSessionLaunchFlagNames": [
+        "--permission-mode",
+        "--model"
+      ],
+      "successorLaunchFlagNames": [
+        "--name",
+        "--permission-mode"
+      ]
+    }
+  },
+  "failedDispatch": {
+    "checks": {
+      "probeSerenaProjectWasCreated": true,
+      "firstSessionStarted": true,
+      "firstSessionBlockedWithTheCode": true,
+      "checkpointWentToTheProbeSerenaProject": true,
+      "firstSessionWroteItsCheckpointFlag": true,
+      "attemptWasRecorded": true,
+      "firstSessionIsListedInTheProbeFolder": true,
+      "noSuccessorAppeared": true,
+      "restoreFlagWasKept": true,
+      "hookReportedTheFailedDispatch": true,
+      "reportNamedTheSwitchThatRefusedTheLaunch": true,
+      "sessionRanNoCommandOnAnInstalledCopy": true
+    },
+    "observations": {
+      "commandsReachingAnInstalledCopy": [],
+      "firstSessionStateAfterTheFailedDispatch": "done"
+    }
+  },
+  "isolation": {
+    "checks": {
+      "runnersFlagsNameNoProbe": true,
+      "basicMemoryProjectWasRemoved": true,
+      "cleanupFoundNoProblem": true
+    }
+  }
+}

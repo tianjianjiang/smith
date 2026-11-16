@@ -235,9 +235,10 @@ session, which has a fresh context, continues from a file.
 - Found while building it: `--add-dir` takes several values, so a prompt
   placed after it is read as one more folder and the session starts idle
   without a prompt; the fixture puts `--` before the prompt.
-- Not measured: a session whose hooks come from the user settings instead of
-  `--settings`, the permission mode of the new session, and what the first
-  session should do after the dispatch.
+- Not measured here: the permission mode of the new session, and what the
+  first session should do after the dispatch. A hook that comes from the
+  user settings instead of `--settings` is measured in "Conditions of the
+  automatic continuation" below.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
@@ -272,15 +273,24 @@ outside.
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason, with no code. The record's observation
   `ranInTheDefaultProfile` says whether the eval used `~/.claude`.
-- Limit: a copy of `enforce-clear.sh` that the profile's user settings
-  register also runs. Run in the default profile, an installed older copy
-  blocks with today's reason beside the new one; the new reason's presence,
-  and its absence in the control, tells the runs apart. Run in the eval
-  profile of the conditions eval below (`CLAUDE_CONFIG_DIR` set to it and
-  `SMITH_PROBE_SESSION_FOLDER` a new folder under its `probes`), that
-  profile registers this checkout's copy, so the first session's Stop hook
-  records list it more than once with the same reason, and the control's
-  with today's reason. The recorded run of 2026-11-16 used the eval profile.
+- Only this checkout's copy of the hook answers the stops of the sessions
+  the eval starts: they are started with `--setting-sources project,local`,
+  which leaves out the user settings and with them an installed copy of
+  `enforce-clear.sh`, so a changed hook can be evaluated before it is
+  installed. This holds only when the trusted folder's own project and local
+  settings register no `enforce-clear.sh`; those two sources are still
+  loaded. The eval does not check this: the observation
+  `firstSessionTranscriptAlsoHoldsTheUnchangedReason` shows only a copy
+  without the dispatch step that also answered, and a copy with the
+  dispatch step is not told apart. The new session is started by the hook without that option and
+  loads the user settings again. This checkout's hook registered in user
+  settings is measured in "Conditions of the automatic continuation"
+  below.
+- The recorded run of 2026-11-17 ran in the eval profile of that section
+  (`CLAUDE_CONFIG_DIR` set to it, `SMITH_PROBE_SESSION_FOLDER` a new folder
+  under its `probes`); each Stop hook record of the first session lists one
+  hook, although that profile's user settings register this checkout's
+  copy too.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
@@ -310,6 +320,86 @@ the same `toolUseID` when the summary was skipped
   `blockRecordedInAStopHookSummaryWithItsCode` fails when the entry changes
   shape. Then copy the new entry with the home folder replaced, under the new
   version's name.
+
+## Conditions of the automatic continuation
+
+Measures these conditions of the version under test, with the hook of this
+checkout registered in user settings (not a `--settings` file): a session
+is continued after its checkpoint, and a refused launch starts nothing and
+keeps the checkpoint. How the model checkpoints and what a restore returns
+are not measured here.
+
+- Script: `../auto-context-reset-conditions.live-eval.mjs`
+- Record: `auto-context-reset-conditions.json`
+- Prerequisites: Node.js, `claude` with background sessions enabled,
+  `basic-memory` 1.0 or later, `uvx`, and an eval profile set up once. The
+  eval profile is a Claude Code configuration folder of its own
+  (`~/.claude-smith-eval`, or `SMITH_EVAL_CONFIG_DIR`), logged in with the
+  same account and trusting its `probes` folder:
+  `mkdir -p ~/.claude-smith-eval/probes && cd ~/.claude-smith-eval/probes && CLAUDE_CONFIG_DIR=~/.claude-smith-eval command claude`,
+  then `/login`, accept the folder trust prompt, and `/exit`. A shell
+  function named `claude` that unsets `CLAUDE_CONFIG_DIR` would log the
+  default profile in instead; `command claude` bypasses it. The login is
+  kept per configuration folder, so it survives later runs.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 node smith-ctx-claude/scripts/tests/auto-context-reset-conditions.live-eval.mjs`
+- What it does: every `claude` call runs with `CLAUDE_CONFIG_DIR` set to
+  the eval profile, so its sessions, background supervisor, transcripts,
+  flags (`plans`) and checkpoint backups stay in that folder. Each run
+  links the profile's `skills` to this checkout and writes its
+  `settings.json`: the Stop hook is this checkout's `enforce-clear.sh`
+  through that link, the permission rules are the default profile's with
+  its folder replaced by the eval profile's and without the allow rules
+  that still name the installed copy, and `SERENA_HOME` points at
+  the run's own folder. Each measurement starts one background session in
+  a new folder under `probes`, outside any repository; the folder lowers
+  the threshold, is a Serena project of that `SERENA_HOME`, and names a
+  temporary Basic-Memory project (`zq-eval-«id»`) registered for the run.
+  The session runs the real `/smith-checkpoint` with no instruction added.
+  - Continuation: the eval waits for a second session in the folder and
+    reads the hook's restore prompt from its transcript, then stops it.
+  - Refused launch: after the first session has started, the eval adds
+    `CLAUDE_CODE_DISABLE_AGENT_VIEW` to the folder's settings, so the
+    hook's `claude --bg` is refused.
+  At the end the sessions, flags, the run folder and the Basic-Memory
+  project are removed; the transcripts in the profile's `projects` are
+  kept. A run that is interrupted removes nothing: stop and remove the
+  eval profile's sessions with `CLAUDE_CONFIG_DIR=~/.claude-smith-eval
+  claude stop` and `claude rm`, delete the `zq-run-` folder under
+  `probes`, remove the `zq-eval-` project with `basic-memory project
+  remove`, and delete the flag files in the profile's `plans`.
+- Passing output: the eval profile is logged in, uses its own folder and
+  trusts `probes`, and neither its `settings.json` nor its `plans` folder
+  is a symbolic link, since the eval writes and deletes there; its skills are this checkout, its Stop hook is this
+  checkout's with the dispatch step, and no allow rule names the
+  installed copy; a Stop hook record of the first session holds an error
+  starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `, its checkpoint is a
+  memory of the folder's Serena project, and a second session in the
+  folder starts with the hook's restore prompt. With the launch refused, no
+  other session appears, the restore flag stays, the attempt is recorded,
+  and a Stop hook notice of the first session, recorded as an attachment
+  of type `hook_system_message`, starts with `[SMITH_CTX_DISPATCH_FAILED] `
+  and names the switch. The hook's texts
+  are matched by these codes, never by their wording.
+  No probe session ran a command on a path of the installed copy
+  (`$HOME/.claude/`, `~/.claude/` or `~/.smith/`), no flag of the runner's own profile
+  names the run folder, and the Basic-Memory project is no longer listed.
+- A run fails, and is rerun, when a probe session types a path of the
+  installed copy itself (`$HOME/.claude/skills/...`) instead of the
+  skill's `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`: the check reads the
+  command text, which cannot tell a listing from an execution.
+- Seen and not explained: in one run the hook after the checkpoint
+  printed nothing and no second session started, while a later run with
+  the same settings, and a run of the hook under a shell trace, continued
+  the session.
+- The record names the Serena version that `uvx` resolved
+  (`serenaVersion`); the eval takes the same unpinned Serena that
+  `smith-checkpoint/scripts/write-checkpoint.sh` runs, so the probe
+  projects match what the checkpoint writes into.
+- Optional parameters: `SMITH_EVAL_CONFIG_DIR`,
+  `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
+  `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
+  `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
 ## Integrity
 
