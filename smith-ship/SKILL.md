@@ -103,8 +103,8 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
 ## Stacked mode — `/smith-ship stack`
 
 For multi-part work that should ship as a dependent stack of PRs. Also load
-`@smith-gh-pr` "Stacked PRs" (+ its `references/STACKS.md` when operating on
-the stack) and `@smith-worktree`.
+`@smith-gh-pr` "Stacked PRs" (+ `smith-gh-pr/references/STACKS.md` when
+operating on the stack) and `@smith-worktree`.
 
 - **Decompose first** — split into logically AND semantically atomic units,
   each one branch/PR. Present the numbered decomposition and get scope

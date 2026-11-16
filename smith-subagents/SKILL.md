@@ -7,8 +7,8 @@ description: Subagent spawning and return discipline. Use when about to spawn a 
 
 **Scope:** Spawning, scoping, and consuming subagents and workflow
 orchestration; what tools to grant and how to trust returns
-**Prerequisites:** @smith-guidance/SKILL.md and its
-`references/IN-BAND-PROGRESS.md` (in-band progress),
+**Prerequisites:** @smith-guidance/SKILL.md and
+`smith-guidance/references/IN-BAND-PROGRESS.md` (in-band progress),
 @smith-ctx/SKILL.md (delegation, context isolation)
 
 ## CRITICAL: Spawn Narrow, Trust Nothing
