@@ -74,8 +74,14 @@ newest_file_of() {
     printf '%s' "$newest"
 }
 
+readonly AUTO_RESET_BLOCKED=SMITH_CTX_AUTO_RESET_BLOCKED
+
+coded() {
+    printf '[%s] %s' "$1" "$2"
+}
+
 json_system_message() {
-    jq -n --arg m "$1" '{systemMessage: $m}'
+    jq -n --arg m "$(coded "$1" "$2")" '{systemMessage: $m}'
 }
 
 first_output_line() {
@@ -87,10 +93,80 @@ first_output_line() {
     done <<<"$1"
 }
 
+stopped_without_successor() {
+    json_system_message "$1" "Context reset: $2. No background session was started; checkpoint this session if it has not been checkpointed, then type /clear."
+}
+
+transcript_readable() {
+    [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]]
+}
+
+stop_hook_records() {
+    jq -R -c 'fromjson? | select(type == "object")
+        | if .type == "system" and .subtype == "stop_hook_summary" and (has("hookLabel") | not) then {id: .toolUseID, errors: .hookErrors}
+          elif .type == "attachment" and (.attachment | type) == "object" and .attachment.hookEvent == "Stop" then
+            {id: .attachment.toolUseID, errors: (if .attachment.type == "hook_blocking_error" then [.attachment.blockingError.blockingError?] else [] end)}
+          else empty end' "$TRANSCRIPT_PATH"
+}
+
+latest_stop_batch_verdict() {
+    local records
+    records=$(stop_hook_records 2>/dev/null) || { printf 'unknown'; return; }
+    jq -r -s --arg code "[${AUTO_RESET_BLOCKED}] " '
+        if length == 0 then "unknown" else
+          last.id as $id
+          | (if $id == null then [last] else map(select(.id == $id)) end) as $batch
+          | if any($batch[]; .errors | type != "array") then "unknown"
+            elif any($batch[] | .errors[]; type == "string" and startswith($code)) then "blocked"
+            else "other" end
+        end' <<<"$records" 2>/dev/null || printf 'unknown'
+}
+
+key_of_this_sessions_block_elsewhere() {
+    local own_key="$1" flag
+    [[ -n "$SESSION_ID" ]] || return 1
+    for flag in "${CTX_FLAGS_DIR}"/.pending-reload-*; do
+        [[ -f "$flag" && "$flag" != *.exit-marker && "$flag" != "${CTX_FLAGS_DIR}/.pending-reload-${own_key}" ]] || continue
+        [[ "$(sed -n '2p' "$flag" 2>/dev/null)" == "$SESSION_ID" ]] || continue
+        printf '%s' "${flag##*/.pending-reload-}"
+        return 0
+    done
+    return 1
+}
+
+block_not_yet_handled() {
+    local pending_reload="$1" attempt_marker="$2"
+    [[ -n "$SESSION_ID" && "$(sed -n '2p' "$pending_reload" 2>/dev/null)" == "$SESSION_ID" ]] || return 1
+    [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && return 1
+    return 0
+}
+
 context_still_critical() {
-    local cwd_key="$1"
-    [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]] || return 1
-    [[ $(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key") -ge $CRITICAL_PCT ]]
+    local cwd_key="$1" pending_reload="$2" attempt_marker="$3" percentage
+    if ! transcript_readable; then
+        block_not_yet_handled "$pending_reload" "$attempt_marker" \
+            && stopped_without_successor SMITH_CTX_TRANSCRIPT_UNREADABLE "the transcript ${TRANSCRIPT_PATH:-(no path given)} cannot be read, and .pending-reload-${cwd_key} records a block of this session that no attempt has handled"
+        return 1
+    fi
+    percentage=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key")
+    [[ "$percentage" =~ ^[0-9]+$ && $percentage -ge $CRITICAL_PCT ]] && return 0
+    [[ "$(latest_stop_batch_verdict)" == blocked ]] \
+        && json_system_message SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL "Context reset: after this hook blocked the stop, context is at ${percentage:-0}%, below the critical ${CRITICAL_PCT}%, so no background session was started and none is needed."
+    return 1
+}
+
+report_missing_pending_reload() {
+    local own_key="$1" other_key
+    transcript_readable || return 0
+    case "$(latest_stop_batch_verdict)" in
+        unknown)
+            stopped_without_successor SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN "the transcript ${TRANSCRIPT_PATH} holds no stop hook record in a known format, and whether this hook blocked this session is unknown"
+            ;;
+        blocked)
+            other_key=$(key_of_this_sessions_block_elsewhere "$own_key")
+            stopped_without_successor SMITH_CTX_PENDING_RELOAD_MISSING "this session was blocked, but .pending-reload-${own_key} is missing${other_key:+ (the one for this session is filed under the session key ${other_key})}"
+            ;;
+    esac
 }
 
 remove_abandoned_attempt_markers() {
@@ -116,14 +192,15 @@ dispatch_successor_session() {
     remove_abandoned_attempt_markers "$own_key"
     if [[ ! -f "$pending_reload" ]]; then
         rm -f "$attempt_marker"
+        report_missing_pending_reload "$own_key"
         return 0
     fi
-    context_still_critical "$own_key" || return 0
+    context_still_critical "$own_key" "$pending_reload" "$attempt_marker" || return 0
     eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
     flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then
         [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && return 0
-        json_system_message "Context reset: no checkpoint was written after the block, so no background session was started. Checkpoint this session, or type /clear."
+        json_system_message SMITH_CTX_NO_CHECKPOINT "Context reset: no checkpoint was written after the block, so no background session was started. Checkpoint this session, or type /clear."
         return 0
     fi
     printf '%s\n' "$eligible_flags" >> "$attempt_marker"
@@ -136,10 +213,10 @@ dispatch_successor_session() {
     output=$(cd -- "$hook_cwd" && claude "${launch_options[@]}" -- "$prompt" < /dev/null 2>&1)
     if [[ "$output" =~ backgrounded\ ·\ ([0-9A-Za-z_-]+) ]]; then
         rm -f "$flag"
-        json_system_message "Context reset: the work continues in background session ${BASH_REMATCH[1]} named \"${name}\"."
+        json_system_message SMITH_CTX_CONTINUED "Context reset: the work continues in background session ${BASH_REMATCH[1]} named \"${name}\"."
     else
         reason=$(first_output_line "$output")
-        json_system_message "Context reset: dispatching a background session for checkpoint \"${label}\" failed${reason:+ (${reason})}; /clear still restores the checkpoint."
+        json_system_message SMITH_CTX_DISPATCH_FAILED "Context reset: dispatching a background session for checkpoint \"${label}\" failed${reason:+ (${reason})}; /clear still restores the checkpoint."
     fi
 }
 
@@ -261,7 +338,7 @@ case "$FLAG_TYPE" in
 esac
 
 if auto_reset_dispatch_enabled; then
-    REASON="${STATUS}. Checkpoint this session; a fresh background session then continues from the checkpoint."
+    REASON=$(coded "$AUTO_RESET_BLOCKED" "${STATUS}. Checkpoint this session; a fresh background session then continues from the checkpoint.")
 else
     REASON="${STATUS}. Checkpoint this session, then /clear."
 fi

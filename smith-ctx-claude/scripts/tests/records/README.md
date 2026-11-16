@@ -279,6 +279,28 @@ outside.
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
+## A Stop hook block as Claude Code writes it in the transcript
+
+The transcript format is not documented
+(https://code.claude.com/docs/en/hooks says only that the file "is written
+asynchronously and may lag the in-memory conversation"), so
+`../../enforce-clear.sh` reads its own earlier block from a recorded shape:
+the `stop_hook_summary` entry, or the `hook_blocking_error` attachment of
+the same `toolUseID` when the summary was skipped
+(https://github.com/anthropics/claude-code/issues/74648).
+
+- Record: `stop-hook-summary.claude-code-2.1.325.jsonl`, the first
+  `stop_hook_summary` entry of a real background session on Claude Code
+  2.1.325, taken from the end-to-end run of the automatic continuation, with
+  the home folder replaced by `/Users/example`. Its reason predates the
+  `[SMITH_CTX_AUTO_RESET_BLOCKED]` code.
+- Used by: `../enforce-clear-dispatch.test.sh`, which reads the sample as
+  recorded and with the coded reason.
+- Refresh after a Claude Code upgrade: run the end-to-end eval above; its check
+  `blockRecordedInAStopHookSummaryWithItsCode` fails when the entry changes
+  shape. Then copy the new entry with the home folder replaced, under the new
+  version's name.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with

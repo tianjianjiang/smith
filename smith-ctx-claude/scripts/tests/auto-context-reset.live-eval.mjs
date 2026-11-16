@@ -19,6 +19,7 @@ const ENFORCE_CLEAR = resolve(HERE, "..", "enforce-clear.sh");
 const WRITE_RELOAD_FLAG = resolve(HERE, "..", "write-reload-flag.sh");
 const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
 const DISPATCH_REASON = "a fresh background session then continues from the checkpoint";
+const AUTO_RESET_BLOCKED_PREFIX = "[SMITH_CTX_AUTO_RESET_BLOCKED] ";
 const UNCHANGED_REASON = "Checkpoint this session, then /clear.";
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
@@ -87,6 +88,17 @@ function transcriptPath(sessionId) {
     if (existsSync(candidate)) return candidate;
   }
   return undefined;
+}
+
+function stopHookSummaryErrors(text) {
+  return text.split("\n").flatMap((line) => {
+    try {
+      const entry = JSON.parse(line);
+      return entry?.type === "system" && entry.subtype === "stop_hook_summary" ? [entry.hookErrors ?? []] : [];
+    } catch {
+      return [];
+    }
+  });
 }
 
 function transcriptText(sessionId) {
@@ -244,6 +256,7 @@ try {
   checks = {
     firstSessionStarted: Boolean(firstId),
     blockReasonNamedTheBackgroundContinuation: firstTranscript.includes(DISPATCH_REASON),
+    blockRecordedInAStopHookSummaryWithItsCode: stopHookSummaryErrors(firstTranscript).some((errors) => Array.isArray(errors) && errors.some((error) => typeof error === "string" && error.startsWith(AUTO_RESET_BLOCKED_PREFIX))),
     successorWithTheLabelInItsNameAppeared: Boolean(successorId),
     successorIsAnotherSession: Boolean(successorId) && successorId !== firstId,
     successorReportedTheCheckpointCodeWord: Boolean(answered) && answer.includes(checkpointWord),
@@ -251,7 +264,7 @@ try {
     dispatchConsumedTheRestoreFlag: restoreFlagsLabelled(label).length === 0,
     controlSessionStarted: Boolean(controlId),
     controlDispatchedNoSuccessor: Boolean(control) && controlWroteARestoreFlag && controlWaitReadTheSessionList && !controlSuccessorId,
-    controlBlockReasonUnchanged: controlTranscript.includes(UNCHANGED_REASON) && !controlTranscript.includes(DISPATCH_REASON),
+    controlBlockReasonUnchanged: controlTranscript.includes(UNCHANGED_REASON) && !controlTranscript.includes(DISPATCH_REASON) && !controlTranscript.includes(AUTO_RESET_BLOCKED_PREFIX),
   };
   observations = {
     successorNamePattern: successor?.name?.replaceAll(label, "«label»") ?? "not listed",

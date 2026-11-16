@@ -157,9 +157,9 @@ plan state file, and returns the session facts as additional context.
 **Automatic continuation of background sessions.** In a background session
 (`CLAUDE_JOB_DIR` set), unless `CTX_AUTO_RESET_DISPATCH=0` is in the `env`
 block of a settings file (a variable exported by the launching shell does
-not reach a background session's hooks), the block reason ends "a fresh
-background session then continues from the checkpoint" instead of "then
-/clear". A session that its terminal hosts is not affected, and neither is
+not reach a background session's hooks), the block reason starts with
+`[SMITH_CTX_AUTO_RESET_BLOCKED]` and ends "a fresh background session then
+continues from the checkpoint" instead of "then /clear". A session that its terminal hosts is not affected, and neither is
 any session when `lib-plan.sh`, which holds the restore wording, is missing.
 On the next stop, the one with `stop_hook_active` true, and only while the
 context is still at or above the threshold, the hook looks for a
@@ -188,6 +188,31 @@ typed into a terminal. Limits:
   dispatch fails.
 - The new session takes its model and allowed tools from its own settings,
   not from the earlier session.
+- Every outcome is told to the session itself in a `systemMessage`, never
+  in a shared file. The block reason and each notice start with a fixed
+  code, so they are matched by the code and never by their wording, which a
+  model may translate or paraphrase: `[SMITH_CTX_AUTO_RESET_BLOCKED]` (the
+  block), `[SMITH_CTX_CONTINUED]`, `[SMITH_CTX_DISPATCH_FAILED]`,
+  `[SMITH_CTX_NO_CHECKPOINT]`, `[SMITH_CTX_PENDING_RELOAD_MISSING]`,
+  `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`
+  and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
+- The hook knows it blocked this session from the latest Stop batch in the
+  transcript (records sharing one `toolUseID`): an error of its
+  `stop_hook_summary` or its `hook_blocking_error` attachment starting with
+  `[SMITH_CTX_AUTO_RESET_BLOCKED] `. The summary can be skipped
+  (https://github.com/anthropics/claude-code/issues/74648), and the format is
+  undocumented, so a readable transcript with no such record, or one whose
+  errors field is missing or not an array, is reported as an unknown format
+  instead of read as "not blocked". When the transcript cannot be read, a
+  `.pending-reload` file that names this session, with no newer attempt
+  marker, is the evidence instead.
+- With that evidence the hook says why nothing was dispatched: the
+  `.pending-reload` file is missing (naming the key it was filed under, if
+  any), the transcript cannot be read, or the context fell below the
+  threshold, where no new session is needed. Without it (another hook
+  blocked, or a stale `.pending-reload` file left by an earlier, handled
+  block) the stop stays silent. Recorded shape and how to refresh it after
+  a Claude Code upgrade: `smith-ctx-claude/scripts/tests/records/README.md`.
 
 Tests: `tests/enforce-clear-dispatch.test.sh`; live eval and record:
 `smith-ctx-claude/scripts/tests/records/README.md`.

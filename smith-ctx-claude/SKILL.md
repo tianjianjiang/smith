@@ -111,7 +111,8 @@ in a settings `env` block turns it off):** once the checkpoint is written,
 the hook starts a background session named `continue: «label»` that restores
 it, so no `/clear` is typed. The block reason says which case applies.
 Checkpoint as above, then stop; do not tell the user to `/clear` unless the
-hook then reports that no session was started. Conditions and limits:
+hook then reports that no session was started; every such notice starts
+with a `[SMITH_CTX_…]` code and says why. Conditions and limits:
 `smith-mode-plan-claude/references/HOOKS.md` "enforce-clear.sh (Stop)".
 
 ### Flag File and Injection Points
