@@ -1,0 +1,23 @@
+title: A section that another skill cites gets a versioned anchor, and the citation uses it
+description: >
+  Goal eval. The workspace is the whole tracked smith tree at origin/main; the
+  with-change arm also carries the feat/anchors changes (smith-skills/SKILL.md,
+  smith-ctx-claude/anchors.lock, the anchors scripts and their test). The
+  with-change smith-skills requires an empty anchor on the line above a cited
+  heading and a citation of the form @skill/SKILL.md#label-vN; the baseline has
+  no such rule, and smith-review already cites sections by heading text.
+input:
+  prompt: |
+    Use the smith-skills skill for this task.
+
+    Add a short section to smith-guidance/SKILL.md on what to do when two
+    rules give conflicting instructions: list both rules with their source
+    lines and ask the user which one applies; never pick one silently.
+    Then make smith-review/SKILL.md point its readers to that new section
+    where it tells them which smith skills to use.
+context:
+  repo_fixture: evals/fixtures/repos/smith
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-anchor.sh
+  timeout_seconds: 30

@@ -1,0 +1,25 @@
+schema_version: v1alpha1
+environment:
+  type: docker
+  image: node:24-bookworm
+skills:
+  - source: local_path
+    path: .
+    include:
+      - SKILL.md
+engine:
+  name: claude_code
+  version: 2.1.321
+  model:
+    provider: anthropic
+    name: claude-sonnet-5-5
+cases:
+  files:
+    - evals/cases/cited-section-gets-anchor.yaml
+  defaults:
+    timeout_seconds: 900
+    max_turns: 40
+  parallelism: 1
+report:
+  formats: [json, html]
+  artifacts: [transcript]
