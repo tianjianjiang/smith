@@ -270,10 +270,15 @@ outside.
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason.
-- Limit: an installed copy of `enforce-clear.sh` in the user settings also
-  blocks at the lowered threshold with today's reason, so the first session
-  sees both reasons; the new reason's presence, and its absence in the
-  control, is what tells the runs apart.
+- Limit: a copy of `enforce-clear.sh` that the profile's user settings
+  register also runs. Run in the default profile, an installed older copy
+  blocks with today's reason beside the new one; the new reason's presence,
+  and its absence in the control, tells the runs apart. Run in the eval
+  profile of the conditions eval below (`CLAUDE_CONFIG_DIR` set to it and
+  `SMITH_PROBE_SESSION_FOLDER` a new folder under its `probes`), that
+  profile registers this checkout's copy, so the first session's Stop hook
+  records list it twice with the same reason, and the control's twice with
+  today's reason. The recorded run of 2026-11-16 used the eval profile.
 - Optional parameters: `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
