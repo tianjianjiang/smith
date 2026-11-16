@@ -11,16 +11,7 @@ fail() { echo "FAIL: $1"; exit 1; }
 run() { printf '%s' "$1" | node "$HOOK"; }
 asks() { run "$2" | grep -q '"permissionDecision":"ask"' || fail "$1: expected ask"; }
 . "$HERE/lib/json-string.sh"
-silent_inputs_are_json() {
-  node -e '
-    const fs = require("fs");
-    const dir = process.argv[1];
-    const broken = fs.readdirSync(dir).filter((name) => {
-      try { JSON.parse(fs.readFileSync(`${dir}/${name}`, "utf8")); return false; } catch { return true; }
-    });
-    if (broken.length > 0) { console.log(broken.join("; ")); process.exit(1); }
-  ' "$WORK/silent-inputs"
-}
+. "$HERE/lib/json-inputs.sh"
 silent() {
   if [ "$1" != "malformed stdin" ]; then
     silent_count=$((silent_count + 1))
@@ -509,5 +500,5 @@ asks   "no tokenizer: a gh read asks too"       "$(bash_cmd 'gh pr view 1')"
 silent "no tokenizer: a command without gh passes" "$(bash_cmd 'ls -la')"
 denies "no tokenizer: an MCP write is still checked" "$(update_call "$NONE")"
 
-broken=$(silent_inputs_are_json) || fail "test input is not valid JSON: $broken"
+broken=$(json_files_are_valid "$WORK/silent-inputs") || fail "test input is not valid JSON: $broken"
 echo "PASS: external-write-guard"

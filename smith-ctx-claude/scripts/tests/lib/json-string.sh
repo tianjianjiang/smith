@@ -1,17 +1,20 @@
 json_string() {
   printf '%s.' "$1" | awk '
     BEGIN {
-      for (i = 1; i < 32; i++) {
-        control[i] = sprintf("%c", i)
-        escaped[i] = sprintf("\\u%04x", i)
-      }
-      escaped[8] = "\\b"; escaped[9] = "\\t"; escaped[12] = "\\f"; escaped[13] = "\\r"
+      for (i = 1; i < 32; i++) escaped[sprintf("%c", i)] = sprintf("\\u%04x", i)
+      escaped[sprintf("%c", 8)] = "\\b"
+      escaped[sprintf("%c", 9)] = "\\t"
+      escaped[sprintf("%c", 12)] = "\\f"
+      escaped[sprintf("%c", 13)] = "\\r"
+      escaped["\\"] = "\\\\"
+      escaped["\""] = "\\\""
     }
     {
-      line = $0
-      gsub(/\\/, "\\\\", line)
-      gsub(/"/, "\\\"", line)
-      for (i = 1; i < 32; i++) if (index(line, control[i])) gsub(control[i], escaped[i], line)
+      line = ""
+      for (i = 1; i <= length($0); i++) {
+        character = substr($0, i, 1)
+        line = line ((character in escaped) ? escaped[character] : character)
+      }
       text = text (NR > 1 ? "\\n" : "") line
     }
     END { printf "\"%s\"", substr(text, 1, length(text) - 1) }

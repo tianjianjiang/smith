@@ -29,6 +29,7 @@ printf '%s\n' \
   > "$NOTHING_LOADED"
 
 . "$HERE/lib/json-string.sh"
+. "$HERE/lib/json-inputs.sh"
 
 extra_fields() {
   fields="${1#\{}"
@@ -46,16 +47,6 @@ run() {
   node "$HOOK" < "$input_file"
 }
 
-hook_inputs_are_json() {
-  node -e '
-    const fs = require("fs");
-    const dir = process.argv[1];
-    const broken = fs.readdirSync(dir).filter((name) => {
-      try { JSON.parse(fs.readFileSync(`${dir}/${name}`, "utf8")); return false; } catch { return true; }
-    });
-    if (broken.length > 0) { console.log(broken.map((name) => fs.readFileSync(`${dir}/${name}`, "utf8")).join("\n")); process.exit(1); }
-  ' "$TMPD/hook-inputs"
-}
 
 bash_command() { printf '{"command":%s}' "$(json_string "$1")"; }
 
@@ -435,5 +426,5 @@ out=$(run "$TMPD/does-not-exist.jsonl" Bash "$(bash_command 'git commit -m messa
 out=$(printf 'not json' | node "$HOOK") || fail "malformed stdin: hook crashed"
 [ -z "$out" ] || fail "malformed stdin should be silent"
 
-broken=$(hook_inputs_are_json) || fail "a hook input built by run() is not valid JSON: $broken"
+broken=$(json_files_are_valid "$TMPD/hook-inputs") || fail "a hook input built by run() is not valid JSON: $broken"
 echo "PASS: skill-load-gate"
