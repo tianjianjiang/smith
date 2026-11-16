@@ -160,7 +160,8 @@ block of a settings file (a variable exported by the launching shell does
 not reach a background session's hooks), the block reason starts with
 `[SMITH_CTX_AUTO_RESET_BLOCKED]` and ends "a fresh background session then
 continues from the checkpoint" instead of "then /clear". A session that its
-terminal hosts is not affected, and neither is any session when `lib-plan.sh`, which holds the restore wording, is missing.
+terminal hosts is not affected, and neither is any session when
+`lib-plan.sh`, which holds the restore wording, is missing.
 On the next stop, the one with `stop_hook_active` true, and only while the
 context is still at or above the threshold, the hook looks for a
 `.pending-memory-restore-*` flag that carries this session's key and is
@@ -197,14 +198,16 @@ session in a `systemMessage`. Nothing is typed into a terminal. Limits:
   `[SMITH_CTX_NO_CHECKPOINT]`, `[SMITH_CTX_PENDING_RELOAD_MISSING]`,
   `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`,
   `[SMITH_CTX_CONTEXT_UNMEASURED]` and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
-- The hook takes the evidence that it blocked this session from the latest Stop batch in the
-  transcript (records sharing one `toolUseID`): an error of its
+- The hook takes the evidence that it blocked this session from the latest
+  Stop batch in the transcript (records sharing one `toolUseID`; a record
+  without one is a batch of its own): an error of its
   `stop_hook_summary` or its `hook_blocking_error` attachment starting with
   `[SMITH_CTX_AUTO_RESET_BLOCKED] `. The summary can be skipped
   (https://github.com/anthropics/claude-code/issues/74648), and the format is
-  undocumented, so a readable transcript with no such record, or one whose
-  errors field is missing or not an array, is reported as an unknown format
-  instead of read as "not blocked". When the transcript cannot be read, a
+  undocumented, so a readable transcript with no Stop hook record in a known
+  shape, or one whose errors field is missing or not an array, is reported
+  as an unknown format instead of read as "not blocked". When the
+  transcript cannot be read, even for lack of read permission, a
   `.pending-reload` file that names this session, with no newer attempt
   marker, is the evidence instead.
 - With that evidence the hook says why nothing was dispatched: the

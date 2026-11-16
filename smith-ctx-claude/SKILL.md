@@ -112,8 +112,9 @@ the hook starts a background session that restores it, so no `/clear` is
 typed; the session is named `«time» «label»`, where «time» is the
 checkpoint's time to the minute. The block reason says which case applies.
 Checkpoint as above, then stop; do not tell the user to `/clear` unless the
-hook then reports that no session was started; every notice of the hook
-starts with a `[SMITH_CTX_«reason»]` code and says why. Conditions and limits:
+hook then reports that no session was started; every `systemMessage`
+notice of the hook starts with a `[SMITH_CTX_«reason»]` code and says why.
+Conditions and limits:
 `smith-mode-plan-claude/references/HOOKS.md` "enforce-clear.sh (Stop)".
 
 ### Flag File and Injection Points
