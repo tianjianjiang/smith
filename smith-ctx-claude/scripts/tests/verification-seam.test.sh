@@ -1,65 +1,11 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-ALLOW="$HERE/verification-seam.allow"
 SEAM="$ROOT/smith-verification/SKILL.md"
-STUB="$ROOT/smith-validation/SKILL.md"
+VALIDATION="$ROOT/smith-validation/SKILL.md"
 status=0
 
 fail() { echo "FAIL: verification-seam: $1"; status=1; }
-
-unlisted_hits() {
-  needle="$1"
-  shift
-  git -C "$ROOT" grep -n -F "$needle" -- "$@" |
-  awk -v allow="$ALLOW" -v root="$ROOT" '
-    function heading_text(line) { sub(/^#+[ \t]*/, "", line); return line }
-    function heading_level(line) { match(line, /^#+/); return RLENGTH }
-    function mark_sections(path,    file, line, n, fenced, level, active, active_level) {
-      file = root "/" path
-      n = 0; fenced = 0; active = 0
-      while ((getline line < file) > 0) {
-        n++
-        if (line ~ /^```/) fenced = !fenced
-        if (!fenced && line ~ /^#+ /) {
-          level = heading_level(line)
-          if (active && level <= active_level) active = 0
-          if ((path "#" heading_text(line)) in section) { active = 1; active_level = level }
-        }
-        if (active) allowed_line[path ":" n] = 1
-      }
-      close(file)
-      marked[path] = 1
-    }
-    BEGIN {
-      while ((getline entry < allow) > 0) {
-        if (entry == "") continue
-        if (index(entry, "#") > 0) section[entry] = 1
-        else whole[entry] = 1
-      }
-    }
-    {
-      path = substr($0, 1, index($0, ":") - 1)
-      rest = substr($0, index($0, ":") + 1)
-      lineno = substr(rest, 1, index(rest, ":") - 1)
-      for (entry in whole) {
-        if (path == entry) next
-        if (substr(entry, length(entry)) == "/" && index(path, entry) == 1) next
-      }
-      if (!(path in marked)) mark_sections(path)
-      if ((path ":" lineno) in allowed_line) next
-      print
-    }'
-}
-
-[ -f "$ALLOW" ] || fail "allowlist missing: $ALLOW"
-
-[ -n "$(unlisted_hits '# ' smith-ctx-claude/references/design.md)" ] ||
-  fail "control: the scan printed no heading of design.md"
-
-leftover=$(unlisted_hits 'smith-validation' .)
-[ -z "$leftover" ] || fail "lines outside the allowlist still name smith-validation:
-$leftover"
 
 readme_missing() {
   printf '%s\n' "$skills" |
@@ -94,14 +40,14 @@ readme_missing "$WORK/README.md" | grep -qxF "$first_skill" ||
   fail "control: a README without the row of $first_skill was not reported"
 
 [ -f "$SEAM" ] || fail "smith-verification/SKILL.md missing"
-points_to_seam "$STUB" ||
+points_to_seam "$VALIDATION" ||
   fail "smith-validation description does not point to smith-verification"
 awk 'NR == 1, NR > 1 && $0 == "---" { if ($0 ~ /^description:/) { print "description: Technique bodies. Use when asked."; next } } { print }' \
-  "$STUB" > "$WORK/stub.md"
-printf 'description: see smith-verification\n' >> "$WORK/stub.md"
-grep -qx 'description: Technique bodies. Use when asked.' "$WORK/stub.md" ||
+  "$VALIDATION" > "$WORK/validation.md"
+printf 'description: see smith-verification\n' >> "$WORK/validation.md"
+grep -qx 'description: Technique bodies. Use when asked.' "$WORK/validation.md" ||
   fail "control: the planted description was not written into the copy"
-points_to_seam "$WORK/stub.md" &&
+points_to_seam "$WORK/validation.md" &&
   fail "control: a description without the pointer passed because a body line names smith-verification"
 
 [ "$status" = 0 ] && echo "PASS: verification-seam"

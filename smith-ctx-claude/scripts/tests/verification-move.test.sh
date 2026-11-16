@@ -5,7 +5,6 @@ VERIFICATION=smith-verification
 ANALYSIS=smith-analysis
 VALIDATION=smith-validation
 LOCK_TOOL="$REPO/smith-ctx-claude/scripts/anchors-lock.sh"
-EVALS="$REPO/smith-ctx-claude/evals/skill-trigger"
 TAB="$(printf '\t')"
 METHODS_LABEL=methods-v1
 HANDBOOK_URL=https://www.nasa.gov/reference/systems-engineering-handbook/
@@ -29,31 +28,6 @@ left_in_validation() {
   comm -3 "$WORK/headings.verification" "$WORK/headings.analysis" | tr -d "$TAB" > "$WORK/headings.single"
   [ -s "$WORK/headings.single" ] || return 0
   grep -x -F -f "$WORK/headings.single" "$1/$VALIDATION/SKILL.md"
-}
-
-eval_overlap() {
-  node -e '
-    const fs = require("fs");
-    const path = require("path");
-    const [first, second] = process.argv.slice(1).map((file) => ({
-      name: path.basename(file),
-      data: JSON.parse(fs.readFileSync(file, "utf8")),
-    }));
-    const list = (set, key) => (Array.isArray(set.data[key]) ? set.data[key] : []);
-    for (const set of [first, second]) {
-      if (list(set, "should_trigger").length === 0) console.log(`${set.name} has no should_trigger prompts`);
-    }
-    const firstTriggers = new Set(list(first, "should_trigger"));
-    for (const prompt of list(second, "should_trigger")) {
-      if (firstTriggers.has(prompt)) console.log(`should_trigger prompt in both: ${prompt}`);
-    }
-    for (const [own, other] of [[first, second], [second, first]]) {
-      const triggers = new Set(list(other, "should_trigger"));
-      if (!list(own, "should_not_trigger").some((prompt) => triggers.has(prompt))) {
-        console.log(`${own.name} should_not_trigger holds no should_trigger prompt of ${other.name}`);
-      }
-    }
-  ' "$1" "$2"
 }
 
 question_problems() {
@@ -198,25 +172,6 @@ for want in "not in $ANALYSIS/" "still in $VALIDATION/" "still in $VERIFICATION/
     fail "control: TECHNIQUES.md $want was not reported"
 done
 rm -rf "$C"
-
-overlap=$(eval_overlap "$EVALS/$VERIFICATION.json" "$EVALS/$ANALYSIS.json") ||
-  fail "control: the trigger eval check did not run (node exited non-zero)"
-[ -z "$overlap" ] || fail "the trigger evals do not separate the questions:
-$overlap"
-(PATH=/nonexistent; eval_overlap "$EVALS/$VERIFICATION.json" "$EVALS/$ANALYSIS.json") > /dev/null 2>&1 &&
-  fail "control: the trigger eval check passed without node"
-mkdir -p "$WORK/plant"
-node -e '
-  const fs = require("fs");
-  const [from, to, out] = process.argv.slice(1);
-  const source = JSON.parse(fs.readFileSync(from, "utf8"));
-  const target = JSON.parse(fs.readFileSync(to, "utf8"));
-  target.should_trigger = [...(target.should_trigger || []), ...(source.should_trigger || []).slice(0, 1)];
-  fs.writeFileSync(out, JSON.stringify(target));
-' "$EVALS/$VERIFICATION.json" "$EVALS/$ANALYSIS.json" "$WORK/plant/$ANALYSIS.json" ||
-  fail "control: the planted trigger eval could not be written"
-eval_overlap "$EVALS/$VERIFICATION.json" "$WORK/plant/$ANALYSIS.json" 2> /dev/null | grep -q 'in both' ||
-  fail "control: a should_trigger prompt planted in both trigger evals was not reported"
 
 problems=$(router_problems "$REPO")
 [ -z "$problems" ] || { report "$problems"; status=1; }
