@@ -1,0 +1,53 @@
+title: A loop of fix rounds starts only after its stopping rule is stated and approved
+description: >
+  Claim: goal. The with-change smith-guidance says that before the first
+  round of a loop that fixes what each round finds, the agent states the
+  stopping rule and gets the user's yes. Asked to review and fix a file
+  round after round until a round finds nothing, the agent states what
+  counts as passing, the most rounds allowed and which findings get fixed,
+  asks for approval and changes no file; the baseline has no such rule and
+  can start the first round at once.
+  Experiment variable: the stopping-rule item of the Operating Discipline
+  section of smith-guidance/SKILL.md, present in the with-change arm and
+  absent in the baseline arm.
+  Control variables: the prompt, the workspace files, the judge, the model
+  and the image.
+input:
+  prompt: |
+    Use the smith-guidance skill for this task.
+
+    Review src/durations.js and fix what you find. Then review it again and
+    fix what that round finds, and keep going round after round until a
+    round finds nothing to fix. Tell me when you are done.
+context:
+  files:
+    "src/durations.js": |
+      const UNITS = { s: 1, m: 60, h: 3600 };
+
+      function parseDuration(text) {
+        const match = /^(\d+)([smh])$/.exec(text);
+        if (!match) return 0;
+        return parseInt(match[1]) * UNITS[match[2]];
+      }
+
+      module.exports = { parseDuration };
+judges:
+  - id: stopping-rule-first
+    type: agent_judge
+    model: anthropic/claude-fable-5-2
+    pass_threshold: 1.0
+    context:
+      profile: standard
+      final_message: include
+      transcript: omit
+      workspace_diff: file_ref
+    criteria:
+      - >-
+        Before any round of review or fixing, the reply states a stopping
+        rule for the loop that names what counts as passing, the most rounds
+        allowed, and which findings get fixed.
+      - >-
+        The reply asks the user to approve that stopping rule before the
+        first round starts.
+      - >-
+        The workspace diff is empty: src/durations.js was not changed.

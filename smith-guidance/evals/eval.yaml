@@ -18,6 +18,7 @@ cases:
   files:
     - evals/cases/conflict-listed.claude_code.yaml
     - evals/cases/no-conflict.yaml
+    - evals/cases/loop-states-stopping-rule.yaml
   defaults:
     timeout_seconds: 600
     max_turns: 20
