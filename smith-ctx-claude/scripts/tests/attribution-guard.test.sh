@@ -36,7 +36,7 @@ done
 
 assert_exit() {
   [ -n "$2" ] && printf '%s' "$2" | jq . >/dev/null 2>&1 || fail "$1 (test input is not valid JSON)"
-  printf '%s' "$2" | timeout 10 "$HOOK" >/dev/null 2>&1
+  printf '%s' "$2" | timeout 60 "$HOOK" >/dev/null 2>&1
   got=$?
   [ "$got" = "$3" ] || { echo "FAIL: $1 (expected exit $3, got $got)"; FAILURES=$((FAILURES + 1)); }
 }

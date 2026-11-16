@@ -2,15 +2,25 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../external-write-guard.mjs"
 
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+mkdir "$WORK/silent-inputs"
+silent_count=0
+
 fail() { echo "FAIL: $1"; exit 1; }
 run() { printf '%s' "$1" | node "$HOOK"; }
 asks() { run "$2" | grep -q '"permissionDecision":"ask"' || fail "$1: expected ask"; }
+. "$HERE/lib/json-string.sh"
+. "$HERE/lib/json-inputs.sh"
 silent() {
-  if [ "$1" != "malformed stdin" ]; then
-    printf '%s' "$2" | node -e 'JSON.parse(require("fs").readFileSync(0, "utf8"))' 2>/dev/null ||
-      fail "$1: test input is not valid JSON"
+  if [ "$1" = "malformed stdin" ]; then
+    out=$(run "$2") || fail "$1: hook crashed"
+  else
+    silent_count=$((silent_count + 1))
+    input_file="$WORK/silent-inputs/$silent_count-$(printf '%s' "$1" | tr '/' '_')"
+    printf '%s' "$2" > "$input_file" || fail "$1: could not record the test input"
+    out=$(node "$HOOK" < "$input_file") || fail "$1: hook crashed"
   fi
-  out=$(run "$2") || fail "$1: hook crashed"
   [ -z "$out" ] || fail "$1: expected silent, got: $out"
 }
 reason_includes() {
@@ -55,7 +65,7 @@ silent "unrelated tool"       '{"tool_name":"Read","tool_input":{"file_path":"/x
 silent "malformed stdin"      'not json at all'
 
 bash_cmd() {
-  printf '{"tool_name":"Bash","tool_input":{"command":%s}}' "$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "$1")"
+  printf '{"tool_name":"Bash","tool_input":{"command":%s}}' "$(json_string "$1")"
 }
 
 deeply_nested_eval_payload() {
@@ -138,14 +148,11 @@ silent "git command untouched" "$(bash_cmd 'git commit -m "fix"')"
 
 denies() { run "$2" | grep -q '"permissionDecision":"deny"' || fail "$1: expected deny"; }
 
-WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
 PAGE="12345678-90ab-cdef-1234-567890abcdef"
 OTHER_PAGE="abcdefab-90ab-cdef-1234-567890abcdef"
 BODY="Weekly summary: the migration finished on Tuesday."
 PREVIEW="Draft (replace_content) for page $PAGE: $BODY"
 
-json_string() { node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "$1"; }
 assistant() { printf '{"type":"assistant","message":{"id":"%s","content":[{"type":"text","text":%s}]}}' "$1" "$(json_string "$2")"; }
 sidechain_assistant() { printf '{"type":"assistant","isSidechain":true,"message":{"id":"%s","content":[{"type":"text","text":%s}]}}' "$1" "$(json_string "$2")"; }
 REPLY_AT="2099-01-01T00:00:00Z"
@@ -495,4 +502,5 @@ asks   "no tokenizer: a gh read asks too"       "$(bash_cmd 'gh pr view 1')"
 silent "no tokenizer: a command without gh passes" "$(bash_cmd 'ls -la')"
 denies "no tokenizer: an MCP write is still checked" "$(update_call "$NONE")"
 
+broken=$(json_files_are_valid "$WORK/silent-inputs") || fail "test input is not valid JSON: $broken"
 echo "PASS: external-write-guard"

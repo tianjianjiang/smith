@@ -28,20 +28,26 @@ printf '%s\n' \
   '{"type":"assistant","message":{"content":[{"type":"text","text":"working"}]}}' \
   > "$NOTHING_LOADED"
 
-run() {
-  node -e '
-    const [transcript, tool, toolInput, extra] = process.argv.slice(1);
-    process.stdout.write(JSON.stringify({
-      hook_event_name: "PreToolUse",
-      transcript_path: transcript,
-      tool_name: tool,
-      tool_input: JSON.parse(toolInput),
-      ...JSON.parse(extra || "{}"),
-    }));
-  ' "$1" "$2" "$3" "$4" | node "$HOOK"
+. "$HERE/lib/json-string.sh"
+. "$HERE/lib/json-inputs.sh"
+
+extra_fields() {
+  fields="${1#\{}"
+  fields="${fields%\}}"
+  [ -n "$fields" ] && printf ',%s' "$fields"
 }
 
-bash_command() { node -e 'process.stdout.write(JSON.stringify({ command: process.argv[1] }))' "$1"; }
+mkdir "$TMPD/hook-inputs"
+
+run() {
+  input_file="$(mktemp "$TMPD/hook-inputs/input.XXXXXX")" || fail "could not create a hook input file"
+  printf '{"hook_event_name":"PreToolUse","transcript_path":%s,"tool_name":%s,"tool_input":%s%s}' \
+    "$(json_string "$1")" "$(json_string "$2")" "$3" "$(extra_fields "$4")" > "$input_file" ||
+    fail "could not record the hook input"
+  node "$HOOK" < "$input_file"
+}
+
+bash_command() { printf '{"command":%s}' "$(json_string "$1")"; }
 
 expect_refusal() {
   echo "$out" | grep -q '"permissionDecision":"deny"' || fail "$1: expected a refusal, got: $out"
@@ -419,4 +425,5 @@ out=$(run "$TMPD/does-not-exist.jsonl" Bash "$(bash_command 'git commit -m messa
 out=$(printf 'not json' | node "$HOOK") || fail "malformed stdin: hook crashed"
 [ -z "$out" ] || fail "malformed stdin should be silent"
 
+broken=$(json_files_are_valid "$TMPD/hook-inputs") || fail "a hook input built by run() is not valid JSON: $broken"
 echo "PASS: skill-load-gate"
