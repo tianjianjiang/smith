@@ -272,7 +272,7 @@ outside.
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason, with no code. The record's observation
-  `ranInTheDefaultProfile` says whether `CLAUDE_CONFIG_DIR` was left unset.
+  `ranInTheDefaultProfile` says whether the eval used `~/.claude`.
 - Only this checkout's copy of the hook answers the stops of the sessions
   the eval starts: they are started with `--setting-sources project,local`,
   which leaves out the user settings and with them an installed copy of
@@ -286,7 +286,7 @@ outside.
   loads the user settings again. This checkout's hook registered in user
   settings is measured in "Conditions of the automatic continuation"
   below.
-- The recorded run of 2026-11-16 ran in the eval profile of that section
+- The recorded run of 2026-11-17 ran in the eval profile of that section
   (`CLAUDE_CONFIG_DIR` set to it, `SMITH_PROBE_SESSION_FOLDER` a new folder
   under its `probes`); each Stop hook record of the first session lists one
   hook, although that profile's user settings register this checkout's
@@ -323,7 +323,7 @@ the same `toolUseID` when the summary was skipped
 
 ## Conditions of the automatic continuation
 
-Measures two conditions of the version under test, with the hook of this
+Measures these conditions of the version under test, with the hook of this
 checkout registered in user settings (not a `--settings` file): a session
 is continued after its checkpoint, and a refused launch starts nothing and
 keeps the checkpoint. How the model checkpoints and what a restore returns
@@ -368,15 +368,17 @@ are not measured here.
   `probes`, remove the `zq-eval-` project with `basic-memory project
   remove`, and delete the flag files in the profile's `plans`.
 - Passing output: the eval profile is logged in, uses its own folder and
-  trusts `probes`; its skills are this checkout, its Stop hook is this
+  trusts `probes`, and neither its `settings.json` nor its `plans` folder
+  is a symbolic link, since the eval writes and deletes there; its skills are this checkout, its Stop hook is this
   checkout's with the dispatch step, and no allow rule names the
   installed copy; a Stop hook record of the first session holds an error
   starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `, its checkpoint is a
   memory of the folder's Serena project, and a second session in the
   folder starts with the hook's restore prompt. With the launch refused, no
   other session appears, the restore flag stays, the attempt is recorded,
-  and the first session's transcript holds the hook's notice starting with
-  `[SMITH_CTX_DISPATCH_FAILED] ` and naming the switch. The hook's texts
+  and a Stop hook notice of the first session, recorded as an attachment
+  of type `hook_system_message`, starts with `[SMITH_CTX_DISPATCH_FAILED] `
+  and names the switch. The hook's texts
   are matched by these codes, never by their wording.
   No probe session ran a command on a path of the installed copy
   (`$HOME/.claude/`, `~/.claude/` or `~/.smith/`), no flag of the runner's own profile

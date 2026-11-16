@@ -871,6 +871,13 @@ append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hookErr
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "a latest stop record without an id after this hook's block" "$OUT" "$STATUS"
+reset_state
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+append_transcript_entry "$(jq -cn --arg error "$BLOCK_REASON" '{type:"system",subtype:"stop_hook_summary",hookErrors:[$error]}')"
+append_transcript_entry '{"type":"system","subtype":"stop_hook_summary","hookErrors":["another hook blocked this stop"]}'
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "a latest stop record without an id after this hook's block without an id" "$OUT" "$STATUS"
 pass "a latest stop record without an id is a batch of its own"
 
 reset_state
@@ -913,10 +920,15 @@ reset_state
 write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 chmod 000 "$TMP/transcript.jsonl"
-OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
-STATUS=$?
-chmod 600 "$TMP/transcript.jsonl"
-expect_unreadable_transcript_notice "a transcript without read permission" "$OUT" "$STATUS" "$TMP/transcript.jsonl"
+if [ -r "$TMP/transcript.jsonl" ]; then
+  chmod 600 "$TMP/transcript.jsonl"
+  echo "SKIP: enforce-clear-dispatch - a transcript without read permission: this user can still read a mode 000 file"
+else
+  OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+  STATUS=$?
+  chmod 600 "$TMP/transcript.jsonl"
+  expect_unreadable_transcript_notice "a transcript without read permission" "$OUT" "$STATUS" "$TMP/transcript.jsonl"
+fi
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
 expect_no_dispatch "an unreadable transcript without a session id" "$OUT" "$STATUS"

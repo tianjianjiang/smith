@@ -119,6 +119,14 @@ function probeRootIsTrusted() {
   return Object.entries(projects).some(([folder, state]) => sameFolder(folder, PROBE_ROOT) && state?.hasTrustDialogAccepted === true);
 }
 
+function isSymbolicLink(path) {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
 function pointTheEvalSkillsAtThisCheckout() {
   let existing;
   try {
@@ -134,10 +142,14 @@ function evalPermissionRule(rule) {
   return rule.split(`/${USER_CONFIG_FOLDER}/`).join(`/${EVAL_CONFIG_FOLDER}/`);
 }
 
+function shellQuoted(path) {
+  return `'${path.replaceAll("'", "'\\''")}'`;
+}
+
 function writeTheEvalSettings(serenaHome) {
   const userPermissions = readJson(join(USER_CONFIG_FOLDER, "settings.json"))?.permissions ?? {};
   const settings = {
-    hooks: { Stop: [{ hooks: [{ type: "command", command: REGISTERED_HOOK_PATH }] }] },
+    hooks: { Stop: [{ hooks: [{ type: "command", command: shellQuoted(REGISTERED_HOOK_PATH) }] }] },
     permissions: {
       allow: (userPermissions.allow ?? []).map(evalPermissionRule).filter((rule) => !INSTALLED_COPY_REFERENCE.test(rule)),
       deny: (userPermissions.deny ?? []).map(evalPermissionRule),
@@ -157,8 +169,8 @@ function evalAllowRulesNameNoInstalledCopy() {
 
 function stopHookIsThisCheckouts() {
   const registered = registeredStopHooks();
-  if (registered.length !== 1 || !existsSync(registered[0])) return false;
-  const path = realpathSync(registered[0]);
+  if (registered.length !== 1 || registered[0] !== shellQuoted(REGISTERED_HOOK_PATH) || !existsSync(REGISTERED_HOOK_PATH)) return false;
+  const path = realpathSync(REGISTERED_HOOK_PATH);
   return path === HOOK_UNDER_TEST && readFileSync(path, "utf8").includes(DISPATCH_STEP_NAME);
 }
 
@@ -260,20 +272,39 @@ function sessionIsGone(shortId) {
   return answeredSessionListings > listingsAnsweredBefore && !listed;
 }
 
-function stopHookBlockedWithCode(text) {
-  return text.split("\n").some((line) => {
+function transcriptEntries(text) {
+  return text.split("\n").flatMap((line) => {
     try {
-      const entry = JSON.parse(line);
-      const errors = entry?.type === "system" && entry.subtype === "stop_hook_summary"
-        ? entry.hookErrors
-        : entry?.type === "attachment" && entry.attachment?.type === "hook_blocking_error" && entry.attachment.hookEvent === "Stop"
-          ? [entry.attachment.blockingError?.blockingError]
-          : [];
-      return Array.isArray(errors) && errors.some((error) => typeof error === "string" && error.startsWith(AUTO_RESET_BLOCKED_PREFIX));
+      return [JSON.parse(line)];
     } catch {
-      return false;
+      return [];
     }
   });
+}
+
+function stopAttachment(entry, type) {
+  const attachment = entry?.type === "attachment" ? entry.attachment : undefined;
+  return attachment?.type === type && attachment.hookEvent === "Stop" ? attachment : undefined;
+}
+
+function stopRecordErrors(entry) {
+  if (entry?.type === "system" && entry.subtype === "stop_hook_summary") return entry.hookErrors;
+  const blockingError = stopAttachment(entry, "hook_blocking_error");
+  if (blockingError) return [blockingError.blockingError?.blockingError];
+  return [];
+}
+
+function stopHookBlockedWithCode(text) {
+  return transcriptEntries(text).some((entry) => {
+    const errors = stopRecordErrors(entry);
+    return Array.isArray(errors) && errors.some((error) => typeof error === "string" && error.startsWith(AUTO_RESET_BLOCKED_PREFIX));
+  });
+}
+
+function stopHookNoticesWithCode(text, prefix) {
+  return transcriptEntries(text)
+    .map((entry) => stopAttachment(entry, "hook_system_message")?.content)
+    .filter((content) => typeof content === "string" && content.startsWith(prefix));
 }
 
 function transcriptText(sessionId) {
@@ -489,6 +520,7 @@ async function measureAFailedDispatch(runFolder) {
     const first = firstId ? listedSession(firstId) : undefined;
     const firstTranscript = transcriptText(first?.sessionId);
     const installedCopyCommands = commandsReachingAnInstalledCopy(firstTranscript);
+    const failedDispatchNotices = stopHookNoticesWithCode(firstTranscript, FAILED_DISPATCH_PREFIX);
     return {
       checks: {
         probeSerenaProjectWasCreated: serenaProjectCreated,
@@ -500,9 +532,8 @@ async function measureAFailedDispatch(runFolder) {
         firstSessionIsListedInTheProbeFolder: first?.cwd === folder,
         noSuccessorAppeared: restoreFlags.length > 0 && quiet.listRead && !successorId,
         restoreFlagWasKept: restoreFlags.length > 0 && restoreFlags.every((name) => restoreFlagsWrittenIn(folder).includes(name)),
-        hookReportedTheFailedDispatch: firstTranscript.includes(FAILED_DISPATCH_PREFIX),
-        reportNamedTheSwitchThatRefusedTheLaunch: firstTranscript.split("\n")
-          .some((line) => line.includes(FAILED_DISPATCH_PREFIX) && line.includes(BACKGROUND_SESSIONS_SWITCH)),
+        hookReportedTheFailedDispatch: failedDispatchNotices.length > 0,
+        reportNamedTheSwitchThatRefusedTheLaunch: failedDispatchNotices.some((notice) => notice.includes(BACKGROUND_SESSIONS_SWITCH)),
         sessionRanNoCommandOnAnInstalledCopy: Boolean(firstTranscript) && installedCopyCommands.length === 0,
       },
       observations: {
@@ -525,6 +556,8 @@ const environmentChecks = {
   evalProfileIsLoggedIn: login.loggedIn,
   evalProfileUsesTheEvalFolder: Boolean(login.configDirectory) && sameFolder(login.configDirectory, EVAL_CONFIG_FOLDER),
   probeFolderIsTrustedInTheEvalProfile: probeRootIsTrusted(),
+  evalSettingsFileIsNotALink: !isSymbolicLink(EVAL_SETTINGS_PATH),
+  evalFlagsFolderIsNotALink: !isSymbolicLink(FLAGS_FOLDER),
 };
 if (Object.values(environmentChecks).includes(false)) {
   console.log(JSON.stringify({ environmentChecks }, null, 2));

@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-11-16T23:59:47+09:00",
+  "recordedAt": "2026-11-17T03:31:00+09:00",
   "claudeCodeVersion": "2.1.325 (Claude Code)",
   "model": "haiku",
   "checks": {
@@ -16,7 +16,7 @@
   },
   "observations": {
     "ranInTheDefaultProfile": false,
-    "successorNamePattern": "continue: «label»",
+    "successorNamePattern": "2026-11-17T03:28 «label»",
     "firstSessionStateAfterDispatch": "done",
     "successorRunsInTheSameFolder": true,
     "firstSessionTranscriptAlsoHoldsTheUnchangedReason": false,

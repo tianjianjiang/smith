@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-11-17T00:04:00+09:00",
+  "recordedAt": "2026-11-17T03:28:04+09:00",
   "claudeCodeVersion": "2.1.325 (Claude Code)",
   "model": "haiku",
   "serenaVersion": "Serena 2.1.1.dev0",
@@ -8,7 +8,9 @@
       "evalFolderIsNotTheRunnersConfiguration": true,
       "evalProfileIsLoggedIn": true,
       "evalProfileUsesTheEvalFolder": true,
-      "probeFolderIsTrustedInTheEvalProfile": true
+      "probeFolderIsTrustedInTheEvalProfile": true,
+      "evalSettingsFileIsNotALink": true,
+      "evalFlagsFolderIsNotALink": true
     }
   },
   "versionUnderTest": {
