@@ -327,11 +327,11 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-serena" description="Serena MCP integration">`@smith-serena/SKILL.md`</skill>
 
 <!-- Reasoning -->
-<skill name="smith-analysis" description="Problem decomposition, Polya method">`@smith-analysis/SKILL.md`</skill>
+<skill name="smith-analysis" description="Problem decomposition, Polya method, debugging and cause finding">`@smith-analysis/SKILL.md`</skill>
 <skill name="smith-clarity" description="Cognitive traps, logic fallacies">`@smith-clarity/SKILL.md`</skill>
 <skill name="smith-design" description="SOLID principles, architecture">`@smith-design/SKILL.md`</skill>
-<skill name="smith-verification" description="Hypothesis testing, adversarial verification of findings, debugging">`@smith-verification/SKILL.md`</skill>
-<skill name="smith-validation" description="Verification technique bodies that smith-verification forwards to">`@smith-validation/SKILL.md`</skill>
+<skill name="smith-verification" description="Verification of claims, findings, status reports and requirements">`@smith-verification/SKILL.md`</skill>
+<skill name="smith-validation" description="Stub that forwards to smith-verification and smith-analysis">`@smith-validation/SKILL.md`</skill>
 <skill name="smith-postmortem" description="Incident postmortem methodology">`@smith-postmortem/SKILL.md`</skill>
 <skill name="smith-dialectic" description="Socratic plan interview against project docs and code">`@smith-dialectic/SKILL.md`</skill>
 
@@ -407,14 +407,18 @@ skill via the Skill tool:
   Inline review comments / committable `suggestion` blocks → `@smith-gh-pr/SKILL.md` (router also emits: a mechanical fix MUST carry the block, not prose describing the edit)
   Running or interpreting a CodeRabbit review, GitHub App or `coderabbit` command line → `@smith-gh-pr/SKILL.md` + `@smith-review/SKILL.md` (router also emits: a review that did not run looks identical to a clean one — check status, not the finding count)
 **Claude Code**: Claude Code hooks (hook event/matcher/script, `PreToolUse`, `Stop hook` …) → `@smith-ctx-claude/SKILL.md` + `@smith-settings/SKILL.md`,
-  MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-verification/SKILL.md`,
+  MCP setup/lifecycle → `@smith-tools/SKILL.md` + `@smith-research/SKILL.md` + `@smith-analysis/SKILL.md`,
   "auto-mode", `hard_deny`, "force push" → `@smith-ctx-claude-mode-auto/SKILL.md`,
   Permission denial wording ("permission denied", "denied by the classifier/auto-mode/hook", "blocked by auto-mode/classifier") → `@smith-ctx-claude-mode-auto/SKILL.md` (router also emits: do not silently retry a denied action)
 **Settings**: editing settings.json/.claude config, which scope a key belongs in, OR building a convention-validator/enforcement hook → `@smith-settings/SKILL.md` + `@smith-ctx-claude/SKILL.md`
 **Skill authoring**: `SKILL.md`, `AGENTS.md`, progressive disclosure, "write a skill" → `@smith-skills/SKILL.md`
 **External-dependency recommendation** (proposing any integration/config/tooling mechanism whose success depends on external system behavior — MCP, OAuth/auth flow, provider API, CLI flag, feature/version support): MUST load `@smith-research/SKILL.md` + `@smith-verification/SKILL.md` and verify the mechanism works (official docs + issue tracker) BEFORE proposing it. A proposed mechanism is a claim; claims need evidence.
-**Reasoning**: Analysis → `@smith-analysis/SKILL.md` (no router rule), "design pattern"/"SOLID principles"/"software architecture"/"architecture review or decision" → `@smith-design/SKILL.md`, "root cause"/"repro"/"bug fix"/"stack trace" → `@smith-verification/SKILL.md`,
-  Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md` + `@smith-verification/SKILL.md`,
+**Reasoning**: Analysis → `@smith-analysis/SKILL.md` (no router rule), "design pattern"/"SOLID principles"/"software architecture"/"architecture review or decision" → `@smith-design/SKILL.md`,
+
+  "root cause"/"repro"/"bug fix"/"stack trace" → `@smith-analysis/SKILL.md`,
+
+  Dialectic/grill/stress-test plan → `@smith-dialectic/SKILL.md` + `@smith-analysis/SKILL.md`,
+
   Investigation / adversarial verification ("investigate X", "verify whether/that/if", "is this true", "prove me wrong", red-team, null hypothesis, refute, disprove, fact-check, falsify) → `@smith-verification/SKILL.md` + `@smith-clarity/SKILL.md` (router also emits: try to disprove a finding before reporting it, carry a durable locator for every claim, and add a separate skeptic when it contradicts a rule or drives an external write, which reporting it is not)
 **Slack**: drafting/replying in Slack, any `slack_send_message*` / `slack_*` MCP tool, OR a `/slack:*` command → `@smith-slack/SKILL.md`
 **Other**: Prompts → `@smith-prompts/SKILL.md`, XML → `@smith-xml/SKILL.md`
@@ -496,7 +500,7 @@ documentation and router-trigger design.
 
 **smith-recon**: Guided multi-source investigation. Use when the user runs /smith-recon, asks to resume or reconstruct an earlier work thread, or asks what is known about a topic across sources.
 
-**smith-analysis**: Reasoning frameworks and problem decomposition. Use when planning an implementation, estimating scope, breaking down a complex task, or assessing risk.
+**smith-analysis**: Reasoning frameworks, problem decomposition and cause finding. Use when planning an implementation, estimating scope, breaking down a complex task, assessing risk, debugging, or when a bug or test failure is reported.
 
 **smith-dialectic**: Socratic interview that stress-tests a plan. Use when the user asks to grill, challenge, interrogate or stress-test a plan, to play devil's advocate, or wants shared understanding before implementing.
 
@@ -518,9 +522,9 @@ documentation and router-trigger design.
 
 **smith-ralph**: Ralph Loop patterns. Use when starting /ralph-loop, managing its iterations, or recovering a loop after a context reset.
 
-**smith-verification**: Hypothesis testing and root cause analysis. Use when debugging, when a bug or test failure is reported, or when verifying a claim before reporting it as fact.
+**smith-verification**: Verification of claims, findings, status reports and requirements. Use when a finding, a status or a count is about to be reported as fact, when a claim needs its evidence or a disproof attempt, when a surprising result may contradict a recorded decision, or when checking that work meets every part of its requirement as its author stated it.
 
-**smith-validation**: Verification technique bodies that smith-verification forwards to. Use when smith-verification points to one of its sections; load smith-verification instead for any other task.
+**smith-validation**: Stub that forwards to smith-verification and smith-analysis. Use when a reference names smith-validation; load smith-verification for claims, findings, status reports and requirements, or smith-analysis for debugging and cause finding.
 
 **smith-automation**: Claude Code scheduling primitives (/loop, cron, ScheduleWakeup, Monitor, /schedule). Use when setting up a recurring or scheduled task, polling, or a reminder.
 

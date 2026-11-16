@@ -27,8 +27,9 @@ tools".
 
 Mark `coderabbit` `ran` only on the evidence `@smith-gh-pr` "CodeRabbit fails
 OPEN" defines: a completed status over a non-empty file list. Every tool needs
-its own completion evidence (`@smith-verification`: a missing signal is never a
-passing one).
+its own completion evidence
+(`@smith-verification/SKILL.md#deviation-is-not-discovery-v1`: a missing
+signal is never a passing one).
 
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
@@ -63,7 +64,8 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    depth, not fewer tools.
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
-   (`@smith-verification` Bugfix Discipline, Adversarial Verification).
+   (`@smith-analysis/SKILL.md#bugfix-discipline-v1`,
+   `@smith-verification/SKILL.md#adversarial-verification-v1`).
 4. **Fix & iterate** — apply high-confidence fixes; re-review with the full
    set, each reviewer blind per the `@smith-subagents` evaluator rule.
    Cost guard is bounded PER ROUND + verify findings (not fewer tools). Drive

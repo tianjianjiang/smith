@@ -17,7 +17,7 @@ description: Testing standards and test-driven development (TDD). Use when writi
 - Run the full test suite proactively after code changes — do not wait for the user to ask
 - Run the module's quality gate before reporting completion — linting, type checks, and tests (`make quality` > project CI script > run individually; see `@smith-dev/SKILL.md` Pre-PR Quality Gates)
 - Run explicit test paths instead of `pytest -m "not integration"` when the folder structure is mirrored — that flag causes import conflicts
-- Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-verification/SKILL.md` Bugfix Discipline)
+- Mock only true external boundaries (LLM, network, DB, clock) — never the branch/unit under test itself; a test that mocks the code path it claims to cover is a false green (the test-masking trap; see `@smith-analysis/SKILL.md#bugfix-discipline-v1`)
 - For a bugfix, write a test that reproduces the real failure FIRST and watch it fail (red) before fixing — write the test to match the real bug, not to fit the fix
 
 ## Test Organization
@@ -32,7 +32,7 @@ description: Testing standards and test-driven development (TDD). Use when writi
 
 ## TDD Workflow
 
-0. **Bugfix only**: reproduce the real failure as a failing regression test first (drive the real code path; mock only true externals) — see `@smith-verification/SKILL.md` Bugfix Discipline
+0. **Bugfix only**: reproduce the real failure as a failing regression test first (drive the real code path; mock only true externals) — see `@smith-analysis/SKILL.md#bugfix-discipline-v1`
 1. **Understand**: Read existing test patterns
 2. **Design**: Write failing tests defining expected behavior
 3. **Implement**: Write minimal code to pass tests
@@ -64,7 +64,7 @@ See `@smith-ralph/SKILL.md` for full patterns.
 - `@smith-python/SKILL.md` - Python testing patterns (pytest functions)
 - `@smith-playwright/SKILL.md` - Playwright failure monitoring
 - `@smith-dev/SKILL.md` - Development workflow (quality gates)
-- `@smith-verification/SKILL.md` - Bugfix Discipline: trace the real path, reproduce first
+- `@smith-analysis/SKILL.md#bugfix-discipline-v1` - Bugfix Discipline: trace the real path, reproduce first
 - @smith-principles/SKILL.md - Core principles
 
 ## Before You Finish

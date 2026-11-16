@@ -205,7 +205,7 @@ only. Widening it is its own change.
 
 - `@smith-playwright/SKILL.md` - Playwright test triage
 - `@smith-tools/SKILL.md` - MCP server lifecycle
-- `@smith-verification/SKILL.md` - Root cause analysis
+- `@smith-analysis/SKILL.md#root-cause-analysis-v1` - Root cause analysis
 
 ## Before You Finish
 

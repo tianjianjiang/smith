@@ -42,7 +42,7 @@ orchestration; what tools to grant and how to trust returns
 - For a delegated diff, audit the EXECUTION PATH rather than approving on
   style/quality alone: does the fix run on the real failing input? (the
   test-masking trap: a delegated workflow's clean-looking diff fixed a dead
-  branch. See `@smith-verification/SKILL.md` Bugfix Discipline.)
+  branch. See `@smith-analysis/SKILL.md#bugfix-discipline-v1`.)
 
 ## Spawning: scope and tools
 
@@ -51,7 +51,7 @@ orchestration; what tools to grant and how to trust returns
 - A SKEPTIC role tries to REFUTE a finding under test — most often your own,
   sometimes another agent's. Read-only tools like any reviewer; it is an
   evaluator (below), and the verdict to ask it for is in
-  `@smith-verification` Adversarial Verification.
+  `@smith-verification/SKILL.md#adversarial-verification-v1`.
 - An evaluator (reviewer, skeptic, grader) is blind: a new subagent, never a
   fork, given only its object and the criteria. Its object is the artifact
   with its stated intent (the PR description or a one-line goal, stripped of
@@ -169,7 +169,8 @@ checked is recorded as such and fails that check rather than passing quietly.
 - Tell the subagent IN the spawn prompt how the platform expects its report
   delivered; a report that never reached the main thread was not delivered.
 - Treat a subagent going idle as "ready to be asked", never as "clean".
-  Silence is a missing signal, not a passing one (`@smith-verification`).
+  Silence is a missing signal, not a passing one
+  (`@smith-verification/SKILL.md#deviation-is-not-discovery-v1`).
 - A summary can echo an earlier report and show a verdict already fixed.
   Re-read the report itself; never trust the summary line.
 
@@ -192,7 +193,8 @@ checked is recorded as such and fails that check rather than passing quietly.
 - `@smith-ralph/SKILL.md` - Iterative orchestration patterns
 - `@smith-skills/SKILL.md` - Skill loading; what a subagent starts without
 - `@smith-worktree/SKILL.md` - Isolate parallel file-mutating subagents
-- `@smith-verification/SKILL.md` - Audit a delegated diff's execution path; adversarial verification of findings
+- `@smith-analysis/SKILL.md#bugfix-discipline-v1` - Audit a delegated diff's execution path
+- `@smith-verification/SKILL.md#adversarial-verification-v1` - Adversarial verification of findings
 
 ## Before You Finish
 

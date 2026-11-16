@@ -50,7 +50,8 @@ description: Core agent steering. Always active. Use for every task, especially 
   the topic; if one was broken, report "the main thread deviated from
   the recorded protocol", never "X was discovered". Before reporting something absent,
   clean or done, confirm the check ran: a missing signal never passes.
-  For both, load `@smith-verification/SKILL.md` first
+  For both, load
+  `@smith-verification/SKILL.md#deviation-is-not-discovery-v1` first
 
 ## Safety Rules
 
@@ -183,8 +184,10 @@ if it would change what you do in another task or repository; "always",
 
 ## Related
 
-- `@smith-verification/SKILL.md` - Adversarial verification, deviation is
-  not discovery, a missing signal never passes
+- `@smith-verification/SKILL.md#adversarial-verification-v1` - Adversarial
+  verification of findings
+- `@smith-verification/SKILL.md#deviation-is-not-discovery-v1` - Deviation
+  is not discovery, a missing signal never passes
 - `@smith-subagents/SKILL.md` - Subagent spawning and returns
 
 ## Before You Finish

@@ -86,8 +86,9 @@ committed file here names its path — resolve it from `core.hooksPath`.
 It is a pre-commit hook, so it has not fired at this gate; and one
 resolving its patterns from `git rev-parse --show-toplevel` finds none
 inside a worktree and exits 0 having scanned nothing. A silent exit 0 is
-evidence of no scan, never of a clean one (`@smith-verification` "a
-missing signal is never a passing one").
+evidence of no scan, never of a clean one
+(`@smith-verification/SKILL.md#deviation-is-not-discovery-v1` "a missing
+signal is never a passing one").
 
 This gate never runs it — the grant would permit that (`git hook run`
 and `git commit` both sit inside `Bash(git *)`), so it is the contract

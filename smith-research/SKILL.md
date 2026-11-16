@@ -17,7 +17,7 @@ description: Proactive research protocol. Use when a question involves library o
 - Best practices queries ("recommended way in «current year»")
 - Technology assessment ("should I use X or Y")
 - Unfamiliar technology (not in training data)
-- **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — MUST load this skill + `@smith-verification/SKILL.md` (falsify-before-present) and verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; claims need evidence — do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way it is assumed" — that reframe is the trigger.
+- **Recommending an integration/config/tooling mechanism that depends on external system behavior** (MCP, OAuth/auth flow, provider API, CLI flag, feature/version support) — MUST load this skill + `@smith-verification/SKILL.md` (falsify-before-present, `@smith-analysis/SKILL.md#hypothesis-testing-v1`) and verify it actually works via official docs AND the issue tracker BEFORE proposing. A proposed mechanism is a *claim*; claims need evidence — do not present it with confidence until verified. Reframe "set up X" as "is X even possible the way it is assumed" — that reframe is the trigger.
 
 ## Research Methods (Priority Order)
 

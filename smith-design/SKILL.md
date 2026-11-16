@@ -33,4 +33,4 @@ description: Architecture and type design principles. Use when designing or revi
 - @smith-principles/SKILL.md - Fundamental principles (DRY, KISS, YAGNI)
 - @smith-standards/SKILL.md - Universal code standards
 - `@smith-dev/SKILL.md` - Development workflow
-- `@smith-analysis/SKILL.md` - Problem decomposition before design
+- `@smith-analysis/SKILL.md#problem-decomposition-v1` - Problem decomposition before design

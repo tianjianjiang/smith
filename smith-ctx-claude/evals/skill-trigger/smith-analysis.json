@@ -10,7 +10,13 @@
     "break this down for me before writing any code: 'make search in the admin panel feel instant'. what is the unknown, what data do we have, is there a simpler version of the problem to solve first, and how will we check the result afterwards",
     "Look at the proposal in docs/rfc-cache-layer.md from every angle before I send it to the team: the hard facts we have, gut concerns, what could go wrong, the upside, alternative designs, and whether the process and next step are right.",
     "instead of asking how to make the import job fast, flip it: list everything that would make src/importer/run.py as slow as possible, then tell me which of those we are already doing",
-    "The integration test passes locally and on two of three CI runners but fails on the third with a timezone-shifted timestamp. I have only these observations. What explanations fit them, which is the most plausible, and how would you confirm or kill it?"
+    "The integration test passes locally and on two of three CI runners but fails on the third with a timezone-shifted timestamp. I have only these observations. What explanations fit them, which is the most plausible, and how would you confirm or kill it?",
+    "Login fails intermittently in production, maybe one request in fifty. Don't guess a fix; work out what's actually causing it.",
+    "ruff is failing on `F841 local variable 'resp' is assigned to but never used` in sync/client.py. just add a noqa so CI goes green",
+    "The integration job times out at 60s on `test_bulk_import`. Bump it to 180s in the workflow file.",
+    "Users report `KeyError: 'currency'` from the invoice endpoint. The stack trace points at serializers/invoice.py line 88, and there's already a `normalize_currency()` helper, so just call that there.",
+    "The nightly export worked on the release from three weeks ago and is broken on main, about a hundred commits later. Find the commit that broke it.",
+    "We keep getting logged out after about ten minutes. Last time someone just extended the session lifetime and it came back. Get to the actual underlying cause this time."
   ],
   "should_not_trigger": [
     "You concluded the memory leak is in the websocket handler. Before I accept that, try to disprove your own finding: rerun the heap comparison with the handler disabled and tell me whether the growth is still there.",
@@ -22,6 +28,9 @@
     "Add 'think step by step and show your reasoning' to the system prompt in prompts/classifier.txt and tune the few-shot examples so the grader agrees with the labels more often.",
     "Investigate why deploys got slower this month: pull the recent pull requests, the CI history and the team chat threads, and give me a sourced summary of what changed.",
     "Should the retry logic live in a base class or be injected as a strategy object? Sketch the class layout for src/http/client.py with the trade-offs of each pattern.",
-    "what's the current best practice for connection pooling with the async postgres driver? check the official docs and the issue tracker before recommending anything"
+    "what's the current best practice for connection pooling with the async postgres driver? check the official docs and the issue tracker before recommending anything",
+    "Your status note says there are 12 open items left on the migration. Is that number current or carried over from yesterday's checkpoint?",
+    "The onboarding checklist in docs/onboarding.md passed review, but the request was that a new hire can get a working laptop on the first day. Walk through it as that new hire and tell me whether it really gets them there.",
+    "Validate that config/pipelines.yaml matches the JSON schema in schemas/pipeline.json and list every violation."
   ]
 }

@@ -25,7 +25,7 @@ description: Ralph Loop patterns. Use when starting /ralph-loop, managing its it
 
 Each test file = iteration boundary. Commit after green.
 
-### Debugging Workflow (smith-verification)
+### Debugging Workflow (smith-analysis)
 
 **Pattern**: hypothesis → test → eliminate → iterate until `<promise>ROOT CAUSE FOUND</promise>`.
 
@@ -140,7 +140,7 @@ Team lead spawns teammates; each gets independent context. Requires `CLAUDE_CODE
 ## Related
 
 - `@smith-tests/SKILL.md` - TDD workflow
-- `@smith-verification/SKILL.md` - Debugging techniques
+- `@smith-analysis/SKILL.md` - Debugging techniques
 - `@smith-dev/SKILL.md` - Task decomposition
 - @smith-guidance/SKILL.md - Making Changes: read before proposing
 - @smith-ctx/SKILL.md - Context management
