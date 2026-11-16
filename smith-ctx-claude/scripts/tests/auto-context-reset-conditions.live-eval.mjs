@@ -26,9 +26,9 @@ const CLAUDE_COMMAND_TIMEOUT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_CO
 const QUIET_WAIT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS ?? 60000);
 const DISPATCH_STEP_NAME = "dispatch_successor_session";
 const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
-const DISPATCH_REASON = "a fresh background session then continues from the checkpoint";
+const AUTO_RESET_BLOCKED_PREFIX = "[SMITH_CTX_AUTO_RESET_BLOCKED] ";
 const RESTORE_PROMPT = "This session continues an earlier session whose context was full";
-const FAILED_DISPATCH_MESSAGE = "dispatching a background session for checkpoint";
+const FAILED_DISPATCH_PREFIX = "[SMITH_CTX_DISPATCH_FAILED] ";
 const BACKGROUND_SESSIONS_SWITCH = "CLAUDE_CODE_DISABLE_AGENT_VIEW";
 const FIRST_PROMPT = "Reply only with OK.";
 const PENDING_RELOAD_NAME = /^\.pending-reload-([0-9a-f]+)$/;
@@ -260,6 +260,22 @@ function sessionIsGone(shortId) {
   return answeredSessionListings > listingsAnsweredBefore && !listed;
 }
 
+function stopHookBlockedWithCode(text) {
+  return text.split("\n").some((line) => {
+    try {
+      const entry = JSON.parse(line);
+      const errors = entry?.type === "system" && entry.subtype === "stop_hook_summary"
+        ? entry.hookErrors
+        : entry?.type === "attachment" && entry.attachment?.type === "hook_blocking_error" && entry.attachment.hookEvent === "Stop"
+          ? [entry.attachment.blockingError?.blockingError]
+          : [];
+      return Array.isArray(errors) && errors.some((error) => typeof error === "string" && error.startsWith(AUTO_RESET_BLOCKED_PREFIX));
+    } catch {
+      return false;
+    }
+  });
+}
+
 function transcriptText(sessionId) {
   if (!sessionId) return "";
   const projects = join(EVAL_CONFIG_FOLDER, "projects");
@@ -431,7 +447,7 @@ async function measureTheHookFromTheUserSettings(runFolder) {
       checks: {
         probeSerenaProjectWasCreated: serenaProjectCreated,
         firstSessionStarted: Boolean(firstId),
-        firstSessionBlockReasonNamedTheContinuation: firstTranscript.includes(DISPATCH_REASON),
+        firstSessionBlockedWithTheCode: stopHookBlockedWithCode(firstTranscript),
         checkpointWentToTheProbeSerenaProject: checkpointMemories.length > 0,
         successorAppeared: Boolean(successorId),
         successorWasStartedWithTheHooksRestorePrompt: successorTranscript.includes(RESTORE_PROMPT),
@@ -477,16 +493,16 @@ async function measureAFailedDispatch(runFolder) {
       checks: {
         probeSerenaProjectWasCreated: serenaProjectCreated,
         firstSessionStarted: Boolean(firstId),
-        firstSessionBlockReasonNamedTheContinuation: firstTranscript.includes(DISPATCH_REASON),
+        firstSessionBlockedWithTheCode: stopHookBlockedWithCode(firstTranscript),
         checkpointWentToTheProbeSerenaProject: serenaMemoriesIn(folder).length > 0,
         firstSessionWroteItsCheckpointFlag: restoreFlags.length > 0,
         attemptWasRecorded: Boolean(markers),
         firstSessionIsListedInTheProbeFolder: first?.cwd === folder,
         noSuccessorAppeared: restoreFlags.length > 0 && quiet.listRead && !successorId,
         restoreFlagWasKept: restoreFlags.length > 0 && restoreFlags.every((name) => restoreFlagsWrittenIn(folder).includes(name)),
-        hookReportedTheFailedDispatch: firstTranscript.includes(FAILED_DISPATCH_MESSAGE),
+        hookReportedTheFailedDispatch: firstTranscript.includes(FAILED_DISPATCH_PREFIX),
         reportNamedTheSwitchThatRefusedTheLaunch: firstTranscript.split("\n")
-          .some((line) => line.includes(FAILED_DISPATCH_MESSAGE) && line.includes(BACKGROUND_SESSIONS_SWITCH)),
+          .some((line) => line.includes(FAILED_DISPATCH_PREFIX) && line.includes(BACKGROUND_SESSIONS_SWITCH)),
         sessionRanNoCommandOnAnInstalledCopy: Boolean(firstTranscript) && installedCopyCommands.length === 0,
       },
       observations: {

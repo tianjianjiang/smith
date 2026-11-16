@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-11-16T17:58:34+09:00",
+  "recordedAt": "2026-11-16T22:28:21+09:00",
   "claudeCodeVersion": "2.1.325 (Claude Code)",
   "model": "haiku",
   "serenaVersion": "Serena 2.1.1.dev0",
@@ -23,7 +23,7 @@
     "checks": {
       "probeSerenaProjectWasCreated": true,
       "firstSessionStarted": true,
-      "firstSessionBlockReasonNamedTheContinuation": true,
+      "firstSessionBlockedWithTheCode": true,
       "checkpointWentToTheProbeSerenaProject": true,
       "successorAppeared": true,
       "successorWasStartedWithTheHooksRestorePrompt": true,
@@ -34,7 +34,7 @@
     "observations": {
       "commandsReachingAnInstalledCopy": [],
       "checkpointMemories": [
-        "zq_probe_session_checkpoint.md"
+        "session_context_reset_checkpoint.md"
       ],
       "firstSessionLaunchFlagNames": [
         "--permission-mode",
@@ -50,7 +50,7 @@
     "checks": {
       "probeSerenaProjectWasCreated": true,
       "firstSessionStarted": true,
-      "firstSessionBlockReasonNamedTheContinuation": true,
+      "firstSessionBlockedWithTheCode": true,
       "checkpointWentToTheProbeSerenaProject": true,
       "firstSessionWroteItsCheckpointFlag": true,
       "attemptWasRecorded": true,

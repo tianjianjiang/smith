@@ -365,12 +365,14 @@ are not measured here.
 - Passing output: the eval profile is logged in, uses its own folder and
   trusts `probes`; its skills are this checkout, its Stop hook is this
   checkout's with the dispatch step, and no allow rule names the
-  installed copy; the first session's block reason
-  names the continuation, its checkpoint is a memory of the folder's
-  Serena project, and a second session in the folder starts with the
-  hook's restore prompt. With the launch refused, no other session
-  appears, the restore flag stays, the attempt is recorded, and the first
-  session's transcript holds the hook's failure message naming the switch.
+  installed copy; a Stop hook record of the first session holds an error
+  starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `, its checkpoint is a
+  memory of the folder's Serena project, and a second session in the
+  folder starts with the hook's restore prompt. With the launch refused, no
+  other session appears, the restore flag stays, the attempt is recorded,
+  and the first session's transcript holds the hook's notice starting with
+  `[SMITH_CTX_DISPATCH_FAILED] ` and naming the switch. The hook's texts
+  are matched by these codes, never by their wording.
   No probe session ran a command on a path of the installed copy
   (`$HOME/.claude/`, `~/.claude/` or `~/.smith/`), no flag of the runner's own profile
   names the run folder, and the Basic-Memory project is no longer listed.
