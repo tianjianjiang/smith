@@ -47,7 +47,6 @@ run() {
   node "$HOOK" < "$input_file"
 }
 
-
 bash_command() { printf '{"command":%s}' "$(json_string "$1")"; }
 
 expect_refusal() {

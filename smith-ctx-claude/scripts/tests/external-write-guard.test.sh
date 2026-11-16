@@ -13,12 +13,14 @@ asks() { run "$2" | grep -q '"permissionDecision":"ask"' || fail "$1: expected a
 . "$HERE/lib/json-string.sh"
 . "$HERE/lib/json-inputs.sh"
 silent() {
-  if [ "$1" != "malformed stdin" ]; then
+  if [ "$1" = "malformed stdin" ]; then
+    out=$(run "$2") || fail "$1: hook crashed"
+  else
     silent_count=$((silent_count + 1))
-    printf '%s' "$2" > "$WORK/silent-inputs/$silent_count-$(printf '%s' "$1" | tr '/' '_')" ||
-      fail "$1: could not record the test input"
+    input_file="$WORK/silent-inputs/$silent_count-$(printf '%s' "$1" | tr '/' '_')"
+    printf '%s' "$2" > "$input_file" || fail "$1: could not record the test input"
+    out=$(node "$HOOK" < "$input_file") || fail "$1: hook crashed"
   fi
-  out=$(run "$2") || fail "$1: hook crashed"
   [ -z "$out" ] || fail "$1: expected silent, got: $out"
 }
 reason_includes() {
