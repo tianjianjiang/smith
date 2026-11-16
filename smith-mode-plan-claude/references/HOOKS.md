@@ -166,10 +166,11 @@ context is still at or above the threshold, the hook looks for a
 `.pending-memory-restore-*` flag that carries this session's key and is
 newer than the `.pending-reload-<CWD_KEY>` flag, that is, a checkpoint
 written after the block. If it finds one it runs `claude --bg --name
-"continue: «label»"`, with the session's permission mode when the hook input
-carries one, and a prompt that restores that checkpoint; on success it
-deletes the flag and reports the new session in a `systemMessage`. Nothing is
-typed into a terminal. Limits:
+"«time» «label»"`, with the session's permission mode when the hook input
+carries one, and a prompt that restores that checkpoint; «time» is the
+checkpoint's time to the minute, so each continuation of one work thread
+gets its own name. On success it deletes the flag and reports the new
+session in a `systemMessage`. Nothing is typed into a terminal. Limits:
 
 - No dispatch without a checkpoint written after the block; the hook says so
   in a `systemMessage`, the session stops as before and `/clear` still works.
