@@ -1,0 +1,64 @@
+title: A user asking to be grilled still gets an interview, one question at a time
+description: >
+  Regression eval. The user asks directly, so no subagent is involved; both the
+  with-change skill and the baseline (origin/main) must interview: one question,
+  a recommended answer, then stop for the user's answer.
+input:
+  prompt: |
+    Grill me on my plan in docs/plan.md before I start.
+context:
+  files:
+    "README.md": |
+      # Orders web app
+
+      Single-page app served by the `api/` service.
+
+      ## Authentication
+
+      Sessions use an httpOnly cookie set by `api/session.py`; the browser
+      never sees the token. See docs/security.md for the reason.
+    "docs/security.md": |
+      # Security decisions
+
+      ## Session tokens
+
+      Tokens stay in httpOnly cookies. A token readable from JavaScript is
+      exposed to any cross-site scripting bug, and the 2026-03 audit found
+      two such bugs in third-party widgets we still load.
+    "docs/plan.md": |
+      # Plan: move the session token to localStorage
+
+      1. The SPA reads the token from localStorage and sends it as a Bearer
+         header, so the API no longer needs cookie handling.
+      2. Remove the cookie code from api/session.py.
+      3. Ship behind no flag; the change is internal.
+    "api/session.py": |
+      from http.cookies import SimpleCookie
+
+      COOKIE_NAME = "session"
+
+
+      def set_session_cookie(headers, token):
+          cookie = SimpleCookie()
+          cookie[COOKIE_NAME] = token
+          cookie[COOKIE_NAME]["httponly"] = True
+          cookie[COOKIE_NAME]["secure"] = True
+          cookie[COOKIE_NAME]["samesite"] = "Strict"
+          headers["Set-Cookie"] = cookie.output(header="").strip()
+
+
+      def read_session_token(request_cookies):
+          return request_cookies.get(COOKIE_NAME)
+judge:
+  type: agent_judge
+  model: anthropic/claude-fable-5-2
+  pass_threshold: 1.0
+  context:
+    profile: standard
+    final_message: include
+    transcript: omit
+    workspace_diff: omit
+  criteria:
+    - "The reply puts exactly one question to the user."
+    - "The reply gives a recommended answer to that question."
+    - "The reply ends by waiting for the user's answer, without going on to further questions or to a full review of the plan."

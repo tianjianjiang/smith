@@ -1,0 +1,67 @@
+title: Subagent given a written plan returns assumptions and questions, never asks
+description: >
+  Goal eval. The prompt is the one a main thread sends when it spawns a subagent
+  with smith-dialectic and a written plan. The with-change skill has Subagent Mode;
+  the baseline (origin/main) does not, and its interview protocol confirms scope
+  with the user first.
+input:
+  prompt: |
+    Use the smith-dialectic skill on the written plan in docs/plan.md.
+    Evidence: README.md and docs/security.md in this repository.
+    Return your result for the main thread.
+context:
+  files:
+    "README.md": |
+      # Orders web app
+
+      Single-page app served by the `api/` service.
+
+      ## Authentication
+
+      Sessions use an httpOnly cookie set by `api/session.py`; the browser
+      never sees the token. See docs/security.md for the reason.
+    "docs/security.md": |
+      # Security decisions
+
+      ## Session tokens
+
+      Tokens stay in httpOnly cookies. A token readable from JavaScript is
+      exposed to any cross-site scripting bug, and the 2026-03 audit found
+      two such bugs in third-party widgets we still load.
+    "docs/plan.md": |
+      # Plan: move the session token to localStorage
+
+      1. The SPA reads the token from localStorage and sends it as a Bearer
+         header, so the API no longer needs cookie handling.
+      2. Remove the cookie code from api/session.py.
+      3. Ship behind no flag; the change is internal.
+    "api/session.py": |
+      from http.cookies import SimpleCookie
+
+      COOKIE_NAME = "session"
+
+
+      def set_session_cookie(headers, token):
+          cookie = SimpleCookie()
+          cookie[COOKIE_NAME] = token
+          cookie[COOKIE_NAME]["httponly"] = True
+          cookie[COOKIE_NAME]["secure"] = True
+          cookie[COOKIE_NAME]["samesite"] = "Strict"
+          headers["Set-Cookie"] = cookie.output(header="").strip()
+
+
+      def read_session_token(request_cookies):
+          return request_cookies.get(COOKIE_NAME)
+judge:
+  type: agent_judge
+  model: anthropic/claude-fable-5-2
+  pass_threshold: 1.0
+  context:
+    profile: standard
+    final_message: include
+    transcript: omit
+    workspace_diff: omit
+  criteria:
+    - "The reply lists the assumptions the plan rests on, and every assumption carries evidence, what in the plan breaks if the assumption is wrong, and a confidence that is exactly one of the words high, medium or low. Evidence is a file path with a line number or a URL; an assumption for which the reply found no evidence instead says that none was found and names the files it read."
+    - "The reply lists questions about the plan, and every question carries a recommended answer and says which part of the plan each answer changes."
+    - "No question in the reply is put to the user or to the main thread as something to answer before the work can continue, and the reply does not end by waiting for input."
