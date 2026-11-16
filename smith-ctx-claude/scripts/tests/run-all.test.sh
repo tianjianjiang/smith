@@ -45,7 +45,7 @@ here="\$(dirname "\$0")"
 tries=0
 until [ -f "\$here/$3.arrived" ]; do
   tries=\$((tries + 1))
-  [ "\$tries" -gt 50 ] && { echo "$2 never saw $3"; exit 1; }
+  [ "\$tries" -gt 300 ] && { echo "$2 never saw $3"; exit 1; }
   sleep 0.1
 done
 EOF

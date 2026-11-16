@@ -9,27 +9,27 @@ case "$JOBS" in
 esac
 LOGS="$(mktemp -d)"
 trap 'rm -rf "$LOGS"' EXIT
+set --
 for test_file in "$HERE"/*.test.sh; do
-  [ -f "$test_file" ] || continue
-  printf '%s\n' "$test_file"
-done > "$LOGS/tests"
-if [ ! -s "$LOGS/tests" ]; then
+  [ -f "$test_file" ] && set -- "$@" "$test_file"
+done
+if [ "$#" = 0 ]; then
   echo "NO TESTS FOUND in $HERE"
   exit 1
 fi
-tr '\n' '\0' < "$LOGS/tests" | xargs -0 -n 1 -P "$JOBS" sh -c '
+printf '%s\0' "$@" | xargs -0 -n 1 -P "$JOBS" sh -c '
   log="$1/$(basename "$2").log"
-  bash "$2" > "$log" 2>&1
+  bash "$2" < /dev/null > "$log" 2>&1
   echo "$?" > "$log.status"
 ' run-one "$LOGS"
 status=0
-while IFS= read -r test_file; do
+for test_file in "$@"; do
   log="$LOGS/$(basename "$test_file").log"
   cat "$log"
   if [ "$(cat "$log.status" 2>/dev/null)" != 0 ]; then
     echo "FAIL: $(basename "$test_file") (rerun bash $test_file)"
     status=1
   fi
-done < "$LOGS/tests"
+done
 [ "$status" = 0 ] && echo "ALL PASS" || echo "SOME FAILED"
 exit "$status"
