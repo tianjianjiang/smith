@@ -122,36 +122,45 @@ latest_stop_batch_verdict() {
         end' <<<"$records" 2>/dev/null || printf 'unknown'
 }
 
+pending_reload_names_this_session() {
+    [[ -n "$SESSION_ID" && "$(sed -n '2p' "$1" 2>/dev/null)" == "$SESSION_ID" ]]
+}
+
+block_already_attempted() {
+    local attempt_marker="$1" pending_reload="$2"
+    [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]]
+}
+
 key_of_this_sessions_block_elsewhere() {
     local own_key="$1" flag
     [[ -n "$SESSION_ID" ]] || return 1
     for flag in "${CTX_FLAGS_DIR}"/.pending-reload-*; do
         [[ -f "$flag" && "$flag" != *.exit-marker && "$flag" != "${CTX_FLAGS_DIR}/.pending-reload-${own_key}" ]] || continue
-        [[ "$(sed -n '2p' "$flag" 2>/dev/null)" == "$SESSION_ID" ]] || continue
+        pending_reload_names_this_session "$flag" || continue
         printf '%s' "${flag##*/.pending-reload-}"
         return 0
     done
     return 1
 }
 
-block_not_yet_handled() {
-    local pending_reload="$1" attempt_marker="$2"
-    [[ -n "$SESSION_ID" && "$(sed -n '2p' "$pending_reload" 2>/dev/null)" == "$SESSION_ID" ]] || return 1
-    [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && return 1
-    return 0
+report_unreadable_transcript() {
+    local own_key="$1" pending_reload="$2" attempt_marker="$3"
+    if pending_reload_names_this_session "$pending_reload" && ! block_already_attempted "$attempt_marker" "$pending_reload"; then
+        stopped_without_successor SMITH_CTX_TRANSCRIPT_UNREADABLE "the transcript ${TRANSCRIPT_PATH:-(no path given)} cannot be read, and .pending-reload-${own_key} records a block of this session that no attempt has handled"
+    fi
 }
 
 context_still_critical() {
-    local cwd_key="$1" pending_reload="$2" attempt_marker="$3" percentage
-    if ! transcript_readable; then
-        block_not_yet_handled "$pending_reload" "$attempt_marker" \
-            && stopped_without_successor SMITH_CTX_TRANSCRIPT_UNREADABLE "the transcript ${TRANSCRIPT_PATH:-(no path given)} cannot be read, and .pending-reload-${cwd_key} records a block of this session that no attempt has handled"
-        return 1
-    fi
+    local cwd_key="$1" percentage
     percentage=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key")
-    [[ "$percentage" =~ ^[0-9]+$ && $percentage -ge $CRITICAL_PCT ]] && return 0
-    [[ "$(latest_stop_batch_verdict)" == blocked ]] \
-        && json_system_message SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL "Context reset: after this hook blocked the stop, context is at ${percentage:-0}%, below the critical ${CRITICAL_PCT}%, so no background session was started and none is needed."
+    [[ "$percentage" =~ ^[0-9]+$ ]] || percentage=0
+    [[ $percentage -ge $CRITICAL_PCT ]] && return 0
+    [[ "$(latest_stop_batch_verdict)" == blocked ]] || return 1
+    if [[ $percentage -eq 0 ]]; then
+        stopped_without_successor SMITH_CTX_CONTEXT_UNMEASURED "after this hook blocked the stop, the context level could not be measured from the transcript ${TRANSCRIPT_PATH}"
+    else
+        json_system_message SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL "Context reset: after this hook blocked the stop, context is at ${percentage}%, below the critical ${CRITICAL_PCT}%, so no background session was started and none is needed."
+    fi
     return 1
 }
 
@@ -195,11 +204,15 @@ dispatch_successor_session() {
         report_missing_pending_reload "$own_key"
         return 0
     fi
-    context_still_critical "$own_key" "$pending_reload" "$attempt_marker" || return 0
+    if ! transcript_readable; then
+        report_unreadable_transcript "$own_key" "$pending_reload" "$attempt_marker"
+        return 0
+    fi
+    context_still_critical "$own_key" || return 0
     eligible_flags=$(eligible_restore_flags "$pending_reload" "$own_key" "$physical_key" "$attempt_marker")
     flag=$(newest_file_of "$eligible_flags")
     if [[ -z "$flag" ]]; then
-        [[ -f "$attempt_marker" && ! "$attempt_marker" -ot "$pending_reload" ]] && return 0
+        block_already_attempted "$attempt_marker" "$pending_reload" && return 0
         json_system_message SMITH_CTX_NO_CHECKPOINT "Context reset: no checkpoint was written after the block, so no background session was started. Checkpoint this session, or type /clear."
         return 0
     fi

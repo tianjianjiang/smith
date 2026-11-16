@@ -751,6 +751,22 @@ STATUS=$?
 expect_no_dispatch "the recorded sample with its uncoded reason" "$OUT" "$STATUS"
 pass "the uncoded reason of the recorded sample does not count as this hook's block"
 
+readonly CLAUDE_CODE_ATTACHMENT_SAMPLE="$HERE/records/hook-blocking-error.claude-code-2.1.325.jsonl"
+[ "$(jq -r '.attachment.type' "$CLAUDE_CODE_ATTACHMENT_SAMPLE")" = hook_blocking_error ] || fail "the recorded attachment sample should be a blocking error"
+reset_state
+jq -c --arg error "$BLOCK_REASON" '.attachment.blockingError.blockingError = $error' "$CLAUDE_CODE_ATTACHMENT_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "the recorded attachment sample with the coded reason" "$OUT" "$STATUS" SMITH_CTX_PENDING_RELOAD_MISSING "\.pending-reload-$CWD_KEY is missing"
+reset_state
+cat "$CLAUDE_CODE_ATTACHMENT_SAMPLE" >> "$TMP/transcript.jsonl"
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_no_dispatch "the recorded attachment sample with its uncoded reason" "$OUT" "$STATUS"
+pass "a blocking error attachment in the recorded Claude Code format is read, and only its coded reason counts"
+
 reset_state
 make_transcript $((DEFAULT_CRITICAL_PCT - 1))
 append_stop_hook_summary "$BLOCK_REASON"
@@ -771,6 +787,18 @@ OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "below the threshold after another hook's block" "$OUT" "$STATUS"
 pass "below the threshold, a block by this hook is explained and a stale pending reload file stays silent"
+
+reset_state
+: > "$TMP/transcript.jsonl"
+append_stop_hook_summary "$BLOCK_REASON"
+write_pending_reload
+write_restore_flag "$LABEL" "$PHYSICAL_KEY"
+OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
+STATUS=$?
+expect_explained_stop "a context level that cannot be measured after this hook's block" "$OUT" "$STATUS" SMITH_CTX_CONTEXT_UNMEASURED "context level could not be measured"
+[ -f "$RESTORE_FLAG" ] || fail "an unmeasured context level: the restore flag should stay"
+case "$OUT" in *"none is needed"*) fail "an unmeasured context level must not be reported as no longer critical: $OUT" ;; esac
+pass "a context level that cannot be measured is not reported as 0% and no longer critical"
 
 reset_state
 write_pending_reload

@@ -159,8 +159,8 @@ plan state file, and returns the session facts as additional context.
 block of a settings file (a variable exported by the launching shell does
 not reach a background session's hooks), the block reason starts with
 `[SMITH_CTX_AUTO_RESET_BLOCKED]` and ends "a fresh background session then
-continues from the checkpoint" instead of "then /clear". A session that its terminal hosts is not affected, and neither is
-any session when `lib-plan.sh`, which holds the restore wording, is missing.
+continues from the checkpoint" instead of "then /clear". A session that its
+terminal hosts is not affected, and neither is any session when `lib-plan.sh`, which holds the restore wording, is missing.
 On the next stop, the one with `stop_hook_active` true, and only while the
 context is still at or above the threshold, the hook looks for a
 `.pending-memory-restore-*` flag that carries this session's key and is
@@ -194,8 +194,8 @@ typed into a terminal. Limits:
   model may translate or paraphrase: `[SMITH_CTX_AUTO_RESET_BLOCKED]` (the
   block), `[SMITH_CTX_CONTINUED]`, `[SMITH_CTX_DISPATCH_FAILED]`,
   `[SMITH_CTX_NO_CHECKPOINT]`, `[SMITH_CTX_PENDING_RELOAD_MISSING]`,
-  `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`
-  and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
+  `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`,
+  `[SMITH_CTX_CONTEXT_UNMEASURED]` and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
 - The hook knows it blocked this session from the latest Stop batch in the
   transcript (records sharing one `toolUseID`): an error of its
   `stop_hook_summary` or its `hook_blocking_error` attachment starting with
@@ -209,7 +209,8 @@ typed into a terminal. Limits:
 - With that evidence the hook says why nothing was dispatched: the
   `.pending-reload` file is missing (naming the key it was filed under, if
   any), the transcript cannot be read, or the context fell below the
-  threshold, where no new session is needed. Without it (another hook
+  threshold, where no new session is needed, or could not be measured, since
+  `lib-context.sh` reads an unmeasured level as 0%. Without it (another hook
   blocked, or a stale `.pending-reload` file left by an earlier, handled
   block) the stop stays silent. Recorded shape and how to refresh it after
   a Claude Code upgrade: `smith-ctx-claude/scripts/tests/records/README.md`.

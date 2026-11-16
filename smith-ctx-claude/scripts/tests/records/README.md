@@ -265,11 +265,13 @@ outside.
   the label, and for its answer. A control run with the switch set to `0`
   follows.
   Sessions, flags and the memory file are removed at the end.
-- Passing output: the block reason names the background continuation; a
+- Passing output: a `stop_hook_summary` of the first session holds an error
+  starting with `[SMITH_CTX_AUTO_RESET_BLOCKED] `; a
   session named `continue: «label»` with another id appears, reports the
   checkpoint's code word and does not know the first conversation's code
   word; the restore flag is consumed; the control dispatches nothing and
-  shows today's reason.
+  shows today's reason, with no code. The record's observation
+  `ranInTheDefaultProfile` says whether `CLAUDE_CONFIG_DIR` was left unset.
 - Limit: a copy of `enforce-clear.sh` that the profile's user settings
   register also runs. Run in the default profile, an installed older copy
   blocks with today's reason beside the new one; the new reason's presence,
@@ -294,12 +296,15 @@ the `stop_hook_summary` entry, or the `hook_blocking_error` attachment of
 the same `toolUseID` when the summary was skipped
 (https://github.com/anthropics/claude-code/issues/74648).
 
-- Record: `stop-hook-summary.claude-code-2.1.325.jsonl`, the first
-  `stop_hook_summary` entry of a real background session on Claude Code
-  2.1.325, taken from the end-to-end run of the automatic continuation, with
-  the home folder replaced by `/Users/example`. Its reason predates the
+- Records: `stop-hook-summary.claude-code-2.1.325.jsonl` and
+  `hook-blocking-error.claude-code-2.1.325.jsonl`, the first
+  `stop_hook_summary` entry and the `hook_blocking_error` attachment of the
+  same Stop batch of a real background session on Claude Code 2.1.325,
+  taken from a run of the conditions eval below (its folder is
+  `probes/zq-run-…/zq-probe-…`), with the home folder replaced by
+  `/Users/example`. Their reason predates the
   `[SMITH_CTX_AUTO_RESET_BLOCKED]` code.
-- Used by: `../enforce-clear-dispatch.test.sh`, which reads the sample as
+- Used by: `../enforce-clear-dispatch.test.sh`, which reads each sample as
   recorded and with the coded reason.
 - Refresh after a Claude Code upgrade: run the end-to-end eval above; its check
   `blockRecordedInAStopHookSummaryWithItsCode` fails when the entry changes
