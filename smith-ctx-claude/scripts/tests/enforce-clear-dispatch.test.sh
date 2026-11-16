@@ -840,12 +840,14 @@ expect_explained_stop "a blocking error attachment without its error" "$OUT" "$S
 pass "a blocking error attachment without its error text is an unknown format, as a summary without errors is"
 
 append_batch_record() {
-  local id=$1 kind=$2 error=${3-}
+  local id=$1 kind=$2 error=${3-} record
   case "$kind" in
-    summary) jq -cn --arg error "$error" --arg id "$id" '{type:"system",subtype:"stop_hook_summary",hookErrors:[$error],toolUseID:$id}' ;;
-    attachment) jq -cn --arg error "$error" --arg id "$id" '{type:"attachment",attachment:{type:"hook_blocking_error",hookEvent:"Stop",toolUseID:$id,blockingError:{blockingError:$error}}}' ;;
-    attachment-without-error) jq -cn --arg id "$id" '{type:"attachment",attachment:{type:"hook_blocking_error",hookEvent:"Stop",toolUseID:$id,blockingError:{command:"x"}}}' ;;
-  esac >> "$TMP/transcript.jsonl"
+    summary) record=$(jq -cn --arg error "$error" --arg id "$id" '{type:"system",subtype:"stop_hook_summary",hookErrors:[$error],toolUseID:$id}') ;;
+    attachment) record=$(jq -cn --arg error "$error" --arg id "$id" '{type:"attachment",attachment:{type:"hook_blocking_error",hookEvent:"Stop",toolUseID:$id,blockingError:{blockingError:$error}}}') ;;
+    attachment-without-error) record=$(jq -cn --arg id "$id" '{type:"attachment",attachment:{type:"hook_blocking_error",hookEvent:"Stop",toolUseID:$id,blockingError:{command:"x"}}}') ;;
+    *) fail "append_batch_record: unknown record kind '$kind'" ;;
+  esac || fail "append_batch_record: jq could not write a $kind record"
+  printf '%s\n' "$record" >> "$TMP/transcript.jsonl"
 }
 
 reset_state

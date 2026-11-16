@@ -273,6 +273,13 @@ outside.
   word; the restore flag is consumed; the control dispatches nothing and
   shows today's reason, with no code. The record's observation
   `ranInTheDefaultProfile` says whether the eval used `~/.claude`.
+- The record names the checkout as it was when the eval started:
+  `commit`, `treeIsDirty` (whether `git status --porcelain` listed
+  anything, `null` when git could not read the tree), and `hookSha256`,
+  the SHA-256 of `enforce-clear.sh` alone, so a change to a file it
+  sources shows only in `treeIsDirty`; `commit` and `hookSha256` are
+  `unknown` when they could not be read, and the run then fails before
+  any session starts.
 - Only this checkout's copy of the hook answers the stops of the sessions
   the eval starts: they are started with `--setting-sources project,local`,
   which leaves out the user settings and with them an installed copy of
@@ -347,9 +354,12 @@ are not measured here.
   flags (`plans`) and checkpoint backups stay in that folder. Each run
   links the profile's `skills` to this checkout and writes its
   `settings.json`: the Stop hook is this checkout's `enforce-clear.sh`
-  through that link, the permission rules are the default profile's with
-  its folder replaced by the eval profile's and without the allow rules
-  that still name the installed copy, and `SERENA_HOME` points at
+  through that link, the allow rules are the default profile's with its
+  folder replaced by the eval profile's, and without the allow rules that
+  still name the installed copy; each deny rule is kept and also copied
+  with the folder replaced; a rule keeps the way it writes the folder
+  (`~/.claude`, `$HOME/.claude`, an absolute path); the `ask` rules are
+  not copied, and `SERENA_HOME` points at
   the run's own folder. Each measurement starts one background session in
   a new folder under `probes`, outside any repository; the folder lowers
   the threshold, is a Serena project of that `SERENA_HOME`, and names a
@@ -367,7 +377,8 @@ are not measured here.
   claude stop` and `claude rm`, delete the `zq-run-` folder under
   `probes`, remove the `zq-eval-` project with `basic-memory project
   remove`, and delete the flag files in the profile's `plans`.
-- Passing output: the eval profile is logged in, uses its own folder and
+- Passing output: the eval profile is logged in, uses its own folder,
+  which is not the home folder, above it or inside `~/.claude`, and
   trusts `probes`, and neither its `settings.json` nor its `plans` folder
   is a symbolic link, since the eval writes and deletes there; its skills are this checkout, its Stop hook is this
   checkout's with the dispatch step, and no allow rule names the
@@ -381,20 +392,33 @@ are not measured here.
   and names the switch. The hook's texts
   are matched by these codes, never by their wording.
   No probe session ran a command on a path of the installed copy
-  (`$HOME/.claude/`, `~/.claude/` or `~/.smith/`), no flag of the runner's own profile
+  (the `.claude` or `.smith` folder in the home folder, written with `~`, `$HOME`,
+  `${HOME}` or the home path), no flag of the runner's own profile
   names the run folder, and the Basic-Memory project is no longer listed.
 - A run fails, and is rerun, when a probe session types a path of the
   installed copy itself (`$HOME/.claude/skills/...`) instead of the
   skill's `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`: the check reads the
-  command text, which cannot tell a listing from an execution.
+  command text, which cannot tell a listing from an execution. The
+  default inside `${CLAUDE_CONFIG_DIR:-…}` is not read, in commands and
+  in allow rules alike, since the eval always sets `CLAUDE_CONFIG_DIR`;
+  it is read in a command that runs `env` or `unset`, or names
+  `CLAUDE_CONFIG_DIR` outside such a default.
 - Seen and not explained: in one run the hook after the checkpoint
   printed nothing and no second session started, while a later run with
   the same settings, and a run of the hook under a shell trace, continued
   the session.
 - The record names the Serena version that `uvx` resolved
-  (`serenaVersion`); the eval takes the same unpinned Serena that
+  (`serenaVersion`, `unknown` when `uvx` fails or prints no version); the
+  eval takes the same unpinned Serena that
   `smith-checkpoint/scripts/write-checkpoint.sh` runs, so the probe
   projects match what the checkpoint writes into.
+- The record names the checkout as it was when the eval started:
+  `commit`, `treeIsDirty` (whether `git status --porcelain` listed
+  anything, `null` when git could not read the tree), and `hookSha256`,
+  the SHA-256 of `enforce-clear.sh` alone, so a change to a file it
+  sources shows only in `treeIsDirty`; `commit` and `hookSha256` are
+  `unknown` when they could not be read, and the run then fails before
+  any session starts.
 - Optional parameters: `SMITH_EVAL_CONFIG_DIR`,
   `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
   `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`,

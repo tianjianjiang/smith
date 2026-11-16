@@ -15,11 +15,12 @@ export function blockWithError(message) {
 }
 
 export function git(dir, args, options = {}) {
-  const { failOpen = false } = options;
+  const { failOpen = false, env } = options;
   try {
     return execFileSync("git", ["-C", dir, ...args], {
       stdio: ["ignore", "pipe", "ignore"],
       encoding: "utf-8",
+      env,
     }).trim();
   } catch (err) {
     if (failOpen) return null;

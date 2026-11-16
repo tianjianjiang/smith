@@ -5,6 +5,9 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkoutProvenance, provenanceWasRead } from "../lib/checkout-provenance.mjs";
+import { evalConfigFolderIsUsable, evalDenyRules, evalPermissionRule, namesAnInstalledCopy } from "../lib/eval-profile-rules.mjs";
+import { canonicalPath } from "../../../smith-git/scripts/lib/serena-root.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHECKOUT_ROOT = realpathSync(resolve(HERE, "..", "..", ".."));
@@ -12,6 +15,7 @@ const HOOK_UNDER_TEST = realpathSync(resolve(HERE, "..", "enforce-clear.sh"));
 const USER_CONFIG_FOLDER = join(homedir(), ".claude");
 const RUNNER_CONFIG_FOLDER = resolve(process.env.CLAUDE_CONFIG_DIR ?? USER_CONFIG_FOLDER);
 const EVAL_CONFIG_FOLDER = resolve(process.env.SMITH_EVAL_CONFIG_DIR ?? join(homedir(), ".claude-smith-eval"));
+const EVAL_PROFILE_FOLDERS = { home: homedir(), evalConfigFolder: EVAL_CONFIG_FOLDER };
 const PROBE_ROOT = join(EVAL_CONFIG_FOLDER, "probes");
 const EVAL_SKILLS_LINK = join(EVAL_CONFIG_FOLDER, "skills");
 const EVAL_SETTINGS_PATH = join(EVAL_CONFIG_FOLDER, "settings.json");
@@ -39,7 +43,6 @@ const VARIABLES_THE_EVAL_DOES_NOT_PASS_ON = [
   "BASIC_MEMORY_CONFIG_DIR", "BASIC_MEMORY_HOME", "SERENA_HOME", BACKGROUND_SESSIONS_SWITCH,
   "CTX_AUTO_RESET_DISPATCH", "CTX_CONTEXT_CRITICAL_PCT",
 ];
-const INSTALLED_COPY_REFERENCE = new RegExp(`(\\$HOME|\\$\\{HOME\\}|~|${homedir().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})/(\\.claude|\\.smith)/`);
 const ONE_TIME_SETUP = `mkdir -p "${PROBE_ROOT}" && cd "${PROBE_ROOT}" && CLAUDE_CONFIG_DIR="${EVAL_CONFIG_FOLDER}" command claude, then /login, accept the folder trust prompt, and exit`;
 
 if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
@@ -96,11 +99,7 @@ function readJson(path) {
 }
 
 function sameFolder(left, right) {
-  try {
-    return realpathSync(left) === realpathSync(right);
-  } catch {
-    return resolve(left) === resolve(right);
-  }
+  return canonicalPath(left) === canonicalPath(right);
 }
 
 function evalProfileLogin() {
@@ -138,8 +137,12 @@ function pointTheEvalSkillsAtThisCheckout() {
   return true;
 }
 
-function evalPermissionRule(rule) {
-  return rule.split(`/${USER_CONFIG_FOLDER}/`).join(`/${EVAL_CONFIG_FOLDER}/`);
+function ruleForTheEvalProfile(rule) {
+  return evalPermissionRule(rule, EVAL_PROFILE_FOLDERS);
+}
+
+function namesTheInstalledCopy(text) {
+  return namesAnInstalledCopy(text, EVAL_PROFILE_FOLDERS.home);
 }
 
 function shellQuoted(path) {
@@ -151,8 +154,8 @@ function writeTheEvalSettings(serenaHome) {
   const settings = {
     hooks: { Stop: [{ hooks: [{ type: "command", command: shellQuoted(REGISTERED_HOOK_PATH) }] }] },
     permissions: {
-      allow: (userPermissions.allow ?? []).map(evalPermissionRule).filter((rule) => !INSTALLED_COPY_REFERENCE.test(rule)),
-      deny: (userPermissions.deny ?? []).map(evalPermissionRule),
+      allow: (userPermissions.allow ?? []).map(ruleForTheEvalProfile).filter((rule) => !namesTheInstalledCopy(rule)),
+      deny: evalDenyRules(userPermissions.deny ?? [], EVAL_PROFILE_FOLDERS),
     },
     env: { SERENA_HOME: serenaHome },
   };
@@ -164,7 +167,7 @@ function registeredStopHooks() {
 }
 
 function evalAllowRulesNameNoInstalledCopy() {
-  return (readJson(EVAL_SETTINGS_PATH)?.permissions?.allow ?? []).every((rule) => !INSTALLED_COPY_REFERENCE.test(rule));
+  return (readJson(EVAL_SETTINGS_PATH)?.permissions?.allow ?? []).every((rule) => !namesTheInstalledCopy(rule));
 }
 
 function stopHookIsThisCheckouts() {
@@ -331,7 +334,7 @@ function bashCommandsIn(transcript) {
 }
 
 function commandsReachingAnInstalledCopy(...transcripts) {
-  return transcripts.flatMap(bashCommandsIn).filter((command) => INSTALLED_COPY_REFERENCE.test(command)).map((command) => command.slice(0, 200).split(homedir()).join("~"));
+  return transcripts.flatMap(bashCommandsIn).filter(namesTheInstalledCopy).map((command) => command.slice(0, 200).split(homedir()).join("~"));
 }
 
 function launchFlagNames(shortId) {
@@ -546,6 +549,11 @@ async function measureAFailedDispatch(runFolder) {
   }
 }
 
+function serenaVersion() {
+  const probe = run("uvx", ["-q", "--from", "git+https://github.com/oraios/serena", "serena", "--version"], { timeout: TURN_TIMEOUT_MS });
+  return (probe.ok && probe.output.trim().split("\n").pop()) || "unknown";
+}
+
 function failedNames(prefix, checks) {
   return Object.entries(checks ?? {}).filter(([, passed]) => !passed).map(([name]) => `${prefix}.${name}`);
 }
@@ -558,6 +566,7 @@ const environmentChecks = {
   probeFolderIsTrustedInTheEvalProfile: probeRootIsTrusted(),
   evalSettingsFileIsNotALink: !isSymbolicLink(EVAL_SETTINGS_PATH),
   evalFlagsFolderIsNotALink: !isSymbolicLink(FLAGS_FOLDER),
+  evalFolderIsNotHomeAboveItOrInTheDefaultProfile: evalConfigFolderIsUsable(EVAL_PROFILE_FOLDERS),
 };
 if (Object.values(environmentChecks).includes(false)) {
   console.log(JSON.stringify({ environmentChecks }, null, 2));
@@ -565,6 +574,7 @@ if (Object.values(environmentChecks).includes(false)) {
   process.exit(1);
 }
 
+const checkout = checkoutProvenance(CHECKOUT_ROOT, HOOK_UNDER_TEST);
 const runFolder = createRunFolder();
 let versionChecks = {};
 let continuation;
@@ -574,6 +584,7 @@ try {
   const skillsWereLinked = pointTheEvalSkillsAtThisCheckout();
   writeTheEvalSettings(runFolder.serenaHome);
   versionChecks = {
+    checkoutProvenanceWasRead: provenanceWasRead(checkout),
     evalSkillsAreThisCheckout: skillsWereLinked && sameFolder(EVAL_SKILLS_LINK, CHECKOUT_ROOT),
     evalStopHookIsThisCheckoutsAndHasTheDispatchStep: stopHookIsThisCheckouts(),
     evalAllowRulesNameNoInstalledCopy: evalAllowRulesNameNoInstalledCopy(),
@@ -604,7 +615,8 @@ const record = {
   recordedAt: localIsoTimestamp(),
   claudeCodeVersion: claude(["--version"]).match(/^\d+\.\d+\.\d+.*/)?.[0] ?? "unknown",
   model: MODEL,
-  serenaVersion: run("uvx", ["-q", "--from", "git+https://github.com/oraios/serena", "serena", "--version"], { timeout: TURN_TIMEOUT_MS }).output.trim().split("\n").pop() ?? "unknown",
+  ...checkout,
+  serenaVersion: serenaVersion(),
   environment: { checks: environmentChecks },
   versionUnderTest: { checks: versionChecks },
   continuation,
