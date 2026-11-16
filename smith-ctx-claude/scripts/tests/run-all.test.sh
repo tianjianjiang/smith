@@ -73,6 +73,17 @@ out=$(sh "$dir/run-all.sh" 2>&1) && fail "a failing test must still fail the sui
 printf '%s\n' "$out" | grep -q 'FAIL.*gamma-breaks' || fail "the report must name the failing test file, got: $out"
 printf '%s\n' "$out" | grep -q 'boom' || fail "the failing test's own output must be shown, got: $out"
 
+dir=$(suite "folder with spaces")
+fake_test "$dir" alpha-spaced 0
+out=$(sh "$dir/run-all.sh" 2>&1) || fail "a folder path with spaces must still run its tests, got: $out"
+[ -f "$dir/alpha-spaced.ran" ] || fail "a folder path with spaces must run every test"
+
+deep="$(printf 'd%.0s' $(seq 1 200))/$(printf 'e%.0s' $(seq 1 100))"
+dir=$(suite "$deep")
+fake_test "$dir" alpha-deep 0
+out=$(sh "$dir/run-all.sh" 2>&1) || fail "a test path longer than 255 bytes must still run, got: $out"
+[ -f "$dir/alpha-deep.ran" ] || fail "a test path longer than 255 bytes must run its test"
+
 dir=$(suite serial)
 fake_test "$dir" alpha-serial 0
 fake_test "$dir" beta-serial 0

@@ -13,11 +13,11 @@ if [ "$found" = 0 ]; then
   echo "NO TESTS FOUND in $HERE"
   exit 1
 fi
-xargs -P "$JOBS" -I{} sh -c '
-  log="$2/$(basename "$1").log"
-  bash "$1" > "$log" 2>&1
+tr '\n' '\0' < "$LOGS/tests" | xargs -0 -n 1 -P "$JOBS" sh -c '
+  log="$1/$(basename "$2").log"
+  bash "$2" > "$log" 2>&1
   echo "$?" > "$log.status"
-' run-one {} "$LOGS" < "$LOGS/tests"
+' run-one "$LOGS"
 status=0
 while IFS= read -r test_file; do
   log="$LOGS/$(basename "$test_file").log"
