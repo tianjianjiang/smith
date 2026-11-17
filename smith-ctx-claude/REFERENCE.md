@@ -337,7 +337,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
 <skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
-<skill name="smith-mcp-browser" description="Browser MCP reliability: take each server's default browser, set no override at all">`@smith-mcp-browser/SKILL.md`</skill>
+<skill name="smith-mcp-browser" description="Browser MCP reliability: drive the operator's chosen browser through each server's documented option">`@smith-mcp-browser/SKILL.md`</skill>
 
 <!-- Languages -->
 <skill name="smith-python" description="Python patterns and testing">`@smith-python/SKILL.md`</skill>
@@ -541,7 +541,7 @@ documentation and router-trigger design.
 
 **smith-serena**: Serena MCP integration. ALWAYS load before any Serena tool call or memory write. Use when a prompt mentions Serena, and at phase and session boundaries to sync memories.
 
-**smith-mcp-browser**: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when a browser launch fails, or when a site needs a user login.
+**smith-mcp-browser**: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when choosing or changing the browser it drives, when a browser launch fails, or when a site needs a user login.
 
 **smith-slack**: Slack drafting discipline (draft, never send). Use when drafting or replying to a Slack message, calling any slack_* MCP tool, or running a /slack command.
 

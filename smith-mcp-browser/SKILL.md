@@ -1,6 +1,6 @@
 ---
 name: smith-mcp-browser
-description: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when a browser launch fails, or when a site needs a user login.
+description: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use before calling any browser MCP tool, when choosing or changing the browser it drives, when a browser launch fails, or when a site needs a user login.
 ---
 
 # Browser MCP Plugin Reliability
@@ -10,22 +10,66 @@ description: Browser MCP reliability (chrome-devtools-mcp, Playwright MCP). Use 
 
 ## CRITICAL: Browser Selection
 
-- **chrome-devtools-mcp**: omit `--executablePath` AND `--channel`, rather than
-  pointing it at `/Applications/Vivaldi.app/...` or any Brave / Arc / Opera /
-  Edge binary. Omitting both resolves to Chrome's stable channel — the
-  installed Google Chrome — which upstream officially supports: "officially
-  supports Google Chrome and Chrome for Testing only". Chrome for Testing is
-  the other supported build, but nothing here selects or installs it, so do
-  not write a recipe that assumes it.
-- **chrome-devtools-mcp**: pass `--isolated` so every run gets a fresh, MCP-owned user-data-dir, rather than reusing a Vivaldi user-data-dir (the one with `VivaldiDirectMatchIcons/`, Vivaldi extension `mpognobbkildjkofajifpdfhcoklimli`). Avoids cross-run profile collisions.
-- **Playwright MCP**: take its own default (no `--browser` / `--executable-path` override), or attach to a user-launched instance via `--cdp-endpoint` — not at any other browser. That default is Google Chrome's stable channel, NOT Playwright's bundled Chromium: upstream documents `--browser` as "browser or chrome channel to use" and lists `chrome` as "Google Chrome (default)". The attach flag is `--cdp-endpoint` here; `--browserUrl` is chrome-devtools-mcp's spelling and is not a Playwright MCP option. Note `--browser` accepts `msedge`, so it selects a forbidden browser as readily as an executable path does.
-- **Pre-flight** at session start (not just before the first MCP call): inspect all four MCP configuration locations (see "MCP Configuration Locations" below) and confirm NO browser-selecting flag is set on `chrome-devtools-mcp` or `@playwright/mcp` — `--executablePath`, `--executable-path`, `--channel`, and Playwright's `--browser`, in both `--flag value` and `--flag=value` forms. The correct state is no browser override at all, so any of them is the finding, whichever browser it names; `--browser msedge` is as much a violation as an Edge executable path. Run `claude mcp list` first as the authoritative live view; then locate the offending entry when a violation is found — by file via the table, or at the plugin that registers it when it is plugin-installed and so appears in none of the four files.
+- **The operator picks the browser; this skill does not.** Before the first
+  browser MCP call, read the operator's instructions (user rules,
+  `CLAUDE.md`, project settings) for a browser choice, which may differ per
+  profile or project. With no choice recorded, each server's default
+  applies: Google Chrome's stable channel for both.
+- **Playwright MCP** selects with `--browser` or the environment variable
+  `PLAYWRIGHT_MCP_BROWSER`, values `chrome`, `msedge`, `firefox`, `webkit`.
+  Precedence rises from config file to environment variable to command
+  line, so a `--browser` flag beats the variable.
+  - `chrome` and `msedge` drive the browser installed on the host.
+  - `firefox` and `webkit` drive Playwright's own patched builds, not an
+    installed app, and need the build matching the server version. Run
+    `install-browser` with the package spec the server itself runs, such
+    as `npx @playwright/mcp@latest install-browser firefox`.
+  - A plugin-installed server has fixed `args`, so set the variable in the
+    `env` block of `settings.json`; Claude Code writes those entries into
+    its process environment, and a stdio server it spawns inherits that
+    environment unless `CLAUDE_CODE_MCP_ALLOWLIST_ENV=1` limits it to a
+    baseline plus the server's own `env`. A top-level `env` value reaches
+    every MCP server and shell command of that profile, not only this
+    one, and most project-scope `env` values apply only once the folder
+    is trusted.
+  - To attach to a Chromium browser the user launched, pass
+    `--cdp-endpoint` or set `PLAYWRIGHT_MCP_CDP_ENDPOINT`; `--browserUrl`
+    is chrome-devtools-mcp's spelling and not a Playwright MCP option.
+- **chrome-devtools-mcp** "officially supports Google Chrome and Chrome for
+  Testing only"; "Other Chromium-based browsers may work, but this is not
+  guaranteed, and you may encounter unexpected behavior", and Firefox and
+  WebKit are outside its support. When the chosen browser is neither Google
+  Chrome nor Chrome for Testing, disable this server instead of pointing
+  `--executablePath` at another browser. The one exception is
+  the attach escape hatch below, written for Vivaldi, which the operator
+  opts into for a Chromium browser they launched. When it runs, pass
+  `--isolated` so each run gets a fresh,
+  MCP-owned user-data-dir. The plugin-installed server has fixed `args`:
+  set the flag through a route its configuration documentation gives, or
+  register it by hand with the recipe below and disable the plugin.
+- **A change applies only to a newly started server.** Do not assume
+  `/reload-plugins` restarts a running MCP server; reconnect it with `/mcp`
+  or start a new session, then confirm the launched browser process, not
+  the configuration alone. `ps` prints full command lines, which can carry
+  a token in an endpoint URL, so read that output before pasting it.
+- **Pre-flight** at session start: compare the browser each server will
+  launch with the operator's choice. Read the installed server's own
+  `--help` and its configuration documentation, and check every option,
+  variable and config file they list that picks a browser or attaches to
+  one, including config files the server finds without being named, as
+  chrome-devtools-mcp does per
+  https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/docs/configuration.md.
+  The set changes between versions, so take it from those sources rather
+  than from this skill. An unwanted selection and a missing one are both
+  findings. Run `claude mcp list` first as the live view, locate each
+  entry with the section below, then confirm the launched browser
+  process: that check catches what the documentation misses.
 
 ## MCP Configuration Locations (Pre-flight Scope)
 
-A browser override can live in any of four files, or in a plugin that
-registers the server (see below). Registrations in `~/.claude.json` are
-the easiest to miss. Check all four:
+A browser selection can live in any of the four files below, in the
+places listed after the table, or in a plugin that registers the
+server. Registrations in `~/.claude.json` are the easiest to miss:
 
 | # | Location | Set by | How to inspect |
 | --- | --- | --- | --- |
@@ -33,7 +77,7 @@ the easiest to miss. Check all four:
 | 2 | Project `.mcp.json` | hand-edit | `jq '.mcpServers // {}\|map_values({type,command,args})' «project»/.mcp.json` |
 | 3 | Project `.claude/settings.json#mcpServers` | hand-edit / `/config` | `jq '.mcpServers // {}\|map_values({type,command,args})' «project»/.claude/settings.json` |
 | 4 | `~/.claude.json#mcpServers` | `claude mcp add … -s user` | `jq '.mcpServers // {}\|map_values({type,command,args})' ~/.claude.json` |
-| — | live composite of 1–4 + plugin-installed | — | `claude mcp list` |
+| — | live composite of 1–4, per-project entries and plugin-installed | — | `claude mcp list` |
 
 Project only `type`, `command` and `args` as above. A bare `jq '.mcpServers'`
 dumps `env` and `headers` too, which is where MCP servers keep API keys — and
@@ -41,27 +85,54 @@ in an agent session that output lands in the transcript. The projection
 narrows the exposure without ending it: `args` can itself carry a token or a
 credential-bearing URL, and `claude mcp list` prints those same values. Read
 the output before pasting any of it. What this check needs is only the
-browser-selecting flags, so quoting those alone is always enough.
+browser-selecting and attach flags, so quoting those alone is always
+enough; an attach endpoint can itself carry a token.
 
-`claude mcp list` is authoritative — it shows everything currently registered
-across scopes, including plugin-installed servers. The file-by-file checks
-tell you WHERE to apply the fix once a violation is found. An entry that
-`claude mcp list` shows but none of the four files contains is
-plugin-installed: fix it at the plugin that registers the server, then rerun
-`claude mcp list` to confirm the override is gone.
+The server documentation also names places outside these files:
+environment variables, which can sit in the top-level `env` of any
+settings file in scope, in a registration's own `env`, or in the
+environment Claude Code runs with; config files the server reads when
+`--config` names one or that it finds by itself; and per-project
+registrations under `.projects["«project path»"].mcpServers` in
+`~/.claude.json`, keyed by the folder Claude Code was started in. List
+names before reading any value, because an endpoint can carry a token,
+then read values only for the keys that pick a browser. For example, to
+list the Playwright MCP variable names in a settings file, then the
+`env` names of each registration in a file from the table:
+
+```shell
+jq '.env // {} | keys | map(select(startswith("PLAYWRIGHT_MCP_")))' «settings file»
+```
+
+```shell
+jq '.mcpServers // {} | map_values(.env // {} | keys)' «file»
+```
+
+`claude mcp list` is authoritative for registrations — it shows every
+server currently registered across scopes, including plugin-installed
+servers — but not for selections made through `env` or a config file.
+The file-by-file checks
+tell you WHERE to apply the fix once a mismatch is found; the fix may
+remove a selection or add one. An entry that `claude mcp list` shows but
+neither the four files nor the per-project entries contain is
+plugin-installed: change its selection
+through the `env` block or at the plugin that registers it, then confirm
+the launched browser process.
 
 To remove a user-scope CLI registration: `claude mcp remove «name» -s user`.
 
 **Tool-namespace divergence by install path**: the SAME browser server exposes
 different tool names depending on how it was added — plugin-installed gives
 `mcp__plugin_«plugin»_«server»__*`; `claude mcp add -s user` gives
-`mcp__«name»-cft__*`. The two can also carry DIFFERENT launch arguments (one
+`mcp__«name»__*`. The two can also carry DIFFERENT launch arguments (one
 bare, one with an explicit `--browser` or `--channel`), so confirm which
 registration is live (`claude mcp list`) before assuming a browser variant.
 
 ## Failure Signatures → Diagnosis
 
-Treat any of these in MCP stderr as a Vivaldi/non-Chrome misconfiguration:
+Treat any of these in MCP stderr as a Vivaldi or other unsupported
+executable-path misconfiguration. Chrome DevTools Protocol (CDP) and
+Google Cloud Messaging (GCM) appear in some of them.
 
 - `/Applications/Vivaldi.app/Contents/MacOS/Vivaldi` in launch args — `--executablePath` is overridden to Vivaldi
 - `VivaldiDirectMatchIcons/...` under the user-data-dir — Vivaldi-specific profile artifacts mixed with MCP profile
@@ -70,53 +141,91 @@ Treat any of these in MCP stderr as a Vivaldi/non-Chrome misconfiguration:
 - `TimeoutError: async initializeServer: Timeout 180000ms exceeded` shortly after a Vivaldi launch — Vivaldi never finished CDP handshake
 - Profile path `ms-playwright/mcp-chrome-*/Default/Vivaldi...` — MCP profile dir contaminated by Vivaldi resources
 
-**Diagnosis**: in every case above, remove the `--executablePath` override from the offending MCP entry and re-run. For chrome-devtools-mcp also add `--isolated`.
+**Diagnosis**: in every case above, remove the executable-path override
+from the offending MCP entry, spelled `--executablePath`,
+`--executable-path` or `PLAYWRIGHT_MCP_EXECUTABLE_PATH`, then follow the
+operator's choice: select it through the server's documented option where
+the server supports it, or disable chrome-devtools-mcp where it does not.
+When chrome-devtools-mcp stays, also add `--isolated`.
 
-## Recipe: chrome-devtools-mcp (default)
+A missing Playwright build has its own signature:
 
-In `~/.claude/settings.json` or a project `.mcp.json`, the chrome-devtools-mcp server entry should look like:
+- `is not installed; expected executable at
+  .../ms-playwright/firefox-«build»/...` — the server version expects a
+  build the cache lacks; run `install-browser` for that browser as above
+
+## Recipe: chrome-devtools-mcp (Google Chrome)
+
+Register it in a project `.mcp.json`:
 
 ```json
 {
-  "chrome-devtools": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["chrome-devtools-mcp@latest", "--isolated"]
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--isolated"]
+    }
   }
 }
 ```
 
-No `--executablePath`, no `--channel` — this resolves to Chrome's stable
-channel, which upstream officially supports. `claude mcp list` confirms the
-configured arguments, which is what an absent override means; it does not
-show which browser was installed, selected, or actually launched. To
-establish that, inspect the running browser process or the server's own
-startup output — and keep the distinction: a recipe says what should run, not what
-does.
+Or for every project:
 
-Source: https://github.com/ChromeDevTools/chrome-devtools-mcp (README:
-"officially supports Google Chrome and Chrome for Testing only"; `--channel`
-"default is the stable channel version").
+```shell
+claude mcp add -s user chrome-devtools -- npx chrome-devtools-mcp@latest --isolated
+```
 
-## Recipe: Playwright MCP (default)
+No `--executablePath`, no `--channel`: this resolves to Chrome's stable
+channel. To turn the plugin-installed server off, set its key, as
+`enabledPlugins` lists it, to `false` in the `settings.json` of the scope
+that enabled it. The key is `chrome-devtools-mcp@«marketplace»`, for
+example `"chrome-devtools-mcp@claude-plugins-official": false`.
+
+Sources: https://github.com/ChromeDevTools/chrome-devtools-mcp (README:
+"officially supports Google Chrome and Chrome for Testing only") and
+https://developer.chrome.com/docs/devtools/agents/get-started/configuration
+(`--channel` defaults to `stable`).
+
+## Recipe: Playwright MCP
+
+For the plugin-installed server, select the browser in `settings.json`.
+A top-level `env` value reaches every MCP server and shell command of
+that profile:
 
 ```json
 {
-  "playwright": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["@playwright/mcp@latest"]
+  "env": {
+    "PLAYWRIGHT_MCP_BROWSER": "firefox"
   }
 }
 ```
 
-No overrides — this takes Playwright MCP's own default, Google Chrome's stable
-channel, the same build chrome-devtools-mcp resolves to. Playwright's bundled
-Chromium is NOT that default.
+For a server registered by hand in a project `.mcp.json`, pass the flag
+instead:
 
-Sources: https://github.com/microsoft/playwright-mcp (`--browser` is "browser or
-chrome channel to use") and https://playwright.dev/mcp/configuration/options
-(value `chrome` — "Google Chrome (default)").
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--browser", "msedge"]
+    }
+  }
+}
+```
+
+With no selection anywhere, Playwright MCP takes Google Chrome's stable
+channel, not its bundled Chromium.
+
+Sources: https://playwright.dev/mcp/configuration/options (`--browser`
+values and the environment variables),
+https://code.claude.com/docs/en/settings (the `env` block),
+https://code.claude.com/docs/en/env-vars ("Claude Code writes each env
+entry into the process environment"), and
+https://github.com/microsoft/playwright-mcp/blob/main/cli.js, which maps
+the `install-browser` subcommand onto Playwright's browser install.
 
 ## Interactive Login: Hand Off, Don't Guess
 
@@ -152,8 +261,11 @@ abstractly or abandoning the task.
   chrome-devtools-mcp a temporary user-data-dir "automatically cleaned up
   after the browser is closed" — the login survives only while that browser
   lives, so keep it open for the whole task. If the SAME login recurs across
-  runs and that churn is the real cost, prefer Playwright MCP — its default
-  recipe above stores login state in a persistent profile across runs. That
+  runs and that churn is the real cost, prefer Playwright MCP — without
+  its own `--isolated` it stores login state in a persistent profile across
+  runs. The profile is kept per browser channel and workspace
+  (`mcp-«channel»-«workspace hash»`), so switching
+  browsers or workspaces starts logged out. That
   profile is single-holder: "A persistent profile can only be used by one
   browser instance at a time, so concurrent MCP clients sharing the same
   workspace will conflict" — so for parallel sessions give each extra client
@@ -184,22 +296,21 @@ If you need the user's Vivaldi profile (logged-in sessions, cookies), do **not**
    { "args": ["chrome-devtools-mcp@latest", "--browserUrl=http://127.0.0.1:9222"] }
    ```
 
-Upstream calls this "may work but not guaranteed" (chrome-devtools-mcp README: *"Other Chromium-based browsers may work, but this is not guaranteed."*). Use only when the default cannot meet a real need.
+Upstream calls this "may work but not guaranteed" (chrome-devtools-mcp README:
+*"Other Chromium-based browsers may work, but this is not guaranteed, and you
+may encounter unexpected behavior"*). Use it only when the operator opts in
+because a real need, such as an existing logged-in profile, cannot be met
+by a browser the server supports.
 
 ## Why This Rule Exists
 
-Upstream does not guarantee non-Chrome Chromium, and that alone is why the override is forbidden — the rule stands on what upstream supports, not on any one machine's browser policy. A Vivaldi launch via `--executablePath` can fail the CDP handshake (profile contamination, GCM registration errors, a 180s timeout).
-
-Both servers land on the same stable-channel Chrome. The chrome-devtools-mcp
-recipes above set no `--channel`, and Playwright MCP's default is Google
-Chrome, not a bundled Chromium. Chrome for Testing is not required.
-
-Known gap, deliberately not closed here: a browser can also be selected by a
-Playwright MCP environment variable (`PLAYWRIGHT_MCP_BROWSER`,
-`PLAYWRIGHT_MCP_EXECUTABLE_PATH`, `PLAYWRIGHT_MCP_CONFIG`) or from a `--config`
-file, and `~/.claude.json` holds per-project registrations outside the
-top-level `mcpServers` this table names. The pre-flight above covers flags
-only. Widening it is its own change.
+A server left on its default while the operator chose another browser
+drives the wrong one, and a browser forced through an executable path that
+upstream does not support can fail the Chrome DevTools Protocol (CDP)
+handshake: profile contamination, Google Cloud Messaging (GCM)
+registration errors, a 180s timeout. Selecting through
+each server's documented option, and checking the launched process, keeps
+the choice with the operator and the launch on a supported path.
 
 ## Related
 
@@ -210,15 +321,26 @@ only. Widening it is its own change.
 ## Before You Finish
 
 **At session start (not just before first browser MCP call):**
-1. Run `claude mcp list` — reject ANY browser-selecting flag on chrome-devtools-mcp or @playwright/mcp: `--executablePath`, `--executable-path`, `--channel`, or Playwright's `--browser`, in both `--flag value` and `--flag=value` forms. The correct state is no browser override at all
-2. If a violation is found, locate it in one of the four MCP configuration locations (see table above) and remove the override; for user-scope CLI registrations use `claude mcp remove «name» -s user`. An entry that `claude mcp list` shows but none of the four files contains is plugin-installed: fix it at the plugin that registers it, then rerun `claude mcp list`
-3. Confirm `--isolated` is set on chrome-devtools-mcp
-4. Confirm Playwright MCP has no `--executable-path` and no `--browser` override
+1. Read the operator's browser choice; with none recorded, each server's
+   default applies
+2. Run `claude mcp list`, then check every place the server's `--help`
+   and configuration documentation name, and compare each with that
+   choice; fix a mismatch where it lives: a registration from the table
+   or a per-project entry, a settings `env` block, a config file, or the
+   plugin that registers the server
+3. Disable chrome-devtools-mcp when the choice is neither Google Chrome
+   nor Chrome for Testing, unless the operator opted into the attach
+   escape hatch; otherwise confirm `--isolated`
+4. After any change, reconnect the server and confirm the launched
+   browser process
 
 **On browser MCP failure:**
 1. Match stderr against the failure signatures above
-2. If Vivaldi/non-Chrome detected → recommend removing override + retry
-3. If user requires Vivaldi profile → escape hatch via `--browserUrl`
+2. An executable path pointed at Vivaldi or another unsupported
+   browser → remove that override, select a supported browser
+   through the server's documented option, retry
+3. Missing Playwright build → `install-browser` for that browser
+4. User requires the Vivaldi profile → escape hatch via `--browserUrl`
 
 **On a login wall:** navigate to the login URL → hand off in one message,
 naming the page rather than echoing the URL → verify with a fresh snapshot.

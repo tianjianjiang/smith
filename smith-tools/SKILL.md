@@ -63,9 +63,9 @@ MCP (Model Context Protocol) tools provide enhanced capabilities for specific sc
   - JS-heavy / SPA pages can return empty or partial content (plain HTTP fetch, no headless browser) — fall back to a browser MCP (`@smith-mcp-browser/SKILL.md`) for those
 
 **Browser MCP plugins (chrome-devtools-mcp, @playwright/mcp)**:
-- Purpose: Drive a real browser via Chrome DevTools Protocol
-- Configuration: set no browser override — both resolve to Chrome's stable channel (chrome-devtools-mcp by omitting `--channel`, Playwright MCP because `chrome` is its documented `--browser` default)
-- Avoid: any browser-selecting flag — `--executablePath`, `--executable-path`, `--channel`, or Playwright's `--browser` (it accepts `msedge`) — see `@smith-mcp-browser/SKILL.md`
+- Purpose: Drive a real browser: chrome-devtools-mcp drives Chrome over the Chrome DevTools Protocol; Playwright MCP drives Chrome, Edge, Firefox and WebKit
+- Configuration: use the browser the operator chose; with none recorded, both default to Chrome's stable channel. Playwright MCP selects with `--browser` or `PLAYWRIGHT_MCP_BROWSER`; chrome-devtools-mcp supports Chrome and Chrome for Testing only — see `@smith-mcp-browser/SKILL.md`
+- Avoid: pointing an executable path (`--executablePath`, `--executable-path`, `PLAYWRIGHT_MCP_EXECUTABLE_PATH`) at a browser upstream does not support
 
 **For MCP server configuration in Kiro**: See `@smith-ctx-kiro/SKILL.md#critical-serena-mcp-is-mandatory`
 
