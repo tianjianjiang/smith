@@ -1272,6 +1272,39 @@ same time, up to the CPU count or `RUN_ALL_JOBS`, prints each test's output
 in name order, and fails when it finds none, so adding a test means adding
 the file; `run-all.test.sh` checks that behaviour.
 
+`sh smith-ctx-claude/scripts/tests/run-affected.sh «base-ref»` runs only
+the tests a change reaches: it takes the files changed since the merge base
+with `«base-ref»`, committed, staged, unstaged and untracked, and follows
+each test's references by text patterns: shell paths after `$(dirname "$0")`
+or a variable built from it, ESM and CommonJS specifiers with Node's
+extension and `index` candidates, `import.meta.resolve` and
+`new URL(…, import.meta.url)`, paths joined onto the module's own folder,
+and symbolic links to their targets. A reference it cannot resolve to one
+file, such as a folder, a glob or a variable in the path, becomes a
+dependency on everything under that folder. The scan fails closed on its
+own anchors: a use of `$0`, `${0…}`, `BASH_SOURCE`, `import.meta.url`,
+`import.meta.filename`, `__dirname` or `__filename` that no pattern above
+explains, an anchor wrapped in `dirname` or a parameter expansion, a
+variable built from an anchor in any other way, and a `$0` inside a file pulled in with `.` or `source`, which names the
+caller, and a reached script in a language other than shell or JavaScript
+each become a dependency on the whole repository; a sourced file with no
+extension is scanned as shell; `basename "$0"` and an `import.meta.url ===` guard of
+a module's main entry are exempt. It adds the data files and globs that
+`tests/test-deps.json` declares for a file, prints every chosen test with
+the chain that reached it, and hands the list to `run-all.sh`. It runs the
+full suite when the set cannot be known for certain: the runner, the
+manifest or `tests/lib` changed; the manifest is missing or malformed,
+lists a file that does not exist or a glob that matches nothing, or
+declares a key no test reaches; the selector itself fails; or git cannot
+name the changes. A path built without any anchor, for example from
+`git rev-parse --show-toplevel`, stays invisible to the scan.
+`check-test-deps.sh` catches that: it runs each test in a clean tree that
+holds only its computed and declared dependencies, and reports a test that
+passes in the checkout but fails or prints a `SKIP` line only in that tree
+as a missing dependency, and a test that skips in the checkout too as
+`SKIPPED`, never as a pass. Hooks fail open, so a pass there is evidence, not
+proof. `run-affected.test.sh` checks both.
+
 ## Registration
 
 **Never register a hook against code that isn't on the branch its path

@@ -9,12 +9,13 @@ case "$JOBS" in
 esac
 LOGS="$(mktemp -d)"
 trap 'rm -rf "$LOGS"' EXIT
-set --
-for test_file in "$HERE"/*.test.sh; do
-  if [ -e "$test_file" ] || [ -L "$test_file" ]; then
-    set -- "$@" "$test_file"
-  fi
-done
+if [ "$#" = 0 ]; then
+  for test_file in "$HERE"/*.test.sh; do
+    if [ -e "$test_file" ] || [ -L "$test_file" ]; then
+      set -- "$@" "$test_file"
+    fi
+  done
+fi
 if [ "$#" = 0 ]; then
   echo "NO TESTS FOUND in $HERE"
   exit 1

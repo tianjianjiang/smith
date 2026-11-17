@@ -114,4 +114,21 @@ for jobs in abc 0 -2; do
 done
 [ ! -f "$dir/alpha-jobs.ran" ] || fail "an invalid RUN_ALL_JOBS must run no test"
 
+dir=$(suite explicit-list)
+fake_test "$dir" alpha-listed 0
+fake_test "$dir" beta-unlisted 0
+fake_test "$dir" gamma-listed 0
+out=$(sh "$dir/run-all.sh" "$dir/gamma-listed.test.sh" "$dir/alpha-listed.test.sh" 2>&1) ||
+  fail "an explicit list of passing tests must exit zero, got: $out"
+[ -f "$dir/alpha-listed.ran" ] && [ -f "$dir/gamma-listed.ran" ] || fail "every listed test must run"
+[ ! -f "$dir/beta-unlisted.ran" ] || fail "a test that is not listed must not run"
+printf '%s\n' "$out" | grep -q 'ALL PASS' || fail "a passing explicit list must report ALL PASS, got: $out"
+
+dir=$(suite explicit-failure)
+fake_test "$dir" alpha-listed-fails 1
+out=$(sh "$dir/run-all.sh" "$dir/alpha-listed-fails.test.sh" 2>&1) && fail "a failing listed test must fail the run"
+printf '%s\n' "$out" | grep -q 'FAIL.*alpha-listed-fails' || fail "a failing listed test must be named, got: $out"
+out=$(sh "$dir/run-all.sh" "$dir/missing.test.sh" 2>&1) && fail "a listed test that does not exist must fail the run"
+printf '%s\n' "$out" | grep -q 'FAIL.*missing' || fail "a listed test that does not exist must be named, got: $out"
+
 echo "PASS: run-all"
