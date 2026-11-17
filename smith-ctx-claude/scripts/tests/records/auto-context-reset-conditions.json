@@ -1,7 +1,10 @@
 {
-  "recordedAt": "2026-11-17T03:28:04+09:00",
-  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "recordedAt": "2026-11-17T16:06:59+09:00",
+  "claudeCodeVersion": "2.1.326 (Claude Code)",
   "model": "haiku",
+  "commit": "0629a447eb7ecd76489bd73e18e3d9a3c727c1ae",
+  "treeIsDirty": false,
+  "hookSha256": "b92dcdd5bf69ea4fac317cd4d7c3792e735a9b5b9ef113982cda1d5400ba0185",
   "serenaVersion": "Serena 2.1.1.dev0",
   "environment": {
     "checks": {
@@ -10,11 +13,13 @@
       "evalProfileUsesTheEvalFolder": true,
       "probeFolderIsTrustedInTheEvalProfile": true,
       "evalSettingsFileIsNotALink": true,
-      "evalFlagsFolderIsNotALink": true
+      "evalFlagsFolderIsNotALink": true,
+      "evalFolderIsNotHomeAboveItOrInTheDefaultProfile": true
     }
   },
   "versionUnderTest": {
     "checks": {
+      "checkoutProvenanceWasRead": true,
       "evalSkillsAreThisCheckout": true,
       "evalStopHookIsThisCheckoutsAndHasTheDispatchStep": true,
       "evalAllowRulesNameNoInstalledCopy": true,
@@ -36,7 +41,7 @@
     "observations": {
       "commandsReachingAnInstalledCopy": [],
       "checkpointMemories": [
-        "zq_probe_session_checkpoint.md"
+        "session_stop_hook_checkpoint_probe.md"
       ],
       "firstSessionLaunchFlagNames": [
         "--permission-mode",

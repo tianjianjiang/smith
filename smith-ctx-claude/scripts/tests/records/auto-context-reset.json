@@ -1,7 +1,10 @@
 {
-  "recordedAt": "2026-11-17T03:31:00+09:00",
-  "claudeCodeVersion": "2.1.325 (Claude Code)",
+  "recordedAt": "2026-11-17T13:42:52+09:00",
+  "claudeCodeVersion": "2.1.326 (Claude Code)",
   "model": "haiku",
+  "commit": "0629a447eb7ecd76489bd73e18e3d9a3c727c1ae",
+  "treeIsDirty": false,
+  "hookSha256": "b92dcdd5bf69ea4fac317cd4d7c3792e735a9b5b9ef113982cda1d5400ba0185",
   "checks": {
     "firstSessionStarted": true,
     "blockRecordedInAStopHookSummaryWithItsCode": true,
@@ -16,7 +19,7 @@
   },
   "observations": {
     "ranInTheDefaultProfile": false,
-    "successorNamePattern": "2026-11-17T03:28 «label»",
+    "successorNamePattern": "2026-11-17T13:40 «label»",
     "firstSessionStateAfterDispatch": "done",
     "successorRunsInTheSameFolder": true,
     "firstSessionTranscriptAlsoHoldsTheUnchangedReason": false,
