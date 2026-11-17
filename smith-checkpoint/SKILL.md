@@ -44,6 +44,13 @@ under Related; a draft the user has not approved yet goes under Next.
 
 ## Compression Requirements
 
+**Audience**: the body is what the session that resumes the work reads,
+and that session has none of this conversation. Write each line as a fact
+or a step it can act on as written: exact paths, refs, commands and the
+state they are in. Leave out the account of how the session went; keep an
+order of events only when it is evidence, such as the steps that reproduce
+a failure. Decisions follow Format rule 2.
+
 **Guideline**: aim for ~400 tokens per checkpoint body (the script prints a
 note past ~1600 bytes). Completeness is the binding requirement: never drop a
 decision, file:line anchor, PR/commit reference, or open follow-up to fit
