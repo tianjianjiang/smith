@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpath
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkoutProvenance, provenanceWasRead } from "../lib/checkout-provenance.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SESSION_FOLDER = process.env.SMITH_PROBE_SESSION_FOLDER;
@@ -15,6 +16,7 @@ const CONTROL_WAIT_MS = Number(process.env.SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT
 const CONFIG_FOLDER = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
 const FLAGS_FOLDER = join(CONFIG_FOLDER, "plans");
 const RECORD_PATH = join(HERE, "records", "auto-context-reset.json");
+const CHECKOUT_ROOT = resolve(HERE, "..", "..", "..");
 const ENFORCE_CLEAR = resolve(HERE, "..", "enforce-clear.sh");
 const WRITE_RELOAD_FLAG = resolve(HERE, "..", "write-reload-flag.sh");
 const BACKGROUNDED = /backgrounded · ([0-9A-Za-z_-]+)/;
@@ -28,6 +30,11 @@ if (process.env.SMITH_LIVE_CONTEXT_RESET_EVAL !== "1") {
 }
 if (!SESSION_FOLDER) {
   console.log("FAIL: set SMITH_PROBE_SESSION_FOLDER to a folder Claude Code already trusts");
+  process.exit(1);
+}
+const checkout = checkoutProvenance(CHECKOUT_ROOT, ENFORCE_CLEAR);
+if (!provenanceWasRead(checkout)) {
+  console.log(`FAIL: the checkout's commit, tree state or hook could not be read: ${JSON.stringify(checkout)}`);
   process.exit(1);
 }
 
@@ -295,6 +302,7 @@ const record = {
   recordedAt: localIsoTimestamp(),
   claudeCodeVersion: claude(["--version"]).trim(),
   model: MODEL,
+  ...checkout,
   checks,
   observations,
 };
