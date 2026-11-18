@@ -15,20 +15,14 @@ flatten() { tr '\n' ' ' | sed 's/  */ /g; s/ $//'; }
 
 expected_scope() {
   flatten <<'EOF'
-**Review scope (every round).** A review round reviews only the change it
-is given: the branch diff against its parent on the first round, and the
-diff since the last reviewed state on each later round. The branch diff is
-`git diff --merge-base «parent»` plus untracked files, where the parent is
-the default branch or, on a stacked branch, its parent branch. Each round's
-report records the state it reviewed: the `git stash create` id, or the
-`git rev-parse HEAD` id when that prints nothing, and the
-`git hash-object -w` id of each untracked file. The next round diffs
-tracked files against the stash or HEAD id and each untracked file
-against its blob id; with no record it reviews the whole branch diff. A
-finding in code the branch diff changes is fixed in the change unless step
-5 closes it otherwise; a finding in code it does not change is not fixed in
-the change, whichever round finds it: report it as pre-existing and record
-a follow-up citing its `path:line` for its own change.
+**Review scope (every round).** Every review round reviews the branch
+diff: everything the branch changes since it left its parent, uncommitted
+changes and new files included, where the parent is the default branch
+or, on a stacked branch, its parent branch. A finding in code the branch
+diff changes is fixed in the change unless step 5 closes it otherwise; a
+finding in code it does not change is not fixed in the change: report it
+as pre-existing and record a follow-up citing its `path:line` for its own
+change.
 EOF
 }
 section_lines() {
