@@ -9,6 +9,7 @@ import { parseArgs } from 'node:util';
 
 const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const EGRESS_SCRIPT = path.join(SCRIPT_DIRECTORY, 'behaviour-eval-egress.sh');
+const EGRESS_UP_FAILED_AFTER_CHANGE = 4;
 const LEAK_SCAN_SCRIPT = path.join(SCRIPT_DIRECTORY, 'behaviour-eval-leak-scan.mjs');
 
 const EXIT_OK = 0;
@@ -142,8 +143,16 @@ function execute(command, args, { cwd, env = childEnvironment(), input, timeoutM
       settled = true;
       for (const timer of timers) clearTimeout(timer);
       if (run) run.children.delete(group);
-      const result = { status, signal, error, timedOut, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
-      if (outputFile) fs.writeFileSync(outputFile, Buffer.concat([result.stdout, result.stderr]));
+      const result = { status, signal, error, timedOut, outputError: null, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
+      if (outputFile) {
+        try {
+          fs.writeFileSync(outputFile, Buffer.concat([result.stdout, result.stderr]));
+        } catch (failure) {
+          result.outputError = failure;
+          if (run) recordFailure(run, EXIT_RUN_INCOMPLETE);
+          reportProblem(`could not write ${outputFile}: ${failure.message}`);
+        }
+      }
       resolve(result);
     };
     child.stdout.on('data', (chunk) => stdout.push(chunk));
@@ -504,6 +513,7 @@ async function runEgress(subcommand, outputFile, run) {
 async function raiseEgress(settings, run) {
   throwIfInterrupted(run);
   const raised = await runEgress('up', path.join(settings.out, 'egress-up.txt'), run);
+  run.egressRaised = raised.status === 0 || raised.status === EGRESS_UP_FAILED_AFTER_CHANGE;
   if (!succeeded(raised)) throw new StepFailure('egress up failed', EXIT_EGRESS_UP_FAILED);
   const probe = await runEgress('probe', path.join(settings.out, 'egress-probe.txt'), run);
   if (!succeeded(probe)) throw new StepFailure('the egress probe did not show the allowlist', EXIT_PROBE_FAILED);
@@ -569,6 +579,7 @@ async function removeSkilledContainers(run) {
 
 async function bringEgressDown(settings, run) {
   await runEgress('status', path.join(settings.out, 'egress-status.txt'), run);
+  if (!run.egressRaised) return;
   const down = await runEgress('down', path.join(settings.out, 'egress-down.txt'), run);
   if (!succeeded(down)) recordFailure(run, statusOf(down));
 }
@@ -653,7 +664,7 @@ async function runSteps(settings, run) {
 }
 
 async function runEvaluation(settings) {
-  const run = { status: EXIT_OK, interrupted: null, cleaningUp: false, signalsReceived: 0, children: new Set(), skilledPath: null };
+  const run = { status: EXIT_OK, interrupted: null, cleaningUp: false, signalsReceived: 0, egressRaised: false, children: new Set(), skilledPath: null };
   installSignalHandlers(run);
   try {
     await runSteps(settings, run);
