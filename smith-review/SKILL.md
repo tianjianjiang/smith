@@ -11,10 +11,26 @@ Review-only (no commit/push/merge). For the full pipeline use `/smith-ship`.
 
 ## Live state
 
-- Diff stat: !`git diff --stat`
+- Branch diff stat against the default branch: !`git diff --merge-base origin/HEAD --stat 2>/dev/null || echo 'origin/HEAD unset'`
+- Untracked files: !`git ls-files --others --exclude-standard :/`
 - Branch: !`git branch --show-current`
 
 ## Procedure
+
+**Review scope (every round).** A review round reviews only the change it
+is given: the branch diff against its parent on the first round, and the
+diff since the last reviewed state on each later round. The branch diff is
+`git diff --merge-base «parent»` plus untracked files, where the parent is
+the default branch or, on a stacked branch, its parent branch. Each round's
+report records the state it reviewed: the `git stash create` id, or the
+`git rev-parse HEAD` id when that prints nothing, and the
+`git hash-object -w` id of each untracked file. The next round diffs
+tracked files against the stash or HEAD id and each untracked file
+against its blob id; with no record it reviews the whole branch diff. A
+finding in code the branch diff changes is fixed in the change unless step
+5 closes it otherwise; a finding in code it does not change is not fixed in
+the change, whichever round finds it: report it as pre-existing and record
+a follow-up citing its `path:line` for its own change.
 
 **Plugin-pass receipt (every round).** A round MUST end with a one-line receipt
 naming each Claude Code review tool and whether it ran:
@@ -75,8 +91,9 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
    plugin-pass receipt shows no applicable tool skipped. Convergence is the
    main thread's call, never a reviewer's: each finding stays open until the
    main thread marks it, in that round's report, fixed (verified), needing no
-   change, rejected with evidence, or deferred with the user's agreement; a
-   clean round has no finding the main thread verified as actionable, and an
+   change, rejected with evidence, deferred with the user's agreement, or
+   deferred under Review scope as pre-existing, with its follow-up's locator;
+   a clean round has no finding the main thread verified as actionable, and an
    Info-only round has none it verified above Info. A closed finding raised
    again without new evidence stays closed. Contradicting verdicts across
    rounds are settled on evidence; one the evidence cannot settle is a

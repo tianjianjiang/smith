@@ -2,7 +2,8 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
-  review-receipt
+  review-receipt \
+  review-scope
 do
   sh "$HERE/$check.test.sh" || status=1
 done
