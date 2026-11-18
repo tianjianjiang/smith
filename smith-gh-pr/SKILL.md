@@ -107,7 +107,10 @@ it cannot read the file.
 1. Fetch review comments using `gh pr-review` (see "Fetching Review Comments" below)
 2. **Get ALL comments including Nitpicks** - don't skip minor issues
 3. Categorize: Actionable > Nitpick > Clarification > Discussion
-4. **Proactively audit similar issues** in other files not explicitly mentioned
+4. **Proactively audit similar issues** in other files not explicitly
+   mentioned: fix one in code the branch diff changes; report one in code it
+   does not change as pre-existing and record a follow-up citing its
+   `path:line` (`@smith-review` "Review scope")
 5. Implement fixes with confidence scoring (high: implement, low: ask)
    - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
    - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
@@ -134,7 +137,8 @@ it cannot read the file.
   re-typing.
 - **PR-level comments** (general discussion, `<details>` blocks): Reply with `gh pr comment` or GitHub's "Quote reply"
 - Reply with the commit SHA. In an automated reviewer's thread that no human joined, inside a ship or review the user invoked, reply "fixed in «SHA»" or a one-line decline and then resolve the thread with `gh pr-review threads resolve`; any other reply is payload and needs a yes. In a human reviewer's thread, show the reply and post it on an explicit yes, and leave the thread open for the reviewer to resolve (`@smith-guidance` External writes)
-- Proactive audit: search codebase for similar issues before committing
+- Proactive audit: search codebase for similar issues before committing,
+  then fix or record each one as step 4 says
 - **CodeRabbit `<details>` comments** (Nitpicks, Duplicated, Outside diff range): These appear in PR thread, not inline on files. Use GitHub's "Quote reply" to include Markdown blockquote of the essential part (e.g., `> The redundant text...`), making response traceable. This creates a new PR-level comment rather than a reply inside the bot's thread, so it is payload — show it and post on a yes (`@smith-guidance` Safety Rules)
 - **Attribution**: When Claude Code generates or posts a comment, end it with the `Assisted-by:` line (see `@smith-style`); that line does not turn a "fixed in «SHA»" or one-line-decline reply into payload. No "on behalf of" line — the account it posts under already names that human. A handle in a body names the person the comment addresses, never its poster.
 - Research questionable suggestions before implementing (see `@smith-research/SKILL.md`)
