@@ -22,6 +22,7 @@ case "$*" in
     ;;
   ps*"network=bridge"*)
     [ -z "$FAKE_BRIDGE_CONTAINERS" ] || printf '%s\n' "$FAKE_BRIDGE_CONTAINERS"
+    exit "${FAKE_BRIDGE_STATUS:-0}"
     ;;
   ps*)
     [ -z "$FAKE_ALL_CONTAINERS" ] || printf '%s\n' "$FAKE_ALL_CONTAINERS"
@@ -43,7 +44,10 @@ echo "rdctl $*" >> "$FAKE_LOG"
 chain=SMITH-EGRESS
 case "$*" in
   *"cat /etc/resolv.conf"*)
-    echo "nameserver ${FAKE_VM_RESOLVER:-192.168.5.2}"
+    [ "${FAKE_NO_RESOLVER:-0}" = 1 ] || echo "nameserver ${FAKE_VM_RESOLVER:-192.168.5.2}"
+    ;;
+  *"iptables"*"-A $chain"*)
+    exit "${FAKE_APPEND_STATUS:-0}"
     ;;
   *"iptables"*"-C DOCKER-USER"*)
     [ -f "$FAKE_STATE/jump" ] || exit 1
@@ -96,12 +100,15 @@ reset_world() {
   FAKE_BRIDGE_IPV6="false"
   FAKE_ALL_CONTAINERS=""
   FAKE_ALL_CONTAINERS_STATUS=0
+  FAKE_BRIDGE_STATUS=0
+  FAKE_NO_RESOLVER=0
+  FAKE_APPEND_STATUS=0
   FAKE_RESOLVED_OUTPUT="$RESOLVED_VENDOR_FIRST STREAM api.anthropic.com
 $RESOLVED_VENDOR_SECOND STREAM api.anthropic.com
 $RESOLVED_VENDOR_FIRST STREAM api.anthropic.com
 $RESOLVED_REGISTRY STREAM registry.npmjs.org"
   set_probe reachable blocked blocked blocked blocked
-  export FAKE_BRIDGE_CONTAINERS FAKE_BRIDGE_IPV6 FAKE_ALL_CONTAINERS FAKE_ALL_CONTAINERS_STATUS FAKE_RESOLVED_OUTPUT
+  export FAKE_BRIDGE_CONTAINERS FAKE_BRIDGE_IPV6 FAKE_ALL_CONTAINERS FAKE_ALL_CONTAINERS_STATUS FAKE_BRIDGE_STATUS FAKE_NO_RESOLVER FAKE_APPEND_STATUS FAKE_RESOLVED_OUTPUT
 }
 
 run_egress() {
@@ -152,7 +159,7 @@ reset_world
 FAKE_BRIDGE_CONTAINERS="neighbour-one"
 export FAKE_BRIDGE_CONTAINERS
 run_egress up
-[ "$rc" != 0 ] || fail "up must refuse while a container is attached to the default bridge"
+[ "$rc" = 3 ] || fail "up must refuse with status 3 while a container is attached to the default bridge, got status $rc"
 installed_any_rule && fail "a refused up must install no rule"
 grep -q "neighbour-one" "$TMPD/out" || fail "a refusal for an attached container must name it, got: $(cat "$TMPD/out")"
 grep -Eq -- ' -s .* -j RETURN' "$FAKE_LOG" && fail "a refused up must not issue a source-address exemption"
@@ -162,7 +169,7 @@ FAKE_BRIDGE_CONTAINERS="neighbour-one
 neighbour-two"
 export FAKE_BRIDGE_CONTAINERS
 run_egress up
-[ "$rc" != 0 ] || fail "up must refuse while several containers are attached to the default bridge"
+[ "$rc" = 3 ] || fail "up must refuse with status 3 while several containers are attached to the default bridge, got status $rc"
 grep -q "neighbour-one" "$TMPD/out" || fail "a refusal must name the first attached container, got: $(cat "$TMPD/out")"
 grep -q "neighbour-two" "$TMPD/out" || fail "a refusal must name every attached container, got: $(cat "$TMPD/out")"
 installed_any_rule && fail "a refused up with several containers must install no rule"
@@ -171,10 +178,39 @@ reset_world
 FAKE_BRIDGE_IPV6="true"
 export FAKE_BRIDGE_IPV6
 run_egress up
-[ "$rc" != 0 ] || fail "up must refuse when the default bridge has IPv6 enabled"
+[ "$rc" = 3 ] || fail "up must refuse with status 3 when the default bridge has IPv6 enabled, got status $rc"
 installed_any_rule && fail "an up refused for IPv6 must install no rule"
 [ -f "$FAKE_STATE/chain" ] && fail "an up refused for IPv6 must leave no chain behind"
 [ -s "$TMPD/out" ] || fail "an up refused for IPv6 must say why"
+
+reset_world
+touch "$FAKE_STATE/chain"
+run_egress up
+[ "$rc" = 3 ] || fail "up must refuse with status 3 while the chain already exists, got status $rc"
+grep -q "already exists" "$TMPD/out" || fail "an up refused for an existing chain must say so, got: $(cat "$TMPD/out")"
+installed_any_rule && fail "an up refused for an existing chain must install no rule"
+[ -f "$FAKE_STATE/chain" ] || fail "an up refused for an existing chain must leave that chain in place"
+
+reset_world
+FAKE_NO_RESOLVER=1
+export FAKE_NO_RESOLVER
+run_egress up
+[ "$rc" = 3 ] || fail "up must exit 3 when no VM resolver is found, since nothing has changed yet, got status $rc"
+installed_any_rule && fail "an up without a VM resolver must install no rule"
+
+reset_world
+FAKE_BRIDGE_STATUS=5
+export FAKE_BRIDGE_STATUS
+run_egress up
+[ "$rc" = 3 ] || fail "up must exit 3 when listing the bridge containers fails, since nothing has changed yet, got status $rc"
+installed_any_rule && fail "an up whose container listing failed must install no rule"
+
+reset_world
+FAKE_APPEND_STATUS=3
+export FAKE_APPEND_STATUS
+run_egress up
+[ "$rc" = 4 ] || fail "up must exit 4 when a rule fails after the chain was created, even when the failing command exits 3, got status $rc"
+[ -f "$FAKE_STATE/chain" ] || fail "the fake must leave the half-built chain, which the caller has to take down"
 
 reset_world
 run_egress probe

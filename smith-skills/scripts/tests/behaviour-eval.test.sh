@@ -119,9 +119,22 @@ install_fake "$BIN/rdctl" <<'FAKE'
 CONTROL=@CONTROL@
 echo "rdctl $*" >> "$CONTROL/invocations.log"
 chain=SMITH-EGRESS
+if [ -s "$CONTROL/block-path" ]; then
+  mkdir -p "$(cat "$CONTROL/block-path")"
+  rm -f "$CONTROL/block-path"
+fi
 case "$*" in
   *"cat /etc/resolv.conf"*)
     echo "nameserver $(cat "$CONTROL/resolver")"
+    ;;
+  *"iptables"*"-L $chain"*)
+    if [ -e "$CONTROL/hang-chain-check" ]; then
+      rm -f "$CONTROL/hang-chain-check"
+      : > "$CONTROL/run-started"
+      exec sleep 60
+    fi
+    [ -f "$CONTROL/state/chain" ] || exit 1
+    echo "-N $chain"
     ;;
   *"iptables"*"-C DOCKER-USER"*)
     [ -f "$CONTROL/state/jump" ] || exit 1
@@ -203,6 +216,13 @@ if [ "$kind" = run ] && [ "$HANG_ON_RUN" = escaped-grandchild ]; then
   "$GRANDCHILD_NODE" -e "const child = require('child_process').spawn('sleep', ['60'], { detached: true, stdio: ['ignore', 'inherit', 'inherit'] }); require('fs').appendFileSync(process.argv[1], child.pid + '\\n'); child.unref();" "$CONTROL/grandchild-pid"
   : > "$CONTROL/run-started"
   exec sleep 60
+fi
+if [ "$kind" = run ] && [ "$BLOCK_RUN_LOG" = 1 ]; then
+  previous=""
+  for argument in "$@"; do
+    if [ "$previous" = --output-dir ]; then mkdir -p "$argument/run.txt"; fi
+    previous=$argument
+  done
 fi
 if [ "$kind" = run ]; then
   output_dir=""
@@ -294,12 +314,12 @@ PROBE
 }
 
 write_skilled_conf() {
-  printf 'FAIL_ON=\nFAIL_STATUS=7\nLEAK_KEY=0\nLEAVE_CONTAINER=0\nCASE_STATUSES=PASS\nSKIP_RESULT_OF_ITERATION=\nHANG_ON_RUN=0\nGRANDCHILD_NODE=%s\n%s\n' "$NODE" "$*" > "$CONTROL/skilled.conf"
+  printf 'FAIL_ON=\nFAIL_STATUS=7\nLEAK_KEY=0\nLEAVE_CONTAINER=0\nCASE_STATUSES=PASS\nSKIP_RESULT_OF_ITERATION=\nHANG_ON_RUN=0\nBLOCK_RUN_LOG=0\nGRANDCHILD_NODE=%s\n%s\n' "$NODE" "$*" > "$CONTROL/skilled.conf"
 }
 
 reset_world() {
   : > "$FAKE_LOG"
-  rm -rf "$CONTROL/state" "$CALLS" "$CONTROL/trashed" "$CONTROL/run-started" "$CONTROL/grandchild-pid" "$CONTROL/hang-rm" "$CONTROL/rm-started"
+  rm -rf "$CONTROL/state" "$CALLS" "$CONTROL/trashed" "$CONTROL/run-started" "$CONTROL/grandchild-pid" "$CONTROL/hang-rm" "$CONTROL/rm-started" "$CONTROL/hang-chain-check" "$CONTROL/block-path"
   mkdir -p "$CONTROL/state" "$CALLS" "$CONTROL/trashed"
   echo 0 > "$CALLS/count"
   : > "$CONTROL/containers-now"
@@ -785,6 +805,52 @@ for failing_step in validate-skill validate-eval dry-run; do
   grep -rl "chain absent" "$OUT" --exclude=SHA256SUMS.txt >/dev/null 2>&1 || fail "a failing $failing_step must still record the egress status in the out folder"
 done
 
+another_run_chain() {
+  touch "$CONTROL/state/chain" "$CONTROL/state/jump"
+}
+
+assert_other_chain_kept() {
+  [ -e "$CONTROL/state/chain" ] || fail "$1: the chain of another run must stay in place"
+  [ -e "$CONTROL/state/jump" ] || fail "$1: the jump of another run must stay in place"
+  log_has "iptables.* -D DOCKER-USER" && fail "$1: a run that did not raise egress must never remove the jump"
+  log_has "iptables.* -X SMITH-EGRESS" && fail "$1: a run that did not raise egress must never delete the chain"
+  assert_sums "$OUT" "$1"
+}
+
+reset_world
+another_run_chain
+OUT="$OUTS/other-run-chain-up-refused"
+invoke --out "$OUT" $STD_ARGS smith-fixture
+[ "$(last_status)" = 6 ] || fail "egress up refused because another run holds the chain must exit 6, got status $(last_status): $(cat "$TMPD/last.out")"
+log_has "skilled [0-9]*: run .*--provider" && fail "a refused egress up must stop before any real run"
+assert_other_chain_kept "egress up refused for an existing chain"
+
+reset_world
+another_run_chain
+write_skilled_conf "FAIL_ON=validate-skill" "FAIL_STATUS=1"
+OUT="$OUTS/other-run-chain-validate-failed"
+invoke --out "$OUT" $STD_ARGS smith-fixture
+[ "$(last_status)" = 3 ] || fail "a failing validation while another run holds the chain must exit 3, got status $(last_status): $(cat "$TMPD/last.out")"
+assert_other_chain_kept "a failing validation while another run holds the chain"
+
+reset_world
+OUT="$OUTS/egress-log-unwritable"
+printf '%s\n' "$OUT/egress-up.txt" > "$CONTROL/block-path"
+invoke --out "$OUT" $STD_ARGS smith-fixture
+[ "$(last_status)" = 7 ] || fail "a run whose egress-up.txt cannot be written must exit 7, got status $(last_status): $(cat "$TMPD/last.out")"
+grep -q "egress-up.txt" "$TMPD/last.out" || fail "an egress-up.txt that cannot be written must be named, got: $(cat "$TMPD/last.out")"
+
+reset_world
+write_skilled_conf "BLOCK_RUN_LOG=1"
+OUT="$OUTS/run-log-unwritable"
+invoke --out "$OUT" $STD_ARGS smith-fixture
+[ "$(last_status)" = 7 ] || fail "a real run whose run.txt cannot be written must exit 7, got status $(last_status): $(cat "$TMPD/last.out")"
+grep -q "run.txt" "$TMPD/last.out" || fail "a run.txt that cannot be written must be named, got: $(cat "$TMPD/last.out")"
+grep -q "unexpected failure" "$TMPD/last.out" && fail "a run.txt that cannot be written must not end in an unexpected failure: $(cat "$TMPD/last.out")"
+log_has "skilled [0-9]*: run .*smith-fixture/baseline" || fail "a run.txt that cannot be written must not stop the next arm"
+assert_cleanup_done "$OUT" "run.txt that cannot be written"
+grep -qx 'files-read: yes' "$OUT/leak-scan.txt" || fail "run.txt that cannot be written: the leak scan must still run"
+
 reset_world
 set_probe unreachable blocked blocked blocked blocked
 OUT="$OUTS/fail-probe"
@@ -1101,6 +1167,14 @@ echo $? > "$TMPD/last.rc"
 [ "$(last_status)" != 0 ] || fail "cleanup-step-hangs: a cleanup step stopped by a second signal must not exit 0"
 assert_cleanup_done "$OUT" "a cleanup step stopped by a second SIGTERM"
 grep -qx 'files-read: yes' "$OUT/leak-scan.txt" || fail "cleanup-step-hangs: the leak scan must still run after the stopped step"
+
+reset_world
+another_run_chain
+: > "$CONTROL/hang-chain-check"
+OUT="$OUTS/other-run-chain-up-interrupted"
+interrupt_hanging_run 1 "$GRACE_TEST_LIMIT_TENTHS" --out "$OUT" $STD_ARGS smith-fixture
+[ "$(last_status)" = 143 ] || fail "a run stopped by SIGTERM during egress up must exit 143, got status $(last_status): $(cat "$TMPD/last.out")"
+assert_other_chain_kept "an egress up interrupted while another run holds the chain"
 
 reset_world
 OUT="$OUTS/refuse-timer-overflow"

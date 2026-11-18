@@ -44,7 +44,8 @@ exec node «smith checkout»/smith-skills/scripts/behaviour-eval.mjs --out "${XD
 - `arms.txt`: one line per skill and arm with the ref, its commit and the
   eval file
 - `«skill»/«arm»/`: skillEd's raw output, never to be committed
-- `egress-status.txt`, `egress-down.txt`: the firewall state at the end
+- `egress-status.txt`, `egress-down.txt`: the firewall state at the end;
+  `egress-down.txt` only when this run raised the firewall
 - `leak-scan.txt`: the leak scan report; `LEAK-FOUND` appears on a hit
 - `SHA256SUMS.txt`: hashes of every file above
 
@@ -67,8 +68,12 @@ Each child runs in its own process group. The watchdog, after
 `--iterations` times `--seconds-per-iteration` seconds, and a first SIGHUP,
 SIGINT or SIGTERM send SIGTERM to that group and SIGKILL ten seconds later; a
 second signal sends SIGKILL at once. Cleanup still runs: containers are
-removed, egress is taken down and the leak scan runs. A total above
-2147483 seconds, the longest timer Node.js keeps, is refused.
+removed, egress is taken down if this run raised it, and the leak scan
+runs. `behaviour-eval-egress.sh up` exits 3 when it fails before changing
+anything, for example while another run holds the chain, and 4 when it
+fails after; the runner takes egress down only after an up that exited 0
+or 4, and leaves the chain alone otherwise. A total above 2147483 seconds, the longest timer
+Node.js keeps, is refused.
 
 ## On a leak-scan hit
 
@@ -80,6 +85,11 @@ files are harmless evidence.
 
 - The firewall narrows accidental egress. It does not stop a process that
   encodes the key into DNS lookups or sends it to an allowed host.
+- Run one runner at a time: two runners that start together can both pass
+  the existing-chain check.
+- An up stopped by a signal counts as unchanged: a chain it had begun
+  stays, and the next up refuses until `behaviour-eval-egress.sh down` is
+  run by hand.
 - A runner stopped by SIGKILL runs no cleanup, and its children keep
   running, the paid skillEd run included; stop them by hand.
 - A process that leaves its process group, for example by starting a new

@@ -53,6 +53,7 @@ bridge_ipv6_enabled() {
 }
 
 up() {
+  trap 'status=$?; [ "$status" -eq 0 ] || exit 3' EXIT
   chain_exists && die "refused: the chain $chain already exists, run down first"
   attached=$(bridge_containers)
   [ -z "$attached" ] || die "refused: a container is attached to the default bridge, which the chain would filter: $attached"
@@ -61,6 +62,7 @@ up() {
   [ -n "$resolver" ] || die "no VM resolver address was found in the VM resolv.conf"
   addresses=$(resolve_allowed_addresses)
   [ -n "$addresses" ] || die "no address resolved for $allowed_hosts"
+  trap 'status=$?; [ "$status" -eq 0 ] || exit 4' EXIT
   vm iptables -N "$chain"
   vm iptables -A "$chain" -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
   vm iptables -A "$chain" -d "$resolver" -p udp --dport 53 -j RETURN
@@ -71,6 +73,7 @@ up() {
   done
   vm iptables -A "$chain" -j REJECT
   vm iptables -I DOCKER-USER 1 -i "$bridge_interface" -j "$chain"
+  trap - EXIT
   echo "egress: up"
 }
 
