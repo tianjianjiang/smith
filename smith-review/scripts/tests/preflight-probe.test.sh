@@ -18,9 +18,12 @@ probe="$(grep -F -- "$PROBE_MARK" "$PREFLIGHT" | sed -n 's/^.*!`\(.*\)`$/\1/p')"
   || fail "the $PROBE_MARK line is not a !\`command\` live-state probe"
 
 TMPD="$(mktemp -d)" && [ -d "$TMPD" ] || fail "mktemp could not create a fixture folder"
-mkdir -p "$TMPD/config" "$TMPD/empty-home" "$TMPD/home/.claude"
-ln -s "$ROOT" "$TMPD/config/skills"
-ln -s "$ROOT" "$TMPD/home/.claude/skills"
+PROBED_SKILL="${PROBE_MARK%%/*}"
+mkdir -p "$TMPD/config/skills" "$TMPD/empty-home" "$TMPD/home/.claude/skills"
+cp -R "$ROOT/$PROBED_SKILL" "$TMPD/config/skills/" \
+  || fail "could not copy $PROBED_SKILL into the CLAUDE_CONFIG_DIR fixture"
+cp -R "$ROOT/$PROBED_SKILL" "$TMPD/home/.claude/skills/" \
+  || fail "could not copy $PROBED_SKILL into the HOME fixture"
 REPO="$TMPD/repo"
 git init -q --bare -b main "$TMPD/remote.git"
 git init -q -b main "$REPO"
