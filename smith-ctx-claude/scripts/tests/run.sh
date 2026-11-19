@@ -1,5 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
+TESTS="$HERE"
 JOBS="${SMITH_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 case "$JOBS" in
   '' | *[!0-9]* | 0)
@@ -9,14 +10,14 @@ case "$JOBS" in
 esac
 LOGS="$(mktemp -d)"
 if [ "$#" = 0 ]; then
-  for test_file in "$HERE"/*.test.sh; do
+  for test_file in "$TESTS"/*.test.sh; do
     if [ -e "$test_file" ] || [ -L "$test_file" ]; then
       set -- "$@" "$test_file"
     fi
   done
 fi
 if [ "$#" = 0 ]; then
-  echo "NO TESTS FOUND in $HERE"
+  echo "NO TESTS FOUND in $TESTS"
   exit 1
 fi
 printf '%s\0' "$@" | xargs -0 -n 1 -P "$JOBS" sh -c '
