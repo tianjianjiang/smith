@@ -73,7 +73,7 @@ keeping full output in context.
 **Registration**: Add to `~/.claude/settings.json` (user-global) or
 `.claude/settings.json` (project-specific). Self-check:
 `smith-ctx-claude/scripts/tests/tool-output-hygiene.test.sh` (run via
-`smith-ctx-claude/scripts/tests/run-all.sh`).
+`smith-ctx-claude/scripts/tests/run.sh`).
 
 ## Hooks Reference
 

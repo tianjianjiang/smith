@@ -8,7 +8,7 @@ kept, because they carry local paths.
 Every eval here drives a live app or a logged-in `claude` command, and all
 except the terminal identity eval call the Anthropic API, so each is skipped
 unless `SMITH_LIVE_CONTEXT_RESET_EVAL=1` is set, and none is part of
-`run-all.sh`.
+`run.sh`.
 
 ## Host-sent `/clear` (stream-json)
 

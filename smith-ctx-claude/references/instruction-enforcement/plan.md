@@ -143,7 +143,7 @@ Modified, in this repository:
   instruction, the Skill tool; in both files, the
   placement principle above; the standing rule that a correction made a
   second time becomes a hook, a judged statement or an evaluation.
-- `smith-ctx-claude/scripts/tests/run-all.sh`,
+- `smith-ctx-claude/scripts/tests/run.sh`,
   `smith-ctx-claude/references/HOOKS.md`: list and document the new hooks.
 
 Outside this repository:
@@ -320,5 +320,5 @@ each of those waits for the owner's yes.
   correction, 130 in 84 for naming an unloaded skill, 11 in 10 for
   point-in-time content in a skill) and, after the period, the recount
   with the same command and a `--since` argument.
-- The whole hook suite, `smith-ctx-claude/scripts/tests/run-all.sh`, passes
+- The whole hook suite, `smith-ctx-claude/scripts/tests/run.sh`, passes
   with the new tests listed in it.

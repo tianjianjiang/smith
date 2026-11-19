@@ -23,9 +23,9 @@ repo_with_fakes() {
   tests="$repo/smith-ctx-claude/scripts/tests"
   scripts="$repo/smith-ctx-claude/scripts"
   mkdir -p "$tests/lib" "$scripts/lib" "$repo/smith-other"
-  cp "$HERE/run-all.sh" "$HERE/run-affected.sh" "$HERE/test-deps.mjs" \
-    "$HERE/check-test-deps.sh" "$tests/" 2>/dev/null
-  printf '{}\n' > "$tests/test-deps.json"
+  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/select.mjs" \
+    "$HERE/verify-self-containedness.sh" "$tests/" 2>/dev/null
+  printf '{}\n' > "$tests/hidden-reads.json"
   printf 'helper() { :; }\n' > "$tests/lib/helper.sh"
   printf 'import { x } from "./lib/alpha-lib.mjs";\nconsole.log(x);\n' \
     > "$scripts/alpha-hook.mjs"
@@ -106,7 +106,7 @@ done
 printf '%s\n' "$out" | grep -qi 'no test' ||
   fail "a change no test reaches must say that no test was run, got: $out"
 
-for runner_file in run-all.sh run-affected.sh test-deps.mjs test-deps.json lib/helper.sh; do
+for runner_file in run.sh run-affected.sh select.mjs hidden-reads.json lib/helper.sh; do
   name="runner-$(printf '%s' "$runner_file" | tr '/.' '--')"
   repo_with_fakes "$name"
   printf '\n' >> "$tests/$runner_file"
@@ -119,18 +119,18 @@ for runner_file in run-all.sh run-affected.sh test-deps.mjs test-deps.json lib/h
 done
 
 repo_with_fakes broken-manifest
-printf '{ not json\n' > "$tests/test-deps.json"
+printf '{ not json\n' > "$tests/hidden-reads.json"
 commit_all "break the manifest"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/README.md"
 affected
 ran alpha && ran beta && ran gamma ||
   fail "an unparseable manifest must run the full suite, got: $out"
-printf '%s\n' "$out" | grep -qi 'test-deps.json' ||
+printf '%s\n' "$out" | grep -qi 'hidden-reads.json' ||
   fail "an unparseable manifest must be named as the reason, got: $out"
 
 repo_with_fakes wrong-shape-manifest
-printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": "*/SKILL.md"}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": "*/SKILL.md"}\n' > "$tests/hidden-reads.json"
 commit_all "a manifest entry that is not a list"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/README.md"
@@ -139,7 +139,7 @@ ran alpha && ran beta && ran gamma ||
   fail "a manifest entry that is not a list must run the full suite, got: $out"
 
 repo_with_fakes missing-manifest
-quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/tests/test-deps.json"
+quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/tests/hidden-reads.json"
 commit_all "drop the manifest"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/README.md"
@@ -148,7 +148,7 @@ ran alpha && ran beta && ran gamma ||
   fail "a missing manifest must run the full suite, got: $out"
 
 repo_with_fakes declared-glob
-printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/hidden-reads.json"
 commit_all "declare a glob"
 quiet_git -C "$repo" branch -f base
 mkdir -p "$repo/smith-new"
@@ -161,7 +161,7 @@ printf '%s\n' "$out" | grep -q '\*/SKILL.md' ||
 
 repo_with_fakes declared-by-hook
 printf '{"smith-ctx-claude/scripts/alpha-hook.mjs": ["smith-ctx-claude/alpha-config.json"]}\n' \
-  > "$tests/test-deps.json"
+  > "$tests/hidden-reads.json"
 printf '{}\n' > "$repo/smith-ctx-claude/alpha-config.json"
 commit_all "declare a hook's data file"
 quiet_git -C "$repo" branch -f base
@@ -171,7 +171,7 @@ ran alpha || fail "a data file declared by a hook must run the tests that reach 
 ran beta && fail "alpha's data file must not run beta, got: $out"
 
 repo_with_fakes stale-manifest-key
-printf '{"smith-ctx-claude/scripts/gone.mjs": ["README.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/gone.mjs": ["README.md"]}\n' > "$tests/hidden-reads.json"
 commit_all "a manifest key for a file that does not exist"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/smith-other/SKILL.md"
@@ -195,7 +195,7 @@ repo_with_fakes check-missing
 fake_test "$tests" gamma 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
 fake_test "$tests" alpha '[ -f "$HERE/../alpha-hook.mjs" ] || exit 1'
 commit_all "gamma reads a file only by a computed path"
-out=$(sh "$tests/check-test-deps.sh" 2>&1) &&
+out=$(sh "$tests/verify-self-containedness.sh" 2>&1) &&
   fail "a test whose dependency is not visible must fail the completeness check, got: $out"
 printf '%s\n' "$out" | grep -q 'MISSING.*gamma.test.sh' ||
   fail "the check must name the test with an undeclared dependency, got: $out"
@@ -204,9 +204,9 @@ printf '%s\n' "$out" | grep -q 'PASS.*alpha.test.sh' ||
 
 repo_with_fakes check-declared
 fake_test "$tests" gamma 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
-printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/hidden-reads.json"
 commit_all "declare gamma's file"
-out=$(sh "$tests/check-test-deps.sh" 2>&1) ||
+out=$(sh "$tests/verify-self-containedness.sh" 2>&1) ||
   fail "a test whose dependencies are all declared must pass the check, got: $out"
 printf '%s\n' "$out" | grep -q 'PASS.*gamma.test.sh' ||
   fail "the check must report the declared test as passing, got: $out"
@@ -214,7 +214,7 @@ printf '%s\n' "$out" | grep -q 'PASS.*gamma.test.sh' ||
 repo_with_fakes check-broken-in-repo
 fake_test "$tests" gamma 'exit 1'
 commit_all "gamma fails everywhere"
-out=$(sh "$tests/check-test-deps.sh" 2>&1) &&
+out=$(sh "$tests/verify-self-containedness.sh" 2>&1) &&
   fail "a test that fails in the repo must fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'FAILS IN REPO.*gamma.test.sh' ||
   fail "a test that fails in the repo too must not be blamed on a dependency, got: $out"
@@ -383,9 +383,9 @@ ran alpha || fail "a change to the file Node loads before a folder index must ru
 repo_with_fakes check-symlinked-test-alias
 fake_test "$repo/smith-other" delta 'grep -q skill "$(git rev-parse --show-toplevel)/smith-other/SKILL.md" || exit 1'
 ln -s ../../../smith-other/delta.test.sh "$tests/delta.test.sh"
-printf '{"smith-ctx-claude/scripts/tests/delta.test.sh": ["smith-other/SKILL.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/delta.test.sh": ["smith-other/SKILL.md"]}\n' > "$tests/hidden-reads.json"
 commit_all "a symlinked test declares its dependency under its own name"
-out=$(sh "$tests/check-test-deps.sh" "$tests/delta.test.sh" 2>&1) ||
+out=$(sh "$tests/verify-self-containedness.sh" "$tests/delta.test.sh" 2>&1) ||
   fail "a declaration made under a symlinked test's name must count in the check, got: $out"
 
 repo_with_fakes check-symlinked-test-fixture
@@ -393,7 +393,7 @@ printf 'fixture\n' > "$tests/fixture.txt"
 fake_test "$repo/smith-other" delta 'grep -q fixture "$(dirname "$0")/fixture.txt" || exit 1'
 ln -s ../../../smith-other/delta.test.sh "$tests/delta.test.sh"
 commit_all "a symlinked test reads a fixture beside its link"
-out=$(sh "$tests/check-test-deps.sh" "$tests/delta.test.sh" 2>&1) ||
+out=$(sh "$tests/verify-self-containedness.sh" "$tests/delta.test.sh" 2>&1) ||
   fail "a symlinked test must run in the tree under its own name, got: $out"
 
 repo_with_fakes check-keeps-links
@@ -402,7 +402,7 @@ ln -s real-target.sh "$scripts/linked.sh"
 printf '#!/bin/sh\n. "$(dirname "$0")/linked.sh"\n' > "$scripts/beta-hook.sh"
 fake_test "$tests" beta 'HOOK="$HERE/../beta-hook.sh"; [ -L "$HERE/../linked.sh" ] || exit 1'
 commit_all "beta needs its link to stay a link"
-out=$(sh "$tests/check-test-deps.sh" "$tests/beta.test.sh" 2>&1) ||
+out=$(sh "$tests/verify-self-containedness.sh" "$tests/beta.test.sh" 2>&1) ||
   fail "the tree of a test must keep symbolic links as links, got: $out"
 
 repo_with_fakes node-shebang-script
@@ -431,7 +431,7 @@ ran beta || fail "a renamed dependency must still run the test that reached its 
 ran alpha && fail "a renamed dependency of beta must not run alpha, got: $out"
 
 repo_with_fakes renamed-out-of-glob
-printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/hidden-reads.json"
 mkdir -p "$repo/smith-another" && printf 'x\n' > "$repo/smith-another/SKILL.md"
 commit_all "declare a glob with a second match"
 quiet_git -C "$repo" branch -f base
@@ -508,7 +508,7 @@ ran alpha || fail "deleting the file Node loads before a folder index must run t
 repo_with_fakes check-skip-in-both
 fake_test "$tests" gamma 'echo "SKIP: always skipped"'
 commit_all "gamma always skips"
-out=$(sh "$tests/check-test-deps.sh" 2>&1) ||
+out=$(sh "$tests/verify-self-containedness.sh" 2>&1) ||
   fail "a SKIP printed in both the repository and the tree must not fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'SKIPPED.*gamma.test.sh' ||
   fail "a test that skips in both runs must be reported as skipped, got: $out"
@@ -527,7 +527,7 @@ affected
 ran alpha || fail "deleting a module required without its extension must run the test, got: $out"
 
 repo_with_fakes deleted-glob-match
-printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$tests/hidden-reads.json"
 mkdir -p "$repo/smith-extra" && printf 'x\n' > "$repo/smith-extra/SKILL.md"
 commit_all "declare a glob with a second match"
 quiet_git -C "$repo" branch -f base
@@ -539,7 +539,7 @@ printf '%s\n' "$out" | grep -q 'declares \*/SKILL.md, which matches smith-extra/
 ran alpha && fail "a deleted file matching gamma's glob must not run alpha, got: $out"
 
 repo_with_fakes two-selected
-printf '{"smith-ctx-claude/scripts/alpha-hook.mjs": ["README.md"], "smith-ctx-claude/scripts/beta-hook.sh": ["README.md"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/alpha-hook.mjs": ["README.md"], "smith-ctx-claude/scripts/beta-hook.sh": ["README.md"]}\n' > "$tests/hidden-reads.json"
 commit_all "two hooks share a file"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/README.md"
@@ -550,7 +550,7 @@ printf '%s\n' "$out" | grep -qi 'full suite' && fail "two selected tests must no
 
 repo_with_fakes selector-crash
 printf 'other notes\n' > "$repo/README.md"
-printf 'if (process.argv[1] && process.argv[1].endsWith("test-deps.mjs")) throw new Error("injected selector crash");\n' > "$TMPD/crash.cjs"
+printf 'if (process.argv[1] && process.argv[1].endsWith("select.mjs")) throw new Error("injected selector crash");\n' > "$TMPD/crash.cjs"
 out=$(cd "$repo" && NODE_OPTIONS="--require $TMPD/crash.cjs" sh "$tests/run-affected.sh" base 2>&1)
 ran alpha && ran beta && ran gamma || fail "a selector crash must run the full suite, got: $out"
 printf '%s\n' "$out" | grep -q 'selector exited with status' || fail "a selector crash must be named, got: $out"
@@ -570,7 +570,7 @@ printf 'real() { :; }\n' > "$scripts/real-target.sh"
 ln -s real-target.sh "$scripts/linked.sh"
 printf '#!/bin/sh\n. "$(dirname "$0")/linked.sh"\n' > "$scripts/beta-hook.sh"
 printf '{}\n' > "$repo/smith-ctx-claude/real-data.json"
-printf '{"smith-ctx-claude/scripts/real-target.sh": ["smith-ctx-claude/real-data.json"]}\n' > "$tests/test-deps.json"
+printf '{"smith-ctx-claude/scripts/real-target.sh": ["smith-ctx-claude/real-data.json"]}\n' > "$tests/hidden-reads.json"
 commit_all "a symlink target declares a data file"
 quiet_git -C "$repo" branch -f base
 printf '{"a": 1}\n' > "$repo/smith-ctx-claude/real-data.json"
@@ -626,20 +626,20 @@ repo_with_fakes failing-full-suite-runner
 fake_test "$tests" gamma 'echo broken' 1
 commit_all "gamma fails"
 quiet_git -C "$repo" branch -f base
-printf '\n' >> "$tests/run-all.sh"
+printf '\n' >> "$tests/run.sh"
 affected
 [ "$status" != 0 ] || fail "a failing test in the full suite after a runner change must fail, got: $out"
 
 repo_with_fakes check-node-stderr
 printf 'require("fs").writeSync(2, "node-preload-noise\\n");\n' > "$TMPD/noise.cjs"
-out=$(NODE_OPTIONS="--require $TMPD/noise.cjs" sh "$tests/check-test-deps.sh" 2>&1) ||
+out=$(NODE_OPTIONS="--require $TMPD/noise.cjs" sh "$tests/verify-self-containedness.sh" 2>&1) ||
   fail "node output on stderr must not fail the completeness check, got: $out"
 printf '%s\n' "$out" | grep -q 'cp:.*node-preload-noise' &&
   fail "node output on stderr must not be read as a dependency file, got: $out"
 
 full_suite_case() {
   repo_with_fakes "$1"
-  printf '%s\n' "$2" > "$tests/test-deps.json"
+  printf '%s\n' "$2" > "$tests/hidden-reads.json"
   commit_all "$1"
   quiet_git -C "$repo" branch -f base
   printf 'other notes\n' > "$repo/README.md"
@@ -664,7 +664,7 @@ repo_with_fakes check-same-name
 mkdir -p "$repo/other-tests"
 fake_test "$repo/other-tests" alpha 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
 commit_all "a second alpha test in another folder"
-out=$(sh "$tests/check-test-deps.sh" "$tests/alpha.test.sh" "$repo/other-tests/alpha.test.sh" 2>&1) &&
+out=$(sh "$tests/verify-self-containedness.sh" "$tests/alpha.test.sh" "$repo/other-tests/alpha.test.sh" 2>&1) &&
   fail "a same-named test with a missing dependency must fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'PASS.*smith-ctx-claude/scripts/tests/alpha.test.sh' ||
   fail "the check must report each same-named test by its own path, got: $out"
@@ -674,13 +674,13 @@ printf '%s\n' "$out" | grep -q 'MISSING.*other-tests/alpha.test.sh' ||
 repo_with_fakes check-skip-only-in-tree
 fake_test "$tests" gamma '[ -f "$(git rev-parse --show-toplevel)/smith-other/SKILL.md" ] || { echo "SKIP: no skill file"; exit 0; }'
 commit_all "gamma skips without its file"
-out=$(sh "$tests/check-test-deps.sh" 2>&1) &&
+out=$(sh "$tests/verify-self-containedness.sh" 2>&1) &&
   fail "a test that skips only in the tree of its dependencies must fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'MISSING.*gamma.test.sh' ||
   fail "a SKIP seen only in the tree must count as a missing dependency, got: $out"
 
 repo_with_fakes check-tree-not-built
-out=$(GIT_INDEX_FILE="$TMPD/no-such-folder/index" sh "$tests/check-test-deps.sh" 2>&1) &&
+out=$(GIT_INDEX_FILE="$TMPD/no-such-folder/index" sh "$tests/verify-self-containedness.sh" 2>&1) &&
   fail "a tree that could not be built must fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'TREE NOT BUILT.*gamma.test.sh' ||
   fail "a tree that could not be built must be reported as its own result, got: $out"
