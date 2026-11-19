@@ -18,7 +18,6 @@ probe="$(grep -F -- "$PROBE_MARK" "$PREFLIGHT" | sed -n 's/^.*!`\(.*\)`$/\1/p')"
   || fail "the $PROBE_MARK line is not a !\`command\` live-state probe"
 
 TMPD="$(mktemp -d)" && [ -d "$TMPD" ] || fail "mktemp could not create a fixture folder"
-trap 'rm -rf "$TMPD"' EXIT
 mkdir -p "$TMPD/config" "$TMPD/empty-home" "$TMPD/home/.claude"
 ln -s "$ROOT" "$TMPD/config/skills"
 ln -s "$ROOT" "$TMPD/home/.claude/skills"
