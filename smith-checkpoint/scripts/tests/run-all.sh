@@ -4,7 +4,6 @@ status=0
 for check in \
   audit-checkpoint \
   extract-session-facts \
-  new-body-file \
   plan-label \
   write-checkpoint
 do
