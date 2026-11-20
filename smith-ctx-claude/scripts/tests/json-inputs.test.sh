@@ -2,7 +2,6 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/lib/json-inputs.sh"
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 mkdir "$TMPD/mixed"

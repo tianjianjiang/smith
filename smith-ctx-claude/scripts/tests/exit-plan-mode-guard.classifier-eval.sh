@@ -14,7 +14,6 @@ case "$RUNS" in
   "" | *[!0-9]* | 0*) fail "SMITH_LIVE_CLASSIFIER_EVAL_RUNS must be a positive integer, got '$RUNS'" ;;
 esac
 TMPD="$(mktemp -d)" || fail "mktemp failed"
-trap 'rm -rf "$TMPD"' EXIT
 TRANSCRIPT="$TMPD/transcript.jsonl"
 misses=0
 

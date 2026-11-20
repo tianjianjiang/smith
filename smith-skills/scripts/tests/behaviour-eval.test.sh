@@ -7,7 +7,7 @@ NODE="$(command -v node)"
 
 TMPD="$(mktemp -d)" && [ -n "$TMPD" ] && [ -d "$TMPD" ] && [ -z "$(ls -A "$TMPD")" ] && TMPD="$(cd "$TMPD" && pwd -P)" && [ -n "$TMPD" ] \
   || { echo "FAIL: mktemp -d did not create a new empty folder"; exit 1; }
-trap 'chmod -R u+rwx "$TMPD" 2>/dev/null; rm -rf "$TMPD"' EXIT
+trap 'chmod -R u+rwx "$TMPD" 2>/dev/null' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 [ "${BEHAVIOUR_EVAL_TEST_STOP_AFTER_TEMP_FOLDER:-}" != 1 ] || exit 0
 

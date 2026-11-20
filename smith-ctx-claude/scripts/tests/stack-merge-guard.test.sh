@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../stack-merge-guard.mjs"
 
 SHIM="$(mktemp -d)"
-trap 'rm -rf "$SHIM"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 cat > "$SHIM/gh" <<'EOF'

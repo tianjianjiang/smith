@@ -28,7 +28,6 @@ bullet_line_of() {
 
 TEMPLATE="$(mktemp)"
 SCRATCH="$(mktemp -d)"
-trap 'rm -f "$TEMPLATE"; rm -rf "$SCRATCH"' EXIT
 section "$GH_PR" "$HOME_HEADING" > "$TEMPLATE"
 [ -s "$TEMPLATE" ] || fail "smith-gh-pr/SKILL.md has no '$HOME_HEADING' section"
 

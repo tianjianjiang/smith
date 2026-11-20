@@ -3,7 +3,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT="$HERE/../write-checkpoint.sh"
 
 SHIM="$(mktemp -d)"
-trap 'chmod -R u+w "$SHIM" 2>/dev/null; rm -rf "$SHIM"' EXIT
+trap 'chmod -R u+w "$SHIM" 2>/dev/null' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 unset BASIC_MEMORY_CONFIG_DIR BASIC_MEMORY_HOME BASIC_MEMORY_MCP_PROJECT

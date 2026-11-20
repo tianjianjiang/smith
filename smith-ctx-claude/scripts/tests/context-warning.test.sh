@@ -6,7 +6,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: context-warning - $1"; }
 
 TMP=$(mktemp -d)
-trap "rm -rf '$TMP'" EXIT
 mkdir -p "$TMP/plans"
 export CLAUDE_CONFIG_DIR="$TMP"
 export _SMITH_PPID=12345

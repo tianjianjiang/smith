@@ -2,7 +2,6 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../personal-data-guard.mjs"
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
 
 fail() { echo "FAIL: $1"; exit 1; }
 

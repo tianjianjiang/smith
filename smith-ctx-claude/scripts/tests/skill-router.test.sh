@@ -4,7 +4,6 @@ HOOK="$HERE/../skill-router.mjs"
 TABLE="$HERE/../../skill-triggers.json"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 NOTHING_LOADED="$TMPD/nothing-loaded.jsonl"

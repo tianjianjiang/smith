@@ -100,11 +100,6 @@ PASS=0
 FAIL=0
 TOTAL=216
 
-cleanup() {
-    rm -rf "$TEST_DIR"
-}
-trap cleanup EXIT
-
 # Two keys, deliberately different -- mirroring lib-context.sh.
 # .plan-state-* files are keyed by CWD alone (plan_state_key), so every session
 # in a directory shares one state file. .pending-reload-* files are keyed by
@@ -2800,11 +2795,11 @@ if [[ "$(id -u)" == "0" ]]; then
     echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
     PASS=$((PASS + 1))
 else
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 500 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_78"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "78" "$OUTPUT" "could NOT be claimed" && \
        assert_contains "78" "$OUTPUT" "checkpoint-78" && \
        assert_contains "78" "$OUTPUT" "filesystem error" && \
@@ -2993,11 +2988,11 @@ if [[ "$(id -u)" == "0" ]]; then
 else
   
   
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 500 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_85"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
   
   
     if assert_contains "85" "$OUTPUT" "could NOT be claimed" && \
@@ -3160,11 +3155,11 @@ else
   
   
   
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 600 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_91"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "91" "$OUTPUT" "could NOT be inspected" && \
        assert_not_contains "91" "$OUTPUT" "Signal: resume" && \
        assert_file_exists "91" "$MR_FLAG_91"; then
@@ -3371,11 +3366,11 @@ else
     cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t97/on-session-clear.sh"
     printf '%s\n%s\n%s\n%s\n' "sess_97" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_97" "checkpoint-97" \
         > "$PLANS_97/.pending-memory-restore-20260816T000097-97097"
-    trap 'chmod 700 "$CFG_97" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$CFG_97" 2>/dev/null' EXIT
     chmod 600 "$CFG_97"
     OUTPUT=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$CFG_97"
-    trap cleanup EXIT
+    trap - EXIT
   
   
   
@@ -3499,11 +3494,11 @@ else
     rm -f "$PLANS_DIR"/.pending-memory-restore-*
     MR_FLAG_101="$PLANS_DIR/.pending-memory-restore-20260816T000101-10101"
     printf '%s\n%s\n%s\n%s\n' "sess_101" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_101" "checkpoint-101" > "$MR_FLAG_101"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 500 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_101"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "101" "$OUTPUT" "could NOT be claimed" && \
        assert_contains "101" "$OUTPUT" "Check the permissions on" && \
        assert_file_exists "101" "$MR_FLAG_101"; then
@@ -3595,11 +3590,11 @@ else
     rm -f "$PLANS_DIR"/.pending-memory-restore-*
     printf '%s\n%s\n%s\n%s\n' "sess_105" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_105" "checkpoint-105" \
         > "$PLANS_DIR/.pending-memory-restore-20260816T000105-10501"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 300 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_105"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "105" "$OUTPUT" "could NOT be inspected"; then
         echo "  PASS"
         PASS=$((PASS + 1))
@@ -3787,11 +3782,11 @@ else
     STUCK_119="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11901"
     printf 'k\n2026-01-01T00:00:00+0900\n%s\nIMPORTANT-119\n' "$CWD_119" > "$STUCK_119"
     touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_119"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 0555 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_119"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if [[ -e "$STUCK_119" ]] && \
        assert_contains "119" "$OUTPUT" "could NOT be removed" && \
        assert_not_contains "119" "$OUTPUT" "IMPORTANT-119"; then
@@ -4160,11 +4155,11 @@ else
     mkdir -p "$CFG_122" "$CWD_122" "$TEST_DIR/t122"
     sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t122/lib-plan.sh"
     cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t122/on-session-clear.sh"
-    trap 'chmod 700 "$CFG_122" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$CFG_122" 2>/dev/null' EXIT
     chmod 300 "$CFG_122"
     OUTPUT=$(echo '{"cwd":"'"$CWD_122"'"}' | bash "$TEST_DIR/t122/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$CFG_122"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "122" "$OUTPUT" "could NOT be inspected"; then
         echo "  PASS"
         PASS=$((PASS + 1))
@@ -4594,11 +4589,11 @@ else
     STUCK_137="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13702"
     printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-137\n' "$TEST_DIR/decoy-137-another-project" > "$STUCK_137"
     touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_137"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 0555 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_137"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "137" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
        assert_contains "137" "$OUTPUT" "1 litter file(s) could NOT be removed" && \
        assert_not_contains "137" "$OUTPUT" "LABEL-137" && \
@@ -5342,11 +5337,11 @@ if [[ "$(id -u)" == "0" ]]; then
     echo "  SKIP (root inspects a mode-000 directory, so the branch is unreachable)"
     PASS=$((PASS + 1))
 else
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null; cleanup' EXIT
+    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
     chmod 000 "$PLANS_DIR"
     OUTPUT=$(echo '{"cwd":"'"$CWD_164"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
     chmod 700 "$PLANS_DIR"
-    trap cleanup EXIT
+    trap - EXIT
     if assert_contains "164" "$OUTPUT" "\`$PLANS_DIR\` could NOT be inspected"; then
         echo "  PASS"; PASS=$((PASS + 1))
     else

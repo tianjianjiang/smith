@@ -4,7 +4,6 @@ HOOK="$HERE/../rtk-find-symlink-guard.mjs"
 
 SHIM="$(mktemp -d)"
 NO_RTK="$(mktemp -d)"
-trap 'rm -rf "$SHIM" "$NO_RTK"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 cat > "$SHIM/rtk" <<'EOF'

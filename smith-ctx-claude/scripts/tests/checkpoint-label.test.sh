@@ -6,7 +6,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: checkpoint-label - $1"; }
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 
 printf '# Fix smith-checkpoint Basic-Memory NOTE_ALREADY_EXISTS — Plan\n\nbody\n' > "$TMP/groovy-greeting-pearl.md"
 got=$(checkpoint_label_from_plan "$TMP/groovy-greeting-pearl.md")

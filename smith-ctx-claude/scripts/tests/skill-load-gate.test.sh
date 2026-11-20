@@ -4,7 +4,6 @@ HOOK="$HERE/../skill-load-gate.mjs"
 TABLE="$HERE/../../skill-gate.json"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 COVERED="$TMPD/covered-actions"

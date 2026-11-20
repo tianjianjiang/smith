@@ -3,7 +3,6 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/../lib/checkout-provenance.mjs"
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
 export GIT_CEILING_DIRECTORIES="$TMP"
 

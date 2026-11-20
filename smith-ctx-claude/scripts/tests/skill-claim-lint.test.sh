@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../skill-claim-lint.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 run() {

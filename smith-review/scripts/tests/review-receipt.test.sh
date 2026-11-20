@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 TOOL="$HERE/../review-receipt.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 FULL_RECEIPT='coderabbit ran · /code-review ran · pr-review-toolkit:review-pr ran · security-review NA:docs · code-simplifier NA:docs'

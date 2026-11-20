@@ -4,7 +4,6 @@ REPORT="$HERE/../spawn-ledger-report.mjs"
 GUARD="$HERE/../subagent-contract-guard.mjs"
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 CLAUDE_CONFIG_DIR="$TMP/config"
 export CLAUDE_CONFIG_DIR
 

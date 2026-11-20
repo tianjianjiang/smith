@@ -5,7 +5,6 @@ SCRIPTS="$HERE/.."
 fail() { echo "FAIL: $1"; exit 1; }
 
 TMP=$(mktemp -d) || fail "mktemp"
-trap 'rm -rf "$TMP"' EXIT
 ROOT="$TMP/smith"
 mkdir -p "$ROOT/smith-style/scripts/lib" "$ROOT/agents"
 cp "$SCRIPTS/attribution.sh" "$ROOT/smith-style/scripts/attribution.sh"

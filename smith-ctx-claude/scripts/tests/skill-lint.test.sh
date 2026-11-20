@@ -4,7 +4,7 @@ LINT="$HERE/../skill-lint.mjs"
 REPO="$(cd "$HERE/../../.." && pwd)"
 
 TMPD="$(mktemp -d)"
-trap 'chmod -R u+rwx "$TMPD" 2>/dev/null; rm -rf "$TMPD"' EXIT
+trap 'chmod -R u+rwx "$TMPD" 2>/dev/null' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 raw_skill() {

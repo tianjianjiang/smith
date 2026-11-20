@@ -6,7 +6,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: link-worktree-memories - $1"; }
 
 TMP=$(cd "$(mktemp -d)" && pwd -P)
-trap 'rm -rf "$TMP"' EXIT
 
 new_repo() {
     local repo="$TMP/$1"

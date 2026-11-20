@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../volatile-artifact-guard.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 run() { printf '{"transcript_path":"%s"}' "$2" | node "$HOOK"; }
 

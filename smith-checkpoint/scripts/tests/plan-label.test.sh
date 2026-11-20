@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 PLAN_LABEL="$HERE/../plan-label.sh"
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: plan-label - $1"; }
 
