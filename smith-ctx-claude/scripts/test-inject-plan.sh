@@ -71,15 +71,16 @@ PLANS_DIR="$TEST_DIR/plans"
 mkdir -p "$PLANS_DIR"
 
 # Fail closed if the sandbox landed inside a git repository. scope_key() searches
-# UPWARD for a repository, so with a repo-local TMPDIR the directories these tests
-# construct as belonging to different repositories would all resolve to the same
-# one: the foreign-flag scenarios would stop testing what their names say, and some
-# would fail for a reason that has nothing to do with the code under test.
+# UPWARD for a repository, so with the system temporary folder inside a repository
+# the directories these tests construct as belonging to different repositories would
+# all resolve to the same one: the foreign-flag scenarios would stop testing what their
+# names say, and some would fail for a reason that has nothing to do with the code
+# under test.
 if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
     echo "Error: sandbox $TEST_DIR, made by mktemp -d -t, is inside a git repository." >&2
     echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
-    echo "       Re-run with the system temporary folder outside any repository: TMPDIR on Linux," >&2
-    echo "       getconf DARWIN_USER_TEMP_DIR on macOS, where mktemp -t ignores TMPDIR." >&2
+    echo "       Re-run with TMPDIR pointing outside any repository. On macOS mktemp -t uses" >&2
+    echo "       the folder that getconf DARWIN_USER_TEMP_DIR reports, which TMPDIR does not change." >&2
   
   
     rm -rf "$TEST_DIR"
