@@ -112,9 +112,14 @@ shared naming prefix that also matches other contributors' work:
 - `gh pr merge --squash «pr-number»` — not a bare `*`: merging is a
   shared-state operation (affects `main`), so a wildcard would pre-approve
   merging ANY PR without confirmation
-- `rm -rf .claude/worktrees/«your-worktree-name»` — not `*`: a wildcard
-  would also delete worktrees you don't own, including ones from other
-  concurrent sessions
+- `/usr/bin/trash .claude/worktrees/«your-worktree-name»` — not `*`: a
+  wildcard would also trash worktrees you don't own, including ones from
+  other concurrent sessions. The `git worktree prune` that then makes git
+  forget the trashed worktree is not session-local, because it drops the
+  record of every worktree whose folder is missing, so do not pre-approve
+  it: read `git worktree prune --dry-run` and ask before running it. Until
+  it runs, git still counts the branch as checked out there, so a
+  `git branch -D` of that branch is refused
 
 **Principle:** Pre-approve only operations bounded by session-local
 state (branches you created, worktrees you own). Reserve operations on

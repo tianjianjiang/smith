@@ -593,9 +593,10 @@ claimed and consumed, one-shot, and only when their age was ESTABLISHED — fres
 match whose age could not be measured is left on disk untouched, because consuming it would
 destroy the pointer on a number nobody has; an unclaimable one is left because the claim itself
 failed. A `same repository, selectable` flag is NOT
-consumed by the hook, so the directive tells the agent to `rm` it after restoring — naming
-`$PLANS_DIR`, never a hardcoded `~/.claude/plans`, because under a non-default
-`CLAUDE_CONFIG_DIR` a hardcoded path makes that `rm -f` a silent no-op. Until it is deleted
+consumed by the hook, so the directive tells the agent to move it to the Trash with
+`/usr/bin/trash` after restoring — naming `$PLANS_DIR`, never a hardcoded `~/.claude/plans`,
+because under a non-default `CLAUDE_CONFIG_DIR` a hardcoded path names a file that is not
+there, so the flag stays. Until it is moved to the Trash
 the flag is re-offered at every `/clear` for the next 24 hours; after that it is only counted,
 and it survives on disk until the seven-day sweep.
 
@@ -822,7 +823,7 @@ echo '{"prompt":"hello","session_id":"test2","transcript_path":"/tmp/test-transc
 ```bash
 source ~/.smith/smith-ctx-claude/scripts/lib-plan.sh
 CWD_KEY=$(session_key)   # first 16 chars of md5(PPID:CWD); matches the hook in this same shell
-rm -f "$PLANS_DIR/.pending-reload-${CWD_KEY}"
+[ ! -d "$PLANS_DIR" ] || find "$PLANS_DIR" -maxdepth 1 -name ".pending-reload-${CWD_KEY}" -exec /usr/bin/trash {} +
 echo '{"transcript_path":"/tmp/test-transcript.jsonl","cwd":"'$PWD'"}' | \
   ~/.smith/smith-ctx-claude/scripts/enforce-clear.sh
 ```
@@ -879,9 +880,12 @@ ls "$PLANS_DIR/.pending-reload-${CWD_KEY}" 2>&1  # Should show "No such file"
 
 ### Stale Flag File
 
-Expired flag files (>1 hour old) are auto-cleaned. To manually clear all flags:
+Expired flag files (>1 hour old) are auto-cleaned. To manually clear all flags, move them to
+the Trash. `/usr/bin/trash`, which this recipe and the Stop hook test above call, ships with
+macOS; on a host without it, move the flags out of the plans folder by hand:
 ```bash
-rm -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"/.pending-reload-*
+plans="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans"
+[ ! -d "$plans" ] || find "$plans" -maxdepth 1 -name '.pending-reload-*' -exec /usr/bin/trash {} +
 ```
 
 ### jq Not Found

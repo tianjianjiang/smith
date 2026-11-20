@@ -164,11 +164,11 @@ Protocol:
 2. From the primary working copy: `git fetch --prune origin && git pull --ff-only`. This catches the new commit and removes the stale remote-tracking ref.
 3. Only if a branch survived step 1 (you exited with `keep`, renamed it, or created it outside the tool): `git branch -D «branch»` to clear the squash-merge orphan (`git branch -d` refuses it as "not fully merged").
 
-If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the squash commit). Clean up:
+If the user pre-mirrored worktree changes back to the main working copy (the "evaluate-in-place" pattern), the working copy has uncommitted edits that are now stale (they're an older version of what's in the squash commit). Both cleanup steps below lose the user's own copies: `git checkout --` discards their edits to tracked files, and `/usr/bin/trash` moves their untracked folders away. So first run `git status --porcelain`, show the user its result, and run the block only after the user's yes to both steps. `/usr/bin/trash` ships with macOS; on a host without it, ask the user to move those folders aside instead.
 
 ```shell
 git checkout -- «tracked-files-from-the-PR»
-rm -rf «new-untracked-dirs-from-the-PR»
+/usr/bin/trash «new-untracked-dirs-from-the-PR»
 git pull --ff-only
 ```
 
