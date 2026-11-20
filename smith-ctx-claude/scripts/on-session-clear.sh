@@ -1192,7 +1192,7 @@ if [[ -n "$_mr_rows" ]]; then
           
           
           
-            _mr_notes+="\nIf one is chosen: restore it (${CHECKPOINT_READ_ONE_BACKEND}), then delete its flag with \`rm -f ${_mr_plans_shown}/.pending-memory-restore-«flag»\` — the hook did not consume it, so it is still there — but THIS session will not list it again, so act on it now or note the flag name. A later session in this directory gets its own first offer."
+            _mr_notes+="\nIf one is chosen: restore it (${CHECKPOINT_READ_ONE_BACKEND}), then delete its flag with \`/usr/bin/trash \"${_mr_plans_shown}/.pending-memory-restore-«flag»\"\` — the hook did not consume it, so it is still there — but THIS session will not list it again, so act on it now or note the flag name. A later session in this directory gets its own first offer."
         fi
     fi
   

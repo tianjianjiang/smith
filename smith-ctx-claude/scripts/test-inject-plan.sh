@@ -2593,7 +2593,7 @@ if [[ -d "$WT_70" ]] && \
    assert_contains "70" "$OUTPUT" "checkpoint-70" && \
    assert_contains "70" "$OUTPUT" "20260815T000070-70070" && \
    assert_contains "70" "$OUTPUT" "AskUserQuestion" && \
-   assert_contains "70" "$OUTPUT" "rm -f $PLANS_DIR/.pending-memory-restore-" && \
+   assert_contains "70" "$OUTPUT" "/usr/bin/trash \\\\\"$PLANS_DIR/.pending-memory-restore-" && \
    assert_contains "70" "$OUTPUT" "Signal: resume" && \
    assert_not_contains "70" "$OUTPUT" "ACTION REQUIRED - MEMORY RESTORE" && \
    assert_file_exists "70" "$MR_FLAG_70"; then
