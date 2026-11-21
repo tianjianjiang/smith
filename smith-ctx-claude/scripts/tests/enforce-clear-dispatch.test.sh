@@ -159,7 +159,7 @@ expect_step_off() {
   OUT=$(PATH="$TMP/bin:$PATH" run_hook)
   [ "$(printf '%s' "$OUT" | jq -r .reason)" = "$UNCHANGED_REASON" ] || fail "$description: the block reason should be unchanged: $OUT"
   [ "$(call_count)" -eq 0 ] || fail "$description: a block should not call claude"
-  rm -f "/tmp/session-facts-$CWD_KEY.md"
+  [ ! -e "/tmp/session-facts-$CWD_KEY.md" ] || fail "$description: a block must leave no session facts file in /tmp"
   HOOK_ENV=()
 }
 

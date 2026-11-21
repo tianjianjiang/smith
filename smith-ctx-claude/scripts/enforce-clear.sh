@@ -340,9 +340,6 @@ FACTS_SUMMARY=""
 if [[ -f "$EXTRACT_FACTS_SCRIPT" ]] && [[ -x "$EXTRACT_FACTS_SCRIPT" ]]; then
     EXTRACTED_FACTS=$("$EXTRACT_FACTS_SCRIPT" "$TRANSCRIPT_PATH" 2>/dev/null || echo "")
 
-    FACTS_FILE="${CLAUDE_JOB_DIR:-/tmp}/session-facts-${CWD_KEY}.md"
-    printf '%s\n' "$EXTRACTED_FACTS" > "$FACTS_FILE"
-
     FILE_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## Files Modified/,/^$/p' | grep -c '^- ') || FILE_COUNT=0
     PR_COUNT=$(echo "$EXTRACTED_FACTS" | sed -n '/## PRs/,/^$/p' | grep -c '^- ') || PR_COUNT=0
     COMMIT_INFO=$(echo "$EXTRACTED_FACTS" | sed -n '/## Commits/,/^$/p' | grep '^- [0-9]' | head -1 || true)

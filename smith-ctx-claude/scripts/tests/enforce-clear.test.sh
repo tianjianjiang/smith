@@ -79,7 +79,6 @@ reset_flags() { rm -f "$STATE_FILE" "$FLAG_FILE" "$FLAG_FILE.exit-marker"; }
 readonly NO_PLAN_REASON="Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear."
 
 reset_flags
-rm -f "$TMP"/session-facts-*.md
 make_transcript "$DEFAULT_CRITICAL_PCT"
 OUT=$(run_hook)
 STATUS=$?
@@ -96,8 +95,8 @@ pass "block exits 0 with decision, reason and a session summary"
 sed -n 3p "$FLAG_FILE" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{4}$' || fail "reload flag timestamp: $(cat "$FLAG_FILE")"
 [ "$(sed -n 4p "$FLAG_FILE")" = "$TMP" ] || fail "reload flag should name the working directory: $(cat "$FLAG_FILE")"
 pass "reload flag names the session, a timestamp and the working directory"
-ls "$TMP"/session-facts-*.md >/dev/null 2>&1 || fail "a block should write the session facts file into the job folder"
-pass "block writes the session facts file"
+! ls "$TMP"/session-facts-*.md >/dev/null 2>&1 || fail "a block must leave no session facts file in the job folder: nothing reads it"
+pass "block leaves no session facts file"
 
 reset_flags
 OUT=$(printf '%s' "{\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | bash "$HOOK")
