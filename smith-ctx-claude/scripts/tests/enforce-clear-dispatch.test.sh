@@ -2,6 +2,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../enforce-clear.sh"
 source "$HERE/../lib-plan.sh"
+source "$HERE/lib/set-aside.sh"
 
 readonly DEFAULT_CRITICAL_PCT=60
 readonly SONNET_4_CONTEXT_TOKENS=200000
@@ -101,7 +102,7 @@ write_restore_flag() {
 }
 
 reset_state() {
-  rm -f "$TMP"/plans/.[!.]* "$CALLS_LOG" "$CALLS_LOG.last" "$CALLS_LOG.penultimate" "$OTHER_PROGRAMS_LOG"
+  set_aside "$TMP"/plans/.[!.]* "$CALLS_LOG" "$CALLS_LOG.last" "$CALLS_LOG.penultimate" "$OTHER_PROGRAMS_LOG"
   make_transcript "$DEFAULT_CRITICAL_PCT"
 }
 
@@ -152,7 +153,7 @@ expect_step_off() {
   STATUS=$?
   expect_no_dispatch "$description, matching fresh flag" "$OUT" "$STATUS"
   [ -f "$RESTORE_FLAG" ] || fail "$description: the restore flag should stay"
-  rm -f "$RESTORE_FLAG"
+  set_aside "$RESTORE_FLAG"
   OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
   STATUS=$?
   expect_no_dispatch "$description, no checkpoint after the block" "$OUT" "$STATUS"
@@ -430,7 +431,7 @@ expect_failure_reason() {
   [ "$STATUS" -eq 0 ] || fail "$description: exit status should be 0, got $STATUS"
   MESSAGE=$(printf '%s' "$OUT" | jq -r .systemMessage)
   [ "$MESSAGE" = "[SMITH_CTX_DISPATCH_FAILED] Context reset: dispatching a background session for checkpoint \"$LABEL\" failed${expected}; /clear still restores the checkpoint." ] || fail "$description: unexpected failure message: $MESSAGE"
-  rm -f "$FAKE_STDOUT" "$FAKE_STDERR"
+  set_aside "$FAKE_STDOUT" "$FAKE_STDERR"
 }
 
 printf 'error: written to stderr only\n' > "$FAKE_STDERR"
@@ -456,7 +457,7 @@ write_pending_reload
 write_restore_flag "$LABEL" "$PHYSICAL_KEY"
 OUT=$(PATH="$TMP/failing-bin:$PATH" run_continuing_stop acceptEdits)
 [ -f "$OWN_MARKER" ] || fail "a failed dispatch should leave this session's attempt marker: $(ls -a "$TMP/plans")"
-rm -f "$PENDING_RELOAD"
+set_aside "$PENDING_RELOAD"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 [ ! -e "$OWN_MARKER" ] || fail "a stop without a pending reload file should remove this session's marker"
 pass "a stop without a pending reload file removes this session's marker"
@@ -482,7 +483,7 @@ OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "below the threshold with a matching fresh flag" "$OUT" "$STATUS"
 [ -f "$RESTORE_FLAG" ] || fail "below the threshold the restore flag should stay"
-rm -f "$RESTORE_FLAG"
+set_aside "$RESTORE_FLAG"
 OUT=$(PATH="$TMP/bin:$PATH" run_continuing_stop acceptEdits)
 STATUS=$?
 expect_no_dispatch "below the threshold without a flag" "$OUT" "$STATUS"
@@ -536,11 +537,11 @@ touch -t "$NEWER" "$OWN_MARKER"
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\",\"transcript_path\":\"$TMP/missing.jsonl\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
 expect_no_dispatch "missing transcript file, block already attempted" "$OUT" "$STATUS"
-rm -f "$OWN_MARKER" "$RESTORE_FLAG"
+set_aside "$OWN_MARKER" "$RESTORE_FLAG"
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
 expect_unreadable_transcript_notice "no transcript path without a flag" "$OUT" "$STATUS" "(no path given)"
-rm -f "$PENDING_RELOAD"
+set_aside "$PENDING_RELOAD"
 OUT=$(printf '%s' "{\"stop_hook_active\":true,\"cwd\":\"$TMP\",\"session_id\":\"s1\"}" | PATH="$TMP/bin:$PATH" bash "$HOOK")
 STATUS=$?
 expect_no_dispatch "no transcript path without a pending reload file" "$OUT" "$STATUS"

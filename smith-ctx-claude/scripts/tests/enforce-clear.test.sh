@@ -1,6 +1,7 @@
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../enforce-clear.sh"
+source "$HERE/lib/set-aside.sh"
 
 readonly DEFAULT_CRITICAL_PCT=60
 readonly SONNET_4_CONTEXT_TOKENS=200000
@@ -67,7 +68,6 @@ OUT=$(run_hook)
 pass "completed plan reason says plan completed"
 
 make_transcript "$DEFAULT_CRITICAL_PCT"
-rm -f "$TMP/missing.md"
 printf 's1\n%s\n0\n\n%s\n' "$TMP/transcript.jsonl" "$TMP/missing.md" > "$STATE_FILE"
 OUT=$(run_hook)
 [ "$(printf '%s' "$OUT" | jq -r .reason)" = "Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear." ] || fail "deleted plan reason: $OUT"
@@ -75,7 +75,7 @@ pass "deleted plan reason names no plan"
 [ "$(sed -n 5p "$FLAG_FILE")" = no-plan ] || fail "deleted plan reload flag type: $(cat "$FLAG_FILE")"
 pass "deleted plan reload flag type is no-plan"
 
-reset_flags() { rm -f "$STATE_FILE" "$FLAG_FILE" "$FLAG_FILE.exit-marker"; }
+reset_flags() { set_aside "$STATE_FILE" "$FLAG_FILE" "$FLAG_FILE.exit-marker"; }
 readonly NO_PLAN_REASON="Context at ${DEFAULT_CRITICAL_PCT}%. Checkpoint this session, then /clear."
 
 reset_flags
