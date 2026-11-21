@@ -1,9 +1,10 @@
 # Ralph Orchestration Mode (Pattern B)
 
-**Pattern B = subagent orchestration**: Parent stays light, workers get fresh 200k context each.
+**Pattern B = subagent orchestration**: Parent stays light,
+workers get a fresh context each.
 
 ```text
-User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh 200k each)
+User -> "ralph orch" -> Parent (light) -> Task tool -> Worker (fresh context each)
 ```
 
 **Trigger**: "ralph orchestrate", "ralph orch", or "use orchestration mode"
