@@ -372,8 +372,8 @@ When invoked via `/smith-checkpoint` (no arguments required):
         every open decision) to a new file, so they cannot be fitted to
         the returns afterwards; the allowed set above already keeps both
         checkers out of it. A rerun from item 6 reuses that file.
-        `mktemp -t checkpoint-expected.XXXXXX` prints its
-        path; later Bash calls reuse that path as a literal string
+        `mktemp -t checkpoint-expected.XXXXXX` prints its path; later
+        Bash calls reuse that path as a literal string
       - Each round spawns both checkers in one message:
         - VERIFIER (verification: is what is written true?), SKEPTIC
           role, named in its prompt to invoke `@smith-validation` and to

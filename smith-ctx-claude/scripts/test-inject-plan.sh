@@ -79,8 +79,6 @@ mkdir -p "$PLANS_DIR"
 if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
     echo "Error: sandbox $TEST_DIR, made by mktemp -d -t, is inside a git repository." >&2
     echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
-    echo "       Re-run with TMPDIR pointing outside any repository. On macOS mktemp -t uses" >&2
-    echo "       the folder that getconf DARWIN_USER_TEMP_DIR reports, which TMPDIR does not change." >&2
   
   
     rm -rf "$TEST_DIR"
