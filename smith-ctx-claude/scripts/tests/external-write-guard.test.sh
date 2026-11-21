@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../external-write-guard.mjs"
 
 WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
 mkdir "$WORK/silent-inputs"
 silent_count=0
 

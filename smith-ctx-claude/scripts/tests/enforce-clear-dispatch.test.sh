@@ -14,7 +14,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: enforce-clear-dispatch - $1"; }
 
 TMP=$(mktemp -d)
-trap "rm -rf '$TMP'" EXIT
 mkdir -p "$TMP/plans" "$TMP/bin" "$TMP/failing-bin" "$TMP/silent-bin"
 export CLAUDE_CONFIG_DIR="$TMP"
 export _SMITH_PPID=12345

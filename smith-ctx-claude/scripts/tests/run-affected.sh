@@ -6,7 +6,6 @@ if [ "$#" != 1 ]; then
 fi
 BASE="$1"
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
 
 full_suite() {
   echo "run-affected: running the full suite, because $1"

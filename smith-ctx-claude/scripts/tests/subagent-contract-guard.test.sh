@@ -4,7 +4,6 @@ HOOK="$HERE/../subagent-contract-guard.mjs"
 SKILL="$HERE/../../../smith-subagents/SKILL.md"
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 CLAUDE_CONFIG_DIR="$TMP/config"
 export CLAUDE_CONFIG_DIR
 

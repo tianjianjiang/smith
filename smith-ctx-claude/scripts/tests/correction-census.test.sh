@@ -3,7 +3,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 CENSUS="$HERE/../correction-census.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'chmod -R u+rwx "$TMPD" 2>/dev/null; rm -rf "$TMPD"' EXIT
+trap 'chmod -R u+rwx "$TMPD" 2>/dev/null' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 mkdir -p "$TMPD/projects/project-one" "$TMPD/projects/project-two"

@@ -4,7 +4,6 @@ EVAL="$HERE/../skill-trigger-eval.mjs"
 PROMPTS="$HERE/../../evals/skill-trigger/smith-nuxt.json"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 mkdir -p "$TMPD/bin"

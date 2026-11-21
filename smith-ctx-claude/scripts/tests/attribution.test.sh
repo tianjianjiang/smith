@@ -8,7 +8,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "SKIP: attribution (jq not installed)"; exit 0; }
 
 TMP=$(mktemp -d) || fail "mktemp"
-trap 'rm -rf "$TMP"' EXIT
 CLAUDE_CONFIG_DIR="$TMP/config"
 export CLAUDE_CONFIG_DIR
 unset CLAUDE_CODE_SESSION_ID

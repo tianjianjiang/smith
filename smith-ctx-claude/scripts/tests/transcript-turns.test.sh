@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 MODULE="$HERE/../../../smith-git/scripts/lib/transcript-turns.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 assert_json() {

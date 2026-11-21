@@ -11,7 +11,6 @@ command -v jq >/dev/null 2>&1 || { echo "SKIP: branch-guard - jq not installed";
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_CEILING_DIRECTORIES
 
 TMP=$(cd "$(mktemp -d)" && pwd -P)
-trap 'rm -rf "$TMP"' EXIT
 
 repo="$TMP/repo"
 git init -q -b main "$repo"

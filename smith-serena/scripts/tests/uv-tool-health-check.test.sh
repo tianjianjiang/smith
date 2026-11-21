@@ -6,7 +6,6 @@ fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: uv-tool-health-check - $1"; }
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/bin"
 
 fake_uv() {

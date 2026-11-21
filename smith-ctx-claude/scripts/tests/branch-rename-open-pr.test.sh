@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../branch-rename-open-pr.mjs"
 
 SHIM="$(mktemp -d)"
-trap 'rm -rf "$SHIM"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 cat > "$SHIM/gh" <<'EOF'

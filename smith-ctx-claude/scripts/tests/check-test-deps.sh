@@ -8,7 +8,7 @@ ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)" || {
 RELATIVE_REAL_PATH='const { realpathSync } = require("fs"); const { basename, dirname, join, relative } = require("path"); const { argv } = process; console.log(relative(realpathSync(argv[1]), join(realpathSync(dirname(argv[2])), basename(argv[2]))));'
 export RELATIVE_REAL_PATH
 WORK="$(mktemp -d)"
-trap 'chmod -R u+rwx "$WORK" 2>/dev/null; rm -rf "$WORK"' EXIT
+trap 'chmod -R u+rwx "$WORK" 2>/dev/null' EXIT
 for test_file in "$@"; do
   shift
   set -- "$@" "$(cd "$(dirname "$test_file")" && pwd)/$(basename "$test_file")"

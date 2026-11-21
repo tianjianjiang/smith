@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 AUDIT="$HERE/../audit-checkpoint.sh"
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 lines() { awk -v n="$2" 'BEGIN { for (i = 1; i <= n; i++) print "line " i }' > "$1"; }

@@ -3,7 +3,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT="$HERE/../behaviour-eval-egress.sh"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 [ -f "$SCRIPT" ] || fail "smith-skills/scripts/behaviour-eval-egress.sh must exist"

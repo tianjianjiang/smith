@@ -115,7 +115,6 @@ expect_usable_folder "a folder inside the default profile cannot be the eval pro
 expect_usable_folder "a folder whose name starts with two dots is not above the home folder" /Users/fixture/..eval true
 
 REAL_HOME=$(mktemp -d)
-trap 'rm -rf "$REAL_HOME"' EXIT
 mkdir "$REAL_HOME/.claude"
 ln -s "$REAL_HOME/.claude" "$REAL_HOME/.claude-smith-eval"
 got=$(eval_folder_is_usable "$REAL_HOME" "$REAL_HOME/.claude-smith-eval") || fail "a link to the default profile: the check did not run"

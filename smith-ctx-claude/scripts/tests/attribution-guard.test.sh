@@ -9,7 +9,6 @@ command -v node >/dev/null 2>&1 || { echo "SKIP: attribution-guard (node not ins
 fail() { echo "FAIL: $1"; exit 1; }
 
 TMP=$(mktemp -d) || fail "mktemp"
-trap 'rm -rf "$TMP"' EXIT
 CLAUDE_CONFIG_DIR="$TMP/config"
 export CLAUDE_CONFIG_DIR
 unset CLAUDE_CODE_SESSION_ID

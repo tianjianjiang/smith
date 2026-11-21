@@ -4,7 +4,6 @@ HOOK="$HERE/../exit-plan-mode-guard.mjs"
 
 TMPD="$(mktemp -d)"
 export CLAUDE_CONFIG_DIR="$TMPD"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 make_stub() {

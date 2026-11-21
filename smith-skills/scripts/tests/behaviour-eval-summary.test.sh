@@ -4,7 +4,6 @@ SUMMARY="$HERE/../behaviour-eval-summary.mjs"
 LEAK_SCAN="$HERE/../behaviour-eval-leak-scan.mjs"
 
 TMPD="$(mktemp -d)"
-trap 'rm -rf "$TMPD"' EXIT
 fail() { echo "FAIL: $1"; exit 1; }
 
 [ -f "$SUMMARY" ] || fail "the script under test does not exist: $SUMMARY"

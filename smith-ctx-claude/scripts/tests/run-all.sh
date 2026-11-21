@@ -8,7 +8,6 @@ case "$JOBS" in
     ;;
 esac
 LOGS="$(mktemp -d)"
-trap 'rm -rf "$LOGS"' EXIT
 if [ "$#" = 0 ]; then
   for test_file in "$HERE"/*.test.sh; do
     if [ -e "$test_file" ] || [ -L "$test_file" ]; then
