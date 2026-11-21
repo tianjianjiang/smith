@@ -56,6 +56,7 @@ INJECT_SCRIPT="$SCRIPT_DIR/scripts/inject-plan.sh"
 ENFORCE_SCRIPT="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
 PLAN_EXIT_SCRIPT="$SCRIPT_DIR/scripts/on-plan-exit.sh"
 SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
+source "$SCRIPT_DIR/scripts/tests/lib/set-aside.sh"
 
 TEST_DIR=$(mktemp -d -t smith-mode-plan-claude-tests.XXXXXX)
 # Every scenario below builds its own repositories, so an INHERITED git environment
@@ -79,9 +80,6 @@ mkdir -p "$PLANS_DIR"
 if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
     echo "Error: sandbox $TEST_DIR, made by mktemp -d -t, is inside a git repository." >&2
     echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
-  
-  
-    rm -rf "$TEST_DIR"
     exit 1
 fi
 
@@ -343,7 +341,7 @@ fi
 # --- Test 3: on-session-clear with state file -> POST-CLEAR RESUME ---
 echo "Test 3: on-session-clear with state file -> POST-CLEAR RESUME directive"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 CWD_3="$TEST_DIR/worktree-3"
 mkdir -p "$CWD_3"
 CWD_3_KEY=$(compute_session_key "$CWD_3")
@@ -366,7 +364,7 @@ fi
 # --- Test 4: Context threshold (percentage-based) ---
 echo "Test 4: Context threshold -> context-warning.sh warns at 50%, inject-plan.sh stays quiet"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 # Create transcript at 55% context (above 50% warning, below 60% critical)
 TRANSCRIPT=$(create_transcript_pct 55 "t4")
 # Update state so we're in an active session (CWD-keyed state)
@@ -382,11 +380,11 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 5: No plan file ---
 echo "Test 5: No plan file -> silent exit, no crash"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-*
 TRANSCRIPT=$(create_transcript_pct 5)
 OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_test","transcript_path":"'"$TRANSCRIPT"'","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/inject-plan.sh" 2>&1)
 EXIT_CODE=$?
@@ -416,7 +414,7 @@ fi
 # --- Test 7: Stop hook first block (percentage-based) ---
 echo "Test 7: Stop hook: context >= 60% + plan pending -> block JSON"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 # Create transcript at 65% context (above 60% critical threshold)
 TRANSCRIPT=$(create_transcript_pct 65 "t7")
 # enforce-clear needs a CWD-keyed state file to find the active plan
@@ -447,7 +445,7 @@ else
     echo "  FAIL (exit: $EXIT_CODE, output: $OUTPUT)"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 # --- Tests 9-13: CWD-based isolation with simulated worktrees ---
 # Worktree A uses "$TEST_DIR/worktree-a", Worktree B uses "$TEST_DIR/worktree-b"
@@ -462,7 +460,7 @@ CWD_B_KEY_PLANSTATE=$(compute_plan_state_key "$WORKTREE_B")
 # --- Test 9: on-plan-exit creates CWD-specific flag (worktree A) ---
 echo "Test 9: on-plan-exit.sh creates flag keyed to worktree A's CWD"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 # Create state file so on-plan-exit finds the plan (ls -t fallback removed)
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_a" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_A_KEY_PLANSTATE}"
 # Run on-plan-exit.sh with worktree A's CWD
@@ -526,7 +524,7 @@ fi
 # --- Test 12: Full lifecycle - both worktrees create and consume flags independently ---
 echo "Test 12: Full lifecycle - parallel worktrees create+consume flags independently"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 # Use percentage-based transcripts: 65% for context threshold, 2% for post-clear
 TRANSCRIPT_HIGH=$(create_transcript_pct 65 "t12-high")
@@ -571,11 +569,11 @@ else
     echo "  Flag B consumed after step 4: $FLAG_B_EXISTS_3 (expected yes=consumed)"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 13: Bug reproduction - after /clear, each worktree gets its OWN plan, not the other's ---
 echo "Test 13: Bug repro - after /clear, each worktree loads its own plan (not the other's)"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 TRANSCRIPT_SMALL=$(create_transcript_pct 2 "t13-small")
 
 # Create plan-a (worktree A's plan)
@@ -651,14 +649,14 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 # --- Tests 14-18: State-based detection and on-session-clear ---
 
 # --- Test 14: State file created after injection ---
 echo "Test 14: State file created after plan injection"
 create_test_plan
-rm -f "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 TRANSCRIPT=$(create_transcript_pct 5 "t14")
 CWD_14_KEY_PLANSTATE="$CWD_DEFAULT_KEY_PLANSTATE"
 # No state file for sess_14 -> new session -> no auto-load
@@ -702,7 +700,7 @@ echo "Test 16: New CWD (no state, no flag) -> no auto-load"
 # Fresh CWD with no state file, no flag -> should NOT auto-load
 CWD_16_KEY_PLANSTATE=$(compute_plan_state_key "$TEST_DIR/worktree-16")
 mkdir -p "$TEST_DIR/worktree-16"
-rm -f "$PLANS_DIR/.plan-state-${CWD_16_KEY_PLANSTATE}"
+set_aside "$PLANS_DIR/.plan-state-${CWD_16_KEY_PLANSTATE}"
 OUTPUT=$(echo '{"prompt":"hi","session_id":"sess_16","transcript_path":"'"$TRANSCRIPT_LARGE"'","cwd":"'"$TEST_DIR/worktree-16"'"}' | bash "$TEST_DIR/inject-plan.sh")
 if [[ -z "$OUTPUT" ]]; then
     echo "  PASS"
@@ -714,7 +712,7 @@ fi
 
 # --- Test 17: on-session-clear without state file -> fresh start ---
 echo "Test 17: on-session-clear without state file -> fresh start directive"
-rm -f "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 create_test_plan
 CWD_17="$TEST_DIR/worktree-17"
 mkdir -p "$CWD_17"
@@ -749,7 +747,7 @@ fi
 # --- Test 19: State-based reload loads CWD's own plan, not most-recent globally ---
 # Uses on-session-clear.sh which is the primary post-/clear injection point.
 echo "Test 19: State-based reload uses plan from state file, not most-recent globally"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 WORKTREE_A19="$TEST_DIR/worktree-a19"
 WORKTREE_B19="$TEST_DIR/worktree-b19"
@@ -814,7 +812,7 @@ fi
 # --- Test 20: Same CWD + different session_id -> flag found (validates /clear fix) ---
 echo "Test 20: Same CWD + different session_id -> flag found (validates /clear fix)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 TRANSCRIPT=$(create_transcript_pct 5 "t20")
 # Session "sess_old" creates the flag before /clear
 CWD_20_KEY=$(compute_session_key "$PWD")
@@ -836,7 +834,7 @@ fi
 # --- Test 21: Different CWDs -> independent flags (validates worktree isolation) ---
 echo "Test 21: Different CWDs -> independent flags (validates worktree isolation)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 TRANSCRIPT=$(create_transcript_pct 5 "t21")
 CWD_X="$TEST_DIR/worktree-x"
 CWD_Y="$TEST_DIR/worktree-y"
@@ -888,7 +886,7 @@ echo ""
 # --- Test 22: Ralph active + context < 50% -> no interference ---
 echo "Test 22: Ralph active + context < 50% -> no interference, state unchanged"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_22="$TEST_DIR/worktree-ralph-22"
 mkdir -p "$RALPH_CWD_22/.claude"
@@ -935,7 +933,7 @@ fi
 # --- Test 23: Ralph active + context 50% -> advisory, resume file created ---
 echo "Test 23: Ralph active + context 50% -> advisory output, resume file created"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_23="$TEST_DIR/worktree-ralph-23"
 mkdir -p "$RALPH_CWD_23/.claude"
@@ -988,7 +986,7 @@ fi
 # --- Test 24: Ralph active + context 60% -> critical, resume file, force exit ---
 echo "Test 24: Ralph active + context 60% -> critical output, resume file, max_iterations = iteration"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_24="$TEST_DIR/worktree-ralph-24"
 mkdir -p "$RALPH_CWD_24/.claude"
@@ -1055,7 +1053,7 @@ fi
 # --- Test 25: enforce-clear + Ralph state file active -> exit 0 (no block) ---
 echo "Test 25: enforce-clear + Ralph state file active -> exit 0 (no block)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_25="$TEST_DIR/worktree-ralph-25"
 mkdir -p "$RALPH_CWD_25/.claude"
@@ -1095,7 +1093,7 @@ fi
 # --- Test 26: enforce-clear + Ralph resume file only -> exit 0 (no block) ---
 echo "Test 26: enforce-clear + Ralph resume file only -> exit 0 (no block)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_26="$TEST_DIR/worktree-ralph-26"
 mkdir -p "$RALPH_CWD_26"
@@ -1137,7 +1135,7 @@ fi
 # --- Test 27: on-session-clear + resume file -> plan + Ralph restart in output ---
 echo "Test 27: on-session-clear + resume file -> plan + Ralph restart in output"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_27="$TEST_DIR/worktree-ralph-27"
 mkdir -p "$RALPH_CWD_27"
@@ -1200,7 +1198,7 @@ fi
 
 # --- Test 28: on-session-clear + resume, no plan -> Ralph restart only ---
 echo "Test 28: on-session-clear + resume, no plan -> Ralph restart only in output"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_28="$TEST_DIR/worktree-ralph-28"
 mkdir -p "$RALPH_CWD_28"
@@ -1268,7 +1266,7 @@ echo ""
 # --- Test 29: on-session-clear + ralph state file (no resume) + plan -> phase resume hint ---
 echo "Test 29: on-session-clear + ralph state (inactive, no resume) + plan -> RALPH LOOP PHASE RESUME"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_29="$TEST_DIR/worktree-ralph-29"
 mkdir -p "$RALPH_CWD_29/.claude"
@@ -1323,7 +1321,7 @@ fi
 
 # --- Test 30: on-session-clear + ralph state (no resume) + no plan -> phase resume hint ---
 echo "Test 30: on-session-clear + ralph state (no resume) + no plan -> RALPH LOOP PHASE RESUME"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_30="$TEST_DIR/worktree-ralph-30"
 mkdir -p "$RALPH_CWD_30/.claude"
@@ -1359,7 +1357,7 @@ fi
 # --- Test 31: inject-plan flag reload + ralph state (no resume) -> phase resume hint ---
 echo "Test 31: inject-plan flag reload + ralph state (inactive, no resume) -> RALPH LOOP PHASE RESUME"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.ralph-resume-*
 
 RALPH_CWD_31="$TEST_DIR/worktree-ralph-31"
 mkdir -p "$RALPH_CWD_31/.claude"
@@ -1416,7 +1414,7 @@ echo ""
 # --- Test 32: "reload" (exact match) triggers plan load from state file ---
 echo "Test 32: \"reload\" (exact match) triggers plan load from state file"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 TRANSCRIPT=$(create_transcript_pct 5 "t32")
 CWD_32="$TEST_DIR/worktree-reload-32"
 mkdir -p "$CWD_32"
@@ -1445,7 +1443,7 @@ fi
 # --- Test 33: "reload plan" (substring) triggers plan load from state file ---
 echo "Test 33: \"reload plan\" (substring) triggers plan load from state file"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 CWD_33="$TEST_DIR/worktree-reload-33"
 mkdir -p "$CWD_33"
 CWD_33_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_33")
@@ -1470,7 +1468,7 @@ fi
 # --- Test 34: "reload the plan" (substring) triggers plan load from state file ---
 echo "Test 34: \"reload the plan\" (substring) triggers plan load from state file"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 CWD_34="$TEST_DIR/worktree-reload-34"
 mkdir -p "$CWD_34"
 CWD_34_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_34")
@@ -1502,7 +1500,7 @@ echo ""
 
 # --- Test 35: on-session-clear + state with completed plan + no flag -> no-plan path ---
 echo "Test 35: on-session-clear + state with completed plan (0 pending) + no flag -> no-plan path"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_35="$TEST_DIR/worktree-35"
 mkdir -p "$CWD_35"
@@ -1546,7 +1544,7 @@ fi
 
 # --- Test 36: on-session-clear + state with completed plan + plan-completed flag (empty path) -> no-plan path ---
 echo "Test 36: on-session-clear + completed plan + plan-completed flag (empty path) -> no-plan path with resume signal"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_36="$TEST_DIR/worktree-36"
 mkdir -p "$CWD_36"
@@ -1590,7 +1588,7 @@ fi
 # --- Test 37: enforce-clear + exit-marker -> exit 0 (no block) ---
 echo "Test 37: enforce-clear + exit-marker -> exit 0 (no block)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 # Create state file and flag file (simulate active plan at high context)
 CWD_37="$TEST_DIR/worktree-37"
@@ -1636,7 +1634,7 @@ fi
 # --- Test 38: enforce-clear + old exit-marker (session match) -> exit 0 (no block) ---
 echo "Test 38: enforce-clear + old exit-marker (session match) -> exit 0 (no block)"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 CWD_38="$TEST_DIR/worktree-38"
 mkdir -p "$CWD_38"
@@ -1680,7 +1678,7 @@ fi
 # --- Test 39: enforce-clear + exit-marker with session mismatch -> still blocks ---
 echo "Test 39: enforce-clear + exit-marker with session mismatch -> still blocks"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 CWD_39="$TEST_DIR/worktree-39"
 mkdir -p "$CWD_39"
@@ -1719,7 +1717,7 @@ fi
 # --- Test 40: enforce-clear + exit-marker without flag file -> still blocks ---
 echo "Test 40: enforce-clear + exit-marker without flag file -> still blocks"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-reload-*
 
 CWD_40="$TEST_DIR/worktree-40"
 mkdir -p "$CWD_40"
@@ -1842,7 +1840,7 @@ fi
 # --- Test 46: SessionStart model file used by inject-plan for context detection ---
 echo "Test 46: SessionStart model file used by inject-plan for Opus[1m] context detection"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
 
 CWD_46="$TEST_DIR/worktree-46"
 mkdir -p "$CWD_46"
@@ -1868,7 +1866,7 @@ else
     echo "  FAIL (expected no output, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR/.model-${CWD_46_KEY}"
+set_aside "$PLANS_DIR/.model-${CWD_46_KEY}"
 
 # --- Test 47: model_to_context_window maps [1m] suffix and current-gen Sonnet correctly ---
 echo "Test 47: model_to_context_window maps [1m] suffix, current-gen Sonnet, and legacy models correctly"
@@ -1934,7 +1932,7 @@ fi
 # --- Test 48: Plain legacy Sonnet session model -> 200K window -> warning at 55% ---
 echo "Test 48: Plain legacy Sonnet (4.5) session model -> 200K window triggers warning at 55%"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
 
 CWD_48="$TEST_DIR/worktree-48"
 mkdir -p "$CWD_48"
@@ -1959,12 +1957,12 @@ else
     echo "  FAIL (expected a context warning, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR/.model-${CWD_48_KEY}"
+set_aside "$PLANS_DIR/.model-${CWD_48_KEY}"
 
 # --- Test 48b: Plain current-gen Sonnet (4.6) session model -> 1M window -> no false warning ---
 echo "Test 48b: Plain current-gen Sonnet (4.6) session model -> 1M window -> no warning at what used to be 55% of 200K"
 create_test_plan
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.model-*
 
 CWD_48B="$TEST_DIR/worktree-48b"
 mkdir -p "$CWD_48B"
@@ -1992,11 +1990,11 @@ else
     echo "  FAIL (expected no context warning, got: $(echo "$OUTPUT" | head -3))"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR/.model-${CWD_48B_KEY}"
+set_aside "$PLANS_DIR/.model-${CWD_48B_KEY}"
 
 # --- Test 49: enforce-clear with completed plan writes empty plan path in flag and state ---
 echo "Test 49: enforce-clear + completed plan -> empty plan path in flag and state"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_49="$TEST_DIR/worktree-49"
 mkdir -p "$CWD_49"
@@ -2054,7 +2052,7 @@ fi
 
 # --- Test 50: inject-plan plan-mode with existing state file (empty plan) -> ls -t fallback should NOT fire ---
 echo "Test 50: inject-plan plan-mode + state file with empty plan -> no ls -t fallback"
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_50="$TEST_DIR/worktree-50"
 mkdir -p "$CWD_50"
@@ -2092,7 +2090,7 @@ fi
 
 # --- Test 51: inject-plan context threshold updating flag to plan-completed writes empty plan path ---
 echo "Test 51: inject-plan context threshold + 0 pending -> plan-completed flag with empty plan path"
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_51="$TEST_DIR/worktree-51"
 mkdir -p "$CWD_51"
@@ -2142,7 +2140,7 @@ fi
 
 # --- Test 52: on-session-clear defense-in-depth: plan-completed flag with plan path still set -> no-plan path ---
 echo "Test 52: on-session-clear defense-in-depth: plan-completed flag with plan path -> no-plan path"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_52="$TEST_DIR/worktree-52"
 mkdir -p "$CWD_52"
@@ -2181,7 +2179,7 @@ fi
 
 # --- Test 53: on-plan-exit with completed plan writes empty plan path in flag ---
 echo "Test 53: on-plan-exit.sh with completed plan writes empty plan path"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_53="$TEST_DIR/worktree-53"
 mkdir -p "$CWD_53"
@@ -2224,7 +2222,7 @@ fi
 
 # --- Test 54: on-plan-exit with NO state file at all -> exits without writing reload flag ---
 echo 'Test 54: on-plan-exit with no state file -> no flag file created'
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 CWD_54="$TEST_DIR/worktree-54"
 mkdir -p "$CWD_54"
@@ -2257,7 +2255,7 @@ fi
 echo "Test 57: memory-restore: 1 fresh matching flag -> MEMORY RESTORE directive, flag consumed"
 CWD_57="$TEST_DIR/worktree-57"
 mkdir -p "$CWD_57"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_57="$PLANS_DIR/.pending-memory-restore-20260718T000000-11111"
 printf '%s\n%s\n%s\n%s\n' "sess_57" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_57" "checkpoint-57" > "$MR_FLAG_57"
 OUTPUT=$(echo '{"cwd":"'"$CWD_57"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -2276,7 +2274,7 @@ fi
 echo "Test 58: memory-restore: 2 matching flags -> collision directive lists both, asks, consumes both"
 CWD_58="$TEST_DIR/worktree-58"
 mkdir -p "$CWD_58"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_58A="$PLANS_DIR/.pending-memory-restore-20260718T000001-22222"
 MR_FLAG_58B="$PLANS_DIR/.pending-memory-restore-20260718T000002-33333"
 printf '%s\n%s\n%s\n%s\n' "sess_58a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_58" "checkpoint-58-older" > "$MR_FLAG_58A"
@@ -2302,7 +2300,7 @@ echo "Test 59: memory-restore: fresh flag for a DIFFERENT cwd -> untouched, no d
 CWD_59="$TEST_DIR/worktree-59"
 CWD_59_OTHER="$TEST_DIR/worktree-59-other"
 mkdir -p "$CWD_59" "$CWD_59_OTHER"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_59="$PLANS_DIR/.pending-memory-restore-20260718T000003-44444"
 printf '%s\n%s\n%s\n%s\n' "sess_59" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_59_OTHER" "checkpoint-59" > "$MR_FLAG_59"
 OUTPUT=$(echo '{"cwd":"'"$CWD_59"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -2314,13 +2312,13 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$MR_FLAG_59"
+set_aside "$MR_FLAG_59"
 
 # --- Test 60: memory-restore, stale matching flag -> consumed, no directive ---
 echo "Test 60: memory-restore: stale (>24h) matching flag -> consumed, no directive"
 CWD_60="$TEST_DIR/worktree-60"
 mkdir -p "$CWD_60"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_60="$PLANS_DIR/.pending-memory-restore-20260716T000000-55555"
 printf '%s\n%s\n%s\n%s\n' "sess_60" "2026-07-16T00:00:00+0900" "$CWD_60" "checkpoint-60" > "$MR_FLAG_60"
 touch -t 202607160000 "$MR_FLAG_60"
@@ -2338,7 +2336,7 @@ fi
 echo "Test 61: memory-restore: real write-reload-flag.sh output is discovered by the hook"
 CWD_61="$TEST_DIR/worktree-61"
 mkdir -p "$CWD_61"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # Fail-closed: without the substitution the writer would write into the
 # REAL ~/.claude/plans and arm a spurious restore on the user's next /clear.
 if patch_lib_common; then
@@ -2377,7 +2375,7 @@ fi
 echo "Test 62: memory-restore: two concurrent hooks, one flag -> exactly one directive (atomic claim)"
 CWD_62="$TEST_DIR/worktree-62"
 mkdir -p "$CWD_62"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
 MR_FLAG_62="$PLANS_DIR/.pending-memory-restore-20260718T000004-66666"
 printf '%s\n%s\n%s\n%s\n' "sess_62" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_62" "checkpoint-62" > "$MR_FLAG_62"
 OUT_62A_FILE="$TEST_DIR/t62-a.out"
@@ -2404,7 +2402,7 @@ fi
 echo "Test 63: memory-restore: collision with distinct mtimes -> newest first, headless picks newest"
 CWD_63="$TEST_DIR/worktree-63"
 mkdir -p "$CWD_63"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_63A="$PLANS_DIR/.pending-memory-restore-20260718T000005-77777"
 MR_FLAG_63B="$PLANS_DIR/.pending-memory-restore-20260718T000006-88888"
 printf '%s\n%s\n%s\n%s\n' "sess_63a" "2026-07-18T01:00:00+0900" "$CWD_63" "checkpoint-63-older" > "$MR_FLAG_63A"
@@ -2427,7 +2425,7 @@ echo "Test 64: memory-restore flag + plan reload flag -> output contains BOTH di
 create_test_plan
 CWD_64="$TEST_DIR/worktree-64"
 mkdir -p "$CWD_64"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.pending-reload-*
 CWD_64_KEY=$(compute_session_key "$CWD_64")
 CWD_64_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_64")
 printf '%s\n%s\n%s\n%s\n%s\n' "sess_64" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLANS_DIR/test-plan.md" > "$PLANS_DIR/.plan-state-${CWD_64_KEY_PLANSTATE}"
@@ -2444,14 +2442,14 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
+set_aside "$PLANS_DIR"/.pending-reload-* "$PLANS_DIR"/.plan-state-*
 
 # --- Test 65: memory-restore, >7-day foreign flag -> swept ---
 echo "Test 65: memory-restore: 8-day-old foreign-cwd flag -> swept, and the sweep is REPORTED (no restore directive)"
 CWD_65="$TEST_DIR/worktree-65"
 CWD_65_OTHER="$TEST_DIR/worktree-65-other"
 mkdir -p "$CWD_65" "$CWD_65_OTHER"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_65="$PLANS_DIR/.pending-memory-restore-20260710T000000-10101"
 printf '%s\n%s\n%s\n%s\n' "sess_65" "2026-07-10T00:00:00+0900" "$CWD_65_OTHER" "checkpoint-65" > "$MR_FLAG_65"
 touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_65"
@@ -2472,7 +2470,7 @@ fi
 echo "Test 66: memory-restore: fresh + stale matching flags -> single-checkpoint directive (no collision), both consumed"
 CWD_66="$TEST_DIR/worktree-66"
 mkdir -p "$CWD_66"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_66A="$PLANS_DIR/.pending-memory-restore-20260716T000001-20202"
 MR_FLAG_66B="$PLANS_DIR/.pending-memory-restore-20260718T000008-30303"
 printf '%s\n%s\n%s\n%s\n' "sess_66a" "2026-07-16T00:00:01+0900" "$CWD_66" "checkpoint-66-stale" > "$MR_FLAG_66A"
@@ -2571,7 +2569,7 @@ mkdir -p "$REPO_70"
 git -C "$REPO_70" init -q 2>/dev/null
 git -C "$REPO_70" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_70" worktree add -q --detach "$WT_70" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_70="$PLANS_DIR/.pending-memory-restore-20260815T000070-70070"
 printf '%s\n%s\n%s\n%s\n' "sess_70" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_70" "checkpoint-70" > "$MR_FLAG_70"
 OUTPUT=$(echo '{"cwd":"'"$REPO_70"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -2603,7 +2601,7 @@ mkdir -p "$CWD_71" "$CWD_71_FOREIGN"
 # fixture, not the code, would be carrying the false claim.
 git -C "$CWD_71_FOREIGN" init -q 2>/dev/null
 git -C "$CWD_71" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_71="$PLANS_DIR/.pending-memory-restore-20260815T000071-71071"
 printf '%s\n%s\n%s\n%s\n' "sess_71" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_71_FOREIGN" "checkpoint-71" > "$MR_FLAG_71"
 OUTPUT=$(echo '{"cwd":"'"$CWD_71"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -2629,7 +2627,7 @@ fi
 echo "Test 72: memory-restore: no flags at all -> no candidates block"
 CWD_72="$TEST_DIR/worktree-72"
 mkdir -p "$CWD_72"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OUTPUT=$(echo '{"cwd":"'"$CWD_72"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_not_contains "72" "$OUTPUT" "Checkpoint candidates" && \
    assert_not_contains "72" "$OUTPUT" "Checkpoint flags at this /clear" && \
@@ -2645,7 +2643,7 @@ fi
 echo "Test 73: memory-restore: 6 listable flags -> 5 rows listed, 1 counted as not shown"
 CWD_73="$TEST_DIR/worktree-73"
 mkdir -p "$CWD_73"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # Unreachable recorded paths, not foreign ones: a flag belonging to another
 # repository is now counted rather than listed, so it could not exercise the cap.
 for n in 1 2 3 4 5 6; do
@@ -2672,7 +2670,7 @@ echo "Test 74: memory-restore: only a stale foreign flag -> one-line report, fla
 CWD_74="$TEST_DIR/worktree-74"
 CWD_74_FOREIGN="$TEST_DIR/elsewhere-74"
 mkdir -p "$CWD_74" "$CWD_74_FOREIGN"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_74="$PLANS_DIR/.pending-memory-restore-20260815T000074-74074"
 printf '%s\n%s\n%s\n%s\n' "sess_74" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_74_FOREIGN" "checkpoint-74" > "$MR_FLAG_74"
 # Two days old: past the 24h freshness window, well inside the 7-day sweep. This
@@ -2700,7 +2698,7 @@ mkdir -p "$REPO_75"
 git -C "$REPO_75" init -q 2>/dev/null
 git -C "$REPO_75" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_75" worktree add -q --detach "$WT_75" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # The key is printed ONLY for a `same repository, selectable` row, so this scenario
 # must be same-repo-but-not-matching. With a matching flag no key is printed at all,
 # the assertion below could not fail, and the allowlist it covers would never run.
@@ -2727,7 +2725,7 @@ fi
 echo "Test 76: memory-restore: flag with no label -> path and key stay in their own columns"
 CWD_76="$TEST_DIR/worktree-76"
 mkdir -p "$CWD_76"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # write-reload-flag.sh takes the label as an OPTIONAL argument, so line 4 is
 # legitimately empty. With a tab-delimited row bash collapses the two adjacent
 # delimiters (tab is IFS whitespace) and every later field shifts left by one:
@@ -2751,7 +2749,7 @@ fi
 echo "Test 77: memory-restore: matching stale flag -> reported as matched-and-consumed, not as 'none matched'"
 CWD_77="$TEST_DIR/worktree-77"
 mkdir -p "$CWD_77"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_77="$PLANS_DIR/.pending-memory-restore-20260816T000077-77077"
 printf '%s\n%s\n%s\n%s\n' "sess_77" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_77" "checkpoint-77" > "$MR_FLAG_77"
 T77_STAMP=$(date -v-2d +%Y%m%d%H%M 2>/dev/null) || T77_STAMP=$(date -d '2 days ago' +%Y%m%d%H%M)
@@ -2778,7 +2776,7 @@ fi
 echo "Test 78: memory-restore: unclaimable matching flag -> reported in context, kept on disk"
 CWD_78="$TEST_DIR/worktree-78"
 mkdir -p "$CWD_78"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_78="$PLANS_DIR/.pending-memory-restore-20260816T000078-78078"
 printf '%s\n%s\n%s\n%s\n' "sess_78" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_78" "checkpoint-78" > "$MR_FLAG_78"
 # A read-only PLANS_DIR makes the claiming `mv` fail. stderr is NOT a channel into
@@ -2809,7 +2807,7 @@ fi
 echo "Test 79: memory-restore: removed-worktree path -> scope unverifiable, no false repository claim"
 CWD_79="$TEST_DIR/worktree-79"
 mkdir -p "$CWD_79"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_79="$PLANS_DIR/.pending-memory-restore-20260816T000079-79079"
 # The directory is never created: this is a checkpoint armed inside a worktree that
 # has since been removed, which is the headline scenario for this whole thread.
@@ -2839,7 +2837,7 @@ mkdir -p "$REPO_80" "$FOREIGN_80"
 git -C "$REPO_80" init -q 2>/dev/null
 git -C "$REPO_80" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_80" worktree add -q --detach "$WT_80" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # The offerable row is the OLDEST, so ordering by time alone drops it past the cap
 # while the directive still tells the agent to offer "those rows only".
 MR_FLAG_80="$PLANS_DIR/.pending-memory-restore-20260816T000080-80080"
@@ -2872,7 +2870,7 @@ mkdir -p "$REPO_81"
 git -C "$REPO_81" init -q 2>/dev/null
 git -C "$REPO_81" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_81" worktree add -q --detach "$WT_81" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # Two genuine matches put the run on the ask-which-one path, which is the ONLY
 # consumer of the match-row selection — with a single match or none, a
 # misclassified row has no observable effect and this test would prove nothing.
@@ -2931,7 +2929,7 @@ fi
 echo "Test 83: memory-restore: cwd with a trailing space still matches (IFS= read, not plain read)"
 CWD_83="$TEST_DIR/worktree 83 "
 mkdir -p "$CWD_83"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_83="$PLANS_DIR/.pending-memory-restore-20260816T000083-83083"
 # A bare `read` into one variable strips leading and trailing IFS whitespace, which
 # the `sed -n '3p'` it replaced did not. The flag would stop matching, and the
@@ -2954,7 +2952,7 @@ fi
 echo "Test 84: memory-restore: flag with no recorded path -> malformed, not 'path unreachable'"
 CWD_84="$TEST_DIR/worktree-84"
 mkdir -p "$CWD_84"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_84="$PLANS_DIR/.pending-memory-restore-20260816T000084-84084"
 printf 'only-one-line\n' > "$MR_FLAG_84"
 OUTPUT=$(echo '{"cwd":"'"$CWD_84"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -2972,7 +2970,7 @@ fi
 echo "Test 85: memory-restore: unclaimable matching flag -> reported, Signal stays fresh-start"
 CWD_85="$TEST_DIR/worktree-85"
 mkdir -p "$CWD_85"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_85="$PLANS_DIR/.pending-memory-restore-20260816T000085-85085"
 printf '%s\n%s\n%s\n%s\n' "sess_85" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_85" "checkpoint-85" > "$MR_FLAG_85"
 if [[ "$(id -u)" == "0" ]]; then
@@ -3004,7 +3002,7 @@ echo "Test 86: memory-restore: flag recorded under a symlinked spelling still MA
 CWD_86="$TEST_DIR/worktree-86"
 mkdir -p "$CWD_86"
 CWD_86_PHYS=$(cd "$CWD_86" && pwd -P)
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_86="$PLANS_DIR/.pending-memory-restore-20260816T000086-86086"
 # The writer records its logical $PWD; the hook receives whatever spelling the
 # session has. A raw string compare misses when they differ — which is the exact
@@ -3031,7 +3029,7 @@ echo "Test 87: memory-restore: stat failure treats the flag as fresh and keeps i
 CWD_87="$TEST_DIR/worktree-87"
 CWD_87_OTHER="$TEST_DIR/elsewhere-87"
 mkdir -p "$CWD_87" "$CWD_87_OTHER" "$TEST_DIR/shim-87"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_87="$PLANS_DIR/.pending-memory-restore-20260816T000087-87087"
 printf '%s\n%s\n%s\n%s\n' "sess_87" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_87_OTHER" "checkpoint-87" > "$MR_FLAG_87"
 touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_87"
@@ -3059,7 +3057,7 @@ mkdir -p "$REPO_88"
 git -C "$REPO_88" init -q 2>/dev/null
 git -C "$REPO_88" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_88" worktree add -q --detach "$WT_88" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_88" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_88" "checkpoint-88-offerable" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000088-88088"
 for n in 1 2 3 4 5; do
@@ -3080,7 +3078,7 @@ fi
 echo "Test 89: memory-restore: unreadable flag file -> counted as unreadable, not 'malformed'"
 CWD_89="$TEST_DIR/worktree-89"
 mkdir -p "$CWD_89"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_89="$PLANS_DIR/.pending-memory-restore-20260816T000089-89089"
 printf '%s\n%s\n%s\n%s\n' "sess_89" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_89" "checkpoint-89" > "$MR_FLAG_89"
 if [[ "$(id -u)" == "0" ]]; then
@@ -3111,7 +3109,7 @@ mkdir -p "$REPO_90"
 git -C "$REPO_90" init -q 2>/dev/null
 git -C "$REPO_90" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_90" worktree add -q --detach "$WT_90" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # Seven newer selectable rows would fill the five-row cap on time alone. Their
 # flags SURVIVE and are offered again at the next /clear; the expired matched flag
 # is deleted by this very run, so its label is the only thing left of it.
@@ -3138,7 +3136,7 @@ fi
 echo "Test 91: memory-restore: mode-600 PLANS_DIR is reported, not silently treated as having no flags"
 CWD_91="$TEST_DIR/worktree-91"
 mkdir -p "$CWD_91"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_91="$PLANS_DIR/.pending-memory-restore-20260816T000091-91091"
 printf '%s\n%s\n%s\n%s\n' "sess_91" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_91" "checkpoint-91" > "$MR_FLAG_91"
 if [[ "$(id -u)" == "0" ]]; then
@@ -3168,7 +3166,7 @@ fi
 echo "Test 92: memory-restore: unresolvable hook cwd -> withheld, never a repository claim"
 CWD_92="$TEST_DIR/worktree-92"
 mkdir -p "$CWD_92"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_92="$PLANS_DIR/.pending-memory-restore-20260816T000092-92092"
 printf '%s\n%s\n%s\n%s\n' "sess_92" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_92" "checkpoint-92" > "$MR_FLAG_92"
 # scope_key returns empty for the hook's OWN cwd here, so no flag can be checked
@@ -3208,7 +3206,7 @@ mkdir -p "$REPO_93"
 git -C "$REPO_93" init -q 2>/dev/null
 git -C "$REPO_93" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_93" worktree add -q --detach "$WT_93" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_93=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
 STAMP_93=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
 for n in 1 2 3 4 5; do
@@ -3248,7 +3246,7 @@ OTHER_94="$TEST_DIR/other-client-repo-94"
 mkdir -p "$REPO_94" "$OTHER_94"
 git -C "$OTHER_94" init -q 2>/dev/null
 git -C "$REPO_94" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # A label is free text people fill with a ticket key or a codename, so it is treated
 # as identifying material, not as a description.
 MR_FLAG_94="$PLANS_DIR/.pending-memory-restore-20260816T000094-94094"
@@ -3284,7 +3282,7 @@ PLAIN_95_HERE="$TEST_DIR/plain-95-here"
 PLAIN_95_THERE="$TEST_DIR/plain-95-there"
 PLAIN_95_THERE2="$TEST_DIR/plain-95-there-b"
 mkdir -p "$PLAIN_95_HERE" "$PLAIN_95_THERE" "$PLAIN_95_THERE2"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_95="$PLANS_DIR/.pending-memory-restore-20260816T000095-95095"
 printf '%s\n%s\n%s\n%s\n' "sess_95" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PLAIN_95_THERE" "checkpoint-95" > "$MR_FLAG_95"
 # Two, so the reported number is load-bearing rather than a constant that happens to
@@ -3320,7 +3318,7 @@ echo "Test 96: memory-restore: git refusing to answer -> withheld, never a repos
 REPO_96="$TEST_DIR/repo-96"
 mkdir -p "$REPO_96/sub" "$TEST_DIR/shim-96"
 git -C "$REPO_96" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_96="$PLANS_DIR/.pending-memory-restore-20260816T000096-96096"
 printf '%s\n%s\n%s\n%s\n' "sess_96" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_96/sub" "checkpoint-96" > "$MR_FLAG_96"
 printf '#!/bin/sh\nexit 128\n' > "$TEST_DIR/shim-96/git"
@@ -3369,7 +3367,7 @@ else
   
   
     OUT_RECOVERED_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
-    rm -rf "$PLANS_97"
+    set_aside "$PLANS_97"
     OUT_GONE_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
     if assert_contains "97" "$OUTPUT" "could NOT be inspected" && \
        assert_not_contains "97" "$OUT_GONE_97" "could NOT be inspected" && \
@@ -3393,7 +3391,7 @@ mkdir -p "$REPO_98" "$TEST_DIR/shim-98"
 git -C "$REPO_98" init -q 2>/dev/null
 git -C "$REPO_98" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_98" worktree add -q --detach "$WT_98" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # One matching flag (priority 1) and one same-repository flag (priority 3): the
 # order between them is what the replaced sort key decided.
 # The glob returns these in filename order, and the SELECTABLE one is named first on
@@ -3430,7 +3428,7 @@ echo "Test 99: memory-restore: a single match still carries the notes block"
 REPO_99="$TEST_DIR/repo-99"
 mkdir -p "$REPO_99"
 git -C "$REPO_99" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_99" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_99" "checkpoint-99" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000099-99099"
 printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000099-99098"
@@ -3451,7 +3449,7 @@ echo "Test 100: memory-restore: several matches still carry the notes block"
 REPO_100="$TEST_DIR/repo-100"
 mkdir -p "$REPO_100"
 git -C "$REPO_100" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_100a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_100" "checkpoint-100-a" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000100-10001"
 printf '%s\n%s\n%s\n%s\n' "sess_100b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_100" "checkpoint-100-b" \
@@ -3484,7 +3482,7 @@ if [[ "$(id -u)" == "0" ]]; then
 else
     CWD_101="$TEST_DIR/worktree-101"
     mkdir -p "$CWD_101"
-    rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-*
     MR_FLAG_101="$PLANS_DIR/.pending-memory-restore-20260816T000101-10101"
     printf '%s\n%s\n%s\n%s\n' "sess_101" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_101" "checkpoint-101" > "$MR_FLAG_101"
     trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
@@ -3507,7 +3505,7 @@ fi
 echo "Test 102: memory-restore: expired-matched rows past the cap are counted as GONE labels"
 CWD_102="$TEST_DIR/worktree-102"
 mkdir -p "$CWD_102"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_102=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
 STAMP_102=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
 for n in 1 2 3 4 5 6 7; do
@@ -3532,11 +3530,11 @@ fi
 echo "Test 103: memory-restore: dangling symlink and directory sharing the flag prefix are counted"
 CWD_103="$TEST_DIR/worktree-103"
 mkdir -p "$CWD_103"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 ln -s "$TEST_DIR/never-created-103" "$PLANS_DIR/.pending-memory-restore-20260816T000103-10301"
 mkdir -p "$PLANS_DIR/.pending-memory-restore-20260816T000103-10302"
 OUTPUT=$(echo '{"cwd":"'"$CWD_103"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-rm -rf "$PLANS_DIR/.pending-memory-restore-20260816T000103-10302" "$PLANS_DIR/.pending-memory-restore-20260816T000103-10301"
+set_aside "$PLANS_DIR/.pending-memory-restore-20260816T000103-10302" "$PLANS_DIR/.pending-memory-restore-20260816T000103-10301"
 if assert_contains "103" "$OUTPUT" "2 matched the flag name but could NOT be opened"; then
     echo "  PASS"
     PASS=$((PASS + 1))
@@ -3552,12 +3550,13 @@ fi
 echo "Test 104: memory-restore: a lost race is reported as a race, not as a permissions fault"
 CWD_104="$TEST_DIR/worktree-104"
 mkdir -p "$CWD_104" "$TEST_DIR/shim-104"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_104" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_104" "checkpoint-104" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000104-10401"
 # Stand in for the concurrent hook: remove the flag, then fail, so the claim finds
 # the file gone rather than still present.
-printf '#!/bin/sh\nrm -f "$1"\nexit 1\n' > "$TEST_DIR/shim-104/mv"
+REAL_MV_104=$(command -v mv)
+printf '#!/bin/sh\n%s -- "$1" "$(mktemp -d)"\nexit 1\n' "$REAL_MV_104" > "$TEST_DIR/shim-104/mv"
 chmod +x "$TEST_DIR/shim-104/mv"
 OUTPUT=$(echo '{"cwd":"'"$CWD_104"'"}' | PATH="$TEST_DIR/shim-104:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
 if assert_contains "104" "$OUTPUT" "claimed concurrently by another session" && \
@@ -3580,7 +3579,7 @@ if [[ "$(id -u)" == "0" ]]; then
 else
     CWD_105="$TEST_DIR/worktree-105"
     mkdir -p "$CWD_105"
-    rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-*
     printf '%s\n%s\n%s\n%s\n' "sess_105" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_105" "checkpoint-105" \
         > "$PLANS_DIR/.pending-memory-restore-20260816T000105-10501"
     trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
@@ -3601,7 +3600,7 @@ fi
 echo "Test 106: memory-restore: an over-long label is cut and marked, not printed whole"
 CWD_106="$TEST_DIR/worktree-106"
 mkdir -p "$CWD_106"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 LABEL_106=$(printf 'x%.0s' $(seq 1 260))
 printf '%s\n%s\n%s\n%s\n' "sess_106" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_106" "$LABEL_106" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000106-10601"
@@ -3627,7 +3626,7 @@ mkdir -p "$REPO_107"
 git -C "$REPO_107" init -q 2>/dev/null
 git -C "$REPO_107" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_107" worktree add -q --detach "$WT_107" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_107="$PLANS_DIR/.pending-memory-restore-20260816T000107-10701"
 printf '%s\n%s\n%s\n%s\n' "sess_107" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_107" "checkpoint-107" > "$MR_FLAG_107"
 touch -t "$(date -v-25H +%Y%m%d%H%M 2>/dev/null || date -d '25 hours ago' +%Y%m%d%H%M)" "$MR_FLAG_107"
@@ -3656,7 +3655,7 @@ mkdir -p "$REPO_108"
 git -C "$REPO_108" init -q 2>/dev/null
 git -C "$REPO_108" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_108" worktree add -q --detach "$WT_108" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf 'only-one-line\n' > "$PLANS_DIR/.pending-memory-restore-20260816T000108-10801"
 REPO_108_PHYS=$(cd "$REPO_108" && pwd -P)
 OUTPUT=$(echo '{"cwd":"'"$WT_108"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -3675,7 +3674,7 @@ echo "Test 109: memory-restore: matched rows past the cap are not counted as wit
 REPO_109="$TEST_DIR/repo-109"
 mkdir -p "$REPO_109"
 git -C "$REPO_109" init -q 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 for n in 1 2 3 4 5 6 7 8; do
     printf '%s\n%s\n%s\n%s\n' "sess_109_$n" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_109" "checkpoint-109-$n" \
         > "$PLANS_DIR/.pending-memory-restore-20260816T000109-1090$n"
@@ -3706,12 +3705,13 @@ fi
 echo "Test 110: memory-restore: a swept flag lost to a concurrent hook is not counted as removed"
 CWD_110="$TEST_DIR/worktree-110"
 mkdir -p "$CWD_110" "$TEST_DIR/shim-110"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_110="$PLANS_DIR/.pending-memory-restore-20260816T000110-11001"
 printf '%s\n%s\n%s\n%s\n' "sess_110" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-110" "checkpoint-110" > "$MR_FLAG_110"
 touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$MR_FLAG_110"
 # Stand in for the concurrent hook: take the file, then fail, so the claim finds it gone.
-printf '#!/bin/sh\nrm -f "$1"\nexit 1\n' > "$TEST_DIR/shim-110/mv"
+REAL_MV_110=$(command -v mv)
+printf '#!/bin/sh\n%s -- "$1" "$(mktemp -d)"\nexit 1\n' "$REAL_MV_110" > "$TEST_DIR/shim-110/mv"
 chmod +x "$TEST_DIR/shim-110/mv"
 OUTPUT=$(echo '{"cwd":"'"$CWD_110"'"}' | PATH="$TEST_DIR/shim-110:$PATH" bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
 if assert_not_contains "110" "$OUTPUT" "removed as older than 7 days"; then
@@ -3731,7 +3731,7 @@ fi
 echo "Test 111: memory-restore: stranded claim files, interrupted writes and in-flight files are told apart"
 CWD_111="$TEST_DIR/worktree-111"
 mkdir -p "$CWD_111"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_111=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 MID_111=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 GONE_111="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11101"
@@ -3758,7 +3758,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$KEPT_111" "$FLIGHT_111"
+set_aside "$KEPT_111" "$FLIGHT_111"
 
 # --- Test 119: litter this hook could not remove must not vanish from the report ---
 # `rm` needs write permission on the DIRECTORY. Counting only the successes let a
@@ -3771,7 +3771,7 @@ if [[ "$(id -u)" == "0" ]]; then
 else
     CWD_119="$TEST_DIR/worktree-119"
     mkdir -p "$CWD_119"
-    rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
     STUCK_119="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11901"
     printf 'k\n2026-01-01T00:00:00+0900\n%s\nIMPORTANT-119\n' "$CWD_119" > "$STUCK_119"
     touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_119"
@@ -3789,7 +3789,7 @@ else
         echo "  FAIL"
         FAIL=$((FAIL + 1))
     fi
-    rm -f "$STUCK_119"
+    set_aside "$STUCK_119"
 fi
 
 # --- Test 112: the candidates block survives without sort(1) or awk(1) ---
@@ -3804,7 +3804,7 @@ mkdir -p "$REPO_112" "$TEST_DIR/shim-112"
 git -C "$REPO_112" init -q 2>/dev/null
 git -C "$REPO_112" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_112" worktree add -q --detach "$WT_112" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_112a" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_112" "checkpoint-112-a" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000112-11201"
 printf '%s\n%s\n%s\n%s\n' "sess_112b" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$REPO_112" "checkpoint-112-b" \
@@ -3843,7 +3843,7 @@ mkdir -p "$WORK_113"
 git -C "$WORK_113" init -q --separate-git-dir="$GITDIR_113" 2>/dev/null
 git -C "$WORK_113" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$WORK_113" worktree add -q --detach "$WT_113" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_113="$PLANS_DIR/.pending-memory-restore-20260816T000113-11301"
 printf '%s\n%s\n%s\n%s\n' "sess_113" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_113" "checkpoint-113" > "$MR_FLAG_113"
 OUTPUT=$(echo '{"cwd":"'"$WORK_113"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -3906,7 +3906,7 @@ fi
 echo "Test 115: memory-restore: an undeterminable cwd is reported, not passed over in silence"
 CWD_115="$TEST_DIR/gone-115"
 mkdir -p "$CWD_115"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_115="$PLANS_DIR/.pending-memory-restore-20260816T000115-11501"
 printf '%s\n%s\n%s\n%s\n' "sess_115" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_115" "checkpoint-115" > "$MR_FLAG_115"
 OUTPUT=$( cd "$CWD_115" && rmdir "$CWD_115" && echo '{}' | env -u PWD /bin/bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null )
@@ -3986,7 +3986,7 @@ fi
 echo "Test 117: memory-restore: a matched flag with no label and no timestamp is still offered"
 CWD_117="$TEST_DIR/worktree-117"
 mkdir -p "$CWD_117"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_117" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_117" "checkpoint-117-good" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000117-11701"
 # Truncated flag: line 2 (timestamp) and line 4 (label) both blank. It still matched,
@@ -4022,7 +4022,7 @@ fi
 echo "Test 118: memory-restore: a failing date(1) still lists every counted match"
 CWD_118="$TEST_DIR/worktree-118"
 mkdir -p "$CWD_118" "$TEST_DIR/shim-118"
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "sess_118" "2026-08-16T00:00:00+0900" "$CWD_118" "checkpoint-118" \
     > "$PLANS_DIR/.pending-memory-restore-20260816T000118-11801"
 printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/shim-118/date"
@@ -4057,7 +4057,7 @@ git -C "$REPO_120" init -q 2>/dev/null
 git -C "$REPO_120" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_120" worktree add -q --detach "$WTA_120" HEAD 2>/dev/null
 git -C "$REPO_120" worktree add -q --detach "$WTB_120" HEAD 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_120=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
 STAMP_120=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
 for n in 1 2 3 4 5; do
@@ -4098,7 +4098,7 @@ REPO_121="$TEST_DIR/repo-121"
 mkdir -p "$REPO_121"
 git -C "$REPO_121" init -q 2>/dev/null
 git -C "$REPO_121" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
-rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_121=$(date -v-30H +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '30 hours ago' +%Y-%m-%dT%H:%M:%S%z)
 STAMP_121=$(date -v-30H +%Y%m%d%H%M 2>/dev/null || date -d '30 hours ago' +%Y%m%d%H%M)
 for n in 1 2 3; do
@@ -4169,7 +4169,7 @@ fi
 echo "Test 123: memory-restore: litter whose age cannot be established is reported, not skipped as in-flight"
 CWD_123="$TEST_DIR/worktree-123"
 mkdir -p "$CWD_123" "$TEST_DIR/fakebin-123"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 # A `stat` that always fails is the real shape of this case. An 8-day-old mtime makes
 # the fixture sweepable, so the assertion that it SURVIVES also pins that nothing is
 # deleted on an age nobody established.
@@ -4194,8 +4194,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$UNMEASURED_123"
-rm -rf "$TEST_DIR/fakebin-123"
+set_aside "$UNMEASURED_123"
 
 # --- Test 124: a NON-EMPTY interrupted write that gets swept destroyed a pointer ---
 # `write-reload-flag.sh` writes the whole body into the temp file and only then renames
@@ -4204,7 +4203,7 @@ rm -rf "$TEST_DIR/fakebin-123"
 echo "Test 124: memory-restore: sweeping a non-empty interrupted write is reported as a destroyed pointer"
 CWD_124="$TEST_DIR/worktree-124"
 mkdir -p "$CWD_124"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_124=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 BODY_124="$PLANS_DIR/.mr-tmp.99999.body-12401"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-124\n' "$CWD_124" > "$BODY_124"
@@ -4226,7 +4225,7 @@ fi
 echo "Test 125: memory-restore: a surviving non-empty interrupted write is reported as still holding a body"
 CWD_125="$TEST_DIR/worktree-125"
 mkdir -p "$CWD_125"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 MID_125=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 KEPT_125="$PLANS_DIR/.mr-tmp.99999.body-12501"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-125\n' "$CWD_125" > "$KEPT_125"
@@ -4243,7 +4242,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$KEPT_125"
+set_aside "$KEPT_125"
 
 # --- Test 126: an EMPTY interrupted write must still be reported as holding nothing ---
 # Guards the opposite over-correction: testing the file must not turn into claiming a
@@ -4252,7 +4251,7 @@ rm -f "$KEPT_125"
 echo "Test 126: memory-restore: an empty interrupted write is still reported as holding no checkpoint"
 CWD_126="$TEST_DIR/worktree-126"
 mkdir -p "$CWD_126"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 MID_126=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 EMPTY_126="$PLANS_DIR/.mr-tmp.99999.empty-12601"
 printf '' > "$EMPTY_126"
@@ -4269,7 +4268,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$EMPTY_126"
+set_aside "$EMPTY_126"
 
 # --- Test 127: claim-versus-temp is decided by the basename, not the whole path ---
 # A whole-path test also fires on any ANCESTOR directory named `.mr-claimed.*`, filing
@@ -4294,7 +4293,6 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$TMP_127"
 
 # --- Test 128: a FUTURE mtime is a file in flight, not a file of unknown age ---
 # `_mr_now` is sampled once, before a per-flag scan that forks several times. A
@@ -4305,7 +4303,7 @@ rm -f "$TMP_127"
 echo "Test 128: memory-restore: a future mtime takes the in-flight exit, not the unexamined one"
 CWD_128="$TEST_DIR/worktree-128"
 mkdir -p "$CWD_128"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 FUTURE_128=$(date -v+30S +%Y%m%d%H%M.%S 2>/dev/null || date -d '30 seconds' +%Y%m%d%H%M.%S)
 LIVE_128="$PLANS_DIR/.mr-tmp.99999.live-12801"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-128\n' "$CWD_128" > "$LIVE_128"
@@ -4321,7 +4319,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$LIVE_128"
+set_aside "$LIVE_128"
 
 # --- Test 129: sweeping an EMPTY interrupted write must not be reported as still there ---
 # One counter for both outcomes made the hook delete the file and then tell the reader
@@ -4329,7 +4327,7 @@ rm -f "$LIVE_128"
 echo "Test 129: memory-restore: a swept empty interrupted write is reported as removed, not as still on disk"
 CWD_129="$TEST_DIR/worktree-129"
 mkdir -p "$CWD_129"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_129=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 SWEPT_129="$PLANS_DIR/.mr-tmp.99999.empty-12901"
 printf '' > "$SWEPT_129"
@@ -4353,7 +4351,7 @@ fi
 echo "Test 130: memory-restore: a mtime far ahead of the clock is reported, not read as in-flight"
 CWD_130="$TEST_DIR/worktree-130"
 mkdir -p "$CWD_130"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 FAR_130=$(date -v+2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days' +%Y%m%d%H%M)
 FAR_FILE_130="$PLANS_DIR/.mr-claimed.99999.20991231T235959-13001"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-130\n' "$CWD_130" > "$FAR_FILE_130"
@@ -4370,7 +4368,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$FAR_FILE_130"
+set_aside "$FAR_FILE_130"
 
 # --- Test 131: a failing clock must not silence the whole sweep ---
 # `_mr_now` is forced to 0 when `date +%s` gives a non-number. Reading that as "every file
@@ -4380,7 +4378,7 @@ rm -f "$FAR_FILE_130"
 echo "Test 131: memory-restore: a failing date(1) does not silence the litter sweep"
 CWD_131="$TEST_DIR/worktree-131"
 mkdir -p "$CWD_131" "$TEST_DIR/fakebin-131"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 cat > "$TEST_DIR/fakebin-131/date" <<'FAKEDATE'
 #!/bin/sh
 for a in "$@"; do
@@ -4403,8 +4401,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$CLAIM_131"
-rm -rf "$TEST_DIR/fakebin-131"
+set_aside "$CLAIM_131"
 
 # --- Test 132: the candidates-block tail reports litter too ---
 # The tail renders only when the flag scan produced a row, so a sweep holding ONLY litter
@@ -4414,7 +4411,7 @@ rm -rf "$TEST_DIR/fakebin-131"
 echo "Test 132: memory-restore: litter is reported inside the candidates block, not only in the fallback"
 CWD_132="$TEST_DIR/worktree-132"
 mkdir -p "$CWD_132"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 MR_FLAG_132="$PLANS_DIR/.pending-memory-restore-20260718T000000-13201"
 printf '%s\n%s\n%s\n%s\n' "sess_132" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_132" "checkpoint-132" > "$MR_FLAG_132"
 MID_132=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
@@ -4431,7 +4428,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$BODY_132"
+set_aside "$BODY_132"
 
 # --- Test 133: a swept claim file alone must reach the directive ---
 # The `elif` that decides whether a directive is emitted lists every counter by name.
@@ -4440,7 +4437,7 @@ rm -f "$BODY_132"
 echo "Test 133: memory-restore: a swept stranded claim file alone still produces a directive"
 CWD_133="$TEST_DIR/worktree-133"
 mkdir -p "$CWD_133"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_133=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 GONE_133="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13301"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-133\n' "$CWD_133" > "$GONE_133"
@@ -4460,7 +4457,7 @@ fi
 echo "Test 134: memory-restore: a surviving stranded claim file alone still produces a directive"
 CWD_134="$TEST_DIR/worktree-134"
 mkdir -p "$CWD_134"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 MID_134=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 KEPT_134="$PLANS_DIR/.mr-claimed.99999.20260810T000000-13401"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-134\n' "$CWD_134" > "$KEPT_134"
@@ -4476,7 +4473,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$KEPT_134"
+set_aside "$KEPT_134"
 
 # --- Test 135: one file with no establishable age must not end the sweep ---
 # The unmeasured branch leaves the iteration with `continue`. A `break` there would look
@@ -4485,7 +4482,7 @@ rm -f "$KEPT_134"
 echo "Test 135: memory-restore: an unmeasurable file does not abort the rest of the sweep"
 CWD_135="$TEST_DIR/worktree-135"
 mkdir -p "$CWD_135" "$TEST_DIR/fakebin-135"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 REAL_STAT_135=$(command -v stat)
 cat > "$TEST_DIR/fakebin-135/stat" <<FAKESTAT
 #!/bin/sh
@@ -4514,8 +4511,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$NOSTAT_135"
-rm -rf "$TEST_DIR/fakebin-135"
+set_aside "$NOSTAT_135"
 
 # --- Test 136: the candidates-block tail carries every litter outcome, not one ---
 # The tail renders only when the flag scan produced a row, and its wording differs from
@@ -4524,7 +4520,7 @@ rm -rf "$TEST_DIR/fakebin-135"
 echo "Test 136: memory-restore: every litter outcome is worded in the candidates block too"
 CWD_136="$TEST_DIR/worktree-136"
 mkdir -p "$CWD_136"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 MR_FLAG_136="$PLANS_DIR/.pending-memory-restore-20260718T000000-13601"
 printf '%s\n%s\n%s\n%s\n' "sess_136" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_136" "checkpoint-136" > "$MR_FLAG_136"
 OLD_136=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
@@ -4563,7 +4559,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$CKEPT_136" "$TKEPT_136"
+set_aside "$CKEPT_136" "$TKEPT_136"
 
 # --- Test 137: the candidates block reports litter it could not remove ---
 # Test 136 cannot reach this sentence: making `rm` fail needs a non-writable plans
@@ -4576,7 +4572,7 @@ if [[ "$(id -u)" == "0" ]]; then
 else
     CWD_137="$TEST_DIR/worktree-137"
     mkdir -p "$CWD_137"
-    rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
     MR_FLAG_137="$PLANS_DIR/.pending-memory-restore-20260718T000000-13701"
     printf '%s\n%s\n%s\n%s\n' "sess_137" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_137" "checkpoint-137" > "$MR_FLAG_137"
     STUCK_137="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13702"
@@ -4597,7 +4593,7 @@ else
         echo "  FAIL"
         FAIL=$((FAIL + 1))
     fi
-    rm -f "$STUCK_137" "$MR_FLAG_137"
+    set_aside "$STUCK_137" "$MR_FLAG_137"
 fi
 
 # --- Test 138: the candidates block reports litter whose age it could not establish ---
@@ -4607,7 +4603,7 @@ fi
 echo "Test 138: memory-restore: litter with no establishable age is reported inside the candidates block"
 CWD_138="$TEST_DIR/worktree-138"
 mkdir -p "$CWD_138" "$TEST_DIR/fakebin-138"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 REAL_STAT_138=$(command -v stat)
 cat > "$TEST_DIR/fakebin-138/stat" <<FAKESTAT
 #!/bin/sh
@@ -4634,8 +4630,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$NOSTAT_138"
-rm -rf "$TEST_DIR/fakebin-138"
+set_aside "$NOSTAT_138"
 
 # --- Test 139: scope_key() must not answer from an inherited GIT_DIR ---
 # `rev-parse` reads the environment before it looks at `-C`, so an exported GIT_DIR makes
@@ -4680,7 +4675,7 @@ fi
 echo "Test 140: memory-restore: a matching flag with no establishable age is reported, not restored or consumed"
 CWD_140="$TEST_DIR/worktree-140"
 mkdir -p "$CWD_140" "$TEST_DIR/fakebin-140"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/fakebin-140/stat"
 chmod +x "$TEST_DIR/fakebin-140/stat"
 FLAG_140="$PLANS_DIR/.pending-memory-restore-20230101T000000-14001"
@@ -4700,8 +4695,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$FLAG_140"
-rm -rf "$TEST_DIR/fakebin-140"
+set_aside "$FLAG_140"
 
 # --- Test 141: entries that are not plain regular files are reported, never swept ---
 # `-f` and `-s` follow a symlink while `stat` does not, so a link to a live file read as
@@ -4713,8 +4707,7 @@ rm -rf "$TEST_DIR/fakebin-140"
 echo "Test 141: memory-restore: symlinks and non-regular entries are reported, not swept or misreported"
 CWD_141="$TEST_DIR/worktree-141"
 mkdir -p "$CWD_141"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-rm -rf "$PLANS_DIR"/.mr-tmp.99999.adir-14103
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_141=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 TARGET_141="$TEST_DIR/live-target-141"
 printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-141\n' "$CWD_141" > "$TARGET_141"
@@ -4738,8 +4731,8 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$LINK_141" "$DANGLE_141" "$TARGET_141"
-rm -rf "$ADIR_141"
+set_aside "$LINK_141" "$DANGLE_141"
+set_aside "$ADIR_141"
 
 # --- Test 142: a legend must not describe a row the cap kept off screen ---
 # The two hidden-row counters exist so a legend never talks about a row nobody can see.
@@ -4749,7 +4742,7 @@ rm -rf "$ADIR_141"
 echo "Test 142: memory-restore: the scope-unverifiable legend fires only when such a row is on screen"
 CWD_142="$TEST_DIR/worktree-142"
 mkdir -p "$CWD_142"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 OLD_142=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 for n in 1 2 3 4 5; do
     F="$PLANS_DIR/.pending-memory-restore-2026081600014${n}-1420${n}"
@@ -4772,7 +4765,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
 
 # --- Test 143: a claim this hook could not delete is reported, not asserted away ---
 # `mv` then `rm` is the one-shot contract. The `rm` was unchecked, so a failure left the
@@ -4781,7 +4774,7 @@ rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
 echo "Test 143: memory-restore: a flag claimed but not deleted is reported as surviving"
 CWD_143="$TEST_DIR/worktree-143"
 mkdir -p "$CWD_143" "$TEST_DIR/fakebin-143"
-rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 REAL_RM_143=$(command -v rm)
 cat > "$TEST_DIR/fakebin-143/rm" <<FAKERM
 #!/bin/sh
@@ -4803,8 +4796,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-rm -rf "$TEST_DIR/fakebin-143"
-/bin/rm -f "$PLANS_DIR"/.mr-claimed.* "$FLAG_143"
+set_aside "$PLANS_DIR"/.mr-claimed.* "$FLAG_143"
 
 # --- Test 144: the seven-day sweep must not count a removal that failed ---
 # Sibling of 143 on the other `rm`. A non-matching flag past seven days is claimed and
@@ -4814,7 +4806,7 @@ rm -rf "$TEST_DIR/fakebin-143"
 echo "Test 144: memory-restore: a sweep whose delete failed is not counted as removed"
 CWD_144="$TEST_DIR/worktree-144"
 mkdir -p "$CWD_144" "$TEST_DIR/fakebin-144"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 REAL_RM_144=$(command -v rm)
 cat > "$TEST_DIR/fakebin-144/rm" <<FAKERM
 #!/bin/sh
@@ -4838,8 +4830,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-/bin/rm -rf "$TEST_DIR/fakebin-144"
-/bin/rm -f "$PLANS_DIR"/.mr-claimed.* "$FLAG_144"
+set_aside "$PLANS_DIR"/.mr-claimed.* "$FLAG_144"
 
 # --- Test 145: a broken clock is as disqualifying as a broken stat ---
 # It takes both to have an age. `date` failing sets the sampled clock to 0, so every real
@@ -4849,7 +4840,7 @@ fi
 echo "Test 145: memory-restore: a matching flag is not restored when only the clock is broken"
 CWD_145="$TEST_DIR/worktree-145"
 mkdir -p "$CWD_145" "$TEST_DIR/fakebin-145"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 printf '#!/bin/sh\nexit 1\n' > "$TEST_DIR/fakebin-145/date"
 chmod +x "$TEST_DIR/fakebin-145/date"
 FLAG_145="$PLANS_DIR/.pending-memory-restore-20230101000145-14501"
@@ -4867,8 +4858,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_145"
-/bin/rm -rf "$TEST_DIR/fakebin-145"
+set_aside "$FLAG_145"
 
 # --- Test 146: an unverifiable flag forbids the "none recorded this scope" claim ---
 # The sentence asserts that every flag was compared and none matched. A flag whose
@@ -4877,7 +4867,7 @@ fi
 echo "Test 146: memory-restore: an unverifiable flag suppresses the none-matched claim"
 CWD_146="$TEST_DIR/worktree-146"
 mkdir -p "$CWD_146"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 FLAG_146="$PLANS_DIR/.pending-memory-restore-20260818T000146-14601"
 printf '%s\n%s\n%s\n%s\n' "sess_146" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/gone-146" "checkpoint-146" > "$FLAG_146"
 OUTPUT=$(echo '{"cwd":"'"$CWD_146"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -4892,13 +4882,13 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_146"
+set_aside "$FLAG_146"
 
 # --- Test 147: the same claim is unfounded when NOTHING could be compared ---
 # The hook's own directory does not resolve, so no flag was checked against this
 # session at all — a stronger version of Test 146's objection.
 echo "Test 147: memory-restore: an unresolvable own scope suppresses the none-matched claim"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 FLAG_147="$PLANS_DIR/.pending-memory-restore-20260818T000147-14701"
 printf '%s\n%s\n%s\n%s\n' "sess_147" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/worktree-147" "checkpoint-147" > "$FLAG_147"
 OUTPUT=$(echo '{"cwd":"'"$TEST_DIR/never-created-147"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -4911,7 +4901,7 @@ else
     echo "  FAIL"
     FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_147"
+set_aside "$FLAG_147"
 
 # --- Tests 148-151: every state that bears on the none-matched sentence ---
 # The sentence claims BOTH that no flag recorded this session's working directory and that
@@ -4926,8 +4916,7 @@ mr_bearing_repo() {
     git -C "$MR_R" init -q 2>/dev/null
     git -C "$MR_R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
     git -C "$MR_R" worktree add -q --detach "$MR_W" HEAD 2>/dev/null
-    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-    /bin/rm -rf "$PLANS_DIR"/.pending-memory-restore-dir
+    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
     printf '%s\n%s\n%s\n%s\n' "sess_$1" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_W" "row-maker-$1" \
         > "$PLANS_DIR/.pending-memory-restore-2026081800$1-$1"
 }
@@ -4950,7 +4939,7 @@ else
     chmod 000 "$PLANS_DIR/.pending-memory-restore-x148"
     OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
     mr_bearing_check 148
-    chmod 644 "$PLANS_DIR/.pending-memory-restore-x148"; /bin/rm -f "$PLANS_DIR/.pending-memory-restore-x148"
+    chmod 644 "$PLANS_DIR/.pending-memory-restore-x148"; set_aside "$PLANS_DIR/.pending-memory-restore-x148"
 fi
 
 echo "Test 149: memory-restore: an unopenable flag name suppresses the none-matched claim"
@@ -4958,7 +4947,7 @@ mr_bearing_repo 149
 mkdir -p "$PLANS_DIR/.pending-memory-restore-dir"
 OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 mr_bearing_check 149
-/bin/rm -rf "$PLANS_DIR/.pending-memory-restore-dir"
+set_aside "$PLANS_DIR/.pending-memory-restore-dir"
 
 # The sweep DELETES this flag, so the sentence's second half — "no flag was
 # consumed" — is false in the same message that reports the removal.
@@ -4969,14 +4958,14 @@ mkdir -p "$TEST_DIR/other-150"
 touch -t 201801010000 "$PLANS_DIR/.pending-memory-restore-x150"
 OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 mr_bearing_check 150
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x150"
+set_aside "$PLANS_DIR/.pending-memory-restore-x150"
 
 echo "Test 151: memory-restore: a malformed flag suppresses the none-matched claim"
 mr_bearing_repo 151
 printf '%s\n%s\n\n\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" > "$PLANS_DIR/.pending-memory-restore-x151"
 OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 mr_bearing_check 151
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x151"
+set_aside "$PLANS_DIR/.pending-memory-restore-x151"
 
 # --- Test 152: the sentence must still be PRINTED when nothing bears against it ---
 # Tests 146-151 all assert its ABSENCE. Absence-only coverage cannot tell a correct
@@ -5004,7 +4993,7 @@ fi
 mr_link_target() {
     MR_T="$TEST_DIR/link-target-$1"
     printf '%s\n%s\n%s\n%s\n' "x" "2026-08-18T00:00:00+0900" "LEAKPATH-$1" "LEAKLABEL-$1" > "$MR_T"
-    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
 }
 mr_link_check() {
     if assert_not_contains "$1" "$OUTPUT" "LEAKLABEL-$1" && \
@@ -5022,7 +5011,7 @@ mr_link_target 153
 ln -s "$MR_T" "$PLANS_DIR/.pending-memory-restore-20260818T000153-153"
 OUTPUT=$(echo '{"cwd":"'"$CWD_153"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 mr_link_check 153
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260818T000153-153"
+set_aside "$PLANS_DIR/.pending-memory-restore-20260818T000153-153"
 
 echo "Test 154: memory-restore: a hard-linked flag name is never read or printed"
 CWD_154="$TEST_DIR/wd-154"; mkdir -p "$CWD_154"
@@ -5030,7 +5019,7 @@ mr_link_target 154
 ln "$MR_T" "$PLANS_DIR/.pending-memory-restore-20260818T000154-154"
 OUTPUT=$(echo '{"cwd":"'"$CWD_154"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 mr_link_check 154
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260818T000154-154"
+set_aside "$PLANS_DIR/.pending-memory-restore-20260818T000154-154"
 
 # --- Test 155: the three states declared NOT to bear must not suppress the sentence ---
 # The bearing sum subtracts stale-kept, foreign and outside because each was compared
@@ -5100,7 +5089,7 @@ if [[ "$SC_OK" -eq 1 ]]; then
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-[fos]155
+set_aside "$PLANS_DIR"/.pending-memory-restore-[fos]155
 
 # --- Tests 156-157: the `stat` probes must select the form, not trust a number ---
 # The probes here pick their fallback on the OUTPUT rather than the exit status,
@@ -5168,7 +5157,7 @@ if assert_contains "157" "$OUTPUT" "State file: found (no plan recorded, age: [0
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_157_PLANSTATE}"
+set_aside "$PLANS_DIR/.plan-state-${KEY_157_PLANSTATE}"
 
 # --- Test 158: the human-readable mtime probe must also ask GNU first ---
 # Six call sites carried their own copy of this two-form probe and four asked BSD
@@ -5202,7 +5191,7 @@ if [[ "$(id -u)" == "0" ]]; then
     echo "  SKIP (root enters a mode-000 directory, so the path would be reachable)"
     PASS=$((PASS + 1))
 else
-    /bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+    set_aside "$PLANS_DIR"/.pending-memory-restore-*
     printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$SEALED_159" "sealed-159" \
         > "$PLANS_DIR/.pending-memory-restore-x159"
     chmod 000 "$SEALED_159"
@@ -5216,7 +5205,7 @@ else
     else
         echo "  FAIL"; FAIL=$((FAIL + 1))
     fi
-    /bin/rm -f "$PLANS_DIR/.pending-memory-restore-x159"
+    set_aside "$PLANS_DIR/.pending-memory-restore-x159"
 fi
 
 # --- Test 160: a malformed row must name the file the note tells the user to delete ---
@@ -5227,7 +5216,7 @@ fi
 # withheld for (a matched flag is already gone; a foreign one must not be acted on).
 echo "Test 160: memory-restore: a malformed row names its flag so the note is actionable"
 CWD_160="$TEST_DIR/wd-160"; mkdir -p "$CWD_160"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf 'sess\n2026-08-19T00:00:00+0900\n' > "$PLANS_DIR/.pending-memory-restore-20260819T000160-160"
 OUTPUT=$(echo '{"cwd":"'"$CWD_160"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "160" "$OUTPUT" "malformed flag, no recorded path" && \
@@ -5236,7 +5225,7 @@ if assert_contains "160" "$OUTPUT" "malformed flag, no recorded path" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-20260819T000160-160"
+set_aside "$PLANS_DIR/.pending-memory-restore-20260819T000160-160"
 
 # --- Test 161: a flag a parallel /clear consumed is a race, not an unopenable name ---
 # The glob expands to a list of names; a concurrent session's /clear may legitimately
@@ -5247,13 +5236,13 @@ fi
 # which is exactly where the race falls, and is deterministic.
 echo "Test 161: memory-restore: a concurrently consumed flag is reported as a race"
 CWD_161="$TEST_DIR/wd-161"; mkdir -p "$CWD_161" "$TEST_DIR/race-161"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-161" "first-161" \
     > "$PLANS_DIR/.pending-memory-restore-a161"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-161" "second-161" \
     > "$PLANS_DIR/.pending-memory-restore-b161"
 REAL_STAT_161=$(command -v stat)
-printf '#!/bin/sh\nrm -f "%s"\nexec %s "$@"\n' "$PLANS_DIR/.pending-memory-restore-b161" "$REAL_STAT_161" \
+printf '#!/bin/sh\n[ -e "%s" ] && mv -- "%s" "$(mktemp -d)"\nexec %s "$@"\n' "$PLANS_DIR/.pending-memory-restore-b161" "$PLANS_DIR/.pending-memory-restore-b161" "$REAL_STAT_161" \
     > "$TEST_DIR/race-161/stat"
 chmod +x "$TEST_DIR/race-161/stat"
 OUTPUT=$(echo '{"cwd":"'"$CWD_161"'"}' | PATH="$TEST_DIR/race-161:$PATH" bash "$TEST_DIR/on-session-clear.sh")
@@ -5263,7 +5252,7 @@ if assert_contains "161" "$OUTPUT" "claimed concurrently by another session" && 
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-[ab]161
+set_aside "$PLANS_DIR"/.pending-memory-restore-[ab]161
 
 # --- Test 162: a backslash in a displayed path must not truncate the directive ---
 # The assembled directive is emitted with `printf '%b'`, which is why labels, paths
@@ -5277,7 +5266,7 @@ echo "Test 162: memory-restore: a backslash in the session path does not truncat
 CWD_162_PLAIN="$TEST_DIR/wd-162-plain"
 CWD_162_BS="$TEST_DIR/wd-162-a\\cb"
 mkdir -p "$CWD_162_PLAIN" "$CWD_162_BS"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 mk_162() {
     printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/elsewhere-162" "lbl-162" \
         > "$PLANS_DIR/.pending-memory-restore-x162"
@@ -5295,7 +5284,7 @@ if assert_contains "162" "$OUT_PLAIN" "State check" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.pending-memory-restore-x162"
+set_aside "$PLANS_DIR/.pending-memory-restore-x162"
 
 # --- Test 163: a failed clock must leave the state age unknown, not enormous ---
 # This was the one unguarded `date` fork left in the file. An empty capture makes
@@ -5317,7 +5306,7 @@ if assert_contains "163" "$OUTPUT" "age: ?m" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.plan-state-${KEY_163_PLANSTATE}"
+set_aside "$PLANS_DIR/.plan-state-${KEY_163_PLANSTATE}"
 
 # --- Tests 164-165: the two skipped-scan directives must NAME the directory ---
 # Both exist to tell the reader which path to look at, and both ran with an empty one.
@@ -5362,7 +5351,7 @@ fi
 # the same report saying the age was established and that it was not.
 echo "Test 166: a flag written during the scan is displayed with an age, not as unknown"
 CWD_166="$TEST_DIR/wd-166"; mkdir -p "$CWD_166"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_166" "ahead-166" \
     > "$PLANS_DIR/.pending-memory-restore-ahead166"
 # `touch -t` only reaches minute granularity, so a 30-second offset rounds away and
@@ -5379,7 +5368,7 @@ if assert_contains "166" "$OUTPUT" "MATCHES this session" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-ahead166
+set_aside "$PLANS_DIR"/.pending-memory-restore-ahead166
 
 # --- Test 167: "nothing belongs to this repository" must not follow a matched row ---
 # The sentence was gated on the priority-3 counter alone, so it fired beside rows at
@@ -5390,14 +5379,14 @@ fi
 # so this test fails if the gate is simply deleted.
 echo "Test 167: a matched-but-expired row suppresses the nothing-belongs-here sentence"
 CWD_167="$TEST_DIR/wd-167"; mkdir -p "$CWD_167"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_167=$(date -v-2d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '2 days ago' +%Y-%m-%dT%H:%M:%S%z)
 printf '%s\n%s\n%s\n%s\n' "s" "$OLD_167" "$CWD_167" "expired-167" \
     > "$PLANS_DIR/.pending-memory-restore-x167"
 touch -t "$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)" \
     "$PLANS_DIR/.pending-memory-restore-x167"
 OUT_MINE=$(echo '{"cwd":"'"$CWD_167"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 # Control: a flag recorded in a directory inside no repository, nothing of ours.
 mkdir -p "$TEST_DIR/foreign-167"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/foreign-167" "other-167" \
@@ -5410,7 +5399,7 @@ if assert_contains "167" "$OUT_MINE" "MATCHED but expired" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-f167
+set_aside "$PLANS_DIR"/.pending-memory-restore-f167
 
 # --- Test 168: hidden-row counts are subsets of the cap overflow, and say so ---
 # `_mr_over`, `_mr_gone_hidden_n` and `_mr_same_hidden_n` are all incremented in the
@@ -5421,7 +5410,7 @@ fi
 # totalled.
 echo "Test 168: hidden-row counts are reported as a subset, not as a second population"
 CWD_168="$TEST_DIR/wd-168"; mkdir -p "$CWD_168"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 OLD_168=$(date -v-2d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '2 days ago' +%Y-%m-%dT%H:%M:%S%z)
 OLDST_168=$(date -v-2d +%Y%m%d%H%M 2>/dev/null || date -d '2 days ago' +%Y%m%d%H%M)
 for i in 1 2 3 4 5 6; do
@@ -5436,7 +5425,7 @@ if assert_contains "168" "$OUTPUT" "1 more not shown, 1 of them destroyed pointe
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-e168*
+set_aside "$PLANS_DIR"/.pending-memory-restore-e168*
 
 # --- Test 169: one message must not issue two AskUserQuestion orders ---
 # With two or more matched flags the directive enumerates them and says "BEFORE
@@ -5453,13 +5442,13 @@ git -C "$REPO_169" init -q 2>/dev/null
 git -C "$REPO_169" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_169" worktree add -q --detach "$WT_169" HEAD 2>/dev/null
 NOW_169=$(date +%Y-%m-%dT%H:%M:%S%z)
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$REPO_169" "m1-169" > "$PLANS_DIR/.pending-memory-restore-m1_169"
 printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$REPO_169" "m2-169" > "$PLANS_DIR/.pending-memory-restore-m2_169"
 printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$WT_169" "sel-169" > "$PLANS_DIR/.pending-memory-restore-s1_169"
 OUT_TWO=$(echo '{"cwd":"'"$REPO_169"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 # Control: only a selectable row, no matched ones -> the note must still ask.
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 printf '%s\n%s\n%s\n%s\n' "s" "$NOW_169" "$WT_169" "sel-only-169" > "$PLANS_DIR/.pending-memory-restore-s2_169"
 OUT_SEL=$(echo '{"cwd":"'"$REPO_169"'"}' | bash "$TEST_DIR/on-session-clear.sh")
 if assert_contains "169" "$OUT_TWO" "ask which checkpoint to restore" && \
@@ -5470,7 +5459,7 @@ if assert_contains "169" "$OUT_TWO" "ask which checkpoint to restore" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*169
+set_aside "$PLANS_DIR"/.pending-memory-restore-*169
 
 # --- Test 170: a recorded path that looks like an option must not become $HOME ---
 # `cd "$dir"` takes the flag's own line 3 as its FIRST WORD, so `-P`, `-L` and `-e`
@@ -5482,7 +5471,7 @@ fi
 # write-reload-flag.sh's own output is trustworthy content.
 echo "Test 170: a recorded path beginning with a dash is not resolved to \$HOME"
 HOME_170="$TEST_DIR/fakehome-170"; mkdir -p "$HOME_170"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 FLAG_170="$PLANS_DIR/.pending-memory-restore-planted170"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "-P" "PLANTED-170" > "$FLAG_170"
 OUTPUT=$(echo '{"cwd":"'"$HOME_170"'"}' | HOME="$HOME_170" bash "$TEST_DIR/on-session-clear.sh")
@@ -5493,7 +5482,7 @@ if assert_not_contains "170" "$OUTPUT" "MATCHES this session" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_170"
+set_aside "$FLAG_170"
 
 # --- Test 171: scope_key must not resolve an option-shaped path to $HOME ---
 # The match site is covered by test 170; this pins the other half. Without `--`,
@@ -5512,7 +5501,7 @@ fi
 # --- Test 172: a flag whose session key matches is this session's own ---
 echo "Test 172: memory-restore: a flag whose session key matches is restored and consumed"
 CWD_172="$TEST_DIR/worktree-172"; mkdir -p "$CWD_172"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 FLAG_172="$PLANS_DIR/.pending-memory-restore-keyed172"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_172" "checkpoint-172" \
     "$(compute_session_key "$(cd "$CWD_172" && pwd -P)")" > "$FLAG_172"
@@ -5526,12 +5515,12 @@ else
     [[ -e "$FLAG_172" ]] && echo "  ASSERT FAILED: matched flag was not consumed"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_172"
+set_aside "$FLAG_172"
 
 # --- Test 173: same directory, different session -> offered, never consumed ---
 echo "Test 173: memory-restore: a flag from a DIFFERENT session in this directory is offered, not consumed"
 CWD_173="$TEST_DIR/worktree-173"; mkdir -p "$CWD_173"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 FLAG_173="$PLANS_DIR/.pending-memory-restore-foreign173"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_173" "checkpoint-173" \
     "ffffffffffffffff" > "$FLAG_173"
@@ -5546,12 +5535,12 @@ if assert_not_contains "173" "$OUTPUT" "MATCHES this session" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_173"
+set_aside "$FLAG_173"
 
 # --- Test 174: a keyless flag keeps the cwd-only rule it was written under ---
 echo "Test 174: memory-restore: a keyless (4-line) flag is still restored on a cwd match"
 CWD_174="$TEST_DIR/worktree-174"; mkdir -p "$CWD_174"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 FLAG_174="$PLANS_DIR/.pending-memory-restore-legacy174"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_174" "checkpoint-174" > "$FLAG_174"
 OUTPUT=$(echo '{"cwd":"'"$CWD_174"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -5563,12 +5552,12 @@ else
     [[ -e "$FLAG_174" ]] && echo "  ASSERT FAILED: keyless flag was not consumed"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_174"
+set_aside "$FLAG_174"
 
 # --- Test 175: no PPID source -> line 5 written EMPTY, not guessed ---
 echo "Test 175: write-reload-flag: no PPID source leaves the session key empty"
 CWD_175="$TEST_DIR/worktree-175"; mkdir -p "$CWD_175"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 T175_OK=false
 if patch_lib_common; then
     cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
@@ -5583,12 +5572,12 @@ else
     echo "  ASSERT FAILED: expected an empty line 5 and a 'no session key' notice"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 
 # --- Test 176: a non-numeric PPID is not a PPID ---
 echo "Test 176: write-reload-flag: a non-numeric CLAUDE_PID leaves the session key empty"
 CWD_176="$TEST_DIR/worktree-176"; mkdir -p "$CWD_176"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 T176_OK=false
 if patch_lib_common; then
     cp "$SCRIPT_DIR/scripts/write-reload-flag.sh" "$TEST_DIR/write-reload-flag.sh"
@@ -5603,16 +5592,16 @@ else
     echo "  ASSERT FAILED: expected an empty line 5 and a 'no session key' notice"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
 
 # --- Test 177: mark-session-restart records the route, and only the two that discard ---
 echo "Test 177: mark-session-restart marks clear and compact, ignores startup, arms the gate only on clear"
-/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
 MARKER_177="$PLANS_DIR/.session-restart-${CWD_DEFAULT_KEY}"
 echo '{"source":"compact","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
 T177_COMPACT=$([[ -f "$MARKER_177" ]] && sed -n '1p' "$MARKER_177" || echo "MISSING")
 T177_SENTINEL_AFTER_COMPACT=$([[ -f "$PLANS_DIR/.sr-hook-installed" ]] && echo "yes" || echo "no")
-/bin/rm -f "$MARKER_177"
+set_aside "$MARKER_177"
 echo '{"source":"startup","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
 T177_STARTUP=$([[ -f "$MARKER_177" ]] && echo "wrote" || echo "silent")
 echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
@@ -5626,12 +5615,12 @@ else
     echo "  ASSERT FAILED: compact='$T177_COMPACT' sentinel_after_compact='$T177_SENTINEL_AFTER_COMPACT' startup='$T177_STARTUP' clear='$T177_CLEAR' sentinel_after_clear='$T177_SENTINEL_AFTER_CLEAR'"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 178: gated, nothing restarted -> no announcement, flag KEPT ---
 echo "Test 178: gated + no restart marker -> no POST-CLEAR directive and the flag survives"
 create_test_plan
-/bin/rm -f "$PLANS_DIR"/.session-restart-*
+set_aside "$PLANS_DIR"/.session-restart-*
 touch "$PLANS_DIR/.sr-hook-installed"
 FLAG_178="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
 printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_178"
@@ -5643,7 +5632,7 @@ if assert_not_contains "178" "$OUTPUT" "RESUME:" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_178" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_178" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 179: gated + a real /clear -> the announcement fires, both files consumed ---
 echo "Test 179: gated + clear marker -> POST-CLEAR RESUME, flag and marker both consumed"
@@ -5663,7 +5652,7 @@ else
     [[ -e "$MARKER_179" ]] && echo "  ASSERT FAILED: restart marker was not consumed"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_179" "$MARKER_179" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_179" "$MARKER_179" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 180: a compact is named a compact ---
 echo "Test 180: gated + compact marker -> POST-COMPACT RESUME, never POST-CLEAR"
@@ -5681,12 +5670,12 @@ if assert_contains "180" "$OUTPUT" "POST-COMPACT RESUME" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_180" "$MARKER_180" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_180" "$MARKER_180" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 181: an unregistered installation keeps working ---
 echo "Test 181: no sentinel -> ungated legacy behaviour is preserved"
 create_test_plan
-/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
 FLAG_181="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
 printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_181"
 TRANSCRIPT=$(create_transcript_pct 5)
@@ -5698,7 +5687,7 @@ else
     [[ -e "$FLAG_181" ]] && echo "  ASSERT FAILED: ungated path did not consume the flag"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_181"
+set_aside "$FLAG_181"
 
 # --- Test 182: a route nobody recorded is not a route ---
 echo "Test 182: gated + marker with an unknown source -> treated as no restart"
@@ -5716,7 +5705,7 @@ if assert_not_contains "182" "$OUTPUT" "RESUME:" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_182" "$MARKER_182" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_182" "$MARKER_182" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 183: a selectable flag is offered once per session, not once per /clear ---
 echo "Test 183: a selectable flag is offered once, then suppressed on the next /clear"
@@ -5725,7 +5714,7 @@ mkdir -p "$REPO_183"
 git -C "$REPO_183" init -q 2>/dev/null
 git -C "$REPO_183" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init 2>/dev/null
 git -C "$REPO_183" worktree add -q --detach "$WT_183" HEAD 2>/dev/null
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_183="$PLANS_DIR/.pending-memory-restore-sel183"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_183" "checkpoint-183" > "$FLAG_183"
 OUT_183A=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -5741,11 +5730,11 @@ if [[ -d "$WT_183" ]] && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_183" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_183" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 184: an unrecordable key is repeated, never silently withheld ---
 echo "Test 184: a flag whose key fails the allowlist keeps being offered"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_184="$PLANS_DIR/.pending-memory-restore-bad key 184"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$WT_183" "checkpoint-184" > "$FLAG_184"
 OUT_184A=$(echo '{"cwd":"'"$REPO_183"'"}' | bash "$TEST_DIR/on-session-clear.sh")
@@ -5759,7 +5748,7 @@ if [[ -d "$WT_183" ]] && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_184" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_184" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 185: a plan-mode prompt must not swallow the restart ---
 echo "Test 185: gated + plan-mode prompt -> marker survives for the next non-plan prompt"
@@ -5781,11 +5770,11 @@ else
     [[ "$T185_MARKER_KEPT" != "yes" ]] && echo "  ASSERT FAILED: plan-mode prompt consumed the restart marker"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_185" "$MARKER_185" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_185" "$MARKER_185" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 186: .mr-offered-* must not be written through a symlink ---
 echo "Test 186: a symlinked .mr-offered-* is refused, not appended through"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 VICTIM_186="$TEST_DIR/victim-186.txt"
 printf 'original\n' > "$VICTIM_186"
 OFFERED_186="$PLANS_DIR/.mr-offered-$(compute_session_key "$REPO_183")"
@@ -5806,13 +5795,13 @@ else
     [[ "$T186_VICTIM" != "original" ]] && echo "  ASSERT FAILED: wrote through the symlink; victim now: $T186_VICTIM"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_186" "$OFFERED_186" "$VICTIM_186"
+set_aside "$FLAG_186" "$OFFERED_186"
 
 # --- Test 187: the sentinel must not be created through a symlink ---
 echo "Test 187: a symlinked .sr-hook-installed is replaced, not followed"
-/bin/rm -f "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR/.sr-hook-installed"
 VICTIM_187="$TEST_DIR/victim-187-branch-guard.disabled"
-/bin/rm -f "$VICTIM_187"
+set_aside "$VICTIM_187"
 ln -s "$VICTIM_187" "$PLANS_DIR/.sr-hook-installed"
 echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
 T187_VICTIM=$([[ -e "$VICTIM_187" ]] && echo "created" || echo "absent")
@@ -5824,11 +5813,11 @@ else
     [[ "$T187_SENTINEL" != "plain" ]] && echo "  ASSERT FAILED: sentinel is still not a plain file"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR/.sr-hook-installed" "$VICTIM_187" "$PLANS_DIR"/.session-restart-*
+set_aside "$PLANS_DIR/.sr-hook-installed" "$PLANS_DIR"/.session-restart-*
 
 # --- Test 188: a cap-hidden selectable row is NOT recorded as offered ---
 echo "Test 188: a selectable row hidden by the display cap is still offered at the next /clear"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 NOW_188=$(date +%Y-%m-%dT%H:%M:%S%z)
 for i in 1 2 3 4 5 6 7 8; do
     printf '%s\n%s\n%s\n%s\n' "s" "$NOW_188" "$WT_183" "checkpoint-188-$i" \
@@ -5855,11 +5844,11 @@ else
     echo "  ASSERT FAILED: shown_first=$T188_SHOWN_A shown_second=$T188_SHOWN_B repeated=$T188_OVERLAP (want first<8, second>0, repeated=0)"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-cap188_* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-cap188_* "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 189: the reserved slot recognises the foreign-session verdict ---
 echo "Test 189: a foreign-session selectable row still gets the reserved slot"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 OLD_189=$(date -v-3d +%Y-%m-%dT%H:%M:%S%z 2>/dev/null || date -d '3 days ago' +%Y-%m-%dT%H:%M:%S%z)
 for i in 1 2 3 4 5 6; do
     printf '%s\n%s\n%s\n%s\n' "s" "$OLD_189" "$REPO_183" "filler-189-$i" \
@@ -5874,13 +5863,13 @@ if assert_contains "189" "$OUT_189" "checkpoint-189" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 190: a symlink-spelled cwd must not make our own flag look foreign ---
 echo "Test 190: a physical-path cwd match is not reclassified as another session"
 REALDIR_190="$TEST_DIR/real-190"; mkdir -p "$REALDIR_190"
 ln -s "$REALDIR_190" "$TEST_DIR/link-190"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_190="$PLANS_DIR/.pending-memory-restore-phys190"
 PHYS_190=$(cd -- "$TEST_DIR/link-190" && pwd -P)
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-190" "checkpoint-190" \
@@ -5892,11 +5881,11 @@ if assert_contains "190" "$OUT_190" "MATCHES this session" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_190" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_190" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 191: destroying another session's flag names its label ---
 echo "Test 191: a foreign-session flag swept at 7 days is announced with its label"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_191="$PLANS_DIR/.pending-memory-restore-old191"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "old" "$PWD" "checkpoint-191" "ffffffffffffffff" > "$FLAG_191"
 touch -t 202501010000 "$FLAG_191"
@@ -5909,12 +5898,12 @@ else
     [[ -e "$FLAG_191" ]] && echo "  ASSERT FAILED: expired foreign-session flag was not swept"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_191" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_191" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 192: a stale sentinel un-arms the gate instead of latching forever ---
 echo "Test 192: a sentinel older than 14 days falls back to ungated behaviour"
 create_test_plan
-/bin/rm -f "$PLANS_DIR"/.session-restart-*
+set_aside "$PLANS_DIR"/.session-restart-*
 touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
 FLAG_192="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
 printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_192"
@@ -5925,13 +5914,13 @@ if assert_contains "192" "$OUT_192" "POST-CLEAR RESUME"; then
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_192" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_192" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 193: a symlinked spelling must not let another session's flag be consumed ---
 echo "Test 193: a foreign key still refuses when the cwd matched only after resolution"
 REALDIR_193="$TEST_DIR/real-193"; mkdir -p "$REALDIR_193"
 ln -s "$REALDIR_193" "$TEST_DIR/link-193"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_193="$PLANS_DIR/.pending-memory-restore-fsphys193"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-193" "checkpoint-193" \
     "ffffffffffffffff" > "$FLAG_193"
@@ -5944,11 +5933,11 @@ else
     [[ ! -e "$FLAG_193" ]] && echo "  ASSERT FAILED: another session's checkpoint pointer was CONSUMED"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_193" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_193" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 194: a flag recorded in THIS directory contradicts the nothing-here sentence ---
 echo "Test 194: a foreign-session row suppresses the no-flag-recorded-this-directory claim"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_194="$PLANS_DIR/.pending-memory-restore-bear194"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-194" \
     "ffffffffffffffff" > "$FLAG_194"
@@ -5959,11 +5948,11 @@ if assert_contains "194" "$OUT_194" "checkpoint-194" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_194" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_194" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 195: once-per-session suppression on the foreign-session arm ---
 echo "Test 195: a foreign-session candidate is offered once, then suppressed"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_195="$PLANS_DIR/.pending-memory-restore-fs195"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-195" \
     "ffffffffffffffff" > "$FLAG_195"
@@ -5977,16 +5966,16 @@ if assert_contains "195" "$OUT_195A" "checkpoint-195" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_195" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_195" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 196: a live installation keeps its sentinel fresh ---
 echo "Test 196: every clear re-arms the sentinel, so a live install never ages out"
-/bin/rm -f "$PLANS_DIR"/.session-restart-*
+set_aside "$PLANS_DIR"/.session-restart-*
 touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
 echo '{"source":"clear","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
 T196_FRESH=$(find "$PLANS_DIR" -name '.sr-hook-installed' -mtime -1 2>/dev/null)
 create_test_plan
-/bin/rm -f "$PLANS_DIR"/.session-restart-*
+set_aside "$PLANS_DIR"/.session-restart-*
 FLAG_196="$PLANS_DIR/.pending-reload-${CWD_DEFAULT_KEY}"
 printf '%s\n%s\n%s\n%s\n' "$PLANS_DIR/test-plan.md" "sess_test" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" > "$FLAG_196"
 TRANSCRIPT=$(create_transcript_pct 5)
@@ -5998,11 +5987,11 @@ else
     [[ -z "$T196_FRESH" ]] && echo "  ASSERT FAILED: clear did not refresh the sentinel mtime"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_196" "$PLANS_DIR/.sr-hook-installed"
+set_aside "$FLAG_196" "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 197: the mixed state every install enters on the day this ships ---
 echo "Test 197: a legacy keyless flag and a foreign-keyed flag in one directory"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 LEGACY_197="$PLANS_DIR/.pending-memory-restore-legacy197"
 KEYED_197="$PLANS_DIR/.pending-memory-restore-keyed197"
 printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-197-legacy" > "$LEGACY_197"
@@ -6019,11 +6008,11 @@ else
     [[ -e "$LEGACY_197" ]] && echo "  ASSERT FAILED: the legacy flag was not restored and consumed"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$LEGACY_197" "$KEYED_197" "$PLANS_DIR"/.mr-offered-*
+set_aside "$LEGACY_197" "$KEYED_197" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 198: a suppressed candidate must not be reported as nothing to offer ---
 echo "Test 198: an already-offered candidate still counts as something to offer"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_198="$PLANS_DIR/.pending-memory-restore-sup198"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$PWD" "checkpoint-198" \
     "ffffffffffffffff" > "$FLAG_198"
@@ -6038,11 +6027,11 @@ if assert_contains "198" "$OUT_198" "already offered to this session" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_198" "$MALFORMED_198" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_198" "$MALFORMED_198" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 199: a compact keeps an existing sentinel alive ---
 echo "Test 199: a compact refreshes an existing sentinel but never creates one"
-/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
 echo '{"source":"compact","cwd":"'"$PWD"'"}' | bash "$TEST_DIR/mark-session-restart.sh"
 T199_CREATED=$([[ -e "$PLANS_DIR/.sr-hook-installed" ]] && echo "created" || echo "absent")
 touch -t 202501010000 "$PLANS_DIR/.sr-hook-installed"
@@ -6055,13 +6044,13 @@ else
     [[ -z "$T199_FRESH" ]] && echo "  ASSERT FAILED: a compact did not refresh an existing sentinel"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
+set_aside "$PLANS_DIR"/.session-restart-* "$PLANS_DIR/.sr-hook-installed"
 
 # --- Test 200: an unresolvable cwd must not be reported as a different session ---
 echo "Test 200: ownership that could not be checked says so, instead of naming another session"
 REAL_200="$TEST_DIR/real-200"; mkdir -p "$REAL_200"
 ln -s "$REAL_200" "$TEST_DIR/link-200"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_200="$PLANS_DIR/.pending-memory-restore-unchk200"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-200" "checkpoint-200" \
     "$(compute_session_key "$(cd -- "$TEST_DIR/link-200" && pwd -P)")" > "$FLAG_200"
@@ -6075,13 +6064,13 @@ if assert_contains "200" "$OUT_200" "checkpoint-200" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_200" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_200" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 201: a flag from the previous writer, which hashed the raw path ---
 echo "Test 201: a raw-path key from the previous writer still matches"
 REAL_201="$TEST_DIR/real-201"; mkdir -p "$REAL_201"
 ln -s "$REAL_201" "$TEST_DIR/link-201"
-/bin/rm -f "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-offered-*
 FLAG_201="$PLANS_DIR/.pending-memory-restore-raw201"
 printf '%s\n%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$TEST_DIR/link-201" "checkpoint-201" \
     "$(compute_session_key "$TEST_DIR/link-201")" > "$FLAG_201"
@@ -6094,11 +6083,11 @@ else
     [[ -e "$FLAG_201" ]] && echo "  ASSERT FAILED: a previous-writer flag was not restored"
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-/bin/rm -f "$FLAG_201" "$PLANS_DIR"/.mr-offered-*
+set_aside "$FLAG_201" "$PLANS_DIR"/.mr-offered-*
 
 # --- Test 202: plan-mode first entry -> foreign-claimed newest is refused, not adopted ---
 echo "Test 202: plan-mode first entry -> newest plan claimed by another scope is refused"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_202="$TEST_DIR/worktree-202"; mkdir -p "$CWD_202"
 CWD_202_KEY=$(compute_session_key "$CWD_202")
 CWD_202_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_202")
@@ -6114,11 +6103,11 @@ if assert_contains "202" "$OUT_202" "PLAN ADOPTION REFUSED" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 203: plan-mode first entry -> unclaimed newest adopted, scope recorded on line 6 ---
 echo "Test 203: plan-mode first entry -> unclaimed newest is adopted and records its scope"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_203="$TEST_DIR/worktree-203"; mkdir -p "$CWD_203"
 CWD_203_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_203")
 printf '%s\n' '# Own Plan 203' '' '- [ ] my task' > "$PLANS_DIR/own-plan-203.md"
@@ -6135,11 +6124,11 @@ if assert_file_exists "203" "$STATE_203" && \
 else
     echo "  FAIL (plan=$T203_PLAN scope=$T203_SCOPE expected=$EXP_SCOPE_203)"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 204: a guessed first-entry adoption must NOT arm the auto-resume flag ---
 echo "Test 204: a guessed first-entry adoption does not create a pending-reload flag"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_204="$TEST_DIR/worktree-204"; mkdir -p "$CWD_204"
 CWD_204_KEY=$(compute_session_key "$CWD_204")
 CWD_204_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_204")
@@ -6154,11 +6143,11 @@ if assert_file_exists "204" "$PLANS_DIR/.plan-state-${CWD_204_KEY_PLANSTATE}" &&
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 205: newest claimed only by a same-scope sibling is adopted, not refused ---
 echo "Test 205: plan-mode first entry -> a same-scope sibling's plan is adopted"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_205="$TEST_DIR/worktree-205"; mkdir -p "$CWD_205"
 CWD_205_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_205")
 printf '%s\n' '# Shared Plan 205' '' '- [ ] shared task' > "$PLANS_DIR/shared-plan-205.md"
@@ -6176,11 +6165,11 @@ if assert_file_exists "205" "$STATE_205" && \
 else
     echo "  FAIL (plan=$T205_PLAN)"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 206: foreign newest is skipped and an adoptable older plan is taken (no refusal) ---
 echo "Test 206: plan-mode first entry -> foreign newest skipped, older unclaimed plan adopted"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_206="$TEST_DIR/worktree-206"; mkdir -p "$CWD_206"
 CWD_206_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_206")
 printf '%s\n' '# Older Own 206' '' '- [ ] mine' > "$PLANS_DIR/older-206.md"
@@ -6202,11 +6191,11 @@ if assert_file_exists "206" "$STATE_206" && \
 else
     echo "  FAIL (newest=$T206_NEWEST plan=$T206_PLAN)"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 207: a legacy 5-line claimant (no recorded scope) blocks adoption ---
 echo "Test 207: plan-mode first entry -> plan claimed by a legacy scope-less state file is refused"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_207="$TEST_DIR/worktree-207"; mkdir -p "$CWD_207"
 CWD_207_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_207")
 printf '%s\n' '# Legacy-claimed 207' '' '- [ ] task' > "$PLANS_DIR/legacy-207.md"
@@ -6220,11 +6209,11 @@ if assert_contains "207" "$OUT_207" "PLAN ADOPTION REFUSED" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 208: emitter listing withholds a foreign-claimed plan, keeps an in-scope one ---
 echo "Test 208: on-session-clear recent-plans listing omits a foreign-claimed plan"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_208="$TEST_DIR/worktree-208"; mkdir -p "$CWD_208"
 printf '%s\n' '# Visible 208' '' '- [ ] task' > "$PLANS_DIR/visible-emit-208.md"
 printf '%s\n' '# Foreign 208' '' '- [ ] task' > "$PLANS_DIR/foreign-emit-208.md"
@@ -6237,11 +6226,11 @@ if assert_contains "208" "$OUT_208" "visible-emit-208" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 210: explicit !load-plan in plan mode overrides the scope refusal ---
 echo "Test 210: plan-mode + explicit !load-plan of a foreign-claimed plan loads it, no refusal"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_210="$TEST_DIR/worktree-210"; mkdir -p "$CWD_210"
 printf '%s\n' '# Foreign 210' '' '- [ ] task' > "$PLANS_DIR/foreign-210.md"
 printf '%s\n%s\n%s\n%s\n%s\n%s\n' "sess_f210" "unknown" "0" "$(date +%Y-%m-%dT%H:%M:%S%z)" \
@@ -6254,11 +6243,11 @@ if assert_contains "210" "$OUT_210" "foreign-210.md" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 211: a stale unclaimed plan (orphan window) is not guess-adopted ---
 echo "Test 211: plan-mode first entry -> a stale unclaimed plan is refused, not adopted"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_211="$TEST_DIR/worktree-211"; mkdir -p "$CWD_211"
 CWD_211_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_211")
 printf '%s\n' '# Stale Orphan 211' '' '- [ ] task' > "$PLANS_DIR/stale-211.md"
@@ -6271,11 +6260,11 @@ if assert_contains "211" "$OUT_211" "PLAN ADOPTION REFUSED" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 212: a just-fresh (23h) unclaimed plan is still guess-adopted ---
 echo "Test 212: plan-mode first entry -> a 23h-old unclaimed plan is adopted (inside the 24h window)"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_212="$TEST_DIR/worktree-212"; mkdir -p "$CWD_212"
 CWD_212_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_212")
 printf '%s\n' '# Fresh Edge 212' '' '- [ ] task' > "$PLANS_DIR/fresh-212.md"
@@ -6289,11 +6278,11 @@ if assert_file_exists "212" "$PLANS_DIR/.plan-state-${CWD_212_KEY_PLANSTATE}" &&
 else
     echo "  FAIL (plan=$T212_PLAN)"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 213: a just-stale (25h) unclaimed plan is not guess-adopted ---
 echo "Test 213: plan-mode first entry -> a 25h-old unclaimed plan is refused (past the 24h window)"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_213="$TEST_DIR/worktree-213"; mkdir -p "$CWD_213"
 CWD_213_KEY_PLANSTATE=$(compute_plan_state_key "$CWD_213")
 printf '%s\n' '# Stale Edge 213' '' '- [ ] task' > "$PLANS_DIR/stale-213.md"
@@ -6306,11 +6295,11 @@ if assert_contains "213" "$OUT_213" "PLAN ADOPTION REFUSED" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Test 214: an explicit trigger-word load is NOT age-gated ---
 echo "Test 214: non-plan 'execute plan' loads a stale unclaimed plan (explicit intent, no freshness gate)"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_214="$TEST_DIR/worktree-214"; mkdir -p "$CWD_214"
 printf '%s\n' '# Old Own 214' '' '- [ ] task' > "$PLANS_DIR/old-own-214.md"
 touch -t 202501010000 "$PLANS_DIR/old-own-214.md"
@@ -6322,7 +6311,7 @@ if assert_contains "214" "$OUT_214" "old-own-214.md" && \
 else
     echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 echo "Test 215: enforce-clear.sh PLAN_LIB default (no SMITH_PLAN_LIB) is the sibling lib-plan.sh"
 ENFORCE_REAL_DIR=$(cd "$(dirname "$ENFORCE_SCRIPT")" && pwd)
@@ -6337,7 +6326,7 @@ else
 fi
 
 echo "Test 216: enforce-clear.sh writes a plan-state file with SMITH_PLAN_LIB unset"
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
+set_aside "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 CWD_216="$TEST_DIR/worktree-216"; mkdir -p "$CWD_216"
 TRANSCRIPT_216=$(create_transcript_pct 70 "t216")
 echo '{"session_id":"sess_216","transcript_path":"'"$TRANSCRIPT_216"'","cwd":"'"$CWD_216"'"}' \
@@ -6349,7 +6338,6 @@ if assert_file_exists "216" "$PLANS_DIR/.plan-state-${STATE_KEY_216}" && [[ -z "
 else
     echo "  FAIL (stderr: $(cat "$TEST_DIR/err-216.txt"))"; FAIL=$((FAIL + 1))
 fi
-rm -f "$PLANS_DIR"/*.md "$PLANS_DIR"/.plan-state-* "$PLANS_DIR"/.pending-reload-*
 
 # --- Summary ---
 echo ""
