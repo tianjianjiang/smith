@@ -335,7 +335,6 @@ if [[ "$PLAN_LIB_AVAILABLE" == "true" ]] && type save_state_file &>/dev/null; th
 fi
 
 EXTRACT_FACTS_SCRIPT="${SCRIPT_DIR}/../../smith-checkpoint/scripts/extract-session-facts.sh"
-EXTRACTED_FACTS=""
 FACTS_SUMMARY=""
 if [[ -f "$EXTRACT_FACTS_SCRIPT" ]] && [[ -x "$EXTRACT_FACTS_SCRIPT" ]]; then
     EXTRACTED_FACTS=$("$EXTRACT_FACTS_SCRIPT" "$TRANSCRIPT_PATH" 2>/dev/null || echo "")
