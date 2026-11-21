@@ -2,6 +2,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPORT="$HERE/../spawn-ledger-report.mjs"
 GUARD="$HERE/../subagent-contract-guard.mjs"
+. "$HERE/lib/set-aside.sh"
 
 TMP=$(mktemp -d)
 CLAUDE_CONFIG_DIR="$TMP/config"
@@ -136,18 +137,18 @@ report | grep -q "FAIL:unchecked-spawn" \
 
 : > "$LEDGER"
 entry "$BRANCH" contract-pasted ""
-rm "$LEDGER"
+set_aside "$LEDGER"
 mkdir "$LEDGER"
 expect "a ledger that exists but cannot be read is not absence" \
   "FAIL:unchecked-spawn(unreadable-ledger)"
-rm -rf "$LEDGER"
+set_aside "$LEDGER"
 
 : > "$LEDGER"
 entry "$BRANCH" contract-pasted ""
 entry "$BRANCH" unenforced ',"reason":"opt-out"'
 expect "an unchecked spawn on this branch fails" "FAIL:unchecked-spawn(opt-out)"
 
-rm -f "$LEDGER"
+set_aside "$LEDGER"
 spawn() {
   node -e 'const fs=require("node:fs");
     process.stdout.write(JSON.stringify({
@@ -175,7 +176,7 @@ OUTSIDE="$TMP/outside-any-repo"
 mkdir -p "$OUTSIDE"
 OUTSIDE_LEDGER=$(node -e 'import("'"$HERE"'/../lib/spawn-ledger.mjs").then(m =>
   process.stdout.write(m.ledgerPath(process.argv[1])));' "$OUTSIDE")
-rm -f "$LEDGER"
+set_aside "$LEDGER"
 printf '{"branch":"","verdict":"unenforced","reason":"opt-out"}\n' > "$OUTSIDE_LEDGER"
 out=$(node "$REPORT" "$OUTSIDE") || fail "non-repo report crashed"
 echo "$out" | grep -q "FAIL:unchecked-spawn(opt-out)" \
@@ -184,19 +185,17 @@ printf '{"branch":"","verdict":"contract-pasted"}\n' > "$OUTSIDE_LEDGER"
 out=$(node "$REPORT" "$OUTSIDE") || fail "non-repo report of a checked spawn crashed"
 echo "$out" | grep -q "subagent-contract PASS" \
   || fail "a checked spawn made outside a repository must pass, got: $out"
-rm -f "$OUTSIDE_LEDGER"
 
 SUBDIR="$REPO/sub/dir"
 mkdir -p "$SUBDIR"
 SUBDIR_LEDGER=$(node -e 'import("'"$HERE"'/../lib/spawn-ledger.mjs").then(m =>
   process.stdout.write(m.ledgerPath(process.argv[1])));' "$SUBDIR")
-rm -f "$LEDGER"
+set_aside "$LEDGER"
 printf '{"branch":"%s","verdict":"unenforced","reason":"opt-out"}\n' "$BRANCH" \
   > "$SUBDIR_LEDGER"
 out=$(node "$REPORT" "$SUBDIR") || fail "subdirectory report crashed"
 echo "$out" | grep -q "FAIL:unchecked-spawn(opt-out)" \
   || fail "a record filed under the raw working directory must still be read: $out"
-rm -f "$SUBDIR_LEDGER"
 
 DETACHED=$(git -C "$REPO" rev-parse HEAD)
 git -C "$REPO" checkout -q --detach "$DETACHED"

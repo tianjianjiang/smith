@@ -2,6 +2,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../subagent-contract-guard.mjs"
 SKILL="$HERE/../../../smith-subagents/SKILL.md"
+. "$HERE/lib/set-aside.sh"
 
 TMP=$(mktemp -d)
 CLAUDE_CONFIG_DIR="$TMP/config"
@@ -44,7 +45,7 @@ payload() {
     }));' "$1" "$2" "$3" "$4"
 }
 
-reset_ledger() { rm -rf "$CLAUDE_CONFIG_DIR/plans"; }
+reset_ledger() { set_aside "$CLAUDE_CONFIG_DIR/plans"; }
 ledger() { cat "$CLAUDE_CONFIG_DIR"/plans/.spawn-ledger-* 2>/dev/null; }
 
 expect_allowed() {
@@ -208,7 +209,7 @@ expect_allowed "an exemption is non-applicability, not a waived check" exempt \
   "$TMP/reworded.txt" "pr-review-toolkit:code-reviewer"
 expect_allowed "a configured exemption survives the opt-out too" exempt \
   "$TMP/reworded.txt" statusline-setup
-rm -rf "$REPO/.claude"
+set_aside "$REPO/.claude"
 
 ledger_path_for() {
   node -e 'import(process.argv[1]).then(m =>
@@ -287,7 +288,7 @@ payload Agent "$REPO" statusline-setup "$TMP/reworded.txt" \
 [ "$?" = 2 ] \
   || fail "a non-array config must exempt nothing, not fall back to a built-in list"
 
-rm -f "$TMP/config-honoured/smith-ctx-claude/subagent-contract-config.json"
+set_aside "$TMP/config-honoured/smith-ctx-claude/subagent-contract-config.json"
 reset_ledger
 payload Agent "$REPO" statusline-setup "$TMP/reworded.txt" \
   | node "$CFG_TREE" >"$TMP/out" 2>"$TMP/err"
@@ -371,7 +372,7 @@ if ! payload Agent "$REPO" general-purpose "$TMP/reworded.txt" \
   | CLAUDE_CONFIG_DIR="$UNWRITABLE" node "$HOOK" >"$TMP/out" 2>"$TMP/err"; then
   fail "opt-out with an unwritable ledger is consent, and must not block"
 fi
-rm -rf "$REPO/.claude"
+set_aside "$REPO/.claude"
 
 ORPHAN="$TMP/orphan/scripts"
 mkdir -p "$ORPHAN/lib"
