@@ -283,14 +283,14 @@ When invoked via `/smith-checkpoint` (no arguments required):
      script prints on stderr after relocation (a memory written by MCP into
      the worktree ends up in the primary checkout, possibly under a
      `__from_worktree_` suffix)
-   - Create the body file with `new-body-file.sh`. It prints the path of a
-     new, empty, owner-only file in `CLAUDE_JOB_DIR`, else `TMPDIR`, else
-     `/tmp`. Reuse that printed path literally as `«body-file»` here and in
-     steps 6 and 7. If the script exits nonzero or prints nothing, stop and
+   - Create the body file with `mktemp`. It prints the path of a new,
+     empty, owner-only file in the folder the system chooses for temporary
+     files. Reuse that printed path literally as `«body-file»` here and in
+     steps 6 and 7. If `mktemp` exits nonzero or prints nothing, stop and
      report it; never write to the literal text `«body-file»`. The file is
-     left for the temporary directory's own cleanup:
+     left for the system's own cleanup of that folder:
      ```bash
-     "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/new-body-file.sh"
+     mktemp -t checkpoint-body.XXXXXX
      ```
    - Fill it with a Bash heredoc (Write tool requires Read first, even for new files):
      ```bash
@@ -372,8 +372,8 @@ When invoked via `/smith-checkpoint` (no arguments required):
         every open decision) to a new file, so they cannot be fitted to
         the returns afterwards; the allowed set above already keeps both
         checkers out of it. A rerun from item 6 reuses that file.
-        `mktemp "${TMPDIR:-/tmp}/checkpoint-expected.XXXXXX"` prints its
-        path; later Bash calls reuse that path as a literal string
+        `mktemp -t checkpoint-expected.XXXXXX` prints its path; later
+        Bash calls reuse that path as a literal string
       - Each round spawns both checkers in one message:
         - VERIFIER (verification: is what is written true?), SKEPTIC
           role, named in its prompt to invoke `@smith-validation` and to

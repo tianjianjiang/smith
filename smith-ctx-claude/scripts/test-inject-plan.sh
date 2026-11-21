@@ -57,14 +57,7 @@ ENFORCE_SCRIPT="$SCRIPT_DIR/../smith-ctx-claude/scripts/enforce-clear.sh"
 PLAN_EXIT_SCRIPT="$SCRIPT_DIR/scripts/on-plan-exit.sh"
 SESSION_CLEAR_SCRIPT="$SCRIPT_DIR/scripts/on-session-clear.sh"
 
-# Use temp directory for isolation. The template is explicit because BSD `mktemp -d`
-# ignores TMPDIR without one, which made the guard below advise a fix that could not
-# work on macOS — and made the guard's own failure path unreachable from a test.
-# The trailing slash matters: macOS sets TMPDIR with one, and pasting a template
-# straight on gives `…/T//smith-…`, a path that compares unequal to the same
-# directory spelled once. Tests assert on these paths, so normalise it here.
-TEST_TMPROOT="${TMPDIR:-/tmp}"; TEST_TMPROOT="${TEST_TMPROOT%/}"
-TEST_DIR=$(mktemp -d "${TEST_TMPROOT}/smith-mode-plan-claude-tests.XXXXXX")
+TEST_DIR=$(mktemp -d -t smith-mode-plan-claude-tests.XXXXXX)
 # Every scenario below builds its own repositories, so an INHERITED git environment
 # has nothing to contribute and plenty to break: rev-parse reads GIT_DIR before it
 # looks at -C, so the sandbox guard below reports every directory as inside a
@@ -78,14 +71,14 @@ PLANS_DIR="$TEST_DIR/plans"
 mkdir -p "$PLANS_DIR"
 
 # Fail closed if the sandbox landed inside a git repository. scope_key() searches
-# UPWARD for a repository, so with a repo-local TMPDIR the directories these tests
-# construct as belonging to different repositories would all resolve to the same
-# one: the foreign-flag scenarios would stop testing what their names say, and some
-# would fail for a reason that has nothing to do with the code under test.
+# UPWARD for a repository, so with the system temporary folder inside a repository
+# the directories these tests construct as belonging to different repositories would
+# all resolve to the same one: the foreign-flag scenarios would stop testing what their
+# names say, and some would fail for a reason that has nothing to do with the code
+# under test.
 if git -C "$TEST_DIR" rev-parse --git-common-dir >/dev/null 2>&1; then
-    echo "Error: sandbox $TEST_DIR is inside a git repository (TMPDIR=${TMPDIR:-unset})." >&2
+    echo "Error: sandbox $TEST_DIR, made by mktemp -d -t, is inside a git repository." >&2
     echo "       scope_key() resolves upward, so repository-scoped scenarios would be meaningless." >&2
-    echo "       Re-run with TMPDIR pointing outside any repository." >&2
   
   
     rm -rf "$TEST_DIR"
