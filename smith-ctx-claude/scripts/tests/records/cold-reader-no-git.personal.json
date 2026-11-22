@@ -1,0 +1,312 @@
+{
+  "recordedAt": "2026-11-20T03:27:56+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "variants": [
+    {
+      "variant": "allowed-and-disallowed-only",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "DesignSync",
+        "EnterWorktree",
+        "ExitWorktree",
+        "ListAgents",
+        "LSP",
+        "PushNotification",
+        "Read",
+        "RemoteTrigger",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskStop",
+        "ToolSearch",
+        "Workflow"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Grep",
+          "isError": true
+        },
+        {
+          "tool": "Glob",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": true,
+      "unnamedRepoRead": true,
+      "searchRan": false,
+      "pass": false
+    },
+    {
+      "variant": "with-tools-read",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Glob",
+          "isError": true
+        },
+        {
+          "tool": "Grep",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": true,
+      "unnamedRepoRead": true,
+      "searchRan": false,
+      "pass": false
+    },
+    {
+      "variant": "restricted-tools-read",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": false,
+      "searchRan": false,
+      "pass": true
+    },
+    {
+      "variant": "no-setting-sources-tools-read",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Grep",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": false,
+      "searchRan": false,
+      "pass": true
+    },
+    {
+      "variant": "dont-ask-tools-read",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": true,
+      "searchRan": false,
+      "pass": false
+    },
+    {
+      "variant": "dont-ask-no-setting-sources-tools-read",
+      "namedFileInWorkingFolder": true,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Glob",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": false,
+      "searchRan": false,
+      "pass": true
+    },
+    {
+      "variant": "no-setting-sources-tools-read-named-outside",
+      "namedFileInWorkingFolder": false,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Glob",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": false,
+      "searchRan": false,
+      "pass": true
+    },
+    {
+      "variant": "dont-ask-no-setting-sources-tools-read-named-outside",
+      "namedFileInWorkingFolder": false,
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Read"
+      ],
+      "toolCalls": [
+        {
+          "tool": "Bash",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": false
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Read",
+          "isError": true
+        },
+        {
+          "tool": "Glob",
+          "isError": true
+        },
+        {
+          "tool": "Grep",
+          "isError": true
+        }
+      ],
+      "gitRan": false,
+      "unnamedRead": false,
+      "unnamedRepoRead": false,
+      "searchRan": false,
+      "pass": true
+    }
+  ],
+  "enforcingVariants": [
+    "restricted-tools-read",
+    "no-setting-sources-tools-read",
+    "dont-ask-no-setting-sources-tools-read",
+    "no-setting-sources-tools-read-named-outside",
+    "dont-ask-no-setting-sources-tools-read-named-outside"
+  ]
+}

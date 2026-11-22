@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-11-20T03:58:15+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "flags": [
+    "--setting-sources \"\"",
+    "--tools Read",
+    "no allow rules",
+    "working folder holds a copied file, a symlink to an outside file and a symlink to an outside folder"
+  ],
+  "exitStatus": 0,
+  "toolCalls": [
+    {
+      "isError": false
+    },
+    {
+      "isError": true
+    },
+    {
+      "isError": true
+    },
+    {
+      "isError": true
+    }
+  ],
+  "copiedFileRead": true,
+  "linkedFileRead": false,
+  "linkedFolderRead": false,
+  "pass": true
+}

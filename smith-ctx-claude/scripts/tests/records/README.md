@@ -425,6 +425,246 @@ are not measured here.
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
+## What a Stop hook receives about background tasks
+
+- Script: `../stop-background-tasks.probe.sh`
+- Record: `stop-background-tasks.json`
+- Prerequisites: `jq`, `timeout`, a logged-in `claude` on `PATH`.
+- Replay: `smith-ctx-claude/scripts/tests/stop-background-tasks.probe.sh smith-ctx-claude/scripts/tests/records/stop-background-tasks.json`
+- What it does: runs one headless haiku session in a fresh temporary folder
+  with an inline Stop hook that saves its input, and asks the session to start
+  a background shell task and reply at once.
+- Passing output: every saved Stop input has `has_background_tasks` true; the
+  first lists the shell task as `running` in `background_tasks`, and the
+  later one lists none.
+
+## Isolated `claude -p` worker: the flags still authenticate
+
+The isolated worker is a `claude -p` child started with the flags in
+`../lib/isolated-worker.sh`: `--strict-mcp-config`,
+`--no-session-persistence`, `--output-format`, `--model`, `--allowedTools`, a
+`--disallowedTools` list, `CLAUDE_JOB_DIR` unset, `CTX_AUTO_RESET_DISPATCH=0`,
+and `--` before the prompt, since `--disallowedTools` otherwise takes the
+prompt as one of its values.
+
+- Script: `../worker-isolation-auth.probe.sh`
+- Record: `worker-isolation-auth.personal.json`, from the personal profile
+- Prerequisites: `jq`, `timeout`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/worker-isolation-auth.probe.sh «record»`
+- What it does: asks an isolated worker in an empty temporary folder to echo
+  a random word.
+- Passing output: exit status 0, `isError` false, `replyMatches` true.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## COLD READER: which flags keep it from `git` and from unnamed files
+
+- Script: `../cold-reader-no-git.probe.sh`
+- Record: `cold-reader-no-git.personal.json`, from the personal profile
+- Prerequisites: `jq`, `timeout`, `git`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/cold-reader-no-git.probe.sh «record»`
+- What it does: writes a named file and an unnamed file with a random code
+  word in separate temporary folders, then asks the worker, allowed only
+  `Read(//«named file»)`, to run `git` on this repository, read the named
+  file, read the unnamed file, read an unnamed file of this repository, and
+  search the repository. Each variant adds flags to the isolated worker:
+  none; `--tools Read`; `--restricted --tools Read`; `--setting-sources ""`
+  with `--tools Read`; `--permission-mode dontAsk --tools Read`; and
+  `dontAsk` with `--setting-sources ""` and `--tools Read`; the last two
+  settings-free variants run again with the named file outside the working
+  folder. The verdicts come from the tool results in the `stream-json`
+  stream, never from the reply text.
+- Passing output: a variant passes when it exits 0, read the named file, and
+  neither ran `git`, read either unnamed file, nor searched;
+  `enforcingVariants` lists the variants that pass.
+- What the record shows: `git` never ran. While the user settings load,
+  their allow rules, such as `Read(//«home»/Projects/**)`, and their auto
+  permission mode admit unnamed reads, so the allow rule on the named file
+  limits nothing. Without `--tools`, the worker also gets non-built-in tools
+  such as `SendMessage`, `Workflow` and `Skill`. With the user settings left
+  out, by `--restricted` or by `--setting-sources ""`, and `--tools Read`,
+  only the named file is read, also when it lies outside the working folder.
+- An absolute path in a rule needs two leading slashes: a single leading
+  slash anchors at the primary working directory for a rule given in a CLI
+  flag, per "How path patterns match" in
+  https://code.claude.com/docs/en/permissions.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## Isolated workers end when their runner is signalled
+
+- Script: `../worker-interrupt.probe.sh`
+- Records: `worker-interrupt.term.personal.json` and
+  `worker-interrupt.int.personal.json`, from the personal profile
+- Prerequisites: `jq`, `perl`, `pgrep`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_WORKER_SIGNAL=TERM SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/worker-interrupt.probe.sh «record»`,
+  and the same with `INT`
+- What it does: starts a runner as the leader of its own process group; the
+  runner starts both isolated workers in the background, each running a
+  script that sleeps in the foreground of its Bash tool, and traps INT and
+  TERM by sending TERM to its whole group. Once both tool processes run, the
+  probe sends the signal to the runner, waits for it to exit, and counts the
+  workers and tool processes still alive. A runner still alive after the wait
+  gets TERM, so no run leaves processes behind.
+- Passing output: the runner exits within the wait, and no worker or tool
+  process is alive afterwards.
+- What the records show: TERM passes. INT fails; the inferred cause, which
+  the probe does not measure, is that a background job of a non-interactive
+  shell starts with INT ignored, so the runner's trap never runs. The tool processes run in process groups of their own, not the
+  runner's, so the group kill reaches only the workers, which then end their
+  own tool processes.
+- Optional parameters: `SMITH_LIVE_WORKER_SIGNAL`, default `TERM`;
+  `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## VERIFIER: which Bash rule keeps `git` to the repository
+
+- Script: `../verifier-bash-scope.probe.sh`
+- Record: `verifier-bash-scope.personal.json`, from the personal profile
+- Prerequisites: `jq`, `timeout`, `git`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/verifier-bash-scope.probe.sh «record»`
+- What it does: runs the isolated worker in an empty temporary folder with
+  `--setting-sources ""`, `--tools Read,Bash` and an allow rule
+  `Read(//«repo»/**)`, and asks it to run `git rev-parse` on this
+  repository, `cat` an unnamed file holding a random code word, the same
+  `cat` chained after `git` with `&&`, `git diff --no-index` against the
+  unnamed file, `git init` in the unnamed file's folder, a `git -c
+  alias.«name»=!cat «unnamed file»` call inside the allowed prefix, then read a file of
+  this repository and the unnamed file. One variant allows `Bash(git *)`,
+  the other `Bash(git -C «repo» *)`.
+- Passing output: `git` on the repository and the repository read succeed,
+  the code word appears in no tool result, and `git init` outside the
+  repository is refused; `enforcingVariants` lists the variants that pass.
+- What the record shows: no variant passes. Both refused `cat`, the chained
+  `cat` and `git diff --no-index`; `Bash(git *)` also let `git init` run
+  outside the repository. In both, the `-c alias.«name»=!cat` call ran and
+  printed the unnamed file's code word: a prefix rule on `git` does not keep
+  a worker from running other programs.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## A worker folder: symlinks do not reach outside it
+
+- Script: `../worker-folder-symlink.probe.sh`
+- Record: `worker-folder-symlink.personal.json`, from the personal profile
+- Prerequisites: `jq`, `timeout`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/worker-folder-symlink.probe.sh «record»`
+- What it does: runs the isolated worker with `--setting-sources ""`,
+  `--tools Read` and no allow rule, in a working folder that holds a copied
+  file, a symlink to a file outside it and a symlink to a folder outside it,
+  each outside file holding a random code word; the worker reads the copied
+  file, both links and the outside file by its own path.
+- Passing output: the copied file is read and neither outside code word
+  appears in a tool result.
+- What the record shows: passes; both links are refused like the outside
+  path, so inputs placed in a worker folder by link are unreadable and have
+  to be copied.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## A runner in the foreground Bash tool when its session is interrupted
+
+- Script: `../foreground-runner-interrupt.probe.sh`
+- Record: `foreground-runner-interrupt.personal.json`, from the personal profile
+- Prerequisites: `jq`, `mkfifo`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/foreground-runner-interrupt.probe.sh «record»`
+- What it does: an outer `claude -p` in `stream-json` mode runs a runner in
+  its foreground Bash tool; the runner traps INT, TERM, HUP and QUIT, logs
+  the signal and ends its background `sleep`. The session is then
+  interrupted, once by the `interrupt` control request on standard input,
+  once by SIGINT to the outer `claude` process.
+- Passing output: the runner and its child are gone afterwards;
+  `signalsTheRunnerTrapped` names what the runner received.
+- What the record shows: both variants pass, and in both the runner received
+  TERM, so a runner that traps TERM and ends its own jobs needs no process
+  group of its own. Both variants interrupt by program and the runner holds
+  only a `sleep`; the Escape key and real workers are the next section.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## The Escape key in an interactive session stops a runner and its workers
+
+- Script: `../foreground-runner-escape.probe.py`
+- Record: `foreground-runner-escape.personal.json`, from the personal profile
+- Prerequisites: Python 3, `pgrep`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 python3 -I smith-ctx-claude/scripts/tests/foreground-runner-escape.probe.py «record»`
+- What it does: starts an interactive `claude` in a pseudo-terminal, in a
+  fresh temporary folder the probe created, with `--setting-sources ""`,
+  `--strict-mcp-config`, `--tools Bash` and `--allowedTools
+  "Bash(./runner.sh)"`, or `"Bash(./start.sh) Bash(./join.sh)"` in the third
+  variant; answers the folder trust dialog with "Yes", types
+  the request to run `./runner.sh` in the foreground and presses Enter; once
+  the runner's jobs run, writes the Escape key byte to the terminal, the
+  same input a person's key press gives. The runner traps INT, TERM, HUP and
+  QUIT, logs the signal and kills its background jobs. In one variant the
+  job is a `sleep`; in another it is both isolated `claude -p` workers of
+  `../lib/isolated-worker.sh`, each holding a `sleep` in its own Bash tool.
+  In the third, the session runs the wrapper script `./start.sh`, which
+  calls `../../worker-job.sh start` on that runner, in one call and the
+  wrapper script `./join.sh`, which calls `../../worker-job.sh join`, in the
+  next, and the key is pressed during the join. `SMITH_LIVE_ESCAPE_VARIANTS`, default
+  `sleep,workers,job`, selects variants.
+- Passing output: the runner, its children and the workers' tool processes
+  are all gone ten seconds after the key press.
+- What the record shows: every variant passes; the runner received TERM in
+  each, the job of the third variant ended as `SMITH_JOB_CANCELLED`, and the
+  interactive session stayed open.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## Raising the Bash tool's timeout ceiling keeps a long command in the foreground
+
+- Script: `../bash-timeout-ceiling.probe.sh`
+- Record: `bash-timeout-ceiling.personal.json`, from the personal profile
+- Prerequisites: `jq`, a logged-in `claude` on `PATH`; one run takes about
+  eleven minutes, its variants running side by side.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/bash-timeout-ceiling.probe.sh «record»`
+- What it does: an isolated worker with `--setting-sources ""` and `--tools
+  Bash` runs a script that sleeps `SMITH_LIVE_HOLD_SECONDS`, default 660,
+  then prints a random word, asking for the Bash `timeout` parameter
+  `SMITH_LIVE_REQUESTED_TIMEOUT_MS`, default 900000. Variants: no change to
+  the ceiling; `BASH_MAX_TIMEOUT_MS` set to `SMITH_LIVE_CEILING_MS`, default
+  1200000, in the environment of the `claude` process; the same value in
+  `--settings` under `env`, as a `settings.json` entry would give it.
+- Passing output: `foregroundVariants` lists the variants whose first tool
+  result holds the random word, meaning the command finished in the
+  foreground.
+- What the record shows: without a change the command moved to the
+  background at 600 seconds; with the ceiling raised either way it finished
+  in the foreground after 660 seconds. Local paths in the tool result are
+  replaced by `«path»`; the record of this run was redacted after the run
+  with the same expression the script now applies.
+- Background: "When a command reaches its timeout before it finishes,
+  Claude Code automatically moves it to the background instead of stopping
+  it", https://code.claude.com/docs/en/interactive-mode, and
+  `BASH_MAX_TIMEOUT_MS` in https://code.claude.com/docs/en/env-vars.
+
+## A `settings.json` env value reaches commands the Bash tool runs
+
+- Script: `../bash-ceiling-env-visible.probe.sh`
+- Record: `bash-ceiling-env-visible.personal.json`, from the personal profile
+- Prerequisites: `jq`, `timeout`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/bash-ceiling-env-visible.probe.sh «record»`
+- What it does: with `BASH_MAX_TIMEOUT_MS` removed from the environment of
+  the `claude` process, an isolated worker with `--setting-sources ""` and
+  `--tools Bash` runs a script that prints that variable; once with no
+  setting, once with `SMITH_LIVE_CEILING_MS`, default 1200000, in
+  `--settings` under `env`.
+- Passing output: `pass` is true: the script sees `unset` without the
+  setting and the configured value with it, so a runner can check the
+  ceiling it runs under before it starts.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
+## A job started in the background of a Bash call outlives the call and the session
+
+- Script: `../detached-job-survives-call.probe.sh`
+- Record: `detached-job-survives-call.personal.json`, from the personal profile
+- Prerequisites: `jq`, `perl`, `timeout`, a logged-in `claude` on `PATH`.
+- Replay: `SMITH_LIVE_CONTEXT_RESET_EVAL=1 smith-ctx-claude/scripts/tests/detached-job-survives-call.probe.sh «record»`
+- What it does: an isolated worker with `--setting-sources ""` and `--tools
+  Bash` runs a start script in the foreground that launches a job sleeping
+  `SMITH_LIVE_JOB_SECONDS`, default 60, then runs a check script in a second
+  call. Launch variants: plain `&`; `nohup … &`; `&` in a new process group
+  made with `perl` `setpgrp`.
+- Passing output: the job is alive at the second call and finishes.
+- What the record shows: every variant passes, and the job is still alive
+  after the `claude -p` session has exited, so a detached job needs its own
+  rule for ending when no session waits for it.
+- Optional parameter: `SMITH_LIVE_CONTEXT_RESET_MODEL`, default `haiku`.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with

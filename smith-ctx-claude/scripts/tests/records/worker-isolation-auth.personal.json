@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-11-20T03:57:57+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "flags": [
+    "--strict-mcp-config",
+    "--no-session-persistence",
+    "--output-format json",
+    "--allowedTools",
+    "--disallowedTools",
+    "env -u CLAUDE_JOB_DIR",
+    "CTX_AUTO_RESET_DISPATCH=0"
+  ],
+  "exitStatus": 0,
+  "elapsedSeconds": 8,
+  "isError": false,
+  "subtype": "success",
+  "replyMatches": true,
+  "pass": true
+}

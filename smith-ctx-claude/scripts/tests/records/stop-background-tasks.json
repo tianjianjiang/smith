@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-11-19T17:35:15+0900",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "exitStatus": "0",
+  "reply": "started\n\nThe background `sleep 40` finished with exit code 0.\n",
+  "stopInputs": [
+    {
+      "hook_event_name": "Stop",
+      "stop_hook_active": false,
+      "has_background_tasks": true,
+      "background_tasks": [
+        {
+          "id": "brdk4xmph",
+          "type": "shell",
+          "status": "running",
+          "description": "Run sleep 40 in background",
+          "command": "sleep 40"
+        }
+      ],
+      "has_session_crons": true
+    },
+    {
+      "hook_event_name": "Stop",
+      "stop_hook_active": false,
+      "has_background_tasks": true,
+      "background_tasks": [],
+      "has_session_crons": true
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "recordedAt": "2026-11-20T04:02:30+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "setup": "outer claude -p in stream-json mode runs ./runner.sh in its foreground Bash tool; runner traps INT TERM HUP QUIT, logs the signal and kills its background sleep",
+  "variants": [
+    {
+      "variant": "control-request-interrupt",
+      "secondsUntilRunnerStarted": 4,
+      "runnerStarted": true,
+      "signalsTheRunnerTrapped": [
+        "TERM"
+      ],
+      "runnerAliveAfter": false,
+      "runnerChildAliveAfter": false,
+      "outerClaudeAliveAfter": true,
+      "controlResponses": [
+        "success"
+      ],
+      "runnerSawSignal": true,
+      "pass": true
+    },
+    {
+      "variant": "sigint-to-outer-claude",
+      "secondsUntilRunnerStarted": 4,
+      "runnerStarted": true,
+      "signalsTheRunnerTrapped": [
+        "TERM"
+      ],
+      "runnerAliveAfter": false,
+      "runnerChildAliveAfter": false,
+      "outerClaudeAliveAfter": false,
+      "controlResponses": [],
+      "runnerSawSignal": true,
+      "pass": true
+    }
+  ],
+  "passingVariants": [
+    "control-request-interrupt",
+    "sigint-to-outer-claude"
+  ]
+}

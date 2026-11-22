@@ -1,0 +1,38 @@
+{
+  "recordedAt": "2026-11-20T04:48:20+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "jobSeconds": 60,
+  "variants": [
+    {
+      "variant": "plain-background",
+      "exitStatus": 0,
+      "jobAliveAtSecondToolCall": true,
+      "jobAliveAfterSessionExit": true,
+      "jobFinished": true,
+      "pass": true
+    },
+    {
+      "variant": "nohup-background",
+      "exitStatus": 0,
+      "jobAliveAtSecondToolCall": true,
+      "jobAliveAfterSessionExit": true,
+      "jobFinished": true,
+      "pass": true
+    },
+    {
+      "variant": "own-process-group",
+      "exitStatus": 0,
+      "jobAliveAtSecondToolCall": true,
+      "jobAliveAfterSessionExit": true,
+      "jobFinished": true,
+      "pass": true
+    }
+  ],
+  "survivingVariants": [
+    "plain-background",
+    "nohup-background",
+    "own-process-group"
+  ]
+}

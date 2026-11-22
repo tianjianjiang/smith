@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-11-20T16:12:38+09:00",
+  "claudeCodeVersion": "2.1.329 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "setup": "interactive claude in a pseudo-terminal runs ./runner.sh in its foreground Bash tool, then the Escape key byte is written to the terminal; runner traps INT TERM HUP QUIT, logs the signal and kills its background jobs, which are a sleep in one variant and both isolated claude -p workers, each holding a sleep in its own Bash tool, in the other; a third variant starts the runner with worker-job.sh start and presses Escape during worker-job.sh join",
+  "variants": [
+    {
+      "variant": "runner-starts-sleep",
+      "jobState": null,
+      "trustPromptAnswered": true,
+      "secondsUntilRunnerStarted": 3,
+      "runnerStarted": true,
+      "signalsTheRunnerTrapped": [
+        "TERM"
+      ],
+      "runnerChildrenBefore": 1,
+      "workerToolProcessesBefore": 0,
+      "runnerAliveAfter": false,
+      "runnerChildrenAliveAfter": 0,
+      "workerToolProcessesAliveAfter": 0,
+      "interactiveSessionAliveAfter": true,
+      "pass": true
+    },
+    {
+      "variant": "runner-starts-isolated-claude-workers",
+      "jobState": null,
+      "trustPromptAnswered": true,
+      "secondsUntilRunnerStarted": 5,
+      "runnerStarted": true,
+      "signalsTheRunnerTrapped": [
+        "TERM"
+      ],
+      "runnerChildrenBefore": 2,
+      "workerToolProcessesBefore": 2,
+      "runnerAliveAfter": false,
+      "runnerChildrenAliveAfter": 0,
+      "workerToolProcessesAliveAfter": 0,
+      "interactiveSessionAliveAfter": true,
+      "pass": true
+    },
+    {
+      "variant": "worker-job-join-of-runner-with-isolated-claude-workers",
+      "jobState": "SMITH_JOB_CANCELLED",
+      "trustPromptAnswered": true,
+      "secondsUntilRunnerStarted": 6,
+      "runnerStarted": true,
+      "signalsTheRunnerTrapped": [
+        "TERM"
+      ],
+      "runnerChildrenBefore": 2,
+      "workerToolProcessesBefore": 2,
+      "runnerAliveAfter": false,
+      "runnerChildrenAliveAfter": 0,
+      "workerToolProcessesAliveAfter": 0,
+      "interactiveSessionAliveAfter": true,
+      "pass": true
+    }
+  ],
+  "passingVariants": [
+    "runner-starts-sleep",
+    "runner-starts-isolated-claude-workers",
+    "worker-job-join-of-runner-with-isolated-claude-workers"
+  ]
+}

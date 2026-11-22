@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-11-20T03:23:27+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "signal": "TERM",
+  "secondsUntilBothToolCallsRan": 6,
+  "runnerExitStatus": 143,
+  "runnerExitedWithin30Seconds": true,
+  "workersBefore": 2,
+  "workersAliveAfter": 0,
+  "toolProcessesBefore": 2,
+  "toolProcessesAliveAfter": 0,
+  "toolProcessesShareRunnerGroup": false,
+  "pass": true
+}

@@ -1,0 +1,158 @@
+{
+  "recordedAt": "2026-11-20T03:38:15+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "commonFlags": [
+    "--setting-sources \"\"",
+    "--tools Read,Bash",
+    "--allowedTools «bash rule» Read(//«repo»/**)"
+  ],
+  "variants": [
+    {
+      "variant": "bash-git-any",
+      "bashRule": "Bash(git *)",
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Bash",
+        "Read"
+      ],
+      "steps": [
+        {
+          "step": "git-rev-parse",
+          "isError": false,
+          "leaked": false,
+          "gitOutput": true,
+          "repoFileRead": false
+        },
+        {
+          "step": "cat-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-then-cat",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-diff-no-index-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-init-outside-repo",
+          "isError": false,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-alias-runs-cat",
+          "isError": false,
+          "leaked": true,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "read-repo-file",
+          "isError": false,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": true
+        },
+        {
+          "step": "read-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        }
+      ],
+      "gitRan": true,
+      "repoFileRead": true,
+      "unnamedLeaked": true,
+      "gitInitOutsideRan": true,
+      "pass": false
+    },
+    {
+      "variant": "bash-git-in-repo",
+      "bashRule": "Bash(git -C «repo» *)",
+      "exitStatus": 0,
+      "toolsAvailable": [
+        "Bash",
+        "Read"
+      ],
+      "steps": [
+        {
+          "step": "git-rev-parse",
+          "isError": false,
+          "leaked": false,
+          "gitOutput": true,
+          "repoFileRead": false
+        },
+        {
+          "step": "cat-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-then-cat",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-diff-no-index-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-init-outside-repo",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "git-alias-runs-cat",
+          "isError": false,
+          "leaked": true,
+          "gitOutput": false,
+          "repoFileRead": false
+        },
+        {
+          "step": "read-repo-file",
+          "isError": false,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": true
+        },
+        {
+          "step": "read-unnamed",
+          "isError": true,
+          "leaked": false,
+          "gitOutput": false,
+          "repoFileRead": false
+        }
+      ],
+      "gitRan": true,
+      "repoFileRead": true,
+      "unnamedLeaked": true,
+      "gitInitOutsideRan": false,
+      "pass": false
+    }
+  ],
+  "enforcingVariants": []
+}

@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-11-20T04:43:52+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "ceilingMs": "1200000",
+  "variants": [
+    {
+      "variant": "no-setting",
+      "exitStatus": 0,
+      "seenByBashChild": "unset"
+    },
+    {
+      "variant": "settings-env",
+      "exitStatus": 0,
+      "seenByBashChild": "1200000"
+    }
+  ],
+  "pass": true
+}

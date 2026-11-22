@@ -1,0 +1,59 @@
+{
+  "recordedAt": "2026-11-20T04:39:27+09:00",
+  "claudeCodeVersion": "2.1.328 (Claude Code)",
+  "profile": "~/.claude",
+  "model": "haiku",
+  "holdSeconds": 660,
+  "requestedTimeoutMs": 900000,
+  "ceilingMs": 1200000,
+  "variants": [
+    {
+      "variant": "no-ceiling-change",
+      "exitStatus": 0,
+      "elapsedSeconds": 668,
+      "requestedTimeouts": [
+        900000,
+        null
+      ],
+      "runInBackgroundRequested": [
+        false,
+        false
+      ],
+      "firstToolResultSaysBackground": true,
+      "holdFinishedInForeground": false,
+      "firstToolResultHead": "Command did not complete within its 600s timeout and was moved to the background (ID: bfnogw5j1). Output is being written to: «path»"
+    },
+    {
+      "variant": "ceiling-in-process-environment",
+      "exitStatus": 0,
+      "elapsedSeconds": 666,
+      "requestedTimeouts": [
+        900000
+      ],
+      "runInBackgroundRequested": [
+        false
+      ],
+      "firstToolResultSaysBackground": false,
+      "holdFinishedInForeground": true,
+      "firstToolResultHead": "holdfinished2467514052"
+    },
+    {
+      "variant": "ceiling-in-settings-env",
+      "exitStatus": 0,
+      "elapsedSeconds": 666,
+      "requestedTimeouts": [
+        900000
+      ],
+      "runInBackgroundRequested": [
+        false
+      ],
+      "firstToolResultSaysBackground": false,
+      "holdFinishedInForeground": true,
+      "firstToolResultHead": "holdfinished2558315402"
+    }
+  ],
+  "foregroundVariants": [
+    "ceiling-in-process-environment",
+    "ceiling-in-settings-env"
+  ]
+}
