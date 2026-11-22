@@ -89,7 +89,9 @@ thread review what the stack taught and re-plan stack two.
 
 ### Stack two: the decision, the seam and several tests folders
 
-Provisional.
+Steps 1 and 2 landed on the default branch as
+https://github.com/tianjianjiang/smith/pull/377 and
+https://github.com/tianjianjiang/smith/pull/378. Step 3 is provisional.
 
 1. `docs: record the test tooling layout decision`
    - Adds `docs/test-tooling/design.md` and this folder's `intent.md`,
@@ -107,10 +109,14 @@ Provisional.
      existing tests fail, and with a listed tooling source missing the test
      fails at the copy and names that source.
 3. Run tests from several tests folders; the commit type is `test`, as for
-   the rename and the seam, which change the same tooling. The runner takes
-   tests folders and names each log by repository-relative path instead of by
-   `basename`; the selector reads several tests folders. Default behaviour
-   unchanged.
+   the rename and the seam, which change the same tooling. In addition to
+   test files, the runner takes a tests folder as an argument and runs
+   every `*.test.sh` in it, `--all` runs every test in every tests folder,
+   and each log is named by repository-relative path instead of by
+   `basename`; the selector reads several tests folders. How the runner and
+   the selector learn the set of tests folders is for this step to settle.
+   Given no argument, the runner still runs the tests that the changes
+   against the default branch affect.
 
 Checkpoint after stack two: its pull requests merged; the owner and the main
 thread review what the stack taught and re-plan stack three.
@@ -229,6 +235,14 @@ GitHub issue. A step is closed only on the owner's OK.
   tests cannot yet tell the two folders apart. Stack two's third step
   states each of them in its acceptance tests, among them a fake repository
   whose tooling sits apart from its tests.
+- Once stack two's third step has the tooling read more than one tests
+  folder, any place that still reads one works on that folder alone. Two
+  such places came after the seam, with the change that made the affected
+  tests the runner's default,
+  https://github.com/tianjianjiang/smith/pull/387: `list_every_test` in
+  `run-affected.sh` and `testsToCheck` in `select.mjs`. Older ones remain
+  throughout the tooling. That step finds every such place and states it
+  in its acceptance tests.
 
 ## Proof
 

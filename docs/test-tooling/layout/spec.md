@@ -78,8 +78,7 @@ Approved, by role:
   their subject, as tests sit in `tests/`.
 - Runner: `run.sh`; it runs the tests it is given. Given none, it runs the
   tests that the changes against the default branch affect, and `--all`
-  runs the full suite, as the owner chose on 2026-11-18. Until that default
-  lands, the runner given none runs the full suite.
+  runs the full suite, as the owner chose on 2026-11-18.
 - Change-based entry point: `run-affected.sh`.
 - Selector: `select.mjs`, with the commands `tests` and `files`.
 - Hidden-read declarations: `hidden-reads.json`.
