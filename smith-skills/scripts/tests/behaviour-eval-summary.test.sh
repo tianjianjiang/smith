@@ -309,7 +309,7 @@ run_summary leak-found "$VARIANT"
 expect_refusal "a folder with the LEAK-FOUND marker"
 
 variant_of_good scan-missing
-rm "$VARIANT/leak-scan.txt"
+mv "$VARIANT/leak-scan.txt" "$(mktemp -d)"
 run_summary scan-missing "$VARIANT"
 expect_refusal "a folder without leak-scan.txt"
 
@@ -399,7 +399,7 @@ run_summary real-scan-hit-named-like-root "$VARIANT"
 expect_refusal "a run folder whose leak scan found a hit in a work file named like a root header"
 
 variant_of_good arms-missing
-rm "$VARIANT/arms.txt"
+mv "$VARIANT/arms.txt" "$(mktemp -d)"
 run_summary arms-missing "$VARIANT"
 expect_refusal "a folder without arms.txt"
 
@@ -415,7 +415,7 @@ run_summary unparsable-result "$VARIANT"
 expect_refusal "a result.json that is not valid JSON"
 
 variant_of_good no-results
-rm -rf "$VARIANT/skill-alpha" "$VARIANT/skill-beta"
+mv "$VARIANT/skill-alpha" "$VARIANT/skill-beta" "$(mktemp -d)"
 mkdir -p "$VARIANT/skill-alpha/with-change" "$VARIANT/skill-alpha/baseline"
 run_summary no-results "$VARIANT"
 expect_refusal "a clean folder holding no result.json"

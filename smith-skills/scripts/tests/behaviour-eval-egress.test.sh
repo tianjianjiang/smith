@@ -7,9 +7,8 @@ fail() { echo "FAIL: $1"; exit 1; }
 
 [ -f "$SCRIPT" ] || fail "smith-skills/scripts/behaviour-eval-egress.sh must exist"
 
-mkdir -p "$TMPD/bin" "$TMPD/state"
+mkdir -p "$TMPD/bin"
 FAKE_LOG="$TMPD/invocations.log"
-FAKE_STATE="$TMPD/state"
 export FAKE_LOG FAKE_STATE
 
 cat > "$TMPD/bin/docker" <<'FAKE'
@@ -52,7 +51,7 @@ case "$*" in
     [ -f "$FAKE_STATE/jump" ] || exit 1
     ;;
   *"iptables"*"-D DOCKER-USER"*)
-    rm -f "$FAKE_STATE/jump"
+    [ ! -e "$FAKE_STATE/jump" ] || mv "$FAKE_STATE/jump" "$(mktemp -d)"
     ;;
   *"iptables"*"-I DOCKER-USER"*)
     touch "$FAKE_STATE/jump"
@@ -61,7 +60,7 @@ case "$*" in
     touch "$FAKE_STATE/chain"
     ;;
   *"iptables"*"-X $chain"*)
-    rm -f "$FAKE_STATE/chain"
+    [ ! -e "$FAKE_STATE/chain" ] || mv "$FAKE_STATE/chain" "$(mktemp -d)"
     ;;
   *"iptables"*"-L $chain"*|*"iptables"*"-S $chain"*)
     [ -f "$FAKE_STATE/chain" ] || exit 1
@@ -94,7 +93,7 @@ foreign-host via $RESOLVED_REGISTRY: $5"
 
 reset_world() {
   : > "$FAKE_LOG"
-  rm -f "$FAKE_STATE/chain" "$FAKE_STATE/jump"
+  FAKE_STATE="$(mktemp -d)" || fail "mktemp -d did not create a fresh state folder"
   FAKE_BRIDGE_CONTAINERS=""
   FAKE_BRIDGE_IPV6="false"
   FAKE_ALL_CONTAINERS=""
