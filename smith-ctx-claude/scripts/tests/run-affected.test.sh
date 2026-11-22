@@ -2,6 +2,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TMPD="$(mktemp -d)"
 fail() { echo "FAIL: $1"; exit 1; }
+. "$HERE/lib/set-aside.sh"
 
 quiet_git() {
   git -c user.name=fake -c user.email=fake@example.invalid \
@@ -139,7 +140,7 @@ ran alpha && ran beta && ran gamma ||
   fail "a manifest entry that is not a list must run the full suite, got: $out"
 
 repo_with_fakes missing-manifest
-quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/tests/hidden-reads.json"
+set_aside "$tests/hidden-reads.json"
 commit_all "drop the manifest"
 quiet_git -C "$repo" branch -f base
 printf 'other notes\n' > "$repo/README.md"
@@ -364,7 +365,7 @@ printf 'beta() { echo changed; }\n' > "$scripts/beta-lib.sh"
 affected
 ran beta || fail "a defaulted path must still reach its default file, got: $out"
 printf 'other notes\n' > "$repo/README.md"
-rm -f "$RAN_DIR"/*
+RAN_DIR="$(mktemp -d)" || fail "mktemp -d did not create a fresh folder for the run markers"
 quiet_git -C "$repo" checkout -q -- "smith-ctx-claude/scripts/beta-lib.sh"
 affected
 ran beta && fail "a defaulted path must not make the test read the whole repository, got: $out"
@@ -490,7 +491,7 @@ ln -s real-a "$scripts/linked-folder"
 printf '#!/bin/sh\n. "$(dirname "$0")/linked-folder/target.sh"\n' > "$scripts/beta-hook.sh"
 commit_all "beta sources through a folder link"
 quiet_git -C "$repo" branch -f base
-rm "$scripts/linked-folder" && ln -s real-b "$scripts/linked-folder"
+set_aside "$scripts/linked-folder" && ln -s real-b "$scripts/linked-folder"
 affected
 ran beta || fail "retargeting a folder link on a dependency path must run the test, got: $out"
 
@@ -501,7 +502,8 @@ printf 'module.exports = 1;\n' > "$scripts/lib/util/index.js"
 printf 'require("./lib/util");\n' > "$scripts/alpha-hook.mjs"
 commit_all "alpha requires util, which exists as a file and as a folder index"
 quiet_git -C "$repo" branch -f base
-quiet_git -C "$repo" rm -q smith-ctx-claude/scripts/lib/util.js
+set_aside "$scripts/lib/util.js"
+quiet_git -C "$repo" add -A
 affected
 ran alpha || fail "deleting the file Node loads before a folder index must run the test, got: $out"
 
@@ -522,7 +524,8 @@ printf 'u\n' > "$scripts/lib/util.js"
 printf 'require("./lib/util");\n' > "$scripts/alpha-hook.mjs"
 commit_all "alpha requires util without an extension"
 quiet_git -C "$repo" branch -f base
-quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/lib/util.js"
+set_aside "$scripts/lib/util.js"
+quiet_git -C "$repo" add -A
 affected
 ran alpha || fail "deleting a module required without its extension must run the test, got: $out"
 
@@ -531,7 +534,8 @@ printf '{"smith-ctx-claude/scripts/tests/gamma.test.sh": ["*/SKILL.md"]}\n' > "$
 mkdir -p "$repo/smith-extra" && printf 'x\n' > "$repo/smith-extra/SKILL.md"
 commit_all "declare a glob with a second match"
 quiet_git -C "$repo" branch -f base
-quiet_git -C "$repo" rm -q smith-extra/SKILL.md
+set_aside "$repo/smith-extra/SKILL.md"
+quiet_git -C "$repo" add -A
 affected
 ran gamma || fail "a deleted file matching a declared glob must run the test that declared it, got: $out"
 printf '%s\n' "$out" | grep -q 'declares \*/SKILL.md, which matches smith-extra/SKILL.md' ||
@@ -599,13 +603,15 @@ affected
 ran delta || fail "a change to the target of a symlinked test must run the test, got: $out"
 
 repo_with_fakes deleted-dependency
-quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/beta-lib.sh"
+set_aside "$scripts/beta-lib.sh"
+quiet_git -C "$repo" add -A
 affected
 ran beta || fail "a deleted dependency must still run the test that reached it, got: $out"
 ran alpha && fail "a deleted dependency of beta must not run alpha, got: $out"
 
 repo_with_fakes deleted-test
-quiet_git -C "$repo" rm -q "smith-ctx-claude/scripts/tests/gamma.test.sh"
+set_aside "$tests/gamma.test.sh"
+quiet_git -C "$repo" add -A
 affected
 [ "$status" = 0 ] || fail "a deleted test alone must exit zero, got: $out"
 printf '%s\n' "$out" | grep -q 'gamma.test.sh was deleted' ||
