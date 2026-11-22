@@ -1,6 +1,5 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-TESTS="$HERE"
 if [ "$#" != 1 ]; then
   echo "usage: sh run-affected.sh BASE_REF"
   exit 2
@@ -10,13 +9,19 @@ WORK="$(mktemp -d)" || {
   echo "run-affected: could not make a scratch folder"
   exit 1
 }
+sh "$HERE/list-folders.sh" > "$WORK/folders" || {
+  echo "run-affected: could not list the tests folders"
+  exit 1
+}
 
 list_every_test() {
-  for test_file in "$TESTS"/*.test.sh; do
-    if [ -e "$test_file" ] || [ -L "$test_file" ]; then
-      printf '%s\n' "$test_file"
-    fi
-  done > "$WORK/check"
+  while IFS= read -r folder; do
+    for test_file in "$folder"/*.test.sh; do
+      if [ -e "$test_file" ] || [ -L "$test_file" ]; then
+        printf '%s\n' "$test_file"
+      fi
+    done
+  done < "$WORK/folders" > "$WORK/check"
 }
 
 check_listed_tests() {
@@ -65,7 +70,11 @@ echo "run-affected: comparing against $BASE (merge base $MERGE_BASE)"
     git -C "$ROOT" ls-files -z --others --exclude-standard
 } > "$WORK/changed" || full_suite "git could not list the changed files"
 
-node "$HERE/select.mjs" tests "$ROOT" "$TESTS" "$WORK/changed" "$WORK/selected" "$WORK/check"
+set --
+while IFS= read -r folder; do
+  set -- "$@" "$folder"
+done < "$WORK/folders"
+node "$HERE/select.mjs" tests "$ROOT" "$WORK/changed" "$WORK/selected" "$WORK/check" "$@"
 selection_status=$?
 if [ "$selection_status" = 3 ]; then
   sh "$HERE/run.sh" --all

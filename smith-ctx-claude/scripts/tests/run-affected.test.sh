@@ -24,7 +24,7 @@ repo_with_fakes() {
   tests="$repo/smith-ctx-claude/scripts/tests"
   scripts="$repo/smith-ctx-claude/scripts"
   mkdir -p "$tests/lib" "$scripts/lib" "$repo/smith-other"
-  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/select.mjs" \
+  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/select.mjs" "$HERE/list-folders.sh" \
     "$HERE/verify-self-containedness.sh" "$tests/" || fail "the fake repository must get every tooling file"
   printf '{}\n' > "$tests/hidden-reads.json"
   printf 'helper() { :; }\n' > "$tests/lib/helper.sh"
@@ -938,5 +938,239 @@ out=$(cd "$repo" && PATH="$failing_mktemp:$PATH" sh "$tests/run-affected.sh" no-
 printf '%s\n' "$out" | grep -q 'could not make a scratch folder' ||
   fail "a scratch folder that cannot be made must be named, got: $out"
 ran alpha && fail "a scratch folder that cannot be made must run no test, got: $out"
+
+repo_with_two_folders() {
+  repo="$TMPD/$1"
+  tooling="$repo/tools/test"
+  one="$repo/smith-one/scripts/tests"
+  two="$repo/smith-two/scripts/tests"
+  mkdir -p "$tooling/lib" "$one" "$two"
+  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/select.mjs" "$HERE/list-folders.sh" \
+    "$HERE/verify-self-containedness.sh" "$tooling/" || fail "the fake repository must get every tooling file"
+  manifest='{}'
+  [ -z "$2" ] || manifest="$2"
+  printf '%s\n' "$manifest" > "$tooling/hidden-reads.json"
+  printf 'helper() { :; }\n' > "$tooling/lib/helper.sh"
+  printf '#!/bin/sh\necho one\n' > "$repo/smith-one/scripts/one-hook.sh"
+  printf '#!/bin/sh\necho two\n' > "$repo/smith-two/scripts/two-hook.sh"
+  printf 'notes\n' > "$repo/README.md"
+  fake_test "$one" alpha 'HOOK="$HERE/../one-hook.sh"; echo ran >> "$RAN_DIR/alpha-one"'
+  fake_test "$two" alpha 'HOOK="$HERE/../two-hook.sh"; echo ran >> "$RAN_DIR/alpha-two"'
+  fake_test "$two" beta ':'
+  quiet_git -C "$repo" init -q
+  quiet_git -C "$repo" add -A
+  quiet_git -C "$repo" commit -qm base
+  quiet_git -C "$repo" branch base
+  RAN_DIR="$TMPD/$1.ran"
+  mkdir -p "$RAN_DIR"
+  export RAN_DIR
+}
+
+affected_apart() {
+  out=$(cd "$repo" && sh "$tooling/run-affected.sh" base 2>&1)
+  status=$?
+}
+
+repo_with_two_folders second-folder-selected
+printf '#!/bin/sh\necho changed\n' > "$repo/smith-two/scripts/two-hook.sh"
+affected_apart
+[ "$status" = 0 ] || fail "a change that a test in a second tests folder reaches must pass, got: $out"
+ran alpha-two || fail "a change must run the test that reaches it in a second tests folder, got: $out"
+ran alpha-one && fail "a change must not run the same-named test of another tests folder, got: $out"
+ran beta && fail "a change must not run a test of the second folder that it does not reach, got: $out"
+printf '%s\n' "$out" | grep -q 'smith-two/scripts/tests/alpha.test.sh' ||
+  fail "the selection must name a test by its path from the repository root, got: $out"
+
+repo_with_two_folders same-name-both-run
+printf '#!/bin/sh\necho changed\n' > "$repo/smith-one/scripts/one-hook.sh"
+printf '#!/bin/sh\necho changed\n' > "$repo/smith-two/scripts/two-hook.sh"
+fake_test "$two" alpha 'HOOK="$HERE/../two-hook.sh"; echo ran >> "$RAN_DIR/alpha-two"' 1
+affected_apart
+[ "$status" != 0 ] || fail "a failing test in a second tests folder must fail the run, got: $out"
+ran alpha-one && ran alpha-two || fail "two tests with one name in two folders must both run, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL: smith-two/scripts/tests/alpha.test.sh' ||
+  fail "a failing test must be named by its path from the repository root, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL: smith-one/scripts/tests/alpha.test.sh' &&
+  fail "the passing test of the same name must not be reported as failing, got: $out"
+
+repo_with_two_folders key-reached-from-one-folder '{"smith-two/scripts/two-hook.sh": ["README.md"]}'
+printf 'other notes\n' > "$repo/README.md"
+affected_apart
+[ "$status" = 0 ] || fail "a declared read reached from one tests folder must pass, got: $out"
+printf '%s\n' "$out" | grep -qi 'full suite' &&
+  fail "a manifest key reached from only one of several tests folders must not ask for the full suite, got: $out"
+ran alpha-two || fail "a declared read must select the test that reaches its key, got: $out"
+ran alpha-one && fail "a declared read must not select a test of another folder, got: $out"
+
+repo_with_two_folders deleted-test-in-second-folder
+set_aside "$two/beta.test.sh"
+quiet_git -C "$repo" add -A
+affected_apart
+[ "$status" = 0 ] || fail "a test deleted from a second tests folder must exit zero, got: $out"
+printf '%s\n' "$out" | grep -q 'smith-two/scripts/tests/beta.test.sh was deleted' ||
+  fail "a test deleted from a second tests folder must be named as deleted, got: $out"
+
+for tooling_file in run.sh run-affected.sh select.mjs list-folders.sh hidden-reads.json lib/helper.sh; do
+  repo_with_two_folders "tooling-apart-$(printf '%s' "$tooling_file" | tr '/.' '--')"
+  printf '\n' >> "$tooling/$tooling_file"
+  affected_apart
+  ran alpha-one && ran alpha-two && ran beta ||
+    fail "a change to the tooling file $tooling_file must run every test of every tests folder, got: $out"
+  printf '%s\n' "$out" | grep -qi 'full suite' ||
+    fail "a change to the tooling file $tooling_file must say it runs the full suite, got: $out"
+done
+
+repo_with_two_folders helper-folder-inside-a-tests-folder
+mkdir -p "$two/lib"
+printf 'helper() { :; }\n' > "$two/lib/local-helper.sh"
+affected_apart
+[ "$status" = 0 ] || fail "a lib folder inside a tests folder that no test reaches must pass, got: $out"
+printf '%s\n' "$out" | grep -qi 'full suite' &&
+  fail "a lib folder inside a tests folder is not the tooling's shared helpers, got: $out"
+
+repo_with_two_folders new-test-in-second-folder
+fake_test "$two" gamma ':'
+affected_apart
+[ "$status" = 0 ] || fail "a new test in a second tests folder must pass, got: $out"
+printf '%s\n' "$out" | grep -q 'PASS: smith-two/scripts/tests/gamma.test.sh' ||
+  fail "a new test in a second tests folder must go through the self-containedness check, got: $out"
+
+repo_with_two_folders check-every-folder
+out=$(sh "$tooling/verify-self-containedness.sh" 2>&1) ||
+  fail "the self-containedness check with no argument must pass over every tests folder, got: $out"
+for checked in smith-one/scripts/tests/alpha.test.sh smith-two/scripts/tests/alpha.test.sh smith-two/scripts/tests/beta.test.sh; do
+  printf '%s\n' "$out" | grep -q "PASS: $checked" ||
+    fail "the self-containedness check with no argument must cover $checked, got: $out"
+done
+
+repo_with_two_folders files-command
+out=$(node "$tooling/select.mjs" files "$repo" "$two/alpha.test.sh" 2>&1) ||
+  fail "the files command must take a root and a test, got: $out"
+printf '%s\n' "$out" | grep -qx 'smith-two/scripts/two-hook.sh' ||
+  fail "the files command must list what the test reaches, got: $out"
+out=$(node "$tooling/select.mjs" files "$repo" "$two" "$two/alpha.test.sh" 2>&1)
+[ "$?" = 2 ] || fail "the files command must refuse a tests folder argument with status 2, got: $out"
+
+repo_with_two_folders all-argument
+out=$(cd "$repo" && sh "$tooling/run.sh" --all 2>&1) ||
+  fail "--all must pass when every test of every tests folder passes, got: $out"
+ran alpha-one && ran alpha-two && ran beta || fail "--all must run every test of every tests folder, got: $out"
+
+repo_with_two_folders folder-argument
+out=$(cd "$repo" && sh "$tooling/run.sh" "$one" 2>&1) ||
+  fail "a tests folder given as an argument must pass when its tests pass, got: $out"
+ran alpha-one || fail "a tests folder given as an argument must run its tests, got: $out"
+ran alpha-two && fail "a tests folder given as an argument must not run another folder's tests, got: $out"
+printf '%s\n' "$out" | grep -q 'ALL PASS' || fail "a passing tests folder must report ALL PASS, got: $out"
+mkdir -p "$repo/smith-three/scripts/tests"
+out=$(cd "$repo" && sh "$tooling/run.sh" "$repo/smith-three/scripts/tests" 2>&1) &&
+  fail "a folder argument that holds no test must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'NO TESTS FOUND in .*smith-three/scripts/tests' ||
+  fail "a folder argument that holds no test must be named, got: $out"
+
+repo_with_two_folders tooling-outside-the-repository
+mkdir -p "$TMPD/outside-tooling"
+cp "$tooling/select.mjs" "$tooling/hidden-reads.json" "$TMPD/outside-tooling/" ||
+  fail "the selector must be copied outside the repository"
+printf 'README.md\0' > "$TMPD/outside-changed"
+out=$(node "$TMPD/outside-tooling/select.mjs" tests "$repo" "$TMPD/outside-changed" \
+  "$TMPD/outside-selected" "$TMPD/outside-check" "$one" "$two" 2>&1)
+[ "$?" = 3 ] ||
+  fail "a selector outside the repository cannot see edits to itself, so it must ask for the full suite, got: $out"
+
+repo_with_two_folders no-tests-folder
+printf 'README.md\0' > "$TMPD/no-folder-changed"
+out=$(node "$tooling/select.mjs" tests "$repo" "$TMPD/no-folder-changed" \
+  "$TMPD/no-folder-selected" "$TMPD/no-folder-check" 2>&1)
+[ "$?" = 3 ] || fail "a selector given no tests folder must ask for the full suite, got: $out"
+printf '%s\n' "$out" | grep -q 'no tests folder was given' ||
+  fail "a selector given no tests folder must say so, got: $out"
+
+repo_with_two_folders test-outside-the-repository
+mkdir -p "$TMPD/outside-tests"
+fake_test "$TMPD/outside-tests" stray ':' 1
+out=$(cd "$repo" && sh "$tooling/run.sh" "$TMPD/outside-tests/stray.test.sh" 2>&1) &&
+  fail "a failing test outside the repository must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL: /.*/outside-tests/stray.test.sh' ||
+  fail "a failing test outside the repository must be named by its full path, got: $out"
+
+repo_with_two_folders test-listed-twice
+fake_test "$one" alpha '[ ! -f "$RAN_DIR/alpha-first" ] || exit 0; echo ran >> "$RAN_DIR/alpha-first"' 1
+out=$(cd "$repo" && SMITH_TEST_JOBS=1 sh "$tooling/run.sh" "$one" "$one/alpha.test.sh" 2>&1) &&
+  fail "a test listed twice whose first run fails must fail the run, got: $out"
+
+repo_with_two_folders empty-argument
+cp "$two/beta.test.sh" "$TMPD/beta-before"
+out=$(cd "$repo" && sh "$tooling/run.sh" "$one/alpha.test.sh" "" "$two/beta.test.sh" 2>&1)
+[ "$?" = 2 ] || fail "an empty argument must be refused with status 2, got: $out"
+cmp -s "$two/beta.test.sh" "$TMPD/beta-before" || fail "an empty argument must leave every test file as it was"
+ran alpha-one && fail "an empty argument must run no test, got: $out"
+
+repo_with_two_folders listing-refused-by-git
+mkdir -p "$TMPD/refusing-git"
+printf '#!/bin/sh\necho "fatal: detected dubious ownership in repository" >&2\nexit 128\n' > "$TMPD/refusing-git/git"
+chmod +x "$TMPD/refusing-git/git"
+out=$(cd "$repo" && PATH="$TMPD/refusing-git:$PATH" sh "$tooling/run.sh" --all 2>&1) &&
+  fail "--all must fail when git cannot name the checkout, got: $out"
+printf '%s\n' "$out" | grep -q 'dubious ownership' ||
+  fail "a git failure that is not a missing checkout must be shown, got: $out"
+ran alpha-one && fail "no test may run when the tests folders cannot be listed, got: $out"
+out=$(cd "$repo" && PATH="$TMPD/refusing-git:$PATH" sh "$tooling/run-affected.sh" base 2>&1)
+[ "$?" = 1 ] || fail "a change-based run must exit 1 when git cannot name the checkout, got: $out"
+printf '%s\n' "$out" | grep -q 'dubious ownership' ||
+  fail "a change-based run must show why git refused the checkout, got: $out"
+ran alpha-one && fail "a change-based run must run no test when git refuses the checkout, got: $out"
+
+repo_with_two_folders line-break-in-a-folder-name
+broken="$repo/smith
+three/scripts/tests"
+mkdir -p "$broken"
+fake_test "$broken" gamma ':'
+out=$(cd "$repo" && sh "$tooling/run.sh" --all 2>&1) &&
+  fail "--all must fail when a tests folder cannot be listed on one line, got: $out"
+printf '%s\n' "$out" | grep -q 'holds a line break' ||
+  fail "a tests folder whose path holds a line break must be named, got: $out"
+ran alpha-one && fail "no test may run when a tests folder cannot be listed, got: $out"
+
+for locked_folder in smith-two/scripts/tests smith-two/scripts smith-two; do
+  repo_with_two_folders "unreadable-$(printf '%s' "$locked_folder" | tr '/' '-')"
+  chmod 000 "$repo/$locked_folder"
+  if [ -r "$repo/$locked_folder" ]; then
+    chmod 755 "$repo/$locked_folder"
+    echo "SKIPPED: $locked_folder stays readable after chmod 000, so the refusal cannot be checked"
+    continue
+  fi
+  out=$(cd "$repo" && sh "$tooling/run.sh" --all 2>&1)
+  status=$?
+  chmod 755 "$repo/$locked_folder"
+  [ "$status" != 0 ] || fail "--all must fail when $locked_folder cannot be read, got: $out"
+  printf '%s\n' "$out" | grep -q "$locked_folder cannot be read" ||
+    fail "the folder $locked_folder that cannot be read must be named, got: $out"
+  ran alpha-one && fail "no test may run when $locked_folder cannot be read, got: $out"
+done
+
+repo_with_two_folders relative-git-dir
+fake_test "$two" beta ':' 1
+out=$(cd "$repo" && GIT_DIR=.git sh "$tooling/run.sh" --all 2>&1) &&
+  fail "--all must still reach every tests folder when GIT_DIR is a relative path, got: $out"
+printf '%s\n' "$out" | grep -q 'FAIL: smith-two/scripts/tests/beta.test.sh' ||
+  fail "a relative GIT_DIR must not hide a failing test of another tests folder, got: $out"
+
+mkdir -p "$TMPD/plain
+folder"
+cp "$HERE/list-folders.sh" "$TMPD/plain
+folder/"
+out=$(sh "$TMPD/plain
+folder/list-folders.sh" 2>&1) &&
+  fail "a tooling folder outside a checkout whose path holds a line break must be refused, got: $out"
+printf '%s\n' "$out" | grep -q 'holds a line break' ||
+  fail "a tooling folder whose path holds a line break must be named, got: $out"
+
+repo_with_two_folders checkout-hidden-from-git
+out=$(cd "$repo" && GIT_CEILING_DIRECTORIES="$(pwd -P)" sh "$tooling/run.sh" --all 2>&1) &&
+  fail "--all must fail when git cannot see the checkout that holds the tooling, got: $out"
+printf '%s\n' "$out" | grep -q 'git could not name the checkout' ||
+  fail "a checkout that git cannot see must be reported, got: $out"
+ran alpha-one && fail "no test may run when git cannot see the checkout that holds the tooling, got: $out"
 
 echo "PASS: run-affected"
