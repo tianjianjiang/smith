@@ -38,13 +38,13 @@ tool write 'coderabbit ran' >/dev/null 2>&1 && fail "an incomplete receipt line 
 tool write "$FULL_RECEIPT · security-review NA:" >/dev/null 2>&1 && fail "an entry without a reason should be refused"
 echo dirty > "$REPO/untracked.txt"
 tool write "$FULL_RECEIPT" >/dev/null 2>&1 && fail "a receipt over a dirty tree should be refused"
-rm "$REPO/untracked.txt"
+mv "$REPO/untracked.txt" "$(mktemp -d)"
 
 tool write "$FULL_RECEIPT" >/dev/null || fail "a complete receipt over a clean tree should be written"
 expect_pass
 echo dirty > "$REPO/untracked.txt"
 expect_fail
-rm "$REPO/untracked.txt"
+mv "$REPO/untracked.txt" "$(mktemp -d)"
 
 receipts="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)/smith-review-receipts"
 change_id="$(ls "$receipts")"
