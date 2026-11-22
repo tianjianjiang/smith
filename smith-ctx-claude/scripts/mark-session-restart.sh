@@ -39,7 +39,7 @@ if ! printf '%s\n%s\n%s\n' \
         "$(date +%Y-%m-%dT%H:%M:%S%z)" \
         "$RESTART_CWD" > "$TMP" || ! mv -f "$TMP" "$MARKER_FILE"; then
     echo "Error: cannot write session-restart marker: $MARKER_FILE" >&2
-    rm -f "$TMP" 2>/dev/null
+    [[ -e "$TMP" ]] && mv -- "$TMP" "$(mktemp -d 2>/dev/null)" 2>/dev/null
     exit 1
 fi
 
@@ -50,7 +50,9 @@ fi
 SENTINEL_FILE="${PLANS_DIR}/.sr-hook-installed"
 if [[ "$HOOK_SOURCE" == "clear" ]] || [[ -e "$SENTINEL_FILE" ]]; then
     if STMP=$(mktemp "${PLANS_DIR}/.sr-tmp.XXXXXX" 2>/dev/null); then
-        mv -f "$STMP" "$SENTINEL_FILE" 2>/dev/null || rm -f "$STMP" 2>/dev/null
+        mv -f "$STMP" "$SENTINEL_FILE" 2>/dev/null || {
+            [[ -e "$STMP" ]] && mv -- "$STMP" "$(mktemp -d 2>/dev/null)" 2>/dev/null
+        }
     fi
 fi
 
