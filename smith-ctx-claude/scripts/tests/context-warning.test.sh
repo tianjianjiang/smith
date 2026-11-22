@@ -1,6 +1,7 @@
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../context-warning.sh"
+source "$HERE/lib/set-aside.sh"
 
 fail() { echo "FAIL: $1"; exit 1; }
 pass() { echo "PASS: context-warning - $1"; }
@@ -83,7 +84,7 @@ make_transcript_with_model 130000 ''
 OUT=$(run_hook)
 echo "$OUT" | grep -q "critical" || fail "without a transcript model the cached model (200K) applies: $OUT"
 pass "cache used only as fallback"
-rm -f "$CACHE_FILE"
+set_aside "$CACHE_FILE" || fail "the model cache could not be set aside"
 
 make_transcript_with_model 510000 '"model":"claude-fable-5-1",'
 OUT=$(run_hook)
