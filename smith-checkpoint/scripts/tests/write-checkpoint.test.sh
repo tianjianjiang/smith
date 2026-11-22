@@ -149,7 +149,8 @@ case "$argv" in
   *"serena memories delete"*)
     label=$(value_after delete "$@")
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/serena_delete.argv"
-    rm -f "$UVX_LOG_DIR/store_serena_$(store_key "$label")"
+    store="$UVX_LOG_DIR/store_serena_$(store_key "$label")"
+    [ ! -e "$store" ] || mv "$store" "$(mktemp -d)" || exit 1
     exit 0
     ;;
   *"basic-memory tool delete "*)
@@ -159,7 +160,9 @@ case "$argv" in
     printf '%s\n' "$argv" >> "$UVX_LOG_DIR/bm_delete.argv"
     store="$UVX_LOG_DIR/store_bm_$(store_key "$title")"
     [ -f "$store" ] || { printf 'Error: {"error": "NOT_FOUND", "message": "No note matches %s"}\n' "$title" >&2; exit 1; }
-    rm -f "$store" "$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
+    folder_store="$UVX_LOG_DIR/store_bm_folder_$(store_key "$title")"
+    mv "$store" "$(mktemp -d)" || exit 1
+    [ ! -e "$folder_store" ] || mv "$folder_store" "$(mktemp -d)" || exit 1
     exit 0
     ;;
 esac
@@ -176,7 +179,9 @@ run_script() {
 }
 
 reset_logs() {
-  rm -f "$SHIM/serena.argv" "$SHIM/serena.content" "$SHIM/bm.argv" "$SHIM/bm.content" "$SHIM/serena_read.argv" "$SHIM/bm_read.argv"
+  for log in "$SHIM/serena.argv" "$SHIM/serena.content" "$SHIM/bm.argv" "$SHIM/bm.content" "$SHIM/serena_read.argv" "$SHIM/bm_read.argv"; do
+    [ ! -e "$log" ] || mv "$log" "$(mktemp -d)" || fail "could not move away: $log"
+  done
 }
 
 make_fake_repo_root() {
@@ -280,7 +285,7 @@ run_script test_label_titleonly "body=$SHIM/body_titleonly.md" >/dev/null 2>"$SH
 reset_logs
 printf '## Completed\n- [x] before the broken read\n' > "$SHIM/body_beforebreak.md"
 run_script test_label_readbroken "body=$SHIM/body_beforebreak.md" >/dev/null 2>"$SHIM/stderr" || fail "readbroken seed: script exited non-zero: $(cat "$SHIM/stderr")"
-rm -f "$SHIM/serena.argv" "$SHIM/serena.content"
+mv "$SHIM/serena.argv" "$SHIM/serena.content" "$(mktemp -d)"
 ( export SERENA_READ_BROKEN=1; run_script test_label_readbroken "body=$SHIM/body_beforebreak.md" >/dev/null 2>"$SHIM/stderr" ) && fail "a genuine Serena read failure must abort the checkpoint, not silently drop prior history"
 grep -qi 'could not read existing Serena memory' "$SHIM/stderr" || fail "a genuine Serena read failure must be reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/serena.content" ] || fail "a genuine Serena read failure must not proceed to overwrite the memory"
@@ -289,7 +294,7 @@ grep -qF -- 'before the broken read' "$SHIM/store_serena_test_label_readbroken" 
 reset_logs
 printf '## Completed\n- [x] before the broken bm read\n' > "$SHIM/body_bmbeforebreak.md"
 run_script test_label_bmreadbroken "body=$SHIM/body_bmbeforebreak.md" >/dev/null 2>"$SHIM/stderr" || fail "bm-readbroken seed: script exited non-zero: $(cat "$SHIM/stderr")"
-rm -f "$SHIM/bm.argv" "$SHIM/bm.content"
+mv "$SHIM/bm.argv" "$SHIM/bm.content" "$(mktemp -d)"
 ( export BM_READ_BROKEN=1; run_script test_label_bmreadbroken "body=$SHIM/body_bmbeforebreak.md" >/dev/null 2>"$SHIM/stderr" ) && fail "a genuine Basic-Memory read failure must abort the checkpoint, not silently drop prior history"
 grep -qi 'could not read existing Basic-Memory note' "$SHIM/stderr" || fail "a genuine Basic-Memory read failure must be reported: $(cat "$SHIM/stderr")"
 [ ! -e "$SHIM/bm.content" ] || fail "a genuine Basic-Memory read failure must not proceed to overwrite the note"
@@ -467,7 +472,6 @@ make_fake_repo_root "$TREE_NOFLAG"
 out=$(run_script_from_tree "$TREE_NOFLAG" test_label_noreloadscript "plan=$PLAN" "body=$BODY") || fail "checkpoint must still succeed when no smith-ctx-claude sibling is present"
 echo "$out" | grep -q 'Auto-reload: unavailable' || fail "missing reload-flag script must report Auto-reload: unavailable: $out"
 [ -s "$SHIM/serena.content" ] || fail "missing reload-flag script must not block the Serena write"
-rm -rf "$TREE_NOFLAG"
 
 reset_logs
 TREE_NOTEXEC="$SHIM/tree-notexec"
@@ -480,7 +484,6 @@ out=$(run_script_from_tree "$TREE_NOTEXEC" test_label_noreloadexec "plan=$PLAN" 
 echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a non-executable reload-flag script must not be reported as merely unavailable: $out"
 grep -q 'not executable' "$SHIM/stderr" || fail "a non-executable reload-flag script must be reported on stderr: $(cat "$SHIM/stderr")"
 [ -s "$SHIM/serena.content" ] || fail "a non-executable reload-flag script must not block the Serena write"
-rm -rf "$TREE_NOTEXEC"
 
 reset_logs
 TREE_SCRIPTS_DIR_ONLY="$SHIM/tree-scripts-dir-only"
@@ -489,7 +492,6 @@ mkdir -p "$TREE_SCRIPTS_DIR_ONLY/smith-ctx-claude/scripts"
 out=$(run_script_from_tree "$TREE_SCRIPTS_DIR_ONLY" test_label_scriptsdironly "plan=$PLAN" "body=$BODY") || fail "a smith-ctx-claude/scripts directory with no write-reload-flag.sh in it must not fail the checkpoint"
 echo "$out" | grep -q 'Auto-reload: unavailable' || fail "a resolved-but-missing reload-flag script must report Auto-reload: unavailable: $out"
 [ -s "$SHIM/serena.content" ] || fail "a resolved-but-missing reload-flag script must not block the Serena write"
-rm -rf "$TREE_SCRIPTS_DIR_ONLY"
 
 reset_logs
 TREE_WRITTEN="$SHIM/tree-written"
@@ -502,13 +504,11 @@ exit 0
 EOF
 RELOAD_FLAG_LOG="$SHIM/reload-flag.log"
 export RELOAD_FLAG_LOG
-rm -f "$RELOAD_FLAG_LOG"
 out=$(run_script_from_tree "$TREE_WRITTEN" test_label_written "plan=$PLAN" "body=$BODY") || fail "checkpoint must succeed when the reload-flag sibling succeeds"
 echo "$out" | grep -q 'Auto-reload: flag written' || fail "a successful reload-flag write must report Auto-reload: flag written: $out"
 [ -f "$RELOAD_FLAG_LOG" ] || fail "the reload-flag sibling script must actually be invoked"
 grep -q '^test_label_written$' "$RELOAD_FLAG_LOG" || fail "the reload-flag sibling must be called with the checkpoint label: $(cat "$RELOAD_FLAG_LOG" 2>/dev/null)"
 reset_logs
-rm -f "$RELOAD_FLAG_LOG"
 label="test_label_brand_new"
 out=$( run_script_from_tree "$TREE_WRITTEN" "$label" "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr" ) || fail "brand-new label: a Basic-Memory 'Note not found' read must start a new note, not fail the checkpoint: $(cat "$SHIM/stderr")"
 grep -q 'rolling Serena back' "$SHIM/stderr" && fail "brand-new label: Serena must not be rolled back: $(cat "$SHIM/stderr")"
@@ -516,7 +516,6 @@ grep -q 'rolling Serena back' "$SHIM/stderr" && fail "brand-new label: Serena mu
 cmp -s "$SHIM/serena.content" "$SHIM/bm.content" || fail "brand-new label: both backends must hold the same single entry"
 grep -q "^${label}\$" "$RELOAD_FLAG_LOG" 2>/dev/null || fail "brand-new label: the reload flag must be written: $out"
 unset RELOAD_FLAG_LOG
-rm -rf "$TREE_WRITTEN"
 
 reset_logs
 (BM_READ_MISSING=project run_script test_label_bm_noproject "body=$BODY") >/dev/null 2>"$SHIM/stderr" && fail "missing project: a Basic-Memory read error other than a missing note must fail the checkpoint"
@@ -540,10 +539,9 @@ printf '%s\n%s\n%s\n%s\n%s\n' "sess" "now" "$PWD" "$1" "$SUPERSEDE_KEY" > "$flag
 echo "Wrote reload flag: $flag"
 exit 0
 EOF
-SUPERSEDE_DIR="$SHIM/supersede-plans"
 export SUPERSEDE_DIR SUPERSEDE_KEY
 seed_supersede_flags() {
-  rm -rf "$SUPERSEDE_DIR"; mkdir -p "$SUPERSEDE_DIR"
+  SUPERSEDE_DIR="$(mktemp -d)" || fail "mktemp -d did not create a fresh supersede folder"
   printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_supersede "$1" > "$SUPERSEDE_DIR/.pending-memory-restore-same"
   printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_other "$1" > "$SUPERSEDE_DIR/.pending-memory-restore-otherlabel"
   printf '%s\n%s\n%s\n%s\n%s\n' "sess" "old" "$SHIM" test_label_supersede "key-other" > "$SUPERSEDE_DIR/.pending-memory-restore-othersession"
@@ -564,7 +562,6 @@ out=$(run_script_from_tree "$TREE_SUPERSEDE" test_label_supersede "plan=$PLAN" "
 [ -f "$SUPERSEDE_DIR/.pending-memory-restore-same" ] || fail "supersede-keyless: a flag without a session key must supersede nothing"
 echo "$out" | grep -qF -- 'Superseded reload flags' && fail "supersede-keyless: nothing superseded must print no superseded line: $out"
 unset SUPERSEDE_DIR SUPERSEDE_KEY
-rm -rf "$TREE_SUPERSEDE" "$SHIM/supersede-plans"
 
 reset_logs
 TREE_FAILED="$SHIM/tree-failed"
@@ -578,7 +575,6 @@ out=$(run_script_from_tree "$TREE_FAILED" test_label_reloadfail "plan=$PLAN" "bo
 echo "$out" | grep -q 'Auto-reload: flag write failed' || fail "a failed reload-flag write must report Auto-reload: flag write failed: $out"
 grep -q 'reload-flag write failed' "$SHIM/stderr" || fail "a failed reload-flag write must be reported on stderr: $(cat "$SHIM/stderr")"
 [ -s "$SHIM/serena.content" ] || fail "a failed reload-flag write must not block the Serena write"
-rm -rf "$TREE_FAILED"
 
 make_repo_with_worktree() {
   repo="$1"
@@ -661,7 +657,6 @@ reset_logs
 printf '{"basicMemory": {"primaryProject": null}}\n' > "$R4/.claude/settings.local.json"
 run_script_in "$R4" test_label_nullproject "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T4: a null primaryProject must count as unset and fall through to settings.json: $(cat "$SHIM/stderr")"
 grep -q -- '--project shared' "$SHIM/bm.argv" || fail "T4: null primaryProject must fall through to settings.json: $(cat "$SHIM/bm.argv")"
-rm -f "$R4/.claude/settings.local.json"
 
 reset_logs
 W1="$R1/.claude/worktrees/wt"
@@ -700,7 +695,7 @@ for m in a b c; do [ ! -e "$W1/.serena/memories/$m.md" ] || fail "T6: $m.md must
 [ -f "$W1/.serena/memories/notes.txt" ] || fail "T6: non-markdown files must be left alone"
 [ "$(grep -c 'worktree memory' "$SHIM/stderr")" = 3 ] || fail "T6: stderr must report one line per relocated file: $(cat "$SHIM/stderr")"
 echo "$out" | grep -qF -- 'Relocated worktree memories: moved 1, removed 1, renamed 1' || fail "T6: reload block must report the relocation counts: $out"
-rm -f "$W1/.serena/project.yml" "$W1/.serena/memories/notes.txt"
+mv "$W1/.serena/project.yml" "$W1/.serena/memories/notes.txt" "$(mktemp -d)" || fail "T6: the worktree's project.yml and notes.txt could not be moved away"
 reset_logs
 printf 'memory c from worktree, second round\n' > "$W1/.serena/memories/c.md"
 run_script_in "$W1" test_label_relocateagain "body=$BODY" >/dev/null 2>"$SHIM/stderr" || fail "T6: second relocation run exited non-zero: $(cat "$SHIM/stderr")"
@@ -938,7 +933,7 @@ grep -qF -- "pass serena=$P1/.claude/worktrees/wt" "$SHIM/stderr" || fail "T8: d
 reset_logs
 run_script_in "$W1" test_label_nodiverge "body=$BODY" "serena=$P1/.claude/worktrees/wt" >/dev/null 2>"$SHIM/stderr" || fail "T8: explicit serena= run exited non-zero: $(cat "$SHIM/stderr")"
 grep -q 'is itself a Serena project' "$SHIM/stderr" && fail "T8: no divergence warning when serena= names the cwd: $(cat "$SHIM/stderr")"
-rm -f "$W1/.serena/project.yml"
+mv "$W1/.serena/project.yml" "$(mktemp -d)" || fail "T8: the worktree's project.yml could not be moved away"
 
 reset_logs
 out=$(run_script_in "$W1" test_label_reloadlines "plan=$PLAN" "body=$BODY" 2>"$SHIM/stderr") || fail "T9: run exited non-zero: $(cat "$SHIM/stderr")"
@@ -993,7 +988,6 @@ BACKUPS="$CLAUDE_CONFIG_DIR/checkpoint-backups/test_label_readback"
 [ "$(grep -c '^## [0-9]' "$BACKUPS"/*-serena.md)" = 1 ] || fail "backup: the Serena backup must hold the prior document: $(cat "$BACKUPS"/*-serena.md)"
 echo "$out" | grep -qF -- "- Prior documents backed up: $BACKUPS (last 5 per backend kept)" || fail "backup: reload block must name the backup directory: $out"
 reset_logs
-rm -f "$SHIM/dropped_once"
 (SERENA_WRITE_DROPS_HISTORY=once run_script test_label_readback "body=$AUDIT_OK_BODY") >/dev/null 2>"$SHIM/stderr" && fail "readback: a write that lost prior entries must fail"
 grep -qF 'Error: Serena readback: 1 entries stored, expected 3 (prior entries lost or duplicated)' "$SHIM/stderr" || fail "readback: Serena loss must be named: $(cat "$SHIM/stderr")"
 grep -qF "Error: Serena restored from $BACKUPS/" "$SHIM/stderr" || fail "restore: a Serena loss must be restored from the backup: $(cat "$SHIM/stderr")"
@@ -1006,7 +1000,7 @@ preserved=$(sed -n 's/.*preserved at //p' "$SHIM/stderr")
 [ "$(grep -c '^## [0-9]' "$preserved")" = 2 ] || fail "restore: the preserved backup must still hold both prior entries: $preserved"
 reset_logs
 run_script test_label_readback_bm "body=$AUDIT_OK_BODY" >/dev/null 2>"$SHIM/stderr" || fail "readback: seed for the Basic-Memory case failed: $(cat "$SHIM/stderr")"
-rm -f "$SHIM/dropped_once"
+mv "$SHIM/dropped_once" "$(mktemp -d)"
 (BM_WRITE_DROPS_HISTORY=once run_script test_label_readback_bm "body=$AUDIT_OK_BODY") >/dev/null 2>"$SHIM/stderr" && fail "readback: a Basic-Memory write that lost prior entries must fail"
 grep -qF 'Error: Basic-Memory readback: 1 entries stored, expected 2 (prior entries lost or duplicated)' "$SHIM/stderr" || fail "readback: Basic-Memory loss must be named: $(cat "$SHIM/stderr")"
 grep -qF "Error: Basic-Memory restored from $CLAUDE_CONFIG_DIR/checkpoint-backups/test_label_readback_bm/" "$SHIM/stderr" || fail "restore: a Basic-Memory loss must be restored from the backup: $(cat "$SHIM/stderr")"
@@ -1022,7 +1016,6 @@ done
 
 reset_logs
 run_script test_label_backupfail "body=$AUDIT_OK_BODY" >/dev/null 2>"$SHIM/stderr" || fail "backup-fail: seed failed: $(cat "$SHIM/stderr")"
-rm -rf "$CLAUDE_CONFIG_DIR/checkpoint-backups/test_label_backupfail"
 : > "$CLAUDE_CONFIG_DIR/checkpoint-backups/test_label_backupfail"
 reset_logs
 run_script test_label_backupfail "body=$AUDIT_OK_BODY" >/dev/null 2>"$SHIM/stderr" && fail "backup-fail: a checkpoint whose backup cannot be written must fail"
@@ -1031,7 +1024,6 @@ grep -qF 'nothing was written to serena' "$SHIM/stderr" || fail "backup-fail: it
 [ -e "$SHIM/serena.argv" ] && fail "backup-fail: Serena must not be overwritten without a backup"
 [ -e "$SHIM/bm.argv" ] && fail "backup-fail: Basic-Memory must not be reached"
 [ "$(grep -c '^## [0-9]' "$SHIM/store_serena_test_label_backupfail")" = 1 ] || fail "backup-fail: Serena must keep its one prior entry"
-rm -f "$CLAUDE_CONFIG_DIR/checkpoint-backups/test_label_backupfail"
 
 reset_logs
 run_script test_label_rollback "body=$AUDIT_OK_BODY" >/dev/null 2>"$SHIM/stderr" || fail "rollback: seed failed: $(cat "$SHIM/stderr")"
@@ -1071,7 +1063,6 @@ grep -qF 'returned no permalink for this write, so nothing was deleted' "$SHIM/s
 [ -e "$SHIM/bm_delete.argv" ] && fail "first-bm-fail: no delete may run without a permalink: $(cat "$SHIM/bm_delete.argv")"
 
 reset_logs
-rm -f "$SHIM/bm_delete.argv"
 (BM_WRITE_DROPS_HISTORY=empty run_script test_label_bmverify_first "body=$AUDIT_OK_BODY") >/dev/null 2>"$SHIM/stderr" && fail "first-bm-verify: a first Basic-Memory write that fails its readback must fail"
 grep -qE "basic-memory tool delete --identifier projects/[^ ]+/Test_Label_Bmverify_First( |$)" "$SHIM/bm_delete.argv" || fail "first-bm-verify: the delete must use the permalink, never the bare title: $(cat "$SHIM/bm_delete.argv" 2>&1)"
 grep -qF 'Error: Basic-Memory held no prior document, so the one this checkpoint created was removed' "$SHIM/stderr" || fail "first-bm-verify: the removal must be verified and reported: $(cat "$SHIM/stderr")"
