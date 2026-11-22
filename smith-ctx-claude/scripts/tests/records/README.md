@@ -425,6 +425,42 @@ are not measured here.
   `SMITH_LIVE_CONTEXT_RESET_CONTROL_WAIT_MS`,
   `SMITH_LIVE_CONTEXT_RESET_COMMAND_TIMEOUT_MS` (limit of one `claude` call).
 
+## What the transcript holds when a Stop hook runs
+
+- Script: `../stop-transcript-tool-calls.live-eval.mjs`
+- Hook fixture: `../fixtures/copy-transcript-on-stop.sh`
+- Records: `stop-transcript-tool-calls.background.json`,
+  `stop-transcript-tool-calls.print.json`
+- Prerequisites: Node.js, `jq`, a logged-in `claude` on `PATH`; for the
+  background mode, a folder Claude Code already trusts.
+- Replay, background sessions, the kind the automatic continuation runs in:
+  `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_SESSION_MODE=background SMITH_PROBE_SESSION_FOLDER=«folder» SMITH_PROBE_RUNS=5 node smith-ctx-claude/scripts/tests/stop-transcript-tool-calls.live-eval.mjs`
+- Replay, print mode, in an empty temporary folder:
+  `SMITH_LIVE_CONTEXT_RESET_EVAL=1 SMITH_PROBE_RUNS=5 node smith-ctx-claude/scripts/tests/stop-transcript-tool-calls.live-eval.mjs`
+- What it does: starts each session with one inline `Stop` hook that copies
+  the file named by the hook input's `transcript_path` at the first stop.
+  The session is asked to run two `echo` commands, each with a random word,
+  as separate tool calls. A background session is stopped and removed once
+  the copy exists.
+- Passing output: in every session the copy holds both words in two
+  separate tool calls, the last one included, each on an entry whose
+  `timestamp` parses as an instant, in order. `sessions` in the record is the number of sessions run; a check is
+  true only when it held in all of them.
+- Why it matters: `enforce-clear.sh` decides whether a session worked after
+  its checkpoint from the tool calls in the transcript, as "Stop hook states"
+  in `smith-ctx-claude/references/auto-context-reset/spec.md` defines, so the last
+  tool call of the turn must be in the transcript by the time the hook
+  reads it.
+- Seen in the copies, not checked by the eval: the closing text of the
+  turn was often not yet in the transcript when the hook ran, so only tool
+  calls are relied on. A person who answers a prompt of a background
+  session while the eval runs changes its turn and fails the run.
+- Limit: one model, short turns of two tool calls; an interactive session
+  in a terminal is not measured. The temporary folders are left in place.
+- Optional parameters: `SMITH_PROBE_RUNS` (default 1),
+  `SMITH_LIVE_CONTEXT_RESET_MODEL` (default `haiku`),
+  `SMITH_LIVE_CONTEXT_RESET_TURN_TIMEOUT_MS`.
+
 ## Integrity
 
 `SHA256SUMS` lists the SHA-256 of each record. Check with

@@ -322,8 +322,10 @@ When invoked via `/smith-checkpoint` (no arguments required):
       mark the others transient in the table
    3. Remove contradictions: the plan owns task state, the body owns
       decisions and context
-   4. Run the scripted audit and fix every `FAIL`, judge every `WARN`:
+   4. Record that the audit started, then run the scripted audit and fix
+      every `FAIL`, judge every `WARN`:
       ```bash
+      [ -z "${CLAUDE_CODE_SESSION_ID:-}" ] || "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/ctx-reset-state.sh" "$CLAUDE_CODE_SESSION_ID" checkpoint-started
       "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-checkpoint/scripts/audit-checkpoint.sh" "«body-file»" "plan=«path»"
       ```
       An anchor that fails to resolve is wrong for the next reader too:
@@ -428,8 +430,13 @@ When invoked via `/smith-checkpoint` (no arguments required):
       answer cannot be written while nobody is there. A correction the
       user gives afterwards, in this session or the one that resumes, is
       applied and written into the expected-answers file where it changes
-      an answer; then item 5 runs again with a new count of at most three
-      rounds, and the checkpoint is written again
+      an answer; then the start is recorded again before the rounds, with
+      the same command as in item 4:
+      ```bash
+      [ -z "${CLAUDE_CODE_SESSION_ID:-}" ] || "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/smith-ctx-claude/scripts/ctx-reset-state.sh" "$CLAUDE_CODE_SESSION_ID" checkpoint-started
+      ```
+      Item 5 then runs again with a new count of at most three rounds, and
+      the checkpoint is written again
 
 7. **Call write-checkpoint.sh**:
    ```bash

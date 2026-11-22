@@ -36,7 +36,7 @@ const FAILED_DISPATCH_PREFIX = "[SMITH_CTX_DISPATCH_FAILED] ";
 const BACKGROUND_SESSIONS_SWITCH = "CLAUDE_CODE_DISABLE_AGENT_VIEW";
 const FIRST_PROMPT = "Reply only with OK.";
 const PENDING_RELOAD_NAME = /^\.pending-reload-([0-9a-f]+)$/;
-const FLAG_PREFIXES = [".pending-reload-", ".pending-memory-restore-", ".auto-reset-attempt-", ".plan-state-"];
+const FLAG_PREFIXES = [".pending-reload-", ".pending-memory-restore-", ".consumed-memory-restore-", ".auto-reset-attempt-", ".plan-state-", ".ctx-reset-state-"];
 const VARIABLES_THE_EVAL_DOES_NOT_PASS_ON = [
   "CLAUDE_CONFIG_DIR", "CLAUDE_JOB_DIR", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
   "AWS_BEARER_TOKEN_BEDROCK", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_PROFILE", "BASIC_MEMORY_MCP_PROJECT",

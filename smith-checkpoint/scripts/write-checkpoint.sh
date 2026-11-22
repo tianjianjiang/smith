@@ -75,6 +75,22 @@ write_reload_flag() {
     return 0
 }
 
+record_checkpoint_in_state() {
+    [[ -n "${CLAUDE_CODE_SESSION_ID:-}" ]] || return 0
+    local state_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../smith-ctx-claude/scripts" 2>/dev/null && pwd)/ctx-reset-state.sh"
+    if [[ ! -x "$state_script" ]]; then
+        echo "Warning: the session state script is missing or not executable, so the checkpoint is not recorded in the session state: ${state_script}" >&2
+        return 0
+    fi
+    local output
+    if ! output=$("$state_script" "$CLAUDE_CODE_SESSION_ID" checkpoint-written "label=$LABEL" "flag=$RELOAD_FLAG_PATH" 2>&1); then
+        echo "Warning: could not record the checkpoint in the session state: ${output}" >&2
+    elif [[ "$output" != "record - checkpointed" ]]; then
+        echo "Warning: the session state did not record the checkpoint; it answered: ${output}" >&2
+    fi
+    return 0
+}
+
 supersede_earlier_reload_flags() {
     [[ -n "$RELOAD_FLAG_PATH" && -f "$RELOAD_FLAG_PATH" && ! -L "$RELOAD_FLAG_PATH" ]] || return 0
     [[ -n "$(sed -n '5p' "$RELOAD_FLAG_PATH" 2>/dev/null)" ]] || return 0
@@ -867,6 +883,7 @@ main() {
     fi
 
     write_reload_flag
+    record_checkpoint_in_state
 
     report_success "$permalink" "$serena_location" "$bm_project_label" "$timestamp"
     generate_reload_block "$permalink" "$plan_path" "$timestamp" "$RELOAD_STATUS" "$serena_location" "$bm_project_label" "$worktree"
