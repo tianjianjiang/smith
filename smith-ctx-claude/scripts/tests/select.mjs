@@ -5,7 +5,8 @@ import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSyn
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 const MANIFEST_NAME = "hidden-reads.json";
-const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", "select.mjs", MANIFEST_NAME]);
+const SCAN_FILES = new Set(["select.mjs", MANIFEST_NAME]);
+const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", ...SCAN_FILES]);
 const SHARED_HELPER_FOLDER = "lib";
 const TEST_SUFFIX = ".test.sh";
 const FULL_SUITE_EXIT = 3;
@@ -551,17 +552,29 @@ function runnerChange(changed, toolingFolderKey, testsFolderKey) {
   });
 }
 
-function select(root, testsFolder, changedListPath, selectionPath) {
+function testsToCheck(root, testsFolder, toolingFolderKey, changed) {
+  const tests = testsIn(testsFolder);
+  if (changed.some((path) => dirname(path) === toolingFolderKey && SCAN_FILES.has(basename(path)))) return tests;
+  const changedPaths = new Set(changed);
+  return tests.filter((testPath) => {
+    if (changedPaths.has(relative(root, testPath))) return true;
+    return existsSync(testPath) && changedPaths.has(relative(root, realpathSync(testPath)));
+  });
+}
+
+function select(root, testsFolder, changedListPath, selectionPath, checkListPath) {
   const changed = [...new Set(readFileSync(changedListPath, "utf-8").split("\0").filter(Boolean))].sort();
   const testsFolderKey = relative(root, testsFolder);
   const toolingFolderKey = relative(root, TOOLING_FOLDER);
   writeFileSync(selectionPath, "");
+  writeFileSync(checkListPath, "");
   if (changed.length === 0) {
     console.log("run-affected: no changed files, so no test to run");
     return;
   }
   console.log("run-affected: changed files:");
   for (const path of changed) console.log(`  ${path}`);
+  writeFileSync(checkListPath, testsToCheck(root, testsFolder, toolingFolderKey, changed).map((testPath) => `${testPath}\n`).join(""));
   const runner = runnerChange(changed, toolingFolderKey, testsFolderKey);
   if (runner) throw new FullSuite(`${runner} is part of the test runner or its shared helpers`);
   const shared = context(root);
@@ -613,13 +626,13 @@ function dependencyFiles(root, testPath) {
 function main() {
   const [command, root, testsFolder, ...rest] = process.argv.slice(2);
   if (!root || !testsFolder) {
-    console.log("usage: select.mjs tests ROOT TESTS CHANGED_LIST SELECTION | files ROOT TESTS TEST");
+    console.log("usage: select.mjs tests ROOT TESTS CHANGED_LIST SELECTION CHECK_LIST | files ROOT TESTS TEST");
     process.exit(2);
   }
   const realRoot = realpathSync(root);
   const realTests = realpathSync(testsFolder);
   try {
-    if (command === "tests" && rest.length === 2) return select(realRoot, realTests, rest[0], rest[1]);
+    if (command === "tests" && rest.length === 3) return select(realRoot, realTests, rest[0], rest[1], rest[2]);
     if (command === "files" && rest.length === 1) return dependencyFiles(realRoot, rest[0]);
   } catch (error) {
     if (error instanceof FullSuite) {

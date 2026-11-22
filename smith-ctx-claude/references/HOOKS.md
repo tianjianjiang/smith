@@ -1267,10 +1267,14 @@ read the prior model, and each session leaves a small
 Each ships a self-check (fixture JSON → stdin, assert exit code + stdout):
 `smith-ctx-claude` hooks under `smith-ctx-claude/scripts/tests/run.sh`,
 `smith-standards` hooks under `smith-standards/scripts/tests/run-all.sh`.
-The `smith-ctx-claude` runner runs every `*.test.sh` in its folder at the
-same time, up to the CPU count or `SMITH_TEST_JOBS`, prints each test's output
-in name order, and fails when it finds none, so adding a test means adding
-the file; `run.test.sh` checks that behaviour.
+`sh smith-ctx-claude/scripts/tests/run.sh` with no arguments runs only the
+tests that changes since `origin/main` reach, through `run-affected.sh`
+below; `--all` runs every `*.test.sh` in its folder, and a list of test
+files runs exactly those. It runs the chosen tests at the same time, up to
+the CPU count or `SMITH_TEST_JOBS` and prints each test's output in name
+order. `--all` fails when it finds no test, so adding a test means adding
+the file; with no arguments and no changed file, the run says no test ran
+and passes. `run.test.sh` checks that behaviour.
 
 `sh smith-ctx-claude/scripts/tests/run-affected.sh «base-ref»` runs only
 the tests a change reaches: it takes the files changed since the merge base
@@ -1291,8 +1295,8 @@ each become a dependency on the whole repository; a sourced file with no
 extension is scanned as shell; `basename "$0"` and an `import.meta.url ===` guard of
 a module's main entry are exempt. It adds the data files and globs that
 `tests/hidden-reads.json` declares for a file, prints every chosen test with
-the chain that reached it, and hands the list to `run.sh`. It runs the
-full suite when the set cannot be known for certain: the runner, the
+the chain that reached it, and hands the list to `run.sh`. It runs
+`run.sh --all` when the set cannot be known for certain: the runner, the
 manifest or `tests/lib` changed; the manifest is missing or malformed,
 lists a file that does not exist or a glob that matches nothing, or
 declares a key no test reaches; the selector itself fails; or git cannot
@@ -1303,7 +1307,13 @@ tree that holds only its computed and declared dependencies, and reports a
 test that passes in the checkout but fails or prints a `SKIP` line only in
 that tree as a missing dependency, and a test that skips in the checkout too
 as `SKIPPED`, never as a pass. Hooks fail open, so a pass there is evidence,
-not proof. `run-affected.test.sh` checks both.
+not proof. `run-affected.sh` passes it every new or changed test, also when
+the selection falls back to the full suite, and every test when
+`select.mjs` or `hidden-reads.json` changed or git cannot name the changes;
+the run fails when the check fails. A selector that fails makes the run fail
+and say the check did not run, and outside a git checkout the run says the
+check cannot run. A hidden read is caught when its test is written instead
+of every test running twice on every check. `run-affected.test.sh` checks both.
 
 ## Registration
 

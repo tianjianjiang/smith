@@ -106,6 +106,8 @@ for name in alpha beta gamma; do
 done
 printf '%s\n' "$out" | grep -qi 'no test' ||
   fail "a change no test reaches must say that no test was run, got: $out"
+printf '%s\n' "$out" | grep -q 'self-containedness check did not run' ||
+  fail "a change no test reaches must say the self-containedness check did not run, got: $out"
 
 for runner_file in run.sh run-affected.sh select.mjs hidden-reads.json lib/helper.sh; do
   name="runner-$(printf '%s' "$runner_file" | tr '/.' '--')"
@@ -601,6 +603,8 @@ quiet_git -C "$repo" branch -f base
 fake_test "$repo/smith-other" delta 'echo edited'
 affected
 ran delta || fail "a change to the target of a symlinked test must run the test, got: $out"
+printf '%s\n' "$out" | grep -q 'PASS: smith-ctx-claude/scripts/tests/delta.test.sh' ||
+  fail "a change to the target of a symlinked test must check that test, got: $out"
 
 repo_with_fakes deleted-dependency
 set_aside "$scripts/beta-lib.sh"
@@ -690,5 +694,167 @@ out=$(GIT_INDEX_FILE="$TMPD/no-such-folder/index" sh "$tests/verify-self-contain
   fail "a tree that could not be built must fail the check, got: $out"
 printf '%s\n' "$out" | grep -q 'TREE NOT BUILT.*gamma.test.sh' ||
   fail "a tree that could not be built must be reported as its own result, got: $out"
+
+default_run() {
+  out=$(cd "$repo" && sh "$tests/run.sh" 2>&1)
+  status=$?
+}
+
+repo_with_fakes default-base
+quiet_git -C "$repo" update-ref refs/remotes/origin/main base
+printf '#!/bin/sh\necho changed\n' > "$scripts/beta-hook.sh"
+default_run
+[ "$status" = 0 ] || fail "run.sh with no arguments must select against origin/main and pass, got: $out"
+ran beta || fail "run.sh with no arguments must run the test a change reaches, got: $out"
+ran alpha && fail "run.sh with no arguments must not run a test the change does not reach, got: $out"
+printf '%s\n' "$out" | grep -q 'origin/main' ||
+  fail "run.sh with no arguments must name origin/main as the base, got: $out"
+
+repo_with_fakes default-base-missing
+printf '#!/bin/sh\necho changed\n' > "$scripts/beta-hook.sh"
+default_run
+ran alpha && ran beta && ran gamma ||
+  fail "run.sh with no arguments and no origin/main must run the full suite, got: $out"
+printf '%s\n' "$out" | grep -qi 'full suite' ||
+  fail "run.sh with no arguments and no origin/main must say it runs the full suite, got: $out"
+
+repo_with_fakes check-new-test-hidden-read
+fake_test "$tests" delta 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
+affected
+[ "$status" != 0 ] || fail "a new test with a read the scan cannot see must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'MISSING DEPENDENCY.*delta.test.sh' ||
+  fail "a new test with a hidden read must be named by the self-containedness check, got: $out"
+
+repo_with_fakes check-changed-test-only
+fake_test "$tests" gamma 'echo edited'
+affected
+[ "$status" = 0 ] || fail "a changed test whose dependencies are complete must pass, got: $out"
+printf '%s\n' "$out" | grep -q 'PASS: smith-ctx-claude/scripts/tests/gamma.test.sh' ||
+  fail "a changed test must go through the self-containedness check, got: $out"
+printf '%s\n' "$out" | grep -q 'alpha.test.sh' &&
+  fail "the self-containedness check must cover only new or changed tests, got: $out"
+
+repo_with_fakes check-skipped-for-unchanged-tests
+printf '#!/bin/sh\necho changed\n' > "$scripts/beta-hook.sh"
+affected
+printf '%s\n' "$out" | grep -q 'DEPENDENCIES ALONE' &&
+  fail "a change that touches no test must not run the self-containedness check, got: $out"
+printf '%s\n' "$out" | grep -q 'no new or changed test, so the self-containedness check did not run' ||
+  fail "a change that touches no test must say the self-containedness check did not run, got: $out"
+
+for scan_file in select.mjs hidden-reads.json; do
+  repo_with_fakes "check-every-test-$scan_file"
+  printf '\n' >> "$tests/run.sh"
+  if [ "$scan_file" = select.mjs ]; then
+    printf '\n' >> "$tests/select.mjs"
+  else
+    printf '{ }\n' > "$tests/hidden-reads.json"
+  fi
+  affected
+  [ "$status" = 0 ] || fail "a change to $scan_file with complete dependencies must pass, got: $out"
+  for name in alpha beta gamma; do
+    printf '%s\n' "$out" | grep -q "PASS: smith-ctx-claude/scripts/tests/$name.test.sh" ||
+      fail "a change to $scan_file beside a runner change must check every test, $name was not checked: $out"
+  done
+done
+
+repo_with_fakes check-new-test-beside-runner-change
+printf '\n' >> "$tests/run.sh"
+fake_test "$tests" delta 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
+affected
+[ "$status" != 0 ] || fail "a new test with a hidden read beside a runner change must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'MISSING DEPENDENCY.*delta.test.sh' ||
+  fail "a new test beside a runner change must still be checked, got: $out"
+
+repo_with_fakes check-fails-after-selector-change
+fake_test "$tests" gamma 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
+commit_all "gamma reads a file the scan cannot see"
+quiet_git -C "$repo" branch -f base
+printf '\n' >> "$tests/select.mjs"
+affected
+[ "$status" != 0 ] || fail "a failing check after a full-suite fallback must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'MISSING DEPENDENCY.*gamma.test.sh' ||
+  fail "a selector change must check every test and name the one that fails, got: $out"
+
+repo_with_fakes check-after-selector-crash
+printf 'other notes\n' > "$repo/README.md"
+out=$(cd "$repo" && NODE_OPTIONS="--require $TMPD/crash.cjs" sh "$tests/run-affected.sh" base 2>&1)
+status=$?
+[ "$status" != 0 ] || fail "a selector crash must fail the run, because the self-containedness check could not run, got: $out"
+printf '%s\n' "$out" | grep -q 'self-containedness check did not run' ||
+  fail "a selector crash must say the self-containedness check did not run, got: $out"
+
+repo_with_fakes check-every-test-after-bad-base
+affected no-such-ref
+[ "$status" = 0 ] || fail "a bad base with complete dependencies must pass, got: $out"
+for name in alpha beta gamma; do
+  printf '%s\n' "$out" | grep -q "PASS: smith-ctx-claude/scripts/tests/$name.test.sh" ||
+    fail "a base that does not resolve must check every test, $name was not checked: $out"
+done
+
+real_git="$(command -v git)"
+failing_diff="$(mktemp -d)"
+printf '#!/bin/sh\nfor arg in "$@"; do [ "$arg" = diff ] && exit 1; done\nexec "%s" "$@"\n' "$real_git" > "$failing_diff/git"
+chmod +x "$failing_diff/git"
+repo_with_fakes check-every-test-when-git-cannot-list
+fake_test "$tests" gamma 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
+commit_all "gamma reads a file the scan cannot see"
+quiet_git -C "$repo" branch -f base
+out=$(cd "$repo" && PATH="$failing_diff:$PATH" sh "$tests/run-affected.sh" base 2>&1)
+status=$?
+printf '%s\n' "$out" | grep -q 'git could not list the changed files' ||
+  fail "a failing git diff must be named as the reason for the full suite, got: $out"
+[ "$status" != 0 ] || fail "when git cannot list the changes, a test with a hidden read must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'MISSING DEPENDENCY.*gamma.test.sh' ||
+  fail "when git cannot list the changes, every test must be checked, got: $out"
+
+failing_mktemp="$(mktemp -d)"
+printf '#!/bin/sh\nexit 1\n' > "$failing_mktemp/mktemp"
+chmod +x "$failing_mktemp/mktemp"
+repo_with_fakes check-new-link-to-unchanged-target
+fake_test "$repo/smith-other" delta ':'
+commit_all "a test outside the tests folder"
+quiet_git -C "$repo" branch -f base
+ln -s ../../../smith-other/delta.test.sh "$tests/delta.test.sh"
+affected
+printf '%s\n' "$out" | grep -q 'PASS: smith-ctx-claude/scripts/tests/delta.test.sh' ||
+  fail "a new link to an unchanged test must check that test, got: $out"
+
+repo_with_fakes dangling-link-during-selection
+ln -s ../../../smith-other/gone.test.sh "$tests/dangling.test.sh"
+commit_all "a dangling test link"
+quiet_git -C "$repo" branch -f base
+printf '#!/bin/sh\necho changed\n' > "$scripts/beta-hook.sh"
+affected
+printf '%s\n' "$out" | grep -q 'selector failed' &&
+  fail "a dangling test link must not make the selector fail, got: $out"
+ran beta || fail "a dangling test link must not stop the selected test from running, got: $out"
+
+repo_with_fakes check-new-test-beside-manifest-fallback
+printf '{"smith-other/SKILL.md": ["README.md"]}\n' > "$tests/hidden-reads.json"
+commit_all "a manifest key no test reaches"
+quiet_git -C "$repo" branch -f base
+fake_test "$tests" delta 'f="$(git rev-parse --show-toplevel)/smith-other/SKILL.md"; grep -q skill "$f" || exit 1'
+affected
+printf '%s\n' "$out" | grep -qi 'full suite' ||
+  fail "a manifest key no test reaches must run the full suite, got: $out"
+[ "$status" != 0 ] || fail "a new test with a hidden read beside a manifest fallback must fail the run, got: $out"
+printf '%s\n' "$out" | grep -q 'MISSING DEPENDENCY.*delta.test.sh' ||
+  fail "a new test beside a manifest fallback must still be checked, got: $out"
+
+refusing_git="$(mktemp -d)"
+printf '#!/bin/sh\necho "fatal: detected dubious ownership in repository" >&2\nexit 128\n' > "$refusing_git/git"
+chmod +x "$refusing_git/git"
+repo_with_fakes git-refuses-the-checkout
+out=$(cd "$repo" && PATH="$refusing_git:$PATH" sh "$tests/run-affected.sh" base 2>&1)
+printf '%s\n' "$out" | grep -q 'detected dubious ownership' ||
+  fail "a git refusal must be shown as the reason, got: $out"
+
+repo_with_fakes no-scratch-folder
+out=$(cd "$repo" && PATH="$failing_mktemp:$PATH" sh "$tests/run-affected.sh" no-such-ref 2>&1)
+[ "$?" = 1 ] || fail "a scratch folder that cannot be made must exit 1, got: $out"
+printf '%s\n' "$out" | grep -q 'could not make a scratch folder' ||
+  fail "a scratch folder that cannot be made must be named, got: $out"
+ran alpha && fail "a scratch folder that cannot be made must run no test, got: $out"
 
 echo "PASS: run-affected"

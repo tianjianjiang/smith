@@ -8,6 +8,25 @@ case "$JOBS" in
     exit 1
     ;;
 esac
+DEFAULT_BASE=origin/main
+usage() {
+  echo "usage: sh run.sh [--all | TEST_FILE...]"
+  echo "  no arguments   run the tests that changes since $DEFAULT_BASE reach, through run-affected.sh"
+  echo "  --all          run every *.test.sh in $TESTS"
+  echo "  TEST_FILE...   run exactly the listed tests"
+  exit 2
+}
+case "$1" in
+  '')
+    [ "$#" = 0 ] || usage
+    exec sh "$HERE/run-affected.sh" "$DEFAULT_BASE"
+    ;;
+  --all)
+    [ "$#" = 1 ] || usage
+    shift
+    ;;
+  -*) usage ;;
+esac
 LOGS="$(mktemp -d)"
 if [ "$#" = 0 ]; then
   for test_file in "$TESTS"/*.test.sh; do
