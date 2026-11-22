@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
-const MANIFEST_NAME = "test-deps.json";
-const RUNNER_FILES = new Set(["run-all.sh", "run-affected.sh", "test-deps.mjs", MANIFEST_NAME]);
+const MANIFEST_NAME = "hidden-reads.json";
+const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", "select.mjs", MANIFEST_NAME]);
 const SHARED_HELPER_FOLDER = "lib";
 const TEST_SUFFIX = ".test.sh";
 const FULL_SUITE_EXIT = 3;
@@ -611,13 +611,13 @@ function dependencyFiles(root, testsFolder, testPath) {
 function main() {
   const [command, root, testsFolder, ...rest] = process.argv.slice(2);
   if (!root || !testsFolder) {
-    console.log("usage: test-deps.mjs select ROOT TESTS CHANGED_LIST SELECTION | files ROOT TESTS TEST");
+    console.log("usage: select.mjs tests ROOT TESTS CHANGED_LIST SELECTION | files ROOT TESTS TEST");
     process.exit(2);
   }
   const realRoot = realpathSync(root);
   const realTests = realpathSync(testsFolder);
   try {
-    if (command === "select" && rest.length === 2) return select(realRoot, realTests, rest[0], rest[1]);
+    if (command === "tests" && rest.length === 2) return select(realRoot, realTests, rest[0], rest[1]);
     if (command === "files" && rest.length === 1) return dependencyFiles(realRoot, realTests, rest[0]);
   } catch (error) {
     if (error instanceof FullSuite) {
@@ -626,7 +626,7 @@ function main() {
     }
     throw error;
   }
-  console.log(`test-deps.mjs: unknown command ${command}`);
+  console.log(`select.mjs: unknown command ${command}`);
   process.exit(2);
 }
 

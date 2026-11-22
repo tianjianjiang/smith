@@ -131,6 +131,6 @@ hook cannot block a command that already ran).
 
 ## Test runners
 
-`smith-ctx-claude` hooks under `smith-ctx-claude/scripts/tests/run-all.sh`
+`smith-ctx-claude` hooks under `smith-ctx-claude/scripts/tests/run.sh`
 also exercise these hooks' shared libs where imported; there is no separate
 `smith-git`-specific runner yet.

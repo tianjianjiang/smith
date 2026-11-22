@@ -9,7 +9,7 @@ WORK="$(mktemp -d)"
 
 full_suite() {
   echo "run-affected: running the full suite, because $1"
-  sh "$HERE/run-all.sh"
+  sh "$HERE/run.sh"
   exit "$?"
 }
 
@@ -23,10 +23,10 @@ echo "run-affected: comparing against $BASE (merge base $MERGE_BASE)"
     git -C "$ROOT" ls-files -z --others --exclude-standard
 } > "$WORK/changed" || full_suite "git could not list the changed files"
 
-node "$HERE/test-deps.mjs" select "$ROOT" "$HERE" "$WORK/changed" "$WORK/selected"
+node "$HERE/select.mjs" tests "$ROOT" "$HERE" "$WORK/changed" "$WORK/selected"
 selection_status=$?
 if [ "$selection_status" = 3 ]; then
-  sh "$HERE/run-all.sh"
+  sh "$HERE/run.sh"
   exit "$?"
 fi
 [ "$selection_status" = 0 ] ||
@@ -36,4 +36,4 @@ set --
 while IFS= read -r test_file; do
   set -- "$@" "$test_file"
 done < "$WORK/selected"
-sh "$HERE/run-all.sh" "$@"
+sh "$HERE/run.sh" "$@"

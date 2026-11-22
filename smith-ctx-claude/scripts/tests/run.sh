@@ -1,9 +1,9 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-JOBS="${RUN_ALL_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
+JOBS="${SMITH_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 case "$JOBS" in
   '' | *[!0-9]* | 0)
-    echo "RUN_ALL_JOBS must be a positive whole number, got: $JOBS"
+    echo "SMITH_TEST_JOBS must be a positive whole number, got: $JOBS"
     exit 1
     ;;
 esac

@@ -1,8 +1,8 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
-JOBS="${RUN_ALL_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
+JOBS="${SMITH_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)" || {
-  echo "check-test-deps: $HERE is not inside a git checkout"
+  echo "verify-self-containedness: $HERE is not inside a git checkout"
   exit 1
 }
 RELATIVE_REAL_PATH='const { realpathSync } = require("fs"); const { basename, dirname, join, relative } = require("path"); const { argv } = process; console.log(relative(realpathSync(argv[1]), join(realpathSync(dirname(argv[2])), basename(argv[2]))));'
@@ -19,7 +19,7 @@ if [ "$#" = 0 ]; then
   done
 fi
 if [ "$#" = 0 ]; then
-  echo "check-test-deps: NO TESTS FOUND in $HERE"
+  echo "verify-self-containedness: NO TESTS FOUND in $HERE"
   exit 1
 fi
 index=0
@@ -31,7 +31,7 @@ done | xargs -0 -n 2 -P "$JOBS" sh -c '
   prefix="$work/$index"
   tree="$prefix.tree"
   result="$prefix.result"
-  if ! node "$here/test-deps.mjs" files "$root" "$here" "$test_file" > "$prefix.files" 2> "$prefix.files.err"; then
+  if ! node "$here/select.mjs" files "$root" "$here" "$test_file" > "$prefix.files" 2> "$prefix.files.err"; then
     echo "NO DEPENDENCY LIST" > "$result"
     exit 0
   fi

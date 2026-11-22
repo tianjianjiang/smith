@@ -48,7 +48,7 @@ take effect once registered in `$HOME/.claude/settings.json` (see
 `@smith-settings/SKILL.md`). With the skills symlink above in place, register
 the hooks below. Every hook **fails open** on a parse/tool error unless noted
 otherwise — a guard bug never breaks unrelated work — and each ships a
-self-check under its owning skill's `scripts/tests/run-all.sh`.
+self-check in its owning skill's `scripts/tests/`.
 
 | Hook | Event (matcher) | Script | Blocks / Advisory | Detail |
 |---|---|---|---|---|
