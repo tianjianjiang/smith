@@ -223,3 +223,22 @@ json_hook_output() {
         }
     }'
 }
+
+move_file_to_temp() {
+    local file="$1" destination
+    [[ -e "$file" || -L "$file" ]] || return 0
+    destination=$(mktemp -d 2>/dev/null) \
+        && mv -n -- "$file" "$destination/" 2>/dev/null \
+        && return 0
+    [[ -e "$file" || -L "$file" ]] || return 0
+    mv -n -- "$file" "$(dirname "$file")/.set-aside.$(basename "$file").$$.$RANDOM"
+}
+
+move_matching_to_temp() {
+    local directory="$1" file
+    shift
+    while IFS= read -r -d '' file; do
+        move_file_to_temp "$file" 2>/dev/null
+    done < <(find "$directory" "$@" ! -type d -print0 2>/dev/null)
+    return 0
+}

@@ -119,6 +119,13 @@ OUT=$(run_hook)
 [ ! -e "$FLAG_FILE.exit-marker" ] || fail "the exit marker should be consumed"
 pass "exit marker of the same session allows the stop once"
 
+printf '\ns1\n' > "$FLAG_FILE"
+: > "$FLAG_FILE.exit-marker"
+OUT=$(SMITH_PLAN_LIB="$TMP/no-plan-library.sh" run_hook 2>&1)
+[ -z "$OUT" ] || fail "without the plan library an exit marker of the same session should still allow the stop: $OUT"
+[ ! -e "$FLAG_FILE.exit-marker" ] || fail "without the plan library the exit marker should still be consumed"
+pass "exit marker consumed without the plan library"
+
 printf '\nother-session\n' > "$FLAG_FILE"
 : > "$FLAG_FILE.exit-marker"
 OUT=$(run_hook)
