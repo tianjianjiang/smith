@@ -2,6 +2,7 @@
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/../lib/checkout-provenance.mjs"
+source "$HERE/lib/set-aside.sh"
 TMP=$(mktemp -d)
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
 export GIT_CEILING_DIRECTORIES="$TMP"
@@ -55,7 +56,7 @@ printf 'note\n' > "$REPO/untracked.txt"
 OUT=$(provenance "$REPO" "$REPO/scripts/hook.sh")
 expect "an untracked file" "$OUT" '.treeIsDirty == true'
 pass "an untracked file marks the tree dirty"
-rm "$REPO/untracked.txt"
+set_aside "$REPO/untracked.txt" || fail "the untracked file could not be set aside"
 
 printf 'echo changed\n' > "$REPO/scripts/hook.sh"
 CHANGED_SHA=$(shasum -a 256 "$REPO/scripts/hook.sh" | cut -d' ' -f1)
