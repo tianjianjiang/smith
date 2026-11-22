@@ -24,7 +24,7 @@ repo_with_fakes() {
   scripts="$repo/smith-ctx-claude/scripts"
   mkdir -p "$tests/lib" "$scripts/lib" "$repo/smith-other"
   cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/select.mjs" \
-    "$HERE/verify-self-containedness.sh" "$tests/" 2>/dev/null
+    "$HERE/verify-self-containedness.sh" "$tests/" || fail "the fake repository must get every tooling file"
   printf '{}\n' > "$tests/hidden-reads.json"
   printf 'helper() { :; }\n' > "$tests/lib/helper.sh"
   printf 'import { x } from "./lib/alpha-lib.mjs";\nconsole.log(x);\n' \

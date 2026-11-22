@@ -1,5 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
+TESTS="$HERE"
 JOBS="${SMITH_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null)" || {
   echo "verify-self-containedness: $HERE is not inside a git checkout"
@@ -14,12 +15,12 @@ for test_file in "$@"; do
   set -- "$@" "$(cd "$(dirname "$test_file")" && pwd)/$(basename "$test_file")"
 done
 if [ "$#" = 0 ]; then
-  for test_file in "$HERE"/*.test.sh; do
+  for test_file in "$TESTS"/*.test.sh; do
     [ -f "$test_file" ] && set -- "$@" "$test_file"
   done
 fi
 if [ "$#" = 0 ]; then
-  echo "verify-self-containedness: NO TESTS FOUND in $HERE"
+  echo "verify-self-containedness: NO TESTS FOUND in $TESTS"
   exit 1
 fi
 index=0
@@ -27,11 +28,11 @@ for test_file in "$@"; do
   index=$((index + 1))
   printf '%s\0%s\0' "$index" "$test_file"
 done | xargs -0 -n 2 -P "$JOBS" sh -c '
-  here="$1" root="$2" work="$3" index="$4" test_file="$5"
+  here="$1" tests="$2" root="$3" work="$4" index="$5" test_file="$6"
   prefix="$work/$index"
   tree="$prefix.tree"
   result="$prefix.result"
-  if ! node "$here/select.mjs" files "$root" "$here" "$test_file" > "$prefix.files" 2> "$prefix.files.err"; then
+  if ! node "$here/select.mjs" files "$root" "$tests" "$test_file" > "$prefix.files" 2> "$prefix.files.err"; then
     echo "NO DEPENDENCY LIST" > "$result"
     exit 0
   fi
@@ -64,7 +65,7 @@ done | xargs -0 -n 2 -P "$JOBS" sh -c '
   else
     echo PASS > "$result"
   fi
-' check-one "$HERE" "$ROOT" "$WORK"
+' check-one "$HERE" "$TESTS" "$ROOT" "$WORK"
 status=0
 skipped=
 index=0

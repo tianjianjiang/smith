@@ -9,6 +9,7 @@ const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", "select.mjs", MANIFES
 const SHARED_HELPER_FOLDER = "lib";
 const TEST_SUFFIX = ".test.sh";
 const FULL_SUITE_EXIT = 3;
+const TOOLING_FOLDER = realpathSync(dirname(fileURLToPath(import.meta.url)));
 
 const SHELL_SELF_DIR = String.raw`\$\(\s*dirname\s+(?:--\s+)?["']?\$\{?(?:0|BASH_SOURCE(?:\[0\])?)\}?["']?\s*\)`;
 const SHELL_SELF_DIR_TRIMMED = String.raw`\$\{(?:0|BASH_SOURCE(?:\[0\])?)[%#:/^,][^}]*\}`;
@@ -90,8 +91,8 @@ function isRepositoryRelative(entry) {
   return entry !== "" && !entry.startsWith("/") && !entry.split("/").includes("..");
 }
 
-function readManifest(root, testsFolder, files) {
-  const path = join(testsFolder, MANIFEST_NAME);
+function readManifest(root, files) {
+  const path = join(TOOLING_FOLDER, MANIFEST_NAME);
   const shown = relative(root, path);
   if (!existsSync(path)) throw new FullSuite(`${shown} is missing`);
   let data;
@@ -537,15 +538,15 @@ function testsIn(testsFolder) {
     .map((name) => join(testsFolder, name));
 }
 
-function context(root, testsFolder) {
+function context(root) {
   let listing;
   const files = () => (listing ??= repositoryFiles(root));
-  return { root, manifest: readManifest(root, testsFolder, files), scan: scanner(root), files };
+  return { root, manifest: readManifest(root, files), scan: scanner(root), files };
 }
 
-function runnerChange(changed, testsFolderKey) {
+function runnerChange(changed, toolingFolderKey, testsFolderKey) {
   return changed.find((path) => {
-    if (dirname(path) === testsFolderKey && RUNNER_FILES.has(basename(path))) return true;
+    if (dirname(path) === toolingFolderKey && RUNNER_FILES.has(basename(path))) return true;
     return path.startsWith(`${testsFolderKey}/${SHARED_HELPER_FOLDER}/`);
   });
 }
@@ -553,6 +554,7 @@ function runnerChange(changed, testsFolderKey) {
 function select(root, testsFolder, changedListPath, selectionPath) {
   const changed = [...new Set(readFileSync(changedListPath, "utf-8").split("\0").filter(Boolean))].sort();
   const testsFolderKey = relative(root, testsFolder);
+  const toolingFolderKey = relative(root, TOOLING_FOLDER);
   writeFileSync(selectionPath, "");
   if (changed.length === 0) {
     console.log("run-affected: no changed files, so no test to run");
@@ -560,9 +562,9 @@ function select(root, testsFolder, changedListPath, selectionPath) {
   }
   console.log("run-affected: changed files:");
   for (const path of changed) console.log(`  ${path}`);
-  const runner = runnerChange(changed, testsFolderKey);
+  const runner = runnerChange(changed, toolingFolderKey, testsFolderKey);
   if (runner) throw new FullSuite(`${runner} is part of the test runner or its shared helpers`);
-  const shared = context(root, testsFolder);
+  const shared = context(root);
   const selected = [];
   const reached = new Set();
   for (const testPath of testsIn(testsFolder)) {
@@ -601,8 +603,8 @@ function select(root, testsFolder, changedListPath, selectionPath) {
   writeFileSync(selectionPath, selected.map(({ testPath }) => `${testPath}\n`).join(""));
 }
 
-function dependencyFiles(root, testsFolder, testPath) {
-  const { parents } = closureOf(join(realpathSync(dirname(testPath)), basename(testPath)), context(root, testsFolder));
+function dependencyFiles(root, testPath) {
+  const { parents } = closureOf(join(realpathSync(dirname(testPath)), basename(testPath)), context(root));
   const files = [...parents.keys()].filter((key) => isRegularFile(join(root, key))).sort();
   if (files.some((file) => file.includes("\n"))) throw new Error("a dependency path contains a line break");
   for (const file of files) console.log(file);
@@ -618,7 +620,7 @@ function main() {
   const realTests = realpathSync(testsFolder);
   try {
     if (command === "tests" && rest.length === 2) return select(realRoot, realTests, rest[0], rest[1]);
-    if (command === "files" && rest.length === 1) return dependencyFiles(realRoot, realTests, rest[0]);
+    if (command === "files" && rest.length === 1) return dependencyFiles(realRoot, rest[0]);
   } catch (error) {
     if (error instanceof FullSuite) {
       console.log(`run-affected: running the full suite, because ${error.message}`);

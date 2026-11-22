@@ -1,5 +1,6 @@
 #!/bin/sh
 HERE="$(cd "$(dirname "$0")" && pwd)"
+TESTS="$HERE"
 if [ "$#" != 1 ]; then
   echo "usage: sh run-affected.sh BASE_REF"
   exit 2
@@ -23,7 +24,7 @@ echo "run-affected: comparing against $BASE (merge base $MERGE_BASE)"
     git -C "$ROOT" ls-files -z --others --exclude-standard
 } > "$WORK/changed" || full_suite "git could not list the changed files"
 
-node "$HERE/select.mjs" tests "$ROOT" "$HERE" "$WORK/changed" "$WORK/selected"
+node "$HERE/select.mjs" tests "$ROOT" "$TESTS" "$WORK/changed" "$WORK/selected"
 selection_status=$?
 if [ "$selection_status" = 3 ]; then
   sh "$HERE/run.sh"
