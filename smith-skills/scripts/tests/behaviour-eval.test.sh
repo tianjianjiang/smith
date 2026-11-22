@@ -95,7 +95,7 @@ case "$*" in
   "rm -f "*)
     if [ -e "$CONTROL/hang-rm" ]; then
       mv "$CONTROL/hang-rm" "$(mktemp -d)"
-      : > "$CONTROL/rm-started"
+      echo $$ > "$CONTROL/rm-started"
       exec sleep 60
     fi
     shift 2
@@ -1035,6 +1035,11 @@ stop_grandchildren() {
   while read -r grandchild; do kill -KILL "$grandchild" 2>/dev/null; done < "$CONTROL/grandchild-pid"
 }
 
+stop_hanging_removal() {
+  [ -s "$CONTROL/rm-started" ] || return 0
+  kill -KILL "$(cat "$CONTROL/rm-started")" 2>/dev/null
+}
+
 interrupt_hanging_run() {
   signal_count=$1
   limit_tenths=$2
@@ -1146,7 +1151,7 @@ while [ ! -e "$CONTROL/rm-started" ] && [ "$waited" -lt 300 ]; do
   sleep 0.1
   waited=$((waited + 1))
 done
-[ -e "$CONTROL/rm-started" ] || { kill -KILL "$runner_pid"; pkill -KILL -f "sleep 60"; fail "cleanup-step-hangs: the container removal never started: $(cat "$TMPD/last.out")"; }
+[ -e "$CONTROL/rm-started" ] || { kill -KILL "$runner_pid"; stop_hanging_removal; fail "cleanup-step-hangs: the container removal never started: $(cat "$TMPD/last.out")"; }
 kill -TERM "$runner_pid"
 sleep 0.2
 kill -TERM "$runner_pid"
@@ -1157,7 +1162,7 @@ while kill -0 "$runner_pid" 2>/dev/null && [ "$waited" -lt 50 ]; do
 done
 if kill -0 "$runner_pid" 2>/dev/null; then
   kill -KILL "$runner_pid"
-  pkill -KILL -f "sleep 60"
+  stop_hanging_removal
   wait "$runner_pid"
   fail "cleanup-step-hangs: a second SIGTERM must stop a cleanup step that hangs, the runner was still alive: $(cat "$TMPD/last.out")"
 fi
