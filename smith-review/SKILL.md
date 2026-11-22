@@ -38,7 +38,8 @@ tools".
 Mark `coderabbit` `ran` only on the evidence `@smith-gh-pr` "CodeRabbit fails
 OPEN" defines: a completed status over a non-empty file list. Every tool needs
 its own completion evidence (`@smith-validation`: a missing signal is never a
-passing one).
+passing one). For `/code-review`, a result of `(none)` is that evidence: it
+ran and found nothing.
 
 Marshal ALL relevant review resources — both smith skills AND Claude Code
 plugins/skills — not just one tool. Pick every one that applies to the change:
