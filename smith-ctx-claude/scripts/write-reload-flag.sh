@@ -98,7 +98,7 @@ if ! printf '%s\n%s\n%s\n%s\n%s\n' \
         "$LABEL" \
         "$SESSION_KEY" > "$TMP" || ! mv -f "$TMP" "$FLAG_FILE"; then
     echo "Error: cannot write reload flag: $FLAG_FILE" >&2
-    rm -f "$TMP" 2>/dev/null
+    [[ -e "$TMP" ]] && mv -- "$TMP" "$(mktemp -d 2>/dev/null)" 2>/dev/null
     exit 1
 fi
 
