@@ -94,7 +94,7 @@ case "$*" in
     ;;
   "rm -f "*)
     if [ -e "$CONTROL/hang-rm" ]; then
-      rm -f "$CONTROL/hang-rm"
+      mv "$CONTROL/hang-rm" "$(mktemp -d)"
       : > "$CONTROL/rm-started"
       exec sleep 60
     fi
@@ -121,7 +121,7 @@ echo "rdctl $*" >> "$CONTROL/invocations.log"
 chain=SMITH-EGRESS
 if [ -s "$CONTROL/block-path" ]; then
   mkdir -p "$(cat "$CONTROL/block-path")"
-  rm -f "$CONTROL/block-path"
+  mv "$CONTROL/block-path" "$(mktemp -d)"
 fi
 case "$*" in
   *"cat /etc/resolv.conf"*)
@@ -129,7 +129,7 @@ case "$*" in
     ;;
   *"iptables"*"-L $chain"*)
     if [ -e "$CONTROL/hang-chain-check" ]; then
-      rm -f "$CONTROL/hang-chain-check"
+      mv "$CONTROL/hang-chain-check" "$(mktemp -d)"
       : > "$CONTROL/run-started"
       exec sleep 60
     fi
@@ -140,7 +140,7 @@ case "$*" in
     [ -f "$CONTROL/state/jump" ] || exit 1
     ;;
   *"iptables"*"-D DOCKER-USER"*)
-    rm -f "$CONTROL/state/jump"
+    [ ! -e "$CONTROL/state/jump" ] || mv "$CONTROL/state/jump" "$(mktemp -d)"
     ;;
   *"iptables"*"-I DOCKER-USER"*)
     touch "$CONTROL/state/jump"
@@ -149,7 +149,7 @@ case "$*" in
     touch "$CONTROL/state/chain"
     ;;
   *"iptables"*"-X $chain"*)
-    rm -f "$CONTROL/state/chain"
+    [ ! -e "$CONTROL/state/chain" ] || mv "$CONTROL/state/chain" "$(mktemp -d)"
     ;;
   *"iptables"*"-L $chain"*|*"iptables"*"-S $chain"*)
     [ -f "$CONTROL/state/chain" ] || exit 1
@@ -282,8 +282,7 @@ for argument in "$@"; do
   previous=$argument
 done
 asset=${archive_name%.tar.gz}
-staging="$CONTROL/gh-staging"
-rm -rf "$staging"
+staging="$(mktemp -d)" || exit 1
 mkdir -p "$staging/$asset"
 cp "$CONTROL/skilled-for-archive" "$staging/$asset/skilled"
 tar -czf "$directory/$archive_name" -C "$staging" "$asset"
@@ -319,7 +318,9 @@ write_skilled_conf() {
 
 reset_world() {
   : > "$FAKE_LOG"
-  rm -rf "$CONTROL/state" "$CALLS" "$CONTROL/trashed" "$CONTROL/run-started" "$CONTROL/grandchild-pid" "$CONTROL/hang-rm" "$CONTROL/rm-started" "$CONTROL/hang-chain-check" "$CONTROL/block-path"
+  for stale in "$CONTROL/state" "$CALLS" "$CONTROL/trashed" "$CONTROL/run-started" "$CONTROL/grandchild-pid" "$CONTROL/hang-rm" "$CONTROL/rm-started" "$CONTROL/hang-chain-check" "$CONTROL/block-path" "$CONTROL/context-inspect-home"; do
+    [ ! -e "$stale" ] || mv "$stale" "$(mktemp -d)" || fail "could not move away: $stale"
+  done
   mkdir -p "$CONTROL/state" "$CALLS" "$CONTROL/trashed"
   echo 0 > "$CALLS/count"
   : > "$CONTROL/containers-now"
@@ -328,7 +329,6 @@ reset_world() {
   echo ok > "$CONTROL/docker-context-mode"
   echo consistent > "$CONTROL/gh-mode"
   echo "$CONTEXT_HOST" > "$CONTROL/docker-context-host"
-  rm -f "$CONTROL/context-inspect-home"
   echo 192.168.5.2 > "$CONTROL/resolver"
   printf '%s STREAM api.anthropic.com\n%s STREAM api.anthropic.com\n%s STREAM registry.npmjs.org\n' \
     "$RESOLVED_VENDOR_FIRST" "$RESOLVED_VENDOR_SECOND" "$RESOLVED_REGISTRY" > "$CONTROL/resolved.txt"
@@ -381,7 +381,7 @@ put smith-second/evals/eval.yaml "eval file at head for smith-second"
 put smith-second/evals/arm-tree-fixture.txt "evals/fixtures/repos/tree"
 put smith-third/evals/eval.yaml "eval file at head for smith-third"
 put smith-third/evals/arm-tree-fixture.txt "evals/fixtures/../../../outside"
-fixture_git rm -q smith-fixture/evals/stale.yaml
+mv "$FIXTURE/smith-fixture/evals/stale.yaml" "$(mktemp -d)"
 fixture_git add -A
 fixture_git commit -q -m "head evals"
 COMMIT_BASE="$(fixture_git rev-parse fixture-base^{commit})"
@@ -1070,7 +1070,6 @@ interrupt_hanging_run() {
 run_unattended_with_limit() {
   limit_tenths=$1
   shift
-  rm -f "$CONTROL/runner-outlived-limit"
   "$NODE" "$RUNNER" "$@" > "$TMPD/last.out" 2>&1 &
   runner_pid=$!
   (
