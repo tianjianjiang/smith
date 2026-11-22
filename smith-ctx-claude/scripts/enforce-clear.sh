@@ -5,11 +5,12 @@
 # Canonical location: smith-ctx-claude (context management foundation).
 # Handles both plan and non-plan contexts (single hook design).
 #
-# Blocks at 60% context using real token counts from transcript JSONL.
-# Uses stop_hook_active (official best practice) for loop prevention.
-#
-# Session Isolation: Uses PPID:CWD-based flag files so parallel Claude Code
-# sessions (even in the same CWD) don't interfere with each other.
+# Measures the context from the transcript's token usage and sends each
+# stop it does not settle first to the per-session state kept by
+# ctx-reset-state.sh; the state answers allow, block, dispatch or unspecified.
+# On unspecified the older path runs: it blocks at the critical threshold and,
+# in a background session the state holds no record of, may dispatch from
+# the PPID:CWD-keyed flag files.
 #
 # Env vars:
 #   CTX_CONTEXT_CRITICAL_PCT - Critical threshold in % (default: 60)
@@ -208,8 +209,7 @@ remove_abandoned_attempt_markers() {
 dispatch_successor_session() {
     local hook_cwd="${HOOK_CWD:-${PWD:-}}"
     local own_key physical_cwd physical_key pending_reload attempt_marker
-    local eligible_flags flag label checkpoint_time name prompt mode output reason
-    local launch_options=()
+    local eligible_flags flag label
     own_key=$(session_key "" "$hook_cwd") || return 0
     physical_cwd=$(cd -- "$hook_cwd" 2>/dev/null && pwd -P) || physical_cwd="$hook_cwd"
     physical_key=$(session_key "" "$physical_cwd") || physical_key=""
@@ -235,26 +235,186 @@ dispatch_successor_session() {
     fi
     printf '%s\n' "$eligible_flags" >> "$attempt_marker"
     label=$(sed -n '4p' "$flag")
-    checkpoint_time=$(sed -n '2p' "$flag")
-    name="${checkpoint_time:0:16} ${label}"
-    prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."
-    mode=$(jq -r '.permission_mode // empty' <<<"$INPUT" 2>/dev/null)
-    launch_options=(--bg --name "$name")
-    [[ -n "$mode" ]] && launch_options+=(--permission-mode "$mode")
-    output=$(cd -- "$hook_cwd" && claude "${launch_options[@]}" -- "$prompt" < /dev/null 2>&1)
-    if [[ "$output" =~ backgrounded\ ·\ ([0-9A-Za-z_-]+) ]]; then
+    if launch_successor "$label" "$(sed -n '2p' "$flag")"; then
         rm -f "$flag"
-        json_system_message SMITH_CTX_CONTINUED "Context reset: the work continues in background session ${BASH_REMATCH[1]} named \"${name}\"."
+        json_system_message SMITH_CTX_CONTINUED "Context reset: the work continues in background session ${SUCCESSOR_ID} named \"${SUCCESSOR_NAME}\"."
     else
-        reason=$(first_output_line "$output")
-        json_system_message SMITH_CTX_DISPATCH_FAILED "Context reset: dispatching a background session for checkpoint \"${label}\" failed${reason:+ (${reason})}; /clear still restores the checkpoint."
+        json_system_message SMITH_CTX_DISPATCH_FAILED "$(dispatch_failed_text "$label")"
     fi
 }
 
-# Official best practice: if already continuing from a stop hook, allow stop
-if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
-    auto_reset_dispatch_enabled && dispatch_successor_session
+launch_successor() {
+    local label="$1" checkpoint_time="$2" prompt mode
+    SUCCESSOR_NAME="${checkpoint_time:+${checkpoint_time:0:16} }${label}"
+    SUCCESSOR_ID=""
+    prompt="This session continues an earlier session whose context was full. Restore the checkpoint \"${label}\": ${CHECKPOINT_READ_ONE_BACKEND}. Then report the restored context and continue the work thread."
+    mode=$(jq -r '.permission_mode // empty' <<<"$INPUT" 2>/dev/null)
+    local launch_options=(--bg --name "$SUCCESSOR_NAME")
+    [[ -n "$mode" ]] && launch_options+=(--permission-mode "$mode")
+    LAUNCH_OUTPUT=$(cd -- "${HOOK_CWD:-${PWD:-}}" && claude "${launch_options[@]}" -- "$prompt" < /dev/null 2>&1)
+    [[ "$LAUNCH_OUTPUT" =~ backgrounded\ ·\ ([0-9A-Za-z_-]+) ]] || return 1
+    SUCCESSOR_ID="${BASH_REMATCH[1]}"
+}
+
+dispatch_failed_text() {
+    local reason
+    reason=$(first_output_line "$LAUNCH_OUTPUT")
+    if [[ "${2:-flagged}" == unflagged ]]; then
+        printf 'Context reset: dispatching a background session for checkpoint "%s" failed%s; no restore flag was written for it, so restore it by its label in a new session.' "$1" "${reason:+ (${reason})}"
+    else
+        printf 'Context reset: dispatching a background session for checkpoint "%s" failed%s; /clear still restores the checkpoint.' "$1" "${reason:+ (${reason})}"
+    fi
+}
+
+readonly STATE_SCRIPT="${SCRIPT_DIR}/ctx-reset-state.sh"
+readonly STATE_UNSPECIFIED="unspecified - unknown"
+readonly PENDING_RESTORE_PREFIX=".pending-memory-restore-"
+readonly CONSUMED_RESTORE_PREFIX=".consumed-memory-restore-"
+
+set_consumed_restore_flag_aside() {
+    local flag="$1" name="${1##*/}"
+    [[ -f "$flag" && "$name" == "${PENDING_RESTORE_PREFIX}"* ]] || return 0
+    mv -f -- "$flag" "${flag%/*}/${CONSUMED_RESTORE_PREFIX}${name#"${PENDING_RESTORE_PREFIX}"}" 2>/dev/null \
+        || echo "Context reset: could not set the restore flag aside: ${flag}" >&2
+}
+
+dispatch_from_state() {
+    local label flag
+    label=$(state_field label)
+    flag=$(state_field flag)
+    if launch_successor "$label" "$(sed -n '2p' "$flag" 2>/dev/null)"; then
+        "$STATE_SCRIPT" "$SESSION_ID" dispatched "successor=${SUCCESSOR_ID}" > /dev/null 2>&1
+        set_consumed_restore_flag_aside "$flag"
+        json_stop_block "$(coded SMITH_CTX_CONTINUED "Context reset: the work continues in background session ${SUCCESSOR_ID} named \"${SUCCESSOR_NAME}\". End this turn without further work.")"
+    else
+        "$STATE_SCRIPT" "$SESSION_ID" dispatch-unrecognized > /dev/null 2>&1
+        json_system_message SMITH_CTX_DISPATCH_FAILED "$(dispatch_failed_text "$label" "$([[ -f "$flag" ]] || echo unflagged)")"
+    fi
     exit 0
+}
+
+exit_on_state_dispatch() {
+    [[ "$STATE_ACTION" == dispatch ]] && dispatch_from_state
+    return 0
+}
+
+readonly TOOL_CALL_AFTER_THE_WRITE='
+    def instant: (.[0:19] + "Z" | fromdateiso8601);
+    ($written_at | instant - (if .[19:20] == "-" then -1 else 1 end) * ((.[20:22] | tonumber) * 3600 + (.[23:25] | tonumber) * 60)) as $write
+    | reduce (inputs | fromjson? | select(.type == "assistant")) as $entry ({write_call_seen: false, worked: false};
+        ($entry.timestamp | if type == "string" then instant else null end) as $called
+        | reduce ($entry.message.content[]? | select(.type == "tool_use")) as $call (.;
+            if $called != null and $called < $write and (($call.input.command? // "") | tostring | contains("write-checkpoint.sh"))
+            then {write_call_seen: true, worked: false}
+            elif .write_call_seen or $called == null or $called >= $write
+            then .worked = true
+            else . end))
+    | .worked'
+
+worked_since_the_checkpoint() {
+    local written_at tool_call_follows
+    [[ "$("$STATE_SCRIPT" "$SESSION_ID" show 2>/dev/null)" == "state=checkpointed" ]] || { echo 0; return; }
+    written_at=$(state_field written_at)
+    if tool_call_follows=$(jq -nR --arg written_at "$written_at" "$TOOL_CALL_AFTER_THE_WRITE" "$TRANSCRIPT_PATH" 2>/dev/null) && [[ "$tool_call_follows" == false ]]; then
+        echo 0
+    else
+        echo 1
+    fi
+}
+
+stop_answer_of_state() {
+    local percentage="$1" active="$2" high=0 dispatch=off answer
+    [[ -n "$SESSION_ID" && -x "$STATE_SCRIPT" ]] || { echo "$STATE_UNSPECIFIED"; return; }
+    [[ "$percentage" =~ ^[0-9]+$ && $percentage -ge $CRITICAL_PCT ]] && high=1
+    auto_reset_dispatch_enabled && dispatch=on
+    answer=$("$STATE_SCRIPT" "$SESSION_ID" stop "high=${high}" "active=${active}" "dispatch=${dispatch}" "worked=$(worked_since_the_checkpoint)" 2>/dev/null) || answer="$STATE_UNSPECIFIED"
+    echo "$answer"
+}
+
+continuation_stop_percentage() {
+    local cwd_key
+    transcript_readable || return 0
+    cwd_key=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || return 0
+    resolve_context_percentage "$TRANSCRIPT_PATH" "$cwd_key"
+}
+
+state_field() {
+    "$STATE_SCRIPT" "$SESSION_ID" show-field "$1" 2>/dev/null
+}
+
+state_records_this_session() {
+    [[ -n "$SESSION_ID" && -x "$STATE_SCRIPT" && "$("$STATE_SCRIPT" "$SESSION_ID" known 2>/dev/null)" == yes ]]
+}
+
+already_continued_text() {
+    local successor
+    successor=$(state_field successor)
+    if [[ -n "$successor" ]]; then
+        printf 'Context reset: the work already continues in background session %s; this stop is allowed.' "$successor"
+    else
+        printf 'Context reset: a background session was already tried for this checkpoint and is not tried again; this stop is allowed.'
+    fi
+}
+
+checkpoint_written_text() {
+    local label
+    label=$(state_field label)
+    if [[ -n "$(state_field flag)" ]]; then
+        printf 'Context reset: checkpoint "%s" is written; type /clear to continue from it.' "$label"
+    else
+        printf 'Context reset: checkpoint "%s" is written, but no restore flag was written for it; restore it by its label in a new session.' "$label"
+    fi
+}
+
+allowed_stop_text() {
+    case "$1" in
+        SMITH_CTX_CHECKPOINT_IN_PROGRESS) printf 'Context reset: a checkpoint is in progress; this stop is allowed.' ;;
+        SMITH_CTX_CHECKPOINT_WRITTEN) checkpoint_written_text ;;
+        SMITH_CTX_ALREADY_CONTINUED) already_continued_text ;;
+        *) return 1 ;;
+    esac
+}
+
+CHECKPOINT_OUT_OF_DATE=false
+
+ask_the_state_about_this_stop() {
+    local percentage="$1" active="$2" state_before answer="$STATE_UNSPECIFIED"
+    state_before=$("$STATE_SCRIPT" "$SESSION_ID" show 2>/dev/null)
+    [[ "$active" == 1 && -z "$percentage" ]] || answer=$(stop_answer_of_state "$percentage" "$active")
+    read -r STATE_ACTION STATE_CODE STATE_NEXT <<<"$answer"
+    [[ "$state_before" == "state=checkpointed" && "$STATE_ACTION" == block ]] && CHECKPOINT_OUT_OF_DATE=true
+    return 0
+}
+
+exit_when_a_checkpoint_waits_unmeasured() {
+    local percentage="$1" written
+    [[ "$STATE_ACTION" == allow && "$STATE_CODE" == - && "$STATE_NEXT" == checkpointed ]] || return 0
+    [[ "$percentage" =~ ^[1-9][0-9]*$ ]] && return 0
+    written=$(checkpoint_written_text)
+    json_system_message SMITH_CTX_CONTEXT_UNMEASURED "Context reset: the context level could not be measured from the transcript ${TRANSCRIPT_PATH}, so no background session was started; ${written#Context reset: }"
+    exit 0
+}
+
+exit_when_state_allows() {
+    local text
+    [[ "$STATE_ACTION" == allow && "$STATE_CODE" != - ]] || return 0
+    text=$(allowed_stop_text "$STATE_CODE") || return 0
+    json_system_message "$STATE_CODE" "$text"
+    exit 0
+}
+
+if [[ "$STOP_HOOK_ACTIVE" == "true" ]]; then
+    CONTINUATION_PCT=$(continuation_stop_percentage)
+    ask_the_state_about_this_stop "$CONTINUATION_PCT" 1
+    exit_on_state_dispatch
+    exit_when_a_checkpoint_waits_unmeasured "$CONTINUATION_PCT"
+    exit_when_state_allows
+    if [[ "$STATE_ACTION" != block ]]; then
+        [[ "$STATE_ACTION" == allow && "$STATE_CODE" == - ]] && exit 0
+        state_records_this_session && exit 0
+        auto_reset_dispatch_enabled && dispatch_successor_session
+        exit 0
+    fi
 fi
 CWD_KEY=$(session_key "" "${HOOK_CWD:-${PWD:-}}") || {
     echo "Error: session_key failed" >&2
@@ -295,10 +455,16 @@ fi
 
 # Real context percentage from transcript token usage
 CONTEXT_PCT=$(resolve_context_percentage "$TRANSCRIPT_PATH" "$CWD_KEY")
+ask_the_state_about_this_stop "$CONTEXT_PCT" 0
+exit_on_state_dispatch
+exit_when_a_checkpoint_waits_unmeasured "$CONTEXT_PCT"
+exit_when_state_allows
 
-if [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]]; then
-    exit 0
-fi
+case "$STATE_ACTION" in
+    allow) exit 0 ;;
+    block) ;;
+    *) [[ $CONTEXT_PCT -lt $CRITICAL_PCT ]] && exit 0 ;;
+esac
 
 STATE_FILE="${FLAGS_DIR}/.plan-state-${PLAN_STATE_KEY}"
 
@@ -364,10 +530,22 @@ case "$FLAG_TYPE" in
         ;;
 esac
 
-if auto_reset_dispatch_enabled; then
+block_reason_is_coded() {
+    if [[ "$STATE_ACTION" == block ]]; then
+        [[ "$STATE_CODE" == "$AUTO_RESET_BLOCKED" ]]
+    else
+        auto_reset_dispatch_enabled
+    fi
+}
+
+if block_reason_is_coded; then
     REASON=$(coded "$AUTO_RESET_BLOCKED" "${STATUS}. Checkpoint this session; a fresh background session then continues from the checkpoint.")
 else
     REASON="${STATUS}. Checkpoint this session, then /clear."
+fi
+
+if [[ "$CHECKPOINT_OUT_OF_DATE" == true ]]; then
+    REASON+=" A tool call followed the earlier checkpoint, so that checkpoint is not handed on; after the new checkpoint, stop without another tool call."
 fi
 
 AGENT_CONTEXT=""

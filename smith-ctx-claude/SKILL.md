@@ -94,7 +94,9 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
 
 - **Real percentage**: Blocks at 60% context (from transcript token usage, not byte count)
 - **Three branches**: Plan+pending, plan+completed, no-plan (plan filepath shown first, Serena optional)
-- **Loop prevention**: Uses `stop_hook_active` field (official best practice)
+- **Loop prevention**: `ctx-reset-state.sh` keeps one checkpoint state per
+  session and answers each stop the hook sends it; the state table is
+  `smith-ctx-claude/references/auto-context-reset/spec.md` "Stop hook states"
 
 **Config**: Both hooks in `smith-ctx-claude/scripts/`.
 
@@ -106,15 +108,21 @@ Stop hook `enforce-clear.sh` blocks at 60% context. Uses real token counts from 
    the hook's invoke directive
 5. smith-checkpoint outputs Reload block with actual memory names
 
-**Automatic continuation (background sessions; `CTX_AUTO_RESET_DISPATCH=0`
-in a settings `env` block turns it off):** once the checkpoint is written,
-the hook starts a background session that restores it, so no `/clear` is
-typed; the session is named `«time» «label»`, where «time» is the
-checkpoint's time to the minute. The block reason says which case applies.
-Checkpoint as above, then stop; do not tell the user to `/clear` unless the
-hook then reports that no session was started; every `systemMessage`
-notice of the hook starts with a `[SMITH_CTX_«reason»]` code and says why.
-Conditions and limits:
+**Acting on the hook's messages.** Every notice of the hook starts with a
+`[SMITH_CTX_«reason»]` code and says why; act on the code, not the wording:
+
+- `[SMITH_CTX_AUTO_RESET_BLOCKED]`, or an uncoded block reason that says
+  "Checkpoint this session, then /clear.": checkpoint as above, then stop
+  without another tool call
+- `[SMITH_CTX_CONTINUED]`: the work moved to the background session the
+  reason names; end the turn without further work
+- Tell the user to `/clear` when a message of the hook says to, and never
+  after `[SMITH_CTX_CONTINUED]`
+
+Automatic continuation runs in background sessions;
+`CTX_AUTO_RESET_DISPATCH=0` in a settings `env` block turns it off. States,
+transitions and codes: the spec section named above and its "Outcome
+codes". Launch details and limits:
 `smith-mode-plan-claude/references/HOOKS.md` "enforce-clear.sh (Stop)".
 
 ### Flag File and Injection Points
@@ -124,7 +132,8 @@ Flag-based auto-reload mechanism for plan and state restoration after `/clear`:
 **Injection points (all in `smith-ctx-claude/scripts/`):**
 - `on-session-clear.sh` (SessionStart:clear) — Reliable plan injection post-`/clear`
 - `inject-plan.sh` (UserPromptSubmit) — Flag-based reload or trigger word
-- `enforce-clear.sh` (Stop) — Creates flag at 60%, outputs reload directive
+- `enforce-clear.sh` (Stop) — Creates flag on each high-context block,
+  outputs reload directive
 - `on-plan-exit.sh` (PostToolUse:ExitPlanMode) — Creates flag for later `/clear`
 
 **Flag file location:** `~/.claude/plans/.pending-reload-«session-hash»`

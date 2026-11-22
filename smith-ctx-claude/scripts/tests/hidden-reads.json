@@ -3,6 +3,9 @@
     "smith-ctx-claude/scripts/attribution-model-source.sh"
   ],
   "smith-ctx-claude/scripts/correction-census.mjs": ["*/SKILL.md"],
+  "smith-ctx-claude/scripts/tests/ctx-reset-state.test.sh": [
+    "smith-checkpoint/SKILL.md"
+  ],
   "smith-ctx-claude/scripts/skill-claim-lint.mjs": ["*/SKILL.md"],
   "smith-ctx-claude/scripts/skill-lint.mjs": ["*/SKILL.md"],
   "smith-ctx-claude/scripts/skill-trigger-eval.mjs": [

@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-11-22T23:57:04+09:00",
+  "claudeCodeVersion": "2.1.330 (Claude Code)",
+  "model": "haiku",
+  "sessionMode": "print",
+  "sessions": 5,
+  "checks": {
+    "stopHookCopiedTheTranscript": true,
+    "transcriptAtStopHeldTheFirstToolCall": true,
+    "transcriptAtStopHeldTheLastToolCall": true,
+    "theTwoWordsCameInSeparateToolCallsInOrder": true,
+    "everyToolCallCarriesAnInstant": true,
+    "toolCallInstantsAreInOrder": true,
+    "toolCallTimestampsEndInZ": true
+  }
+}

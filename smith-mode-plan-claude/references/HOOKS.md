@@ -10,7 +10,7 @@ These hooks work together to manage plan execution across context boundaries:
 |------|-------|-------|---------|
 | `inject-plan.sh` | UserPromptSubmit | Every prompt | Load plan, detect flags |
 | `context-warning.sh` | UserPromptSubmit | Every prompt | Warn above the context threshold (owns this message; `inject-plan.sh` emits none) |
-| `enforce-clear.sh` | Stop | Agent stop | Block stop when context high + pending tasks |
+| `enforce-clear.sh` | Stop | Agent stop | Allow, block or dispatch a continuation as the session's checkpoint state answers; block at high context whether or not tasks are pending |
 | `on-plan-exit.sh` | PostToolUse (ExitPlanMode) | Plan mode exit | Create reload flag for auto-load after `/clear` |
 | `on-session-clear.sh` | SessionStart (`clear`) | After `/clear` | Scan checkpoint flags, restore this session's, report the rest |
 | `mark-session-restart.sh` | SessionStart (`clear`, `compact`) | After `/clear` or `/compact` | Record that a restart actually happened, and which one |
@@ -143,46 +143,86 @@ Fires on every prompt. Three main paths:
 
 ### enforce-clear.sh (Stop)
 
-Fires when agent attempts to stop. Blocks the stop when the context
+Fires when the agent attempts to stop. The context is high when the
 percentage read from the transcript's token usage is at or above
-`CTX_CONTEXT_CRITICAL_PCT` (default 60).
+`CTX_CONTEXT_CRITICAL_PCT`, default 60. Each stop the hook does not settle
+first is sent to the per-session state of
+`smith-ctx-claude/scripts/ctx-reset-state.sh`, which answers allow, block,
+dispatch or `unspecified`; the hook acts on that answer. What is sent, what
+each answer is given for, and when the older path runs:
+`smith-ctx-claude/references/auto-context-reset/spec.md` "Stop hook states".
 
-It allows the stop without blocking when `stop_hook_active` is true, which
-is what prevents a loop; when no transcript exists; or when an exit marker
-from `on-plan-exit.sh` matches the session.
+Two facts that section does not hold:
 
-When blocking, it writes the `.pending-reload-<CWD_KEY>` flag, refreshes the
-plan state file, and returns the session facts as additional context.
+- `write-checkpoint.sh` warns on stderr when the state answers anything
+  other than `record - checkpointed`, and when the session has an id but
+  the state script is missing or not executable.
+- When a tool call followed a checkpoint, its restore flag stays for
+  `/clear`.
 
-**Automatic continuation of background sessions.** In a background session
-(`CLAUDE_JOB_DIR` set), unless `CTX_AUTO_RESET_DISPATCH=0` is in the `env`
-block of a settings file (a variable exported by the launching shell does
-not reach a background session's hooks), the block reason starts with
-`[SMITH_CTX_AUTO_RESET_BLOCKED]` and ends "a fresh background session then
-continues from the checkpoint" instead of "then /clear". A session that its
-terminal hosts is not affected, and neither is any session when
-`lib-plan.sh`, which holds the restore wording, is missing.
-On the next stop, the one with `stop_hook_active` true, and only while the
-context is still at or above the threshold, the hook looks for a
+When it blocks for high context, the hook writes the
+`.pending-reload-<CWD_KEY>` flag, refreshes the plan state file, and
+returns the session facts as additional context.
+
+**Automatic continuation of background sessions.** Dispatch is on in a
+background session, one with `CLAUDE_JOB_DIR` set, unless
+`CTX_AUTO_RESET_DISPATCH=0` is in the `env` block of a settings file; a
+variable exported by the launching shell does not reach a background
+session's hooks. It is off in a session that its terminal hosts, and in
+every session when `lib-plan.sh`, which holds the restore wording, is
+missing.
+
+The launch command is
+`claude --bg --name "«time» «label»"` with the session's permission mode
+when the hook input carries one, and a prompt that restores the recorded
+checkpoint; «time» is the checkpoint's time to the minute, so each
+continuation of one work thread gets its own name. Nothing is typed into a
+terminal.
+
+- A restore flag rename that fails is reported on stderr. Without a restore
+  flag the session is named by the label alone.
+- The `[SMITH_CTX_DISPATCH_FAILED]` notice carries the first line of the
+  command's output; when the checkpoint has no restore flag, it says to
+  restore the checkpoint by its label in a new session.
+
+The older dispatch, which runs when "Stop hook states" says so and only
+while the context is still at or above the threshold, looks for a
 `.pending-memory-restore-*` flag that carries this session's key and is
-newer than the `.pending-reload-<CWD_KEY>` flag, that is, a checkpoint
-written after the block. If it finds one it runs `claude --bg --name
-"«time» «label»"`, with the session's permission mode when the hook input
-carries one, and a prompt that restores that checkpoint; «time» is the
-checkpoint's time to the minute, so each continuation of one work thread
-gets its own name. On success it deletes the flag and reports the new
-session in a `systemMessage`. Nothing is typed into a terminal. Limits:
+newer than the `.pending-reload-<CWD_KEY>` flag, launches as above, and on
+success deletes the flag and reports the new session with
+`[SMITH_CTX_CONTINUED]` in a `systemMessage`. Without a checkpoint written
+after the block it dispatches nothing and says so with
+`[SMITH_CTX_NO_CHECKPOINT]`; the session stops as before and `/clear` still
+works. A failed dispatch keeps the flag and reports the first line of the
+command's output with `[SMITH_CTX_DISPATCH_FAILED]`.
+`.auto-reset-attempt-<CWD_KEY>` lists every flag that was tried or was
+superseded by a newer one at that moment, so a later stop never tries one
+of them, while a flag written afterwards is still tried. On such a stop the
+hook removes this marker when no `.pending-reload` file is left, and another
+session's marker older than an hour once that session's `.pending-reload`
+file is gone. Its evidence that it blocked this session is the latest Stop
+batch in the transcript, the records sharing one `toolUseID`, where a record
+without one is a batch of its own: an error of its `stop_hook_summary` or of
+its `hook_blocking_error` attachment starting with
+`[SMITH_CTX_AUTO_RESET_BLOCKED] `. The summary can be skipped,
+https://github.com/anthropics/claude-code/issues/74648, and the format is
+undocumented, so a readable transcript with no Stop hook record in a known
+shape, or one whose errors field is missing or not an array, is reported as
+an unknown format instead of read as "not blocked". When the transcript
+cannot be read, even for lack of read permission, a `.pending-reload` file
+that names this session, with no newer attempt marker, is the evidence
+instead. With that evidence the older dispatch says why nothing was
+dispatched: the `.pending-reload` file is missing, naming the key it was
+filed under when there is one; the transcript cannot be read; or the
+context fell below the threshold, where no new session is needed, or could
+not be measured, since `lib-context.sh` reads an unmeasured level as 0%.
+Without that evidence, as when another hook
+blocked or a stale `.pending-reload` file was left by an earlier, handled
+block, the stop stays silent. Recorded shape and how to refresh it after a Claude Code upgrade:
+`smith-ctx-claude/scripts/tests/records/README.md`.
 
-- No dispatch without a checkpoint written after the block; the hook says so
-  in a `systemMessage`, the session stops as before and `/clear` still works.
-- A failed dispatch keeps the flag and reports the first line of the
-  command's output; `/clear` still restores the checkpoint.
-- One attempt per checkpoint: `.auto-reset-attempt-<CWD_KEY>` lists every
-  flag that was tried or was superseded by a newer one at that moment, so a
-  later stop never tries one of them, while a flag written afterwards is
-  still tried. On such a stop the hook removes this marker when no
-  `.pending-reload` file is left, and another session's marker older than an
-  hour once that session's `.pending-reload` file is gone.
+Limits of both paths:
+
 - The earlier session stays in the session list, and a terminal showing it
   does not switch to the new one.
 - Needs background sessions: with `disableAgentView` or
@@ -190,41 +230,16 @@ session in a `systemMessage`. Nothing is typed into a terminal. Limits:
   dispatch fails.
 - The new session takes its model and allowed tools from its own settings,
   not from the earlier session.
-- Every outcome is told to the session itself in a `systemMessage`, never
-  in a shared file. The block reason and each notice start with a fixed
-  code, so they are matched by the code and never by their wording, which a
-  model may translate or paraphrase: `[SMITH_CTX_AUTO_RESET_BLOCKED]` (the
-  block), `[SMITH_CTX_CONTINUED]`, `[SMITH_CTX_DISPATCH_FAILED]`,
-  `[SMITH_CTX_NO_CHECKPOINT]`, `[SMITH_CTX_PENDING_RELOAD_MISSING]`,
-  `[SMITH_CTX_TRANSCRIPT_UNREADABLE]`, `[SMITH_CTX_CONTEXT_NO_LONGER_CRITICAL]`,
-  `[SMITH_CTX_CONTEXT_UNMEASURED]` and `[SMITH_CTX_TRANSCRIPT_FORMAT_UNKNOWN]`.
-- The hook takes the evidence that it blocked this session from the latest
-  Stop batch in the transcript (records sharing one `toolUseID`; a record
-  without one is a batch of its own): an error of its
-  `stop_hook_summary` or its `hook_blocking_error` attachment starting with
-  `[SMITH_CTX_AUTO_RESET_BLOCKED] `. The summary can be skipped
-  (https://github.com/anthropics/claude-code/issues/74648), and the format is
-  undocumented, so a readable transcript with no Stop hook record in a known
-  shape, or one whose errors field is missing or not an array, is reported
-  as an unknown format instead of read as "not blocked". When the
-  transcript cannot be read, even for lack of read permission, a
-  `.pending-reload` file that names this session, with no newer attempt
-  marker, is the evidence instead.
-- With that evidence the hook says why nothing was dispatched: the
-  `.pending-reload` file is missing (naming the key it was filed under, if
-  any), the transcript cannot be read, or the context fell below the
-  threshold, where no new session is needed, or could not be measured, since
-  `lib-context.sh` reads an unmeasured level as 0%. Without it (another hook
-  blocked, or a stale `.pending-reload` file left by an earlier, handled
-  block) the stop stays silent. Recorded shape and how to refresh it after
-  a Claude Code upgrade: `smith-ctx-claude/scripts/tests/records/README.md`.
+- Every outcome is told to the session itself, never in a shared file.
+  Codes and their channels: "Outcome codes" in the same spec.
 
-Tests: `tests/enforce-clear-dispatch.test.sh`; live eval and record:
-`smith-ctx-claude/scripts/tests/records/README.md`.
+Live evals and records: `smith-ctx-claude/scripts/tests/records/README.md`.
 
 **Input JSON fields used:**
 - `transcript_path` - Path to JSONL transcript file
-- `session_id` - Current session identifier (for flag file)
+- `session_id` - Current session identifier, which keys the state record
+- `stop_hook_active` - Whether this stop continues a blocked one
+- `cwd` - Working directory, which keys the flag files
 - `permission_mode` - Passed to the dispatched session when present
 
 ### on-plan-exit.sh (PostToolUse: ExitPlanMode)
@@ -347,7 +362,7 @@ and there is no plan to auto-resume.
 `~/.claude/plans/.pending-memory-restore-<unique id>` — written by `/smith-checkpoint` via
 `write-reload-flag.sh`, read by `on-session-clear.sh` (`clear`) and, more narrowly,
 `on-session-compact.sh` (`compact` — see below). **Deliberately separate** from
-`.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every high-context Stop,
+`.pending-reload`: the plan hooks (`enforce-clear.sh` writes it on every Stop it blocks for high context,
 `inject-plan.sh` deletes it on the next prompt) own that file, so a non-plan flag stored there
 would be clobbered/consumed before `/clear`. The plan hooks never touch this file.
 
