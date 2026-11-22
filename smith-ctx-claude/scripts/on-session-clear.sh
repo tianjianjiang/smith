@@ -99,7 +99,7 @@ fi
 #   6 "different repository, counted only" / "outside this session's scope, counted
 #     only" / "own scope unresolvable, withheld" — the WITHHELD band: counted, never
 #     printed, because a recorded path and a free-text label are identifying
-#     material this session established no claim to (~/.claude/rules/client-scope.md)
+#     material this session established no claim to
 # Verdicts 1, 2 and 4 come from the exact cwd match; 3, 5 (unverifiable) and 6
 # come from scope_key(); 5 (malformed) comes from neither — it is decided before
 # scope_key() is consulted, because the flag records no path to resolve.

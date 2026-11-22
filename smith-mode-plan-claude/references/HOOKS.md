@@ -525,7 +525,7 @@ label, recorded path, age, verdict, and — only where the agent may act on it �
 | 4 | `MATCHED but its age could NOT be established` | matched, but `stat` or the clock gave no usable number, so the 24-hour window could not be applied | nothing restored, nothing consumed, flag still on disk; report the age as unknown and assert no freshness |
 | 5 | `scope unverifiable, recorded path unreachable` | this session's own scope resolved, but the recorded directory could not be reached | assert nothing about it; show the path and let the user judge |
 | 5 | `malformed flag, no recorded path` | the file records no path at all — truncated or hand-mangled | nothing to restore; the user may want to delete it |
-| 6 | `different repository, counted only` | both sides resolved to a repository, and they differ | **counted, never printed** — the path and label belong to that project (`~/.claude/rules/client-scope.md`) |
+| 6 | `different repository, counted only` | both sides resolved to a repository, and they differ | **counted, never printed** — the path and label belong to that project |
 | 6 | `outside this session's scope, counted only` | both sides resolved, but at least one is a directory inside no repository | **counted, never printed** — only the difference of scope was established, never that it belongs to another project |
 | 6 | `own scope unresolvable, withheld` | this session's OWN directory could not be resolved, so no flag could be checked against it | **counted, never printed** — the flags are untouched in `PLANS_DIR`; read them there |
 
