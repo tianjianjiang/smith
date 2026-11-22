@@ -202,7 +202,7 @@ remove_abandoned_attempt_markers() {
         [[ -n "$marker" ]] || continue
         marker_key="${marker##*/.auto-reset-attempt-}"
         [[ "$marker_key" == "$own_key" || -f "${CTX_FLAGS_DIR}/.pending-reload-${marker_key}" ]] && continue
-        rm -f "$marker"
+        move_file_to_temp "$marker"
     done < <(find "$CTX_FLAGS_DIR" -maxdepth 1 -name '.auto-reset-attempt-*' -mmin +60 2>/dev/null)
 }
 
@@ -217,7 +217,7 @@ dispatch_successor_session() {
     attempt_marker="${CTX_FLAGS_DIR}/.auto-reset-attempt-${own_key}"
     remove_abandoned_attempt_markers "$own_key"
     if [[ ! -f "$pending_reload" ]]; then
-        rm -f "$attempt_marker"
+        move_file_to_temp "$attempt_marker"
         report_missing_pending_reload "$own_key"
         return 0
     fi
@@ -236,7 +236,7 @@ dispatch_successor_session() {
     printf '%s\n' "$eligible_flags" >> "$attempt_marker"
     label=$(sed -n '4p' "$flag")
     if launch_successor "$label" "$(sed -n '2p' "$flag")"; then
-        rm -f "$flag"
+        move_file_to_temp "$flag"
         json_system_message SMITH_CTX_CONTINUED "Context reset: the work continues in background session ${SUCCESSOR_ID} named \"${SUCCESSOR_NAME}\"."
     else
         json_system_message SMITH_CTX_DISPATCH_FAILED "$(dispatch_failed_text "$label")"
@@ -435,7 +435,7 @@ FLAG_FILE="${FLAGS_DIR}/.pending-reload-${CWD_KEY}"
 EXIT_MARKER="${FLAG_FILE}.exit-marker"
 if [[ -f "$EXIT_MARKER" ]]; then
     marker_session=$(sed -n '2p' "$FLAG_FILE" 2>/dev/null || true)
-    rm -f "$EXIT_MARKER"
+    move_file_to_temp "$EXIT_MARKER"
     if [[ "$marker_session" == "$SESSION_ID" ]]; then
         exit 0
     fi

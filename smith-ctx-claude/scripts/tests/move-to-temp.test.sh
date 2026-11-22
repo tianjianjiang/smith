@@ -1,11 +1,11 @@
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")" && pwd)"
-LIB="$HERE/../lib-plan.sh"
-HOOK="$HERE/../inject-plan.sh"
+LIB="$HERE/../lib-context.sh"
+HOOKS=("$HERE/../inject-plan.sh" "$HERE/../enforce-clear.sh")
 TMPD="$(mktemp -d)"
 fail() { printf 'FAIL: %s\n' "$1"; exit 1; }
 [ -f "$LIB" ] || fail "the library under test does not exist: $LIB"
-[ -f "$HOOK" ] || fail "the hook that calls the library does not exist: $HOOK"
+for hook in "${HOOKS[@]}"; do [ -f "$hook" ] || fail "a hook that calls the library does not exist: $hook"; done
 export CLAUDE_CONFIG_DIR="$TMPD/config"
 source "$LIB"
 
@@ -62,7 +62,7 @@ out=$(with_fake_mktemp move_matching_to_temp "$TMPD/sweep" -name ".never-*" -mmi
 [ -z "$out" ] || fail "a sweep with no match: move_matching_to_temp must print nothing, got: $out"
 
 ERASING='(^|[^a-zA-Z_])(rm|rmdir|unlink)([^a-zA-Z_]|$)|-delete([^a-zA-Z_-]|$)'
-grep -nE -e "$ERASING" "$LIB" && fail "lib-plan.sh must not erase anything"
-grep -nE -e "$ERASING" "$HOOK" && fail "inject-plan.sh must not erase anything"
+grep -nE -e "$ERASING" "$LIB" && fail "lib-context.sh must not erase anything"
+for hook in "${HOOKS[@]}"; do grep -nE -e "$ERASING" "$hook" && fail "$hook must not erase anything"; done
 
 echo "PASS: move-to-temp"
