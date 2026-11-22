@@ -61,7 +61,7 @@ out=$(run_in "$TMP/not-git")
 pass "primary checkout and non-git dir are no-ops"
 
 repo_b=$(new_repo repo-b)
-rm -rf "$repo_b/.serena"
+mv "$repo_b/.serena" "$(mktemp -d)"
 wt=$(new_worktree "$repo_b" noserena)
 out=$(run_in "$wt")
 [[ -z "$out" && ! -e "$wt/.serena/memories" ]] || fail "primary without Serena memories was not a no-op"
@@ -70,7 +70,7 @@ pass "primary without Serena memories is a no-op"
 repo_c=$(new_repo repo-c)
 mkdir -p "$TMP/external-bucket"
 echo "external" > "$TMP/external-bucket/bucket_note.md"
-rm -rf "$repo_c/.serena/memories"
+mv "$repo_c/.serena/memories" "$(mktemp -d)"
 ln -s "$TMP/external-bucket" "$repo_c/.serena/memories"
 wt=$(new_worktree "$repo_c" chained)
 run_in "$wt" >/dev/null
@@ -114,7 +114,7 @@ echo "$out" | grep -q "FAILED" || fail "no warning when the link cannot be creat
 pass "a link that cannot be created is reported, never silent"
 
 repo_d=$(new_repo repo-d)
-rm -f "$repo_d/.serena/memories/shared_note.md"
+mv "$repo_d/.serena/memories/shared_note.md" "$(mktemp -d)" || fail "fixture: the primary's memories folder could not be emptied"
 wt=$(new_worktree "$repo_d" sharedserena)
 ln -s "$repo_d/.serena" "$wt/.serena"
 out=$(run_in "$wt")

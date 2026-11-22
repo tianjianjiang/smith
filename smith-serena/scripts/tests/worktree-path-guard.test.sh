@@ -359,7 +359,7 @@ expect_block "path into a worktree outside Serena's root"
 pass "the corrected path is relative to the top of Serena's checkout"
 
 gone=$(new_worktree "$repo" gone) || fail "fixture worktree gone"
-rm -rf "$gone"
+mv "$gone" "$(mktemp -d)"
 run_hook "$repo" "$wt" "$REPLACE" '{"relative_path":".claude/worktrees/gone/src/alpha.md"}'
 expect_block "path into a worktree whose directory is gone"
 pass "a registered worktree whose directory is gone does not count"
