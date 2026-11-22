@@ -70,12 +70,12 @@ save_injection_state() {
 }
 
 # Clean up expired flags (>1 hour old) and legacy single-flag format
-find "$PLANS_DIR" -name ".pending-reload-*" -mmin +60 -delete 2>/dev/null || true
-rm -f "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
+move_matching_to_temp "$PLANS_DIR" -name ".pending-reload-*" -mmin +60
+move_file_to_temp "${PLANS_DIR}/.pending-reload" 2>/dev/null || true
 # 24h: state files live longer than flags (matches freshness window in on-session-clear.sh)
-find "$PLANS_DIR" -name ".plan-state-*" -mmin +1440 -delete 2>/dev/null || true
-find "$PLANS_DIR" -name ".pending-reload-*.exit-marker" -mmin +5 -delete 2>/dev/null || true
-find "$PLANS_DIR" -name ".model-*" -mmin +1440 -delete 2>/dev/null || true
+move_matching_to_temp "$PLANS_DIR" -name ".plan-state-*" -mmin +1440
+move_matching_to_temp "$PLANS_DIR" -name ".pending-reload-*.exit-marker" -mmin +5
+move_matching_to_temp "$PLANS_DIR" -name ".model-*" -mmin +1440
 
 # --- Plan mode state saving ---
 # During plan mode (permission_mode: "plan"), save state on every prompt.
@@ -134,7 +134,7 @@ RESTART_LABEL="CLEAR"
 RESTART_MARKER="${PLANS_DIR}/.session-restart-${CWD_KEY}"
 if [[ "$PERMISSION_MODE" != "plan" ]] && [[ -f "$RESTART_MARKER" ]]; then
     RESTART_SOURCE=$(sed -n '1p' "$RESTART_MARKER" 2>/dev/null)
-    rm -f "$RESTART_MARKER" 2>/dev/null || true
+    move_file_to_temp "$RESTART_MARKER" 2>/dev/null || true
 fi
 case "$RESTART_SOURCE" in
     clear) RESTART_LABEL="CLEAR" ;;
@@ -144,8 +144,8 @@ esac
 RESTART_GATED=0
 [[ -n "$(find "$PLANS_DIR" -maxdepth 1 -name '.sr-hook-installed' -mtime -14 2>/dev/null)" ]] && RESTART_GATED=1
 
-find "$PLANS_DIR" -name ".session-restart-*" -mmin +60 -delete 2>/dev/null || true
-find "$PLANS_DIR" -name ".sr-tmp.*" -mmin +60 -delete 2>/dev/null || true
+move_matching_to_temp "$PLANS_DIR" -name ".session-restart-*" -mmin +60
+move_matching_to_temp "$PLANS_DIR" -name ".sr-tmp.*" -mmin +60
 
 # --- Auto-reload: check for CWD-specific pending-reload flag ---
 # Each parallel session (worktree) has its own flag file keyed by CWD hash.
@@ -158,13 +158,13 @@ if [[ -f "$FLAG_FILE" ]] && [[ "$PERMISSION_MODE" != "plan" ]] \
     FLAG_FRESH=$(find "$FLAG_FILE" -mmin -60 2>/dev/null)
 
     if [[ -n "$FLAG_FRESH" ]] && [[ -n "$FLAGGED_PLAN" ]] && [[ -f "$FLAGGED_PLAN" ]]; then
-        rm -f "$FLAG_FILE"
+        move_file_to_temp "$FLAG_FILE"
         ACTION="load"
         PLAN_FILE="$FLAGGED_PLAN"
         LOAD_REASON="flag"
     else
       
-        rm -f "$FLAG_FILE"
+        move_file_to_temp "$FLAG_FILE"
         ACTION="serena_only"
     fi
 fi
