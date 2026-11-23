@@ -248,4 +248,6 @@ grep -q 'unknown option: --run' "$TMPD/err" || fail "the unknown option must be 
 usage_error "a misspelled compare option" compare "$OUT" "$OUT" --olny smith-nuxt
 usage_error "no command"
 
+grep -nE -e 'rmSync|unlinkSync|rmdirSync' "$EVAL" && fail "skill-trigger-eval.mjs must not erase anything: its scratch folder is left for the operating system"
+
 echo "PASS: skill-trigger-eval"
