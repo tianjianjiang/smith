@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync, execSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -137,7 +137,6 @@ try {
   };
 } finally {
   if (terminal) orca("terminal", "close", "--terminal", terminal);
-  rmSync(scratchFolder, { recursive: true, force: true });
 }
 
 const record = {

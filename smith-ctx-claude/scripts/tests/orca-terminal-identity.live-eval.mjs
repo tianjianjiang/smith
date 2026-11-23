@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,7 +79,6 @@ const activeBefore = orca("terminal", "show").result?.terminal?.handle ?? "";
 const created = orca("terminal", "create", "--worktree", WORKTREE, "--title", "smith probe: terminal identity", "--command", insideTerminal).result?.terminal ?? {};
 const report = await readWhenDone(outputPath);
 if (created.handle) orca("terminal", "close", "--terminal", created.handle);
-rmSync(scratchFolder, { recursive: true, force: true });
 
 const variableNames = lineValue(report, "names").split(" ").filter(Boolean);
 const handleInTerminal = lineValue(report, "handle");
