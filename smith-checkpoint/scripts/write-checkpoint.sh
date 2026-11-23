@@ -91,6 +91,12 @@ record_checkpoint_in_state() {
     return 0
 }
 
+move_to_temp() {
+    local file="$1" destination
+    [[ -e "$file" || -L "$file" ]] || return 0
+    destination=$(mktemp -d) && mv -n -- "$file" "$destination/"
+}
+
 supersede_earlier_reload_flags() {
     [[ -n "$RELOAD_FLAG_PATH" && -f "$RELOAD_FLAG_PATH" && ! -L "$RELOAD_FLAG_PATH" ]] || return 0
     [[ -n "$(sed -n '5p' "$RELOAD_FLAG_PATH" 2>/dev/null)" ]] || return 0
@@ -99,7 +105,7 @@ supersede_earlier_reload_flags() {
     for old_flag in "$(dirname "$RELOAD_FLAG_PATH")"/.pending-memory-restore-*; do
         [[ "$old_flag" != "$RELOAD_FLAG_PATH" && -f "$old_flag" && ! -L "$old_flag" ]] || continue
         [[ "$(sed -n '3,5p' "$old_flag" 2>/dev/null)" == "$identity" ]] || continue
-        rm -f "$old_flag" 2>/dev/null && RELOAD_SUPERSEDED=$((RELOAD_SUPERSEDED + 1))
+        move_to_temp "$old_flag" 2>/dev/null && RELOAD_SUPERSEDED=$((RELOAD_SUPERSEDED + 1))
     done
     return 0
 }
@@ -262,7 +268,7 @@ relocate_worktree_memories() {
         cmp -s "$file" "$dest" || compare_status=$?
         case "$compare_status" in
             0)
-                rm -f "$file"
+                move_to_temp "$file"
                 RELOCATED_REMOVED=$((RELOCATED_REMOVED + 1))
                 echo "Removed duplicate worktree memory: ${name} (identical copy already in ${dest_dir})" >&2
                 ;;
@@ -463,12 +469,10 @@ read_serena_memory() {
     local output error_file error_output
     error_file=$(mktemp)
     if output=$(serena_memories read "${LABEL}" ${serena_project:+"$serena_project"} 2>"$error_file"); then
-        rm -f "$error_file"
         printf '%s' "$output"
         return 0
     fi
     error_output=$(cat "$error_file")
-    rm -f "$error_file"
     if grep -qiE "Memory named '.*' not found" <<<"$error_output"; then
         return 0
     fi
@@ -531,7 +535,7 @@ prune_backups() {
         | tail -n +$((BACKUPS_KEPT + 1)) \
         | while IFS= read -r stale_file; do
             [[ "$stale_file" == "$keep" ]] && continue
-            rm -f "$stale_file" || echo "Warning: could not prune old backup ${stale_file}" >&2
+            move_to_temp "$stale_file" || echo "Warning: could not prune old backup ${stale_file}" >&2
         done
 }
 
@@ -677,7 +681,6 @@ read_basic_memory_note_json() {
     error_file=$(mktemp)
     if ! result=$(basic_memory_tool read "$title" --json --no-include-frontmatter ${bm_project:+--project "$bm_project"} 2>"$error_file"); then
         error_output=$(cat "$error_file")
-        rm -f "$error_file"
         if is_basic_memory_note_not_found "$error_output"; then
             printf '{}'
             return 0
@@ -685,7 +688,6 @@ read_basic_memory_note_json() {
         echo "Error: could not read existing Basic-Memory note for ${title}: ${error_output}" >&2
         return 1
     fi
-    rm -f "$error_file"
     printf '%s' "$result"
 }
 
