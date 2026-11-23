@@ -21,7 +21,8 @@ Review-only (no commit/push/merge). For the full pipeline use `/smith-ship`.
 diff: everything the branch changes since it left its parent, uncommitted
 changes and new files included, where the parent is the default branch
 or, on a stacked branch, its parent branch. A finding in code the branch
-diff changes is fixed in the change unless step 5 closes it otherwise; a
+diff changes, labelled Critical or Required (step 0), is fixed in the
+change unless step 5 closes it otherwise; a
 finding in code it does not change is not fixed in the change: report it
 as pre-existing and record a follow-up citing its `path:line` for its own
 change.
@@ -53,6 +54,21 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
   applicable agents), CodeRabbit, `code-simplifier`, and relevant reviewer
   subagents.
 
+0. **Define done first** — before round 1, state the change's definition
+   of done: the checkable conditions that its commit type and stated goal
+   require. Verify each finding, then label it yourself, never by a
+   reviewer's own label (severity scale from
+   https://github.com/addyosmani/agent-skills, `code-review-and-quality`):
+   - **Critical**: a security issue, data loss, or something that worked
+     before and the change breaks; fix it whatever the definition says
+   - **Required**: the change misses its definition of done; fix it, or
+     defer it with a reason and the user's agreement
+   - **Optional**, **Nit** or **FYI**: anything else; record it and change
+     nothing
+
+   Before applying any fix, check it against the change's stated goal: a
+   fix that works around or contradicts the goal is the user's decision,
+   so record the finding and ask instead of fixing, Critical included.
 1. **Self-audit** against the applicable smith conventions first (cheap, no
    API call).
 2. **Full automated pass** — run EVERY applicable tool above each round, not
@@ -76,22 +92,22 @@ plugins/skills — not just one tool. Pick every one that applies to the change:
 3. **Verify, don't rubber-stamp** — each finding is a claim; check it against
    the actual lines. For a bugfix, audit the execution path, not just style
    (`@smith-validation` Bugfix Discipline, Adversarial Verification).
-4. **Fix & iterate** — apply high-confidence fixes; re-review with the full
-   set, each reviewer blind per the `@smith-subagents` evaluator rule.
+4. **Fix & iterate** — apply fixes for verified findings labelled
+   Critical or Required (step 0); re-review with the full set, each
+   reviewer blind per the `@smith-subagents` evaluator rule.
    Cost guard is bounded PER ROUND + verify findings (not fewer tools). Drive
    iteration as a `/loop`/ralph loop that re-shares the relevant skills + diff
    each round (`@smith-ralph`, `@smith-automation`).
 5. **Converge** — these criteria are canonical here (referenced from
-   `@smith-gh-pr` and `@smith-ship`): stop on a clean round or 2 consecutive
-   Info-only rounds, AND only once no finding is open and the latest round's
-   plugin-pass receipt shows no applicable tool skipped. Convergence is the
+   `@smith-gh-pr` and `@smith-ship`): stop once no Critical or Required
+   finding is open AND the latest round's plugin-pass receipt shows no
+   applicable tool skipped. Convergence is the
    main thread's call, never a reviewer's: each finding stays open until the
    main thread marks it, in that round's report, fixed (verified), needing no
    change, rejected with evidence, deferred with the user's agreement, or
-   deferred under Review scope as pre-existing, with its follow-up's locator;
-   a clean round has no finding the main thread verified as actionable, and an
-   Info-only round has none it verified above Info. A closed finding raised
-   again without new evidence stays closed. Contradicting verdicts across
+   deferred under Review scope as pre-existing, with its follow-up's locator.
+   A closed finding raised again without new evidence stays closed.
+   Contradicting verdicts across
    rounds are settled on evidence; one the evidence cannot settle is a
    flip-flop, a terminal but NON-converged state: escalate the trade-off to
    the user and stop iterating — do not report converged. Report findings +

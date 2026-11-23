@@ -84,7 +84,8 @@ const timeout = configuredTimeout ?? DEFAULT_TIMEOUT;
   "Approving a PR by command".
 
 **Decide-and-proceed defaults (no questions between obvious steps; payload still needs its yes):**
-- CodeRabbit finding is Critical/Warning + high-confidence: fix locally;
+- CodeRabbit finding labelled Critical or Required (`@smith-review` step
+  0) after verification: fix locally;
   show the commit message and commit on a yes; push only inside a ship the
   user invoked or on their instruction
 - CodeRabbit finding is Info/Nitpick: in a bot thread no human joined, inside
@@ -287,13 +288,16 @@ above for decide-vs-ask criteria and convergence rules):
 1. Fetch unresolved comments:
    `gh pr-review threads list --pr {number} -R {owner}/{repo} --unresolved`
 2. Classify each: code change vs clarification vs resolved
-3. High-confidence fixes: implement locally, show the commit message and
+3. Verified findings labelled Critical or Required (`@smith-review` step
+   0): implement locally, show the commit message and
    commit on a yes, push (inside a ship the user invoked or on the user's
    instruction to push), then reply with the pushed SHA. Inside a ship or
    review the user invoked, a reply in the bot's own thread limited to
    "fixed in «SHA»" or a one-line decline is mechanics (`@smith-guidance`
    Safety Rules); any other reply is payload and needs a yes.
-4. Low-confidence: draft the reply, show it, wait for the user's reply,
+4. A finding whose fix works around or contradicts the change's stated
+   goal, or that needs the user's judgment: draft the reply, show it,
+   wait for the user's reply,
    and post it only on a yes (`@smith-ctx-claude` External Writes)
 5. Re-check after CI passes
 

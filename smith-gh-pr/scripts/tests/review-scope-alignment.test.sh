@@ -15,9 +15,10 @@ flatten() { tr '\n' ' ' | sed 's/  */ /g; s/ $//'; }
 expected_audit_step() {
   flatten <<'EOF'
 4. **Proactively audit similar issues** in other files not explicitly
-   mentioned: fix one in code the branch diff changes; report one in code it
-   does not change as pre-existing and record a follow-up citing its
-   `path:line` (`@smith-review` "Review scope")
+   mentioned: fix one labelled Critical or Required (`@smith-review` step
+   0) in code the branch diff changes; report one in code it does not
+   change as pre-existing and record a follow-up citing its `path:line`
+   (`@smith-review` "Review scope")
 EOF
 }
 expected_audit_bullet() {
