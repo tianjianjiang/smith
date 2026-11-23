@@ -324,7 +324,7 @@ _mr_scope_shown="$_MR_CLEAN"
 # column and its flag key in the path column. 0x1F cannot appear in any field
 # because _mr_clean strips the whole 0x00-0x1F range.
 #
-# The flag key is emitted verbatim into an `rm` command the agent is told to run,
+# The flag key is emitted verbatim into a `/usr/bin/trash` command the agent is told to run,
 # so it gets an allowlist rather than a filter: anything outside it is dropped and
 # the row simply carries no key (the caller then omits the delete instruction).
 #
@@ -638,7 +638,7 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
               
               
               
-                if rm -f "$_mr_claim" 2>/dev/null; then
+                if move_file_to_temp "$_mr_claim" 2>/dev/null; then
                     _mr_swept_n=$((_mr_swept_n + 1))
                     [[ -n "$_mr_foreign_session" ]] && _mr_append_row 2 "$_mr_mtime" "REMOVED as older than 7 days WITHOUT restoring: another session's flag recorded in THIS directory (its memory is still in the backends)" "$_mr_l4" "$_mr_l2" "$_mr_fcwd" "$_mr_key"
                 else
@@ -806,11 +806,11 @@ for _mr_f in "${PLANS_DIR}"/.pending-memory-restore-*; do
   
   
   
-    rm -f "$_mr_claim" 2>/dev/null || _mr_unconsumed_n=$((_mr_unconsumed_n + 1))
+    move_file_to_temp "$_mr_claim" 2>/dev/null || _mr_unconsumed_n=$((_mr_unconsumed_n + 1))
 done
 
-find "$PLANS_DIR" -name '.mr-offered-*' -mtime +7 -delete 2>/dev/null || true
-# Litter sweep: a hook killed between claim and rm, or a crashed writer, can strand
+move_matching_to_temp "$PLANS_DIR" -name '.mr-offered-*' -mtime +7
+# Litter sweep: a hook killed between claim and move, or a crashed writer, can strand
 # .mr-claimed.* / .mr-tmp.* files. A claim file is the ORIGINAL flag, moved rather
 # than rewritten, so it still holds a label and a recorded path — but it sits outside
 # the .pending-memory-restore-* scan glob, so no later run mentions it, and deleting
@@ -900,7 +900,7 @@ for _mr_litter in "${PLANS_DIR}"/.mr-claimed.* "${PLANS_DIR}"/.mr-tmp.*; do
       
       
       
-        if rm -f "$_mr_litter" 2>/dev/null; then
+        if move_file_to_temp "$_mr_litter" 2>/dev/null; then
             if [[ "$_mr_is_claim" -eq 1 ]]; then
                 _mr_claimed_gone_n=$((_mr_claimed_gone_n + 1))
             elif [[ "$_mr_has_body" -eq 1 ]]; then
@@ -1379,7 +1379,7 @@ if [[ -z "$PLAN_FILE" ]]; then
   
     [[ -n "$MR_DIRECTIVE" ]] && STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
 
-    rm -f "$FLAG_FILE" 2>/dev/null
+    move_file_to_temp "$FLAG_FILE" 2>/dev/null
     json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
     exit 0
 fi
@@ -1395,7 +1395,7 @@ if ! PLAN_CONTENT=$(cat "$PLAN_FILE" 2>/dev/null); then
     STATE_OUTPUT+="\n- Plan file: \`${PLAN_FILE}\` (unreadable)"
     STATE_OUTPUT+="\n- Plans directory: \`${PLANS_DIR}\`"
     [[ -n "$MR_DIRECTIVE" ]] && STATE_OUTPUT="${MR_DIRECTIVE}\n\n${STATE_OUTPUT}"
-    rm -f "$FLAG_FILE" 2>/dev/null
+    move_file_to_temp "$FLAG_FILE" 2>/dev/null
     json_session_start_output "$(printf '%b' "$STATE_OUTPUT")"
     exit 0
 fi
@@ -1448,7 +1448,7 @@ fi
 [[ -n "$MR_DIRECTIVE" ]] && FULL_CONTENT=$(printf '%b\n\n%s' "$MR_DIRECTIVE" "$FULL_CONTENT")
 
 # Clean up the pending-reload flag if it exists (SessionStart:clear handles it now)
-rm -f "$FLAG_FILE" 2>/dev/null
+move_file_to_temp "$FLAG_FILE" 2>/dev/null
 
 json_session_start_output "$FULL_CONTENT"
 

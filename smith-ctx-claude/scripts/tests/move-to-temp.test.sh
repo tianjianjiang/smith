@@ -1,7 +1,7 @@
 #!/bin/bash
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/../lib-context.sh"
-HOOKS=("$HERE/../inject-plan.sh" "$HERE/../enforce-clear.sh")
+HOOKS=("$HERE/../inject-plan.sh" "$HERE/../enforce-clear.sh" "$HERE/../on-session-clear.sh")
 TMPD="$(mktemp -d)"
 fail() { printf 'FAIL: %s\n' "$1"; exit 1; }
 [ -f "$LIB" ] || fail "the library under test does not exist: $LIB"
