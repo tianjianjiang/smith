@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,7 +85,6 @@ const variants = {
 };
 const launches = {};
 for (const [name, argumentText] of Object.entries(variants)) launches[name] = observeLaunch(argumentText);
-rmSync(scratchFolder, { recursive: true, force: true });
 
 const withArguments = Object.entries(launches).filter(([name]) => name !== "bare").map(([, launch]) => launch);
 const checks = {
