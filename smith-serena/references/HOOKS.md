@@ -146,8 +146,9 @@ The rows are checked top to bottom; the first that applies decides.
 
 | Call | Result |
 |---|---|
+| Malformed input | Passes (fail open) and names the reason on standard error, where the model does not see it |
 | Memory tools and any tool without a string `relative_path`, except the three whole-project tools below when the path is absent or `null` | Passes; memories belong to the primary checkout |
-| `cwd` in the checkout Serena is rooted in, `CLAUDE_PROJECT_DIR` unset or in an unrelated repository, not a repository, malformed input | Passes silently (fail open) |
+| `cwd` in the checkout Serena is rooted in, `CLAUDE_PROJECT_DIR` unset or in an unrelated repository, not a repository | Passes silently (fail open) |
 | The session's checkout is unreachable (see Reachability) | Write tools blocked and sent to the built-in `Edit`/`Write`; read tools pass with a note naming the checkout that the result describes |
 | Path that resolves outside the checkout Serena is rooted in | Passes; it cannot land in that checkout, so it is outside this hook's concern |
 | `relative_path` that resolves inside the checkout Serena is rooted in but outside every linked worktree and the session's checkout | Blocked (exit 2); message gives `relative_path="<prefix>/<path>"`, where `<path>` is relative to the top of Serena's checkout (the same file in the session's checkout) |

@@ -206,7 +206,9 @@ pass "a launch directory or cwd that cannot be related fails open"
 
 OUT=$(printf 'not json' | CLAUDE_PROJECT_DIR="$repo" node "$HOOK" 2>"$TMP/stderr"); STATUS=$?
 ERR=$(cat "$TMP/stderr")
-expect_silent "malformed stdin"
+expect_allow "malformed stdin"
+[[ -z "$OUT" ]] || fail "malformed stdin: expected no output, got out=[$OUT]"
+expect_stderr "malformed stdin" "hook input unreadable: SyntaxError after reading 8 characters"
 run_hook "$repo" "$wt" "$REPLACE" '{"relative_path":42}'
 expect_silent "numeric relative_path"
 run_hook "$repo" "$wt" "$REPLACE" '{"relative_path":null}'

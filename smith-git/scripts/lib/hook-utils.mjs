@@ -1,10 +1,21 @@
 import { readFileSync, writeSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-export function readHookInput() {
+function noteOnStandardError(message) {
   try {
-    return JSON.parse(readFileSync(0, "utf-8"));
+    writeSync(2, `${message}\n`);
   } catch {
+    return;
+  }
+}
+
+export function readHookInput() {
+  let text = "";
+  try {
+    text = readFileSync(0, "utf-8");
+    return JSON.parse(text);
+  } catch (error) {
+    noteOnStandardError(`hook input unreadable: ${error.code ?? error.name} after reading ${text.length} characters`);
     return null;
   }
 }
