@@ -87,7 +87,7 @@ GH_STACK_INSTALLED=1 silent "unrelated command is silent" \
   '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}'
 GH_STACK_INSTALLED=1 silent "non-Bash tool is silent" \
   '{"tool_name":"Read","tool_input":{"file_path":"/x"}}'
-GH_STACK_INSTALLED=1 silent "malformed stdin is silent" 'not json'
+GH_STACK_INSTALLED=1 silent "malformed stdin gives no decision" 'not json'
 GH_STACK_INSTALLED=1 GIT_NO_DEFAULT=1 silent "unresolvable default branch stays silent" \
   '{"tool_name":"Bash","tool_input":{"command":"gh pr create --base feature-x"}}'
 unset GIT_NO_DEFAULT
@@ -98,5 +98,23 @@ GH_STACK_INSTALLED=0 silent "no native stack extension installed stays silent" \
 out=$(printf '%s' '{"tool_name":"Bash","tool_input":{"command":"gh pr create --base feature-x"}}' \
   | PATH="$GIT_ONLY" "$NODE" "$HOOK") || fail "gh missing: hook crashed"
 [ -z "$out" ] || fail "gh missing (ENOENT) should stay silent, got: $out"
+
+unreadable() {
+  out=$(run "$1" "$2" 2>"$SHIM/stderr") || fail "$1: hook crashed"
+  [ -z "$out" ] || fail "$1: expected no output, got: $out"
+  [ "$(cat "$SHIM/stderr")" = "hook input unreadable: $3" ] ||
+    fail "$1: standard error must name the reason, got: $(cat "$SHIM/stderr")"
+}
+unreadable "malformed input says why on standard error" 'not json' 'SyntaxError after reading 8 characters'
+unreadable "empty input says why on standard error" '' 'SyntaxError after reading 0 characters'
+
+out=$(node "$HOOK" < "$SHIM" 2>"$SHIM/stderr") || fail "input that cannot be read: hook crashed"
+[ -z "$out" ] || fail "input that cannot be read: expected no output, got: $out"
+[ "$(cat "$SHIM/stderr")" = "hook input unreadable: EISDIR after reading 0 characters" ] ||
+  fail "input that cannot be read must name the system error, got: $(cat "$SHIM/stderr")"
+
+(printf 'not json' | node "$HOOK" 2>&1 >/dev/null; echo "$?" > "$SHIM/status") | true
+[ "$(cat "$SHIM/status")" = 0 ] ||
+  fail "unreadable input with nobody reading standard error must still exit 0, got: $(cat "$SHIM/status")"
 
 echo "PASS: gh-stack-guard"
