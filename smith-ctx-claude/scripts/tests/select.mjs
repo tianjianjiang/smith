@@ -6,7 +6,7 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 const MANIFEST_NAME = "hidden-reads.json";
 const SCAN_FILES = new Set(["select.mjs", MANIFEST_NAME]);
-const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", ...SCAN_FILES]);
+const RUNNER_FILES = new Set(["run.sh", "run-affected.sh", "list-folders.sh", ...SCAN_FILES]);
 const SHARED_HELPER_FOLDER = "lib";
 const TEST_SUFFIX = ".test.sh";
 const FULL_SUITE_EXIT = 3;
@@ -546,11 +546,13 @@ function chain(parents, key) {
   return steps.join(" -> ");
 }
 
-function testsIn(testsFolder) {
-  return readdirSync(testsFolder)
-    .filter((name) => name.endsWith(TEST_SUFFIX))
-    .sort()
-    .map((name) => join(testsFolder, name));
+function testsIn(testsFolders) {
+  return testsFolders.flatMap((testsFolder) =>
+    readdirSync(testsFolder)
+      .filter((name) => name.endsWith(TEST_SUFFIX))
+      .sort()
+      .map((name) => join(testsFolder, name)),
+  );
 }
 
 function context(root) {
@@ -559,15 +561,15 @@ function context(root) {
   return { root, manifest: readManifest(root, files), scan: scanner(root), files };
 }
 
-function runnerChange(changed, toolingFolderKey, testsFolderKey) {
+function runnerChange(changed, toolingFolderKey) {
   return changed.find((path) => {
     if (dirname(path) === toolingFolderKey && RUNNER_FILES.has(basename(path))) return true;
-    return path.startsWith(`${testsFolderKey}/${SHARED_HELPER_FOLDER}/`);
+    return path.startsWith(`${toolingFolderKey}/${SHARED_HELPER_FOLDER}/`);
   });
 }
 
-function testsToCheck(root, testsFolder, toolingFolderKey, changed) {
-  const tests = testsIn(testsFolder);
+function testsToCheck(root, testsFolders, toolingFolderKey, changed) {
+  const tests = testsIn(testsFolders);
   if (changed.some((path) => dirname(path) === toolingFolderKey && SCAN_FILES.has(basename(path)))) return tests;
   const changedPaths = new Set(changed);
   return tests.filter((testPath) => {
@@ -576,9 +578,9 @@ function testsToCheck(root, testsFolder, toolingFolderKey, changed) {
   });
 }
 
-function select(root, testsFolder, changedListPath, selectionPath, checkListPath) {
+function select(root, testsFolders, changedListPath, selectionPath, checkListPath) {
   const changed = [...new Set(readFileSync(changedListPath, "utf-8").split("\0").filter(Boolean))].sort();
-  const testsFolderKey = relative(root, testsFolder);
+  const testsFolderKeys = testsFolders.map((testsFolder) => relative(root, testsFolder));
   const toolingFolderKey = relative(root, TOOLING_FOLDER);
   writeFileSync(selectionPath, "");
   writeFileSync(checkListPath, "");
@@ -588,13 +590,17 @@ function select(root, testsFolder, changedListPath, selectionPath, checkListPath
   }
   console.log("run-affected: changed files:");
   for (const path of changed) console.log(`  ${path}`);
-  writeFileSync(checkListPath, testsToCheck(root, testsFolder, toolingFolderKey, changed).map((testPath) => `${testPath}\n`).join(""));
-  const runner = runnerChange(changed, toolingFolderKey, testsFolderKey);
+  writeFileSync(checkListPath, testsToCheck(root, testsFolders, toolingFolderKey, changed).map((testPath) => `${testPath}\n`).join(""));
+  if (testsFolders.length === 0) throw new FullSuite("no tests folder was given, so no test can be selected");
+  if (toolingFolderKey === ".." || toolingFolderKey.startsWith(`..${sep}`)) {
+    throw new FullSuite(`the tooling folder ${TOOLING_FOLDER} is outside the repository, so an edit to it cannot be seen`);
+  }
+  const runner = runnerChange(changed, toolingFolderKey);
   if (runner) throw new FullSuite(`${runner} is part of the test runner or its shared helpers`);
   const shared = context(root);
   const selected = [];
   const reached = new Set();
-  for (const testPath of testsIn(testsFolder)) {
+  for (const testPath of testsIn(testsFolders)) {
     const { parents, globs } = closureOf(testPath, shared);
     for (const key of parents.keys()) reached.add(key);
     const reasons = [];
@@ -611,7 +617,7 @@ function select(root, testsFolder, changedListPath, selectionPath, checkListPath
   const unreached = [...shared.manifest.keys()].find((key) => !reached.has(key));
   if (unreached) throw new FullSuite(`${MANIFEST_NAME} declares dependencies for ${unreached}, which no test reaches`);
   for (const path of changed) {
-    if (dirname(path) === testsFolderKey && path.endsWith(TEST_SUFFIX) && !existsSync(join(root, path))) {
+    if (testsFolderKeys.includes(dirname(path)) && path.endsWith(TEST_SUFFIX) && !existsSync(join(root, path))) {
       console.log(`run-affected: ${path} was deleted, so it is not run`);
     }
   }
@@ -624,7 +630,7 @@ function select(root, testsFolder, changedListPath, selectionPath, checkListPath
   }
   console.log("run-affected: selected tests and the changed files that reach them:");
   for (const { testPath, reasons } of selected) {
-    console.log(`  ${relative(testsFolder, testPath)}`);
+    console.log(`  ${relative(root, testPath)}`);
     for (const reason of reasons) console.log(`    ${reason}`);
   }
   writeFileSync(selectionPath, selected.map(({ testPath }) => `${testPath}\n`).join(""));
@@ -638,15 +644,16 @@ function dependencyFiles(root, testPath) {
 }
 
 function main() {
-  const [command, root, testsFolder, ...rest] = process.argv.slice(2);
-  if (!root || !testsFolder) {
-    console.log("usage: select.mjs tests ROOT TESTS CHANGED_LIST SELECTION CHECK_LIST | files ROOT TESTS TEST");
+  const [command, root, ...rest] = process.argv.slice(2);
+  if (!root) {
+    console.log("usage: select.mjs tests ROOT CHANGED_LIST SELECTION CHECK_LIST TESTS_FOLDER... | files ROOT TEST");
     process.exit(2);
   }
   const realRoot = realpathSync(root);
-  const realTests = realpathSync(testsFolder);
   try {
-    if (command === "tests" && rest.length === 3) return select(realRoot, realTests, rest[0], rest[1], rest[2]);
+    if (command === "tests" && rest.length >= 3) {
+      return select(realRoot, rest.slice(3).map((testsFolder) => realpathSync(testsFolder)), rest[0], rest[1], rest[2]);
+    }
     if (command === "files" && rest.length === 1) return dependencyFiles(realRoot, rest[0]);
   } catch (error) {
     if (error instanceof FullSuite) {

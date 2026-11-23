@@ -1269,12 +1269,25 @@ Each ships a self-check (fixture JSON → stdin, assert exit code + stdout):
 `smith-standards` hooks under `smith-standards/scripts/tests/run-all.sh`.
 `sh smith-ctx-claude/scripts/tests/run.sh` with no arguments runs only the
 tests that changes since `origin/main` reach, through `run-affected.sh`
-below; `--all` runs every `*.test.sh` in its folder, and a list of test
-files runs exactly those. It runs the chosen tests at the same time, up to
-the CPU count or `SMITH_TEST_JOBS` and prints each test's output in name
-order. `--all` fails when it finds no test, so adding a test means adding
-the file; with no arguments and no changed file, the run says no test ran
-and passes. `run.test.sh` checks that behaviour.
+below; `--all` runs every `*.test.sh` in every tests folder, a test file
+given as an argument runs exactly that test, and a folder given as an
+argument runs every `*.test.sh` in it. `list-folders.sh` prints the tests
+folders: every `«skill»/scripts/tests` of the checkout that holds a
+`*.test.sh`, or the folder of the tooling alone when git finds no
+repository and no folder above the tooling holds a `.git`;
+it fails when git cannot name the checkout for any other reason, when a
+`«skill»`, `«skill»/scripts` or `«skill»/scripts/tests` folder cannot be
+read, or when the path of a tests folder holds a line break. A `«skill»`
+folder whose name starts with a dot is not listed. It ignores `GIT_DIR`,
+`GIT_WORK_TREE` and `GIT_COMMON_DIR` from the environment, so a git hook
+that sets them cannot hide the checkout.
+`run.sh` runs the chosen tests at the same time, up to the CPU count or
+`SMITH_TEST_JOBS`, prints each test's output in the order given, and names
+a failing test by its path from the repository root, or by its full path
+when it lies outside the repository. `--all` fails when it finds no test,
+so adding a test means adding the file; with no arguments and no changed
+file, the run says no test ran and passes. `run.test.sh` checks that
+behaviour.
 
 `sh smith-ctx-claude/scripts/tests/run-affected.sh «base-ref»` runs only
 the tests a change reaches: it takes the files changed since the merge base
@@ -1296,10 +1309,12 @@ extension is scanned as shell; `basename "$0"` and an `import.meta.url ===` guar
 a module's main entry are exempt. It adds the data files and globs that
 `tests/hidden-reads.json` declares for a file, prints every chosen test with
 the chain that reached it, and hands the list to `run.sh`. It runs
-`run.sh --all` when the set cannot be known for certain: the runner, the
-manifest or `tests/lib` changed; the manifest is missing or malformed,
-lists a file that does not exist or a glob that matches nothing, or
-declares a key no test reaches; the selector itself fails; or git cannot
+`run.sh --all` when the set cannot be known for certain: the runner,
+`list-folders.sh`, the manifest or the `lib` folder beside the tooling
+changed; the tooling sits outside the repository; no tests folder was
+found; the manifest is missing or malformed, lists a file that does not
+exist or a glob that matches nothing, or declares a key no test reaches;
+the selector itself fails; or git cannot
 name the changes. A path built without any anchor, for example from
 `git rev-parse --show-toplevel`, stays invisible to the scan.
 `verify-self-containedness.sh` catches that: it runs each test in a clean
@@ -1312,8 +1327,11 @@ the selection falls back to the full suite, and every test when
 `select.mjs` or `hidden-reads.json` changed or git cannot name the changes;
 the run fails when the check fails. A selector that fails makes the run fail
 and say the check did not run, and outside a git checkout the run says the
-check cannot run. A hidden read is caught when its test is written instead
-of every test running twice on every check. `run-affected.test.sh` checks both.
+check cannot run. When git refuses the checkout for any other reason, the
+tests folders cannot be listed, so the run shows the refusal and fails
+without running a test. A hidden read is caught when its test is written
+instead of every test running twice on every check. `run-affected.test.sh`
+checks both.
 
 ## Registration
 

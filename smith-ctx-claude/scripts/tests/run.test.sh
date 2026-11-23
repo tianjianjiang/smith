@@ -6,7 +6,7 @@ fail() { echo "FAIL: $1"; exit 1; }
 suite() {
   dir="$TMPD/$1"
   mkdir -p "$dir"
-  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$dir/"
+  cp "$HERE/run.sh" "$HERE/run-affected.sh" "$HERE/list-folders.sh" "$dir/"
   echo "$dir"
 }
 
