@@ -1094,4 +1094,6 @@ LEAKED_FLAGS=$(leaked_real_flags)
 [ "$(ls "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] || fail "T10: the suite must have written its flags under the isolated CLAUDE_CONFIG_DIR"
 grep -qF -- "$SUITE_MARKER" "$CLAUDE_CONFIG_DIR/plans"/.pending-memory-restore-* || fail "T10: the suite's flags must record a working directory under $SHIM, or the leak check above matches nothing"
 
+grep -nE -e '(^|[^a-zA-Z_])(rm|rmdir|unlink)([^a-zA-Z_]|$)|-delete([^a-zA-Z_-]|$)' "$SCRIPT" && fail "write-checkpoint.sh must not erase anything: move the file aside instead"
+
 echo "PASS: write-checkpoint"
