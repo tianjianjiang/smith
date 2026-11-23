@@ -8,7 +8,6 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -369,13 +368,9 @@ async function runAll(options) {
       appendFileSync(options.out, JSON.stringify(record) + "\n");
     }
   };
-  try {
-    buildProject(project, frontmatters);
-    appendFileSync(options.out, "");
-    await Promise.all(Array.from({ length: options.concurrency }, worker));
-  } finally {
-    rmSync(project, { recursive: true, force: true });
-  }
+  buildProject(project, frontmatters);
+  appendFileSync(options.out, "");
+  await Promise.all(Array.from({ length: options.concurrency }, worker));
   if (failuresInARow >= FAILURES_IN_A_ROW_LIMIT) {
     process.stderr.write(
       `skill-trigger-eval: stopped after ${failuresInARow} prompts in a row did not complete; ` +
