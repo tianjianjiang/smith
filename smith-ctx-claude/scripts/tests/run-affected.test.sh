@@ -351,6 +351,88 @@ printf 'other notes\n' > "$repo/README.md"
 affected
 ran beta && fail "the basename of the script must not make the test read the whole repository, got: $out"
 
+repo_with_fakes closed-quote-then-braces
+printf '#!/bin/sh\nLIB="$(dirname "$0")/beta-lib.sh"\nsh "$LIB" > /dev/null || { echo "failed"; }\n' > "$scripts/beta-hook.sh"
+commit_all "beta runs its library and then opens a brace group"
+quiet_git -C "$repo" branch -f base
+printf 'other notes\n' > "$repo/README.md"
+affected
+[ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+ran beta && fail "a quoted path variable followed by a space and a brace must not make the test read the whole repository, got: $out"
+printf 'beta() { echo changed; }\n' > "$scripts/beta-lib.sh"
+affected
+[ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+ran beta || fail "a change to the library behind a quoted path variable must still run the test, got: $out"
+
+still_wide_case() {
+  repo_with_fakes "still-wide-$1"
+  printf '#!/bin/sh\nsh "$(dirname "$0")/lib/helper.sh"\n' > "$scripts/beta-hook.sh"
+  printf '#!/bin/sh\nDIR="$(dirname "$0")"\nNAME=notes\n%s\n' "$2" > "$scripts/lib/helper.sh"
+  commit_all "beta's helper has $1"
+  quiet_git -C "$repo" branch -f base
+  printf 'other notes\n' > "$repo/README.md"
+  affected
+  [ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+  ran beta || fail "a helper with $1 must still make the test read the whole repository, got: $out"
+}
+still_wide_case a-quoted-string-joined-onto-a-path-variable 'cat "$DIR"" $NAME/x"'
+still_wide_case a-literal-single-quote-after-a-path-variable 'cat "$DIR'"'"' $NAME/x"'
+still_wide_case a-quote-opening-after-a-path-variable 'cat "$(echo $DIR" $NAME")"'
+still_wide_case its-own-path-after-a-hash-that-starts-no-comment '[ $# -gt 0 ] || run=$0'
+still_wide_case its-own-path-on-a-hash-line-of-a-multi-line-string 'title="
+# $(cat "$0.title")
+"'
+still_wide_case its-own-path-on-a-hash-line-of-a-here-document 'cat <<EOF
+# written by $0
+EOF'
+still_wide_case its-own-path-on-a-hash-line-of-the-second-of-two-here-documents 'cat <<A <<B
+a
+A
+# written by $0
+B'
+still_wide_case its-own-path-on-a-hash-line-after-an-indented-here-document-end 'cat <<EOF
+  EOF
+# written by $0
+EOF'
+still_wide_case its-own-path-on-a-hash-line-that-continues-a-word 'payload=prefix\
+#$(cat "$0.data")'
+still_wide_case its-own-path-on-a-hash-line-of-a-string-after-a-quoted-double-quote 'printf x '"'"'"'"'"'
+title="
+# $(cat "$0.data")
+"'
+still_wide_case its-own-path-after-a-comment-line '# reads its own name
+run=$0'
+still_wide_case its-own-path-on-a-hash-line-of-an-unclosed-expansion 'payload=${option:-
+#$(cat "$0.data")
+}'
+
+repo_with_fakes comment-in-sourced-library
+printf '# usage: . "$(dirname "$0")/beta-lib.sh"\nbeta() { :; }\n' > "$scripts/beta-lib.sh"
+commit_all "beta's library documents how to source it"
+quiet_git -C "$repo" branch -f base
+printf 'other notes\n' > "$repo/README.md"
+affected
+[ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+ran beta && fail "a comment line in a sourced file must not make the test read the whole repository, got: $out"
+
+repo_with_fakes comment-names-the-script
+printf '#!/bin/sh\n# usage: $0 FILE\n. "$(dirname "$0")/beta-lib.sh"\n' > "$scripts/beta-hook.sh"
+commit_all "beta documents its usage"
+quiet_git -C "$repo" branch -f base
+printf 'other notes\n' > "$repo/README.md"
+affected
+[ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+ran beta && fail "a comment line that names the script must not make the test read the whole repository, got: $out"
+
+repo_with_fakes trailing-comment-names-the-script
+printf '#!/bin/sh\n. "$(dirname "$0")/beta-lib.sh"\nrun=$0 # the script itself\n' > "$scripts/beta-hook.sh"
+commit_all "beta keeps its own path"
+quiet_git -C "$repo" branch -f base
+printf 'other notes\n' > "$repo/README.md"
+affected
+[ "$status" = 0 ] || fail "the selection must succeed before its choice is judged, got: $out"
+ran beta || fail "the script's own path outside a comment line must still make the test read the whole repository, got: $out"
+
 repo_with_fakes main-guard
 printf 'import { pathToFileURL } from "node:url";\nif (import.meta.url === pathToFileURL(process.argv[1]).href) console.log(1);\n' > "$scripts/alpha-hook.mjs"
 commit_all "alpha guards its main entry"

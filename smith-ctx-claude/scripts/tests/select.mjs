@@ -136,6 +136,19 @@ function masked(text, spans) {
   return result;
 }
 
+const SHELL_COMMENT_LINE = /^[ \t]*#/;
+
+function withoutLeadingCommentLines(text) {
+  const comments = [];
+  let start = 0;
+  for (const line of text.split("\n")) {
+    if (SHELL_COMMENT_LINE.test(line)) comments.push([start, start + line.length]);
+    else if (line.trim() !== "") break;
+    start += line.length + 1;
+  }
+  return masked(text, comments);
+}
+
 function shellWordEnd(text, start) {
   const stack = [];
   for (let index = start; index < text.length; index += 1) {
@@ -293,7 +306,8 @@ function shellReferences(text, folder, root) {
     const remainder = rest.slice(tail.length);
     const namesFolder = tail.endsWith("/") || after.startsWith("/");
     const sourcedHere = SHELL_SOURCE_BEFORE.test(scanned.slice(scanned.lastIndexOf("\n", match.index) + 1, match.index));
-    const quotedSpace = /^[ \t]/.test(remainder) && insideDoubleQuotes(scanned, match.index);
+    const wholeQuotedWord = scanned[match.index - 1] === '"' && /^"[ \t]/.test(scanned.slice(match.index + match[0].length));
+    const quotedSpace = /^[ \t]/.test(remainder) && !wholeQuotedWord && insideDoubleQuotes(scanned, match.index);
     const word = quotedSpace ? remainder.slice(0, remainder.indexOf('"') + 1 || undefined) : remainder.match(SHELL_WORD_REST)[0];
     if (tail === "" && SHELL_WORD.test(rest[0] ?? "")) {
       folders.push(dirname(baseFolder));
@@ -317,7 +331,7 @@ function shellReferences(text, folder, root) {
     }
   }
   const anchors = spansOf(text, [new RegExp(SHELL_SELF_DIR, "g"), new RegExp(SHELL_SELF_DIR_TRIMMED, "g")]);
-  for (const token of text.matchAll(SHELL_SELF_TOKEN)) {
+  for (const token of withoutLeadingCommentLines(text).matchAll(SHELL_SELF_TOKEN)) {
     if (insideSpans(token.index, anchors) || SHELL_BASENAME_BEFORE.test(text.slice(0, token.index))) continue;
     folders.push(root);
     break;
@@ -443,7 +457,7 @@ function scanner(root) {
       if (kind === "js") references = { ...jsReferences(text, dirname(path), root), sourced: [] };
       if (kind === "shell") references = shellReferences(text, dirname(path), root);
       if (kind === "other") references = { files: [], folders: [root], sourced: [] };
-      if (kind === "shell" && sourced && SHELL_CALLER_PATH.test(text)) references.folders.push(root);
+      if (kind === "shell" && sourced && SHELL_CALLER_PATH.test(withoutLeadingCommentLines(text))) references.folders.push(root);
     }
     const files = references.files.filter((reference) => inside(reference) && !isDirectory(reference));
     const folders = [...references.folders, ...references.files.filter(isDirectory)].filter(inside);
