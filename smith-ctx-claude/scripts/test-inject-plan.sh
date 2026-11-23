@@ -4768,22 +4768,24 @@ fi
 set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.*
 
 # --- Test 143: a claim this hook could not delete is reported, not asserted away ---
-# `mv` then `rm` is the one-shot contract. The `rm` was unchecked, so a failure left the
+# Claim by `mv`, then move the claim away, is the one-shot contract. That second move was unchecked, so a failure left the
 # file alive as `.mr-claimed.*` — outside the scan glob — while the report said the flag
 # had been consumed or swept.
 echo "Test 143: memory-restore: a flag claimed but not deleted is reported as surviving"
 CWD_143="$TEST_DIR/worktree-143"
 mkdir -p "$CWD_143" "$TEST_DIR/fakebin-143"
 set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-REAL_RM_143=$(command -v rm)
-cat > "$TEST_DIR/fakebin-143/rm" <<FAKERM
+REAL_MV_143=$(command -v mv)
+cat > "$TEST_DIR/fakebin-143/mv" <<FAKEMV
 #!/bin/sh
+for last in "\$@"; do :; done
 for a in "\$@"; do
+    [ "\$a" = "\$last" ] && continue
     case "\$a" in *.mr-claimed.*) exit 1;; esac
 done
-exec $REAL_RM_143 "\$@"
-FAKERM
-chmod +x "$TEST_DIR/fakebin-143/rm"
+exec $REAL_MV_143 "\$@"
+FAKEMV
+chmod +x "$TEST_DIR/fakebin-143/mv"
 FLAG_143="$PLANS_DIR/.pending-memory-restore-20260816000143-14301"
 printf '%s\n%s\n%s\n%s\n' "sess_143" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_143" "checkpoint-143" > "$FLAG_143"
 OUTPUT=$(echo '{"cwd":"'"$CWD_143"'"}' | PATH="$TEST_DIR/fakebin-143:$PATH" bash "$TEST_DIR/on-session-clear.sh")
@@ -4799,7 +4801,7 @@ fi
 set_aside "$PLANS_DIR"/.mr-claimed.* "$FLAG_143"
 
 # --- Test 144: the seven-day sweep must not count a removal that failed ---
-# Sibling of 143 on the other `rm`. A non-matching flag past seven days is claimed and
+# Sibling of 143 on the other move. A non-matching flag past seven days is claimed and
 # deleted; counting the sweep without checking the delete asserted a removal that may not
 # have happened. This one produces no row, so it also pins the assembled fallback
 # sentence, which is the only place that reports it here.
@@ -4807,15 +4809,17 @@ echo "Test 144: memory-restore: a sweep whose delete failed is not counted as re
 CWD_144="$TEST_DIR/worktree-144"
 mkdir -p "$CWD_144" "$TEST_DIR/fakebin-144"
 set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-REAL_RM_144=$(command -v rm)
-cat > "$TEST_DIR/fakebin-144/rm" <<FAKERM
+REAL_MV_144=$(command -v mv)
+cat > "$TEST_DIR/fakebin-144/mv" <<FAKEMV
 #!/bin/sh
+for last in "\$@"; do :; done
 for a in "\$@"; do
+    [ "\$a" = "\$last" ] && continue
     case "\$a" in *.mr-claimed.*) exit 1;; esac
 done
-exec $REAL_RM_144 "\$@"
-FAKERM
-chmod +x "$TEST_DIR/fakebin-144/rm"
+exec $REAL_MV_144 "\$@"
+FAKEMV
+chmod +x "$TEST_DIR/fakebin-144/mv"
 OLD_144=$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)
 FLAG_144="$PLANS_DIR/.pending-memory-restore-20260101000144-14401"
 printf '%s\n%s\n%s\n%s\n' "sess_144" "2026-01-01T00:00:00+0900" "$TEST_DIR/elsewhere-144" "checkpoint-144" > "$FLAG_144"
