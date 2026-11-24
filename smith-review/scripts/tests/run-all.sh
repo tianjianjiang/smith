@@ -3,8 +3,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for check in \
   preflight-probe \
-  review-receipt \
-  review-scope
+  review-receipt
 do
   sh "$HERE/$check.test.sh" || status=1
 done

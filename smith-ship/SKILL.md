@@ -74,8 +74,9 @@ Load and follow `@smith-gh-pr/SKILL.md`, `@smith-git/SKILL.md`,
    (`@smith-guidance` Safety Rules).
 5. **Address review** — follow `@smith-gh-pr` (Code Review Cycle, Posting
    Review Findings) for fetching, replying, attribution, suggestion blocks,
-   and the payload-vs-mechanics gate. Ship-specific: fix high-confidence
-   findings locally, then show the commit message and **amend** on a yes
+   and the payload-vs-mechanics gate. Ship-specific: fix verified findings
+   labelled Critical or Required (`@smith-review` step 0) locally, then
+   show the commit message and **amend** on a yes
    (not new commits). Before each of those
    pushes, in this order: rerun the `/smith-review` loop to a fresh
    converged verdict (full receipt plus criteria — a mechanics-only recheck

@@ -108,12 +108,13 @@ it cannot read the file.
 2. **Get ALL comments including Nitpicks** - don't skip minor issues
 3. Categorize: Actionable > Nitpick > Clarification > Discussion
 4. **Proactively audit similar issues** in other files not explicitly
-   mentioned: fix one in code the branch diff changes; report one in code it
-   does not change as pre-existing and record a follow-up citing its
-   `path:line` (`@smith-review` "Review scope")
-5. Implement fixes with confidence scoring (high: implement, low: ask)
-   - **High confidence**: Small surface area change, aligns with existing patterns, covered by tests
-   - **Low confidence**: Ambiguous behavior, architectural impact, requires design discussion
+   mentioned: fix one labelled Critical or Required (`@smith-review` step
+   0) in code the branch diff changes; report one in code it does not
+   change as pre-existing and record a follow-up citing its `path:line`
+   (`@smith-review` "Review scope")
+5. Implement fixes for verified findings labelled Critical or Required
+   (`@smith-review` step 0); ask when a fix works around or contradicts
+   the change's stated goal
 6. Show the commit message and commit on a yes, push it (inside a ship the
    user invoked or on the user's instruction to push), then reply with the
    pushed SHA — by reviewer type:
@@ -183,7 +184,8 @@ Before drafting any PR review comment:
 
 ## Review Convergence & Auto-Fix
 
-Follow convergence protocol: fix high-confidence findings (commit message shown for a yes), and merge a user-authored PR on a converged review only inside a ship the user invoked or after the user said to merge. Full protocol in `references/REVIEW-WORKFLOW.md`.
+Follow convergence protocol: fix verified Critical and Required findings
+(`@smith-review` step 0) (commit message shown for a yes), and merge a user-authored PR on a converged review only inside a ship the user invoked or after the user said to merge. Full protocol in `references/REVIEW-WORKFLOW.md`.
 
 ## Rebase Decision Tree
 
