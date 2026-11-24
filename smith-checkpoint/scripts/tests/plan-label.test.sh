@@ -88,14 +88,10 @@ printf '# Windows\r\n\r\n<!-- checkpoint-label-v1: abc -->\r\n' > "$WORK/crlf.md
 run_label "$WORK/crlf.md"
 expect "CRLF line endings" 0 abc
 
-if [ "$(id -u)" -ne 0 ]; then
-    printf '# Unreadable\n\n<!-- checkpoint-label-v1: x -->\n' > "$WORK/unreadable.md"
-    chmod 000 "$WORK/unreadable.md"
-    run_label "$WORK/unreadable.md"
-    expect "unreadable plan is refused" 1 ""
-else
-    echo "SKIP: plan-label - unreadable plan: permission bits do not restrict the superuser"
-fi
+printf '# Unreadable\n\n<!-- checkpoint-label-v1: x -->\n' > "$WORK/unreadable.md"
+chmod 000 "$WORK/unreadable.md"
+run_label "$WORK/unreadable.md"
+expect "unreadable plan is refused" 1 ""
 
 mkdir -p "$WORK/failing-grep"
 printf '#!/bin/sh\nexit 2\n' > "$WORK/failing-grep/grep"

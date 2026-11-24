@@ -421,16 +421,14 @@ add_line_to_transcript 'not json {'
 expect_asked_again "a line that is not JSON, a tool call after the write"
 pass "a transcript line that is not JSON is skipped and the other lines still decide"
 
-if [ "$(id -u)" -ne 0 ]; then
-  new_sandbox
-  make_transcript $((CRITICAL_PCT - 1))
-  write_checkpoint_of s1
-  chmod 000 "$TMP/transcript.jsonl"
-  stop_of s1 false > /dev/null 2>&1
-  chmod 644 "$TMP/transcript.jsonl"
-  [ "$(state_of s1)" = "state=idle" ] || fail "a transcript that exists but cannot be opened: the checkpoint should count as worked on, got $(state_of s1)"
-  pass "a transcript that exists but cannot be opened counts as work"
-fi
+new_sandbox
+make_transcript $((CRITICAL_PCT - 1))
+write_checkpoint_of s1
+chmod 000 "$TMP/transcript.jsonl"
+stop_of s1 false > /dev/null 2>&1
+chmod 644 "$TMP/transcript.jsonl"
+[ "$(state_of s1)" = "state=idle" ] || fail "a transcript that exists but cannot be opened: the checkpoint should count as worked on, got $(state_of s1)"
+pass "a transcript that exists but cannot be opened counts as work"
 
 dispatch_sandbox
 record_checkpoint_written_at 2026-11-22T08:00:05-05:00
