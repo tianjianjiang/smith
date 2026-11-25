@@ -336,6 +336,8 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 
 <!-- Testing -->
 <skill name="smith-tests" description="Testing standards, TDD workflow">`@smith-tests/SKILL.md`</skill>
+<skill name="smith-maintainability" description="Shared rules for deterministic maintainability signals: evidence levels, size, block versus warn, placement by cost">`@smith-maintainability/SKILL.md`</skill>
+<skill name="smith-maintainability-rework" description="Rework census: share of commits a later fix rewrites (the SZZ algorithm of Śliwerski, Zimmermann and Zeller)">`@smith-maintainability-rework/SKILL.md`</skill>
 <skill name="smith-playwright" description="Playwright testing, proactive failure monitoring">`@smith-playwright/SKILL.md`</skill>
 <skill name="smith-mcp-browser" description="Browser MCP reliability: drive the operator's chosen browser through each server's documented option">`@smith-mcp-browser/SKILL.md`</skill>
 
@@ -391,6 +393,8 @@ skill via the Skill tool:
 **Languages**: Python → `@smith-python/SKILL.md`, TypeScript → `@smith-typescript/SKILL.md`, Nuxt → `@smith-nuxt/SKILL.md`
 **Testing**: Tests/TDD → `@smith-tests/SKILL.md`,
   Playwright → `@smith-playwright/SKILL.md` + `@smith-mcp-browser/SKILL.md`
+**Maintainability**: maintainability, a quality bar, or code-quality metrics, signals or gates → `@smith-maintainability/SKILL.md`;
+  rework rate, share or census, fix-inducing commits, or SZZ (Śliwerski-Zimmermann-Zeller) → `@smith-maintainability-rework/SKILL.md`
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation phrases (add a feature/option/flag/command/skill/test/support, new feature, make a change, start the task/work/implementation) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
@@ -546,6 +550,10 @@ documentation and router-trigger design.
 **smith-slack**: Slack drafting discipline (draft, never send). Use when drafting or replying to a Slack message, calling any slack_* MCP tool, or running a /slack command.
 
 ### Testing & Quality
+
+**smith-maintainability**: Shared rules for deterministic maintainability signals; its members so far measure rework. Use when choosing, placing or reading a code-quality signal, or when setting a repository's quality bar.
+
+**smith-maintainability-rework**: Rework census, the share of commits whose added lines a later fix rewrites (the SZZ algorithm of Śliwerski, Zimmermann and Zeller). Use when measuring whether quality measures cut fix-ups, setting a repository's rework baseline, or tracking rework as a control-band metric.
 
 **smith-tests**: Testing standards and test-driven development (TDD). Use when writing or running tests, fixing a bug with a failing test first, or organizing test files.
 

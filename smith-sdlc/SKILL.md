@@ -302,7 +302,8 @@ invocation path, and what it finds re-enters as `intent.md`.
   invoke Claude read-only to diagnose. At 3σ: Claude may open a PR or
   trigger a pre-approved runbook. Tier boundaries live in version-controlled
   config (e.g. `bands.yaml`); detection itself stays deterministic, never
-  a model call.
+  a model call. A repository without deployments can watch its rework
+  share (`@smith-maintainability-rework/SKILL.md`).
 - **Recurring codebase scans** (Claude Security) — scheduled, validated,
   confidence-rated findings; bounded fixes go through the normal PR
   review gate, wider findings become `intent.md`.
