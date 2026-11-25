@@ -43,10 +43,12 @@ scripts, hooks and tests
 ## Enforcement
 
 - The erase-guard PreToolUse hook, `smith-ctx-claude/scripts/erase-guard.mjs`,
-  is being built: once it lands it denies `rm`, `unlink`, `shred`,
-  `find -delete` and `git clean -f` in a Bash command and names the move
-  or `/usr/bin/trash` in its reason. It judges the command's name, since a
-  command cannot show whether what it erases exists elsewhere
+  denies `rm`, `unlink`, `shred`, `find -delete`, `git clean -f`,
+  `git rm -f` and `claude rm` with `--discard-unpushed` or
+  `--force-remove-worktree` in a Bash command and names the move or
+  `/usr/bin/trash` in its reason. It judges the command's name, since a
+  command cannot show whether what it erases exists elsewhere; its limits
+  are in `smith-ctx-claude/references/HOOKS.md` "erase-guard"
 - `smith-ctx-claude/scripts/tests/erasing-calls.test.sh` fails on any
   erasing call in a tracked script that
   `smith-ctx-claude/scripts/tests/erasing-calls.allowlist` does not cover.
