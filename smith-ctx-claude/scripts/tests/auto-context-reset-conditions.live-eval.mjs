@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkoutProvenance, provenanceWasRead } from "../lib/checkout-provenance.mjs";
 import { evalConfigFolderIsUsable, evalDenyRules, evalPermissionRule, namesAnInstalledCopy } from "../lib/eval-profile-rules.mjs";
 import { canonicalPath } from "../../../smith-git/scripts/lib/serena-root.mjs";
+import { moveAside } from "./lib/move-aside.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHECKOUT_ROOT = realpathSync(resolve(HERE, "..", "..", ".."));
@@ -132,7 +133,7 @@ function pointTheEvalSkillsAtThisCheckout() {
     existing = lstatSync(EVAL_SKILLS_LINK);
   } catch {}
   if (existing && !existing.isSymbolicLink()) return false;
-  if (existing) unlinkSync(EVAL_SKILLS_LINK);
+  if (existing) moveAside(EVAL_SKILLS_LINK);
   symlinkSync(CHECKOUT_ROOT, EVAL_SKILLS_LINK);
   return true;
 }
@@ -204,7 +205,7 @@ function flagLines(name) {
 
 function removeEveryEvalFlag() {
   for (const prefix of FLAG_PREFIXES) {
-    for (const name of flagNames(prefix)) rmSync(join(FLAGS_FOLDER, name), { force: true });
+    for (const name of flagNames(prefix)) moveAside(join(FLAGS_FOLDER, name));
   }
 }
 
@@ -423,7 +424,7 @@ function removeFlagsOfTheProbe(sessionIds, folder) {
     ...probeKeys.map((key) => `.auto-reset-attempt-${key}`),
     ...probeRestoreFlags.flatMap(attemptMarkersListing),
   ];
-  for (const name of probeFiles) rmSync(join(FLAGS_FOLDER, name), { force: true });
+  for (const name of probeFiles) moveAside(join(FLAGS_FOLDER, name));
 }
 
 function noteTheSessionsLeftIn(folder) {
@@ -599,7 +600,7 @@ try {
     const removed = run("basic-memory", ["project", "remove", runFolder.basicMemoryProject, "--local"]);
     if (!removed.ok) throw new Error(removed.output.trim().split("\n")[0] || "no output");
   });
-  attemptCleanupStep("remove the run folder", () => rmSync(runFolder.folder, { recursive: true, force: true }));
+  attemptCleanupStep("remove the run folder", () => moveAside(runFolder.folder));
   for (const problem of cleanupProblems) {
     console.log(`WARN: ${problem}; the manual cleanup is in records/README.md, "Conditions of the automatic continuation"`);
   }

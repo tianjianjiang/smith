@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkoutProvenance, provenanceWasRead } from "../lib/checkout-provenance.mjs";
+import { moveAside } from "./lib/move-aside.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SESSION_FOLDER = process.env.SMITH_PROBE_SESSION_FOLDER;
@@ -175,7 +176,7 @@ function removeFlagsOfTheProbe(labels, sessionIds) {
     ...probePendingReloads,
     ...probeKeys.map((key) => `.auto-reset-attempt-${key}`),
   ];
-  for (const name of probeFiles) rmSync(join(FLAGS_FOLDER, name), { force: true });
+  for (const name of probeFiles) moveAside(join(FLAGS_FOLDER, name));
 }
 
 function createMemoryFile(label, codeWord) {
@@ -189,7 +190,7 @@ function createMemoryFile(label, codeWord) {
 
 function removeMemoryFile(memory) {
   if (!memory) return;
-  rmSync(memory.memoryPath, { force: true });
+  moveAside(memory.memoryPath);
   for (const folder of memory.createdFolders) {
     try {
       rmdirSync(folder);
@@ -295,7 +296,6 @@ try {
   removeSession(firstId);
   removeFlagsOfTheProbe([label, controlLabel], sessionIds);
   removeMemoryFile(memory);
-  rmSync(scratchFolder, { recursive: true, force: true });
 }
 
 const record = {
