@@ -44,7 +44,7 @@ Vocabulary, on top of `docs/test-tooling/layout/spec.md`:
   fixtures in `tools/test/fixtures/` included, since a change to either runs
   the full suite by the shared rule.
 - Paths: an existing file is named at its path on 3cd2f68; the step of
-  `docs/test-tooling/layout/plan.md:148` that moves tests and tooling, and
+  [`docs/test-tooling/layout/plan.md:148`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L148) that moves tests and tooling, and
   the moves under `lib/` that §shared-code-has-a-path asks for, change those
   paths, and a requirement that applies after them means the same file at
   its new path.
@@ -176,7 +176,7 @@ finds skills one level deep only, `~/.claude/skills/<skill-name>/SKILL.md`
 in https://code.claude.com/docs/en/skills.md, read on 2026-11-24, and a
 trial with Claude Code 2.1.331 on that date loaded no skill from a folder
 without `SKILL.md` and reported no error. Like `tools/test/`, which
-`docs/test-tooling/layout/plan.md:162` on 3cd2f68 bars from it, it may never
+[`docs/test-tooling/layout/plan.md:162`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L162) on 3cd2f68 bars from it, it may never
 hold `.claude-plugin/plugin.json`.
 
 ## §owner-tree-proves-selection
@@ -227,7 +227,7 @@ tree it fails in.
 The test helpers on 3cd2f68,
 `smith-ctx-claude/scripts/tests/lib/set-aside.sh`, `json-string.sh` and
 `json-inputs.sh`, move to `tools/test/helpers/` in the step of
-`docs/test-tooling/layout/plan.md:148` that moves every test, not to
+[`docs/test-tooling/layout/plan.md:148`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L148) that moves every test, not to
 `tests/lib/`.
 
 This one check gives the three signals that `intent.md` leaves open: what
@@ -413,24 +413,24 @@ Agreed with the work those files order, not made by this spec:
   declarations once §inference-leaves-default holds.
 - `spec.md` §names-say-what, "Change-based entry point: `run-affected.sh`":
   it keeps the name and selects by §selection-reads-paths.
-- `docs/test-tooling/layout/plan.md:135`: it lists `review-scope.test.sh`,
+- [`docs/test-tooling/layout/plan.md:135`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L135): it lists `review-scope.test.sh`,
   which 68227d5 removed.
-- `docs/test-tooling/layout/plan.md:184-191`, the problem of tests that read
+- [`docs/test-tooling/layout/plan.md:184-191`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L184-L191), the problem of tests that read
   the live repository, whose done condition is "Done when every test's reads
   are visible to the scan, or each remaining declaration is justified on its
   own": it needs the scan and `hidden-reads.json`, so it becomes
   §live-reads-stay-with-their-owner.
-- `docs/test-tooling/layout/plan.md:195-198`, on the fake repositories of
-  `run-affected.test.sh`, and `:228-237`, on the selector's `files` command
+- [`docs/test-tooling/layout/plan.md:195-198`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L195-L198), on the fake repositories of
+  `run-affected.test.sh`, and [`:228-237`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L228-L237), on the selector's `files` command
   and the tooling key in `runnerChange`: both describe the selector, which
   leaves the default branch by §inference-leaves-default, so they move with
   it.
-- `docs/test-tooling/layout/plan.md:238-245`, on places that read one tests
+- [`docs/test-tooling/layout/plan.md:238-245`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L238-L245), on places that read one tests
   folder: of the two it names, `testsToCheck` in `select.mjs` leaves with
   the selector, and `list_every_test` in `run-affected.sh` stays on the
   default branch, rewritten by §inference-leaves-default, so the risk stays
   for it.
-- `docs/test-tooling/layout/plan.md:148`, the step that moves every test:
+- [`docs/test-tooling/layout/plan.md:148`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L148), the step that moves every test:
   it retires `smith-ctx-claude/scripts/tests/list-folders.sh`, by
   §inference-leaves-default, and edits every tracked file that names it
   outside `docs/test-tooling/` on 3cd2f68: under
@@ -438,9 +438,9 @@ Agreed with the work those files order, not made by this spec:
   `run-affected.sh:12`, `verify-self-containedness.sh:17`, `select.mjs:9`,
   `run.test.sh:9` and `run-affected.test.sh:27`, `:948`, `:1013`, `:1161`,
   `:1164`; and `smith-ctx-claude/references/HOOKS.md:1274`, `:1313`.
-- `spec.md:38-39` and `docs/test-tooling/layout/plan.md:153`:
+- [`spec.md:38-39`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/spec.md?plain=1#L38-L39) and [`docs/test-tooling/layout/plan.md:153`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/plan.md?plain=1#L153):
   `tools/test/lib/` becomes `tools/test/helpers/`, and `spec.md` "Approved,
-  by role" (`:75`) adds `tools/test/helpers/` as the folder of test helpers
+  by role" ([`:75`](https://github.com/tianjianjiang/smith/blob/3cd2f680a13d85ce7f1711087b53adb013c9cd08/docs/test-tooling/layout/spec.md?plain=1#L75)) adds `tools/test/helpers/` as the folder of test helpers
   shared across owners, which `smith-ctx-claude/scripts/tests/lib/` holds
   on 3cd2f68.
 
