@@ -385,7 +385,8 @@ Rule: `smith-guidance/SKILL.md:67-74`, "Make every operation undoable",
    named files (`move-to-temp.test.sh:64-66`, `set-aside.test.sh:159`,
    `write-checkpoint.test.sh:1093`, `skill-trigger-eval.test.sh:251`)
    remain, listed in the allowlist as mentions.
-2. **A PreToolUse erase-guard hook on Bash commands.**
+2. **A PreToolUse erase-guard hook on Bash commands.** Done in 7d7500bb
+   (#412).
    `smith-ctx-claude/scripts/erase-guard.mjs`, reading the command through
    `smith-ctx-claude/scripts/lib/shell-scan.mjs`, as
    `attribution-guard.mjs` (run by the registered `attribution-guard.sh`)
@@ -404,15 +405,17 @@ Rule: `smith-guidance/SKILL.md:67-74`, "Make every operation undoable",
    Settled on 2026-11-25 as proposed, awaiting the owner's review: the
    hook denies rather than asks, because an approval prompt mid-build
    blocks parallel sessions (`smith-sdlc/SKILL.md` Stage 3).
-3. **The procedure skill.** `smith-undoable`, holding the rule's current
-   wording, its trigger ("Use when a command, script, hook or test would
-   delete, overwrite or truncate a file"), and the hook's limits. Name and
-   description settled on 2026-11-25 as proposed; they await the owner's
-   review.
-4. **A one-line pointer in smith-guidance.** The rule at
-   `smith-guidance/SKILL.md:67-74` becomes one line naming the skill and
-   its trigger, about 25 tokens: the file falls from 2,273 to about 2,163,
-   still over budget.
+3. **The procedure skill.** Done in 731bda29 (#411). `smith-undoable`,
+   holding the rule's current wording, its trigger ("Use when a command,
+   script, hook or test would delete, overwrite or truncate a file"), and
+   the hook's limits. Name and description settled on 2026-11-25 as
+   proposed; they await the owner's review.
+4. **A one-line pointer in smith-guidance.** Done in #413. The rule
+   at `smith-guidance/SKILL.md:67-74` (at 7d7500bb) became one bullet
+   naming the skill, its scope (a file, folder, branch or worktree) and
+   its action, wrapped to three lines: 55 tokens rather than the planned
+   25, so the file fell from 2,273 to 2,193 rather than about 2,163, still
+   over budget.
 
 ### Stack two: external writes
 
