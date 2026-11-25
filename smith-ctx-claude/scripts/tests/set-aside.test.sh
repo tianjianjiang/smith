@@ -83,36 +83,32 @@ reported "$out" "$TMPD/plain/a-file/child" "$TMPD/plain/a-file is not a folder" 
   && reported "$out" "$TMPD/plain/b-file/child" "$TMPD/plain/b-file is not a folder" \
   || fail "a path under a file: the message must say the file is not a folder, got: $out"
 
-if [ "$(id -u)" = 0 ]; then
-  echo "SKIP: running as root, which ignores folder permissions, so the permission cases were not run"
-else
-  mkdir -p "$TMPD/sealed/deeper" "$TMPD/open"
-  : > "$TMPD/sealed/hidden"
-  : > "$TMPD/sealed/deeper/hidden"
-  : > "$TMPD/open/after-sealed"
-  chmod 000 "$TMPD/sealed"
-  out=$(with_fake_mktemp set_aside "$TMPD/sealed/hidden" "$TMPD/sealed/deeper/hidden" "$TMPD/open/after-sealed" 2>&1)
-  sealed_status=$?
-  chmod 755 "$TMPD/sealed"
-  [ "$sealed_status" != 0 ] || fail "a folder that cannot be searched: set_aside must fail, as rm -f does"
-  [ -e "$TMPD/sealed/hidden" ] && [ -e "$TMPD/sealed/deeper/hidden" ] || fail "a folder that cannot be searched: its files must stay in place"
-  reported "$out" "$TMPD/sealed/hidden" "$TMPD/sealed cannot be searched" \
-    && reported "$out" "$TMPD/sealed/deeper/hidden" "$TMPD/sealed cannot be searched" \
-    || fail "a folder that cannot be searched: the message must name each path and the folder, got: $out"
-  [ ! -e "$TMPD/open/after-sealed" ] && aside_holds after-sealed || fail "a folder that cannot be searched: the paths after it must still be moved aside"
+mkdir -p "$TMPD/sealed/deeper" "$TMPD/open"
+: > "$TMPD/sealed/hidden"
+: > "$TMPD/sealed/deeper/hidden"
+: > "$TMPD/open/after-sealed"
+chmod 000 "$TMPD/sealed"
+out=$(with_fake_mktemp set_aside "$TMPD/sealed/hidden" "$TMPD/sealed/deeper/hidden" "$TMPD/open/after-sealed" 2>&1)
+sealed_status=$?
+chmod 755 "$TMPD/sealed"
+[ "$sealed_status" != 0 ] || fail "a folder that cannot be searched: set_aside must fail, as rm -f does"
+[ -e "$TMPD/sealed/hidden" ] && [ -e "$TMPD/sealed/deeper/hidden" ] || fail "a folder that cannot be searched: its files must stay in place"
+reported "$out" "$TMPD/sealed/hidden" "$TMPD/sealed cannot be searched" \
+  && reported "$out" "$TMPD/sealed/deeper/hidden" "$TMPD/sealed cannot be searched" \
+  || fail "a folder that cannot be searched: the message must name each path and the folder, got: $out"
+[ ! -e "$TMPD/open/after-sealed" ] && aside_holds after-sealed || fail "a folder that cannot be searched: the paths after it must still be moved aside"
 
-  mkdir "$TMPD/locked"
-  : > "$TMPD/locked/stuck"
-  : > "$TMPD/open/free"
-  chmod 555 "$TMPD/locked"
-  out=$(with_fake_mktemp set_aside "$TMPD/locked/stuck" "$TMPD/open/free" 2>&1)
-  locked_status=$?
-  chmod 755 "$TMPD/locked"
-  [ "$locked_status" != 0 ] || fail "a move that fails: set_aside must fail"
-  [ -e "$TMPD/locked/stuck" ] || fail "a move that fails: the file must stay in place"
-  reported "$out" "$TMPD/locked/stuck" "the move failed" || fail "a move that fails: the message must name the path, got: $out"
-  [ ! -e "$TMPD/open/free" ] && aside_holds free || fail "a move that fails: the paths after it must still be moved aside"
-fi
+mkdir "$TMPD/locked"
+: > "$TMPD/locked/stuck"
+: > "$TMPD/open/free"
+chmod 555 "$TMPD/locked"
+out=$(with_fake_mktemp set_aside "$TMPD/locked/stuck" "$TMPD/open/free" 2>&1)
+locked_status=$?
+chmod 755 "$TMPD/locked"
+[ "$locked_status" != 0 ] || fail "a move that fails: set_aside must fail"
+[ -e "$TMPD/locked/stuck" ] || fail "a move that fails: the file must stay in place"
+reported "$out" "$TMPD/locked/stuck" "the move failed" || fail "a move that fails: the message must name the path, got: $out"
+[ ! -e "$TMPD/open/free" ] && aside_holds free || fail "a move that fails: the paths after it must still be moved aside"
 
 mkdir "$TMPD/decoy"
 : > "$TMPD/plain/stays"

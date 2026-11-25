@@ -876,24 +876,20 @@ run_script_in "$W6I" test_label_primarymemoriesfile "body=$BODY" >/dev/null 2>"$
 grep -qF -- "Error: $P6I/.serena/memories exists and is not a directory" "$SHIM/stderr" || fail "T6 (primary memories is a file): stderr must say what is in the way: $(cat "$SHIM/stderr")"
 assert_relocation_refused "primary memories is a file" "$W6I"
 
-if [ "$(id -u)" -ne 0 ]; then
-  reset_logs
-  R6J="$SHIM/repo-t6-unwritable-primary"
-  make_repo_with_worktree "$R6J"
-  W6J="$R6J/.claude/worktrees/wt"
-  make_primary_serena_project_without_memories "$R6J"
-  make_stranded_worktree_memory "$W6J"
-  P6J="$(cd "$R6J" && pwd -P)"
-  chmod 555 "$R6J/.serena"
-  run_script_in "$W6J" test_label_unwritableprimary "body=$BODY" >/dev/null 2>"$SHIM/stderr"
-  unwritable_status=$?
-  chmod 755 "$R6J/.serena"
-  [ "$unwritable_status" -ne 0 ] || fail "T6 (unwritable primary): a memories directory that cannot be created must make the script exit non-zero"
-  grep -qF -- "Error: could not create $P6J/.serena/memories" "$SHIM/stderr" || fail "T6 (unwritable primary): stderr must name the directory: $(cat "$SHIM/stderr")"
-  assert_relocation_refused "unwritable primary" "$W6J"
-else
-  echo "SKIP: T6 (unwritable primary): permission bits do not restrict the superuser"
-fi
+reset_logs
+R6J="$SHIM/repo-t6-unwritable-primary"
+make_repo_with_worktree "$R6J"
+W6J="$R6J/.claude/worktrees/wt"
+make_primary_serena_project_without_memories "$R6J"
+make_stranded_worktree_memory "$W6J"
+P6J="$(cd "$R6J" && pwd -P)"
+chmod 555 "$R6J/.serena"
+run_script_in "$W6J" test_label_unwritableprimary "body=$BODY" >/dev/null 2>"$SHIM/stderr"
+unwritable_status=$?
+chmod 755 "$R6J/.serena"
+[ "$unwritable_status" -ne 0 ] || fail "T6 (unwritable primary): a memories directory that cannot be created must make the script exit non-zero"
+grep -qF -- "Error: could not create $P6J/.serena/memories" "$SHIM/stderr" || fail "T6 (unwritable primary): stderr must name the directory: $(cat "$SHIM/stderr")"
+assert_relocation_refused "unwritable primary" "$W6J"
 
 reset_logs
 R6K="$SHIM/repo-t6-dangling-primary-nothing-to-relocate"

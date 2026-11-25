@@ -145,18 +145,14 @@ passes url-colon
 raw_skill flow-colon '---' 'name: flow-colon' 'description: A fixture skill. Use when testing the lint.' 'argument-hint: [focus: area]' '---'
 passes flow-colon
 out=$(cd "$TMPD/clean" && node "$LINT" SKILL.md) || fail "a relative path must take its directory's name, got: $out"
-if [ "$(id -u)" = 0 ]; then
-  echo "  SKIP unreachable skill file (root reads regardless of mode)"
-else
-  mkdir -p "$TMPD/locked-root/locked-skill"
-  cp "$TMPD/clean/SKILL.md" "$TMPD/locked-root/locked-skill/SKILL.md"
-  chmod 000 "$TMPD/locked-root/locked-skill"
-  out=$(node "$LINT" --root "$TMPD/locked-root")
-  status=$?
-  chmod 700 "$TMPD/locked-root/locked-skill"
-  [ "$status" != 0 ] || fail "a skill file that cannot be reached must not pass, got: $out"
-  printf '%s' "$out" | grep -q 'SKILL.md:1: unreadable:' || fail "a skill file that cannot be reached must be reported, got: $out"
-fi
+mkdir -p "$TMPD/locked-root/locked-skill"
+cp "$TMPD/clean/SKILL.md" "$TMPD/locked-root/locked-skill/SKILL.md"
+chmod 000 "$TMPD/locked-root/locked-skill"
+out=$(node "$LINT" --root "$TMPD/locked-root")
+status=$?
+chmod 700 "$TMPD/locked-root/locked-skill"
+[ "$status" != 0 ] || fail "a skill file that cannot be reached must not pass, got: $out"
+printf '%s' "$out" | grep -q 'SKILL.md:1: unreadable:' || fail "a skill file that cannot be reached must be reported, got: $out"
 mkdir -p "$TMPD/directory-instead-of-file/SKILL.md"
 reports directory-instead-of-file unreadable
 
@@ -215,17 +211,13 @@ blocks "serena edit of many files across the project" "{\"tool_name\":\"mcp__ser
 blocks "serena edit of many files under a directory" "{\"tool_name\":\"mcp__serena__replace_in_files\",\"cwd\":\"$TMPD/elsewhere\",\"tool_input\":{\"relative_path\":\"nested\"}}" 'serena-root/nested/dated/SKILL.md'
 blocks "serena edit of many files in one skill directory" "{\"tool_name\":\"mcp__serena__replace_in_files\",\"cwd\":\"$TMPD/elsewhere\",\"tool_input\":{\"relative_path\":\"dated\"}}" 'serena-root/dated/SKILL.md'
 silent "serena single-file write to another file" "{\"tool_name\":\"mcp__serena__replace_content\",\"cwd\":\"$TMPD/elsewhere\",\"tool_input\":{\"relative_path\":\"dated/notes.md\"}}"
-if [ "$(id -u)" = 0 ]; then
-  echo "  SKIP unlistable directory (root reads regardless of mode)"
-else
-  mkdir -p "$SERENA_ROOT/locked"
-  chmod 000 "$SERENA_ROOT/locked"
-  out=$(hook "{\"tool_name\":\"mcp__serena__replace_in_files\",\"cwd\":\"$TMPD/elsewhere\",\"tool_input\":{\"relative_path\":\"locked\"}}")
-  status=$?
-  chmod 700 "$SERENA_ROOT/locked"
-  [ "$status" = 0 ] || fail "a directory that cannot be listed must not crash the hook"
-  printf '%s' "$out" | jq -e '.decision == "block" and (.reason | contains("could not be checked"))' >/dev/null || fail "a directory that cannot be listed must be reported, got: $out"
-fi
+mkdir -p "$SERENA_ROOT/locked"
+chmod 000 "$SERENA_ROOT/locked"
+out=$(hook "{\"tool_name\":\"mcp__serena__replace_in_files\",\"cwd\":\"$TMPD/elsewhere\",\"tool_input\":{\"relative_path\":\"locked\"}}")
+status=$?
+chmod 700 "$SERENA_ROOT/locked"
+[ "$status" = 0 ] || fail "a directory that cannot be listed must not crash the hook"
+printf '%s' "$out" | jq -e '.decision == "block" and (.reason | contains("could not be checked"))' >/dev/null || fail "a directory that cannot be listed must be reported, got: $out"
 
 expected_files=$(ls -d "$REPO"/*/SKILL.md | wc -l | tr -d ' ')
 [ "$expected_files" -ge 48 ] || fail "expected at least 48 skill files, found $expected_files"

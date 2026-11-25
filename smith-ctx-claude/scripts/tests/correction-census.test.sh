@@ -95,14 +95,9 @@ printf '%s\n' \
   > "$TMPD/projects/project-two/session-g.jsonl"
 
 ln -s "$TMPD/nowhere" "$TMPD/projects/dangling-link"
-UNREADABLE_ENTRIES=1
-if [ "$(id -u)" = 0 ]; then
-  echo "  SKIP locked directory (root reads regardless of mode)"
-else
-  mkdir "$TMPD/projects/locked-directory"
-  chmod 000 "$TMPD/projects/locked-directory"
-  UNREADABLE_ENTRIES=2
-fi
+mkdir "$TMPD/projects/locked-directory"
+chmod 000 "$TMPD/projects/locked-directory"
+UNREADABLE_ENTRIES=2
 
 value() { printf '%s' "$1" | jq -r "$2"; }
 expect() {

@@ -2782,25 +2782,20 @@ printf '%s\n%s\n%s\n%s\n' "sess_78" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_78" "ch
 # A read-only PLANS_DIR makes the claiming `mv` fail. stderr is NOT a channel into
 # the session: additionalContext is the only one, so a warning there alone would be
 # invisible exactly when a matching checkpoint failed to restore.
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 500 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_78"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "78" "$OUTPUT" "could NOT be claimed" && \
+   assert_contains "78" "$OUTPUT" "checkpoint-78" && \
+   assert_contains "78" "$OUTPUT" "filesystem error" && \
+   assert_file_exists "78" "$MR_FLAG_78"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 500 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_78"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "78" "$OUTPUT" "could NOT be claimed" && \
-       assert_contains "78" "$OUTPUT" "checkpoint-78" && \
-       assert_contains "78" "$OUTPUT" "filesystem error" && \
-       assert_file_exists "78" "$MR_FLAG_78"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 79: an unreachable recorded path is "unverifiable", never "different repository" ---
@@ -2973,28 +2968,23 @@ mkdir -p "$CWD_85"
 set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_85="$PLANS_DIR/.pending-memory-restore-20260816T000085-85085"
 printf '%s\n%s\n%s\n%s\n' "sess_85" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_85" "checkpoint-85" > "$MR_FLAG_85"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root ignores the missing write bit, so the claim would succeed)"
+  
+  
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 500 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_85"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+  
+  
+if assert_contains "85" "$OUTPUT" "could NOT be claimed" && \
+   assert_contains "85" "$OUTPUT" "Signal: fresh-start" && \
+   assert_file_exists "85" "$MR_FLAG_85"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-  
-  
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 500 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_85"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-  
-  
-    if assert_contains "85" "$OUTPUT" "could NOT be claimed" && \
-       assert_contains "85" "$OUTPUT" "Signal: fresh-start" && \
-       assert_file_exists "85" "$MR_FLAG_85"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 86: one directory under two spellings still matches ---
@@ -3081,24 +3071,19 @@ mkdir -p "$CWD_89"
 set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_89="$PLANS_DIR/.pending-memory-restore-20260816T000089-89089"
 printf '%s\n%s\n%s\n%s\n' "sess_89" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_89" "checkpoint-89" > "$MR_FLAG_89"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root reads regardless of mode)"
+chmod 000 "$MR_FLAG_89"
+OUTPUT=$(echo '{"cwd":"'"$CWD_89"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 600 "$MR_FLAG_89"
+  
+  
+if assert_contains "89" "$OUTPUT" "could NOT be read (permissions)" && \
+   assert_not_contains "89" "$OUTPUT" "malformed flag" && \
+   assert_file_exists "89" "$MR_FLAG_89"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    chmod 000 "$MR_FLAG_89"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_89"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 600 "$MR_FLAG_89"
-  
-  
-    if assert_contains "89" "$OUTPUT" "could NOT be read (permissions)" && \
-       assert_not_contains "89" "$OUTPUT" "malformed flag" && \
-       assert_file_exists "89" "$MR_FLAG_89"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 90: an irreversible row outranks recoverable ones at the cap ---
@@ -3139,27 +3124,22 @@ mkdir -p "$CWD_91"
 set_aside "$PLANS_DIR"/.pending-memory-restore-*
 MR_FLAG_91="$PLANS_DIR/.pending-memory-restore-20260816T000091-91091"
 printf '%s\n%s\n%s\n%s\n' "sess_91" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_91" "checkpoint-91" > "$MR_FLAG_91"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root searches a directory regardless of the execute bit)"
+  
+  
+  
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 600 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_91"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "91" "$OUTPUT" "could NOT be inspected" && \
+   assert_not_contains "91" "$OUTPUT" "Signal: resume" && \
+   assert_file_exists "91" "$MR_FLAG_91"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-  
-  
-  
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 600 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_91"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "91" "$OUTPUT" "could NOT be inspected" && \
-       assert_not_contains "91" "$OUTPUT" "Signal: resume" && \
-       assert_file_exists "91" "$MR_FLAG_91"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 92: when the hook's OWN cwd cannot be resolved, assert nothing ---
@@ -3345,39 +3325,34 @@ fi
 # own sandbox because the parent has to be locked, and the real PLANS_DIR's parent is
 # the directory holding the scripts under test.
 echo "Test 97: memory-restore: unsearchable parent of PLANS_DIR is reported, not silent"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root searches a directory regardless of the execute bit)"
+CFG_97="$TEST_DIR/cfg-97"
+PLANS_97="$CFG_97/plans"
+CWD_97="$TEST_DIR/worktree-97"
+mkdir -p "$PLANS_97" "$CWD_97" "$TEST_DIR/t97"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_97"'"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t97/lib-plan.sh"
+cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t97/on-session-clear.sh"
+printf '%s\n%s\n%s\n%s\n' "sess_97" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_97" "checkpoint-97" \
+    > "$PLANS_97/.pending-memory-restore-20260816T000097-97097"
+trap 'chmod 700 "$CFG_97" 2>/dev/null' EXIT
+chmod 600 "$CFG_97"
+OUTPUT=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$CFG_97"
+trap - EXIT
+  
+  
+  
+  
+OUT_RECOVERED_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+set_aside "$PLANS_97"
+OUT_GONE_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
+if assert_contains "97" "$OUTPUT" "could NOT be inspected" && \
+   assert_not_contains "97" "$OUT_GONE_97" "could NOT be inspected" && \
+   assert_contains "97" "$OUT_RECOVERED_97" "checkpoint-97"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CFG_97="$TEST_DIR/cfg-97"
-    PLANS_97="$CFG_97/plans"
-    CWD_97="$TEST_DIR/worktree-97"
-    mkdir -p "$PLANS_97" "$CWD_97" "$TEST_DIR/t97"
-    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$PLANS_97"'"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t97/lib-plan.sh"
-    cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t97/on-session-clear.sh"
-    printf '%s\n%s\n%s\n%s\n' "sess_97" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_97" "checkpoint-97" \
-        > "$PLANS_97/.pending-memory-restore-20260816T000097-97097"
-    trap 'chmod 700 "$CFG_97" 2>/dev/null' EXIT
-    chmod 600 "$CFG_97"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$CFG_97"
-    trap - EXIT
-  
-  
-  
-  
-    OUT_RECOVERED_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
-    set_aside "$PLANS_97"
-    OUT_GONE_97=$(echo '{"cwd":"'"$CWD_97"'"}' | bash "$TEST_DIR/t97/on-session-clear.sh" 2>/dev/null)
-    if assert_contains "97" "$OUTPUT" "could NOT be inspected" && \
-       assert_not_contains "97" "$OUT_GONE_97" "could NOT be inspected" && \
-       assert_contains "97" "$OUT_RECOVERED_97" "checkpoint-97"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 98: rows are ordered by priority, and no external sort is consulted ---
@@ -3476,29 +3451,24 @@ fi
 # Tests 78 and 85 match text that comes from the ROW verdict, so the note itself
 # — the only line that says what to DO about it — was unpinned.
 echo "Test 101: memory-restore: an unclaimable match explains which directory to fix"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root writes a directory regardless of the write bit)"
+CWD_101="$TEST_DIR/worktree-101"
+mkdir -p "$CWD_101"
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
+MR_FLAG_101="$PLANS_DIR/.pending-memory-restore-20260816T000101-10101"
+printf '%s\n%s\n%s\n%s\n' "sess_101" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_101" "checkpoint-101" > "$MR_FLAG_101"
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 500 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_101"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "101" "$OUTPUT" "could NOT be claimed" && \
+   assert_contains "101" "$OUTPUT" "Check the permissions on" && \
+   assert_file_exists "101" "$MR_FLAG_101"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CWD_101="$TEST_DIR/worktree-101"
-    mkdir -p "$CWD_101"
-    set_aside "$PLANS_DIR"/.pending-memory-restore-*
-    MR_FLAG_101="$PLANS_DIR/.pending-memory-restore-20260816T000101-10101"
-    printf '%s\n%s\n%s\n%s\n' "sess_101" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_101" "checkpoint-101" > "$MR_FLAG_101"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 500 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_101"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "101" "$OUTPUT" "could NOT be claimed" && \
-       assert_contains "101" "$OUTPUT" "Check the permissions on" && \
-       assert_file_exists "101" "$MR_FLAG_101"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 102: a destroyed pointer the cap could not show must be counted and said ---
@@ -3573,27 +3543,22 @@ fi
 # Test 91 covers mode 600 (readable, non-searchable). Mode 300 is the other bit and
 # fails differently: the glob cannot expand at all and yields its own pattern.
 echo "Test 105: memory-restore: mode-300 PLANS_DIR is reported, not treated as empty"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root reads a directory regardless of the read bit)"
+CWD_105="$TEST_DIR/worktree-105"
+mkdir -p "$CWD_105"
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "sess_105" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_105" "checkpoint-105" \
+    > "$PLANS_DIR/.pending-memory-restore-20260816T000105-10501"
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 300 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_105"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "105" "$OUTPUT" "could NOT be inspected"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CWD_105="$TEST_DIR/worktree-105"
-    mkdir -p "$CWD_105"
-    set_aside "$PLANS_DIR"/.pending-memory-restore-*
-    printf '%s\n%s\n%s\n%s\n' "sess_105" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_105" "checkpoint-105" \
-        > "$PLANS_DIR/.pending-memory-restore-20260816T000105-10501"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 300 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_105"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "105" "$OUTPUT" "could NOT be inspected"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 106: an over-long label is truncated, and says so ---
@@ -3765,32 +3730,27 @@ set_aside "$KEPT_111" "$FLIGHT_111"
 # stranded pointer disappear from the output entirely while staying on disk — the
 # same silence this loop was rewritten to remove, reintroduced in a third outcome.
 echo "Test 119: memory-restore: a stranded file that cannot be removed is reported, not passed over"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root writes a directory regardless of the write bit)"
+CWD_119="$TEST_DIR/worktree-119"
+mkdir -p "$CWD_119"
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+STUCK_119="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11901"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nIMPORTANT-119\n' "$CWD_119" > "$STUCK_119"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_119"
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 0555 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_119"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if [[ -e "$STUCK_119" ]] && \
+   assert_contains "119" "$OUTPUT" "could NOT be removed" && \
+   assert_not_contains "119" "$OUTPUT" "IMPORTANT-119"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CWD_119="$TEST_DIR/worktree-119"
-    mkdir -p "$CWD_119"
-    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-    STUCK_119="$PLANS_DIR/.mr-claimed.99999.20260101T000000-11901"
-    printf 'k\n2026-01-01T00:00:00+0900\n%s\nIMPORTANT-119\n' "$CWD_119" > "$STUCK_119"
-    touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_119"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 0555 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_119"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if [[ -e "$STUCK_119" ]] && \
-       assert_contains "119" "$OUTPUT" "could NOT be removed" && \
-       assert_not_contains "119" "$OUTPUT" "IMPORTANT-119"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
-    set_aside "$STUCK_119"
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
+set_aside "$STUCK_119"
 
 # --- Test 112: the candidates block survives without sort(1) or awk(1) ---
 # Ordering and row selection are builtins. Forking for them and capturing the result
@@ -4139,27 +4099,22 @@ fi
 # half of the guard is exercised. Mode 300 is the other half: the directory can be
 # entered but not listed, so absence cannot be established either.
 echo "Test 122: memory-restore: a mode-300 ancestor of PLANS_DIR is reported, not read as absence"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root reads a directory regardless of the read bit)"
+CFG_122="$TEST_DIR/cfg-122"
+CWD_122="$TEST_DIR/worktree-122"
+mkdir -p "$CFG_122" "$CWD_122" "$TEST_DIR/t122"
+sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t122/lib-plan.sh"
+cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t122/on-session-clear.sh"
+trap 'chmod 700 "$CFG_122" 2>/dev/null' EXIT
+chmod 300 "$CFG_122"
+OUTPUT=$(echo '{"cwd":"'"$CWD_122"'"}' | bash "$TEST_DIR/t122/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$CFG_122"
+trap - EXIT
+if assert_contains "122" "$OUTPUT" "could NOT be inspected"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CFG_122="$TEST_DIR/cfg-122"
-    CWD_122="$TEST_DIR/worktree-122"
-    mkdir -p "$CFG_122" "$CWD_122" "$TEST_DIR/t122"
-    sed -e 's|^PLANS_DIR=.*|PLANS_DIR="'"$CFG_122"'/plans"|' "$SCRIPT_DIR/scripts/lib-plan.sh" > "$TEST_DIR/t122/lib-plan.sh"
-    cp "$SCRIPT_DIR/scripts/on-session-clear.sh" "$TEST_DIR/t122/on-session-clear.sh"
-    trap 'chmod 700 "$CFG_122" 2>/dev/null' EXIT
-    chmod 300 "$CFG_122"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_122"'"}' | bash "$TEST_DIR/t122/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$CFG_122"
-    trap - EXIT
-    if assert_contains "122" "$OUTPUT" "could NOT be inspected"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
 
 # --- Test 123: an age that could not be established is not an age of zero ---
@@ -4566,35 +4521,30 @@ set_aside "$CKEPT_136" "$TKEPT_136"
 # directory, which also stops the flag being claimed. That is fine — an unclaimable flag
 # still produces a row, so the tail still renders, and the two outcomes coexist.
 echo "Test 137: memory-restore: unremovable litter is reported inside the candidates block"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root writes a directory regardless of the write bit)"
+CWD_137="$TEST_DIR/worktree-137"
+mkdir -p "$CWD_137"
+set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
+MR_FLAG_137="$PLANS_DIR/.pending-memory-restore-20260718T000000-13701"
+printf '%s\n%s\n%s\n%s\n' "sess_137" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_137" "checkpoint-137" > "$MR_FLAG_137"
+STUCK_137="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13702"
+printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-137\n' "$TEST_DIR/decoy-137-another-project" > "$STUCK_137"
+touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_137"
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 0555 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_137"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "137" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
+   assert_contains "137" "$OUTPUT" "1 litter file(s) could NOT be removed" && \
+   assert_not_contains "137" "$OUTPUT" "LABEL-137" && \
+   assert_not_contains "137" "$OUTPUT" "decoy-137-another-project"; then
+    echo "  PASS"
     PASS=$((PASS + 1))
 else
-    CWD_137="$TEST_DIR/worktree-137"
-    mkdir -p "$CWD_137"
-    set_aside "$PLANS_DIR"/.pending-memory-restore-* "$PLANS_DIR"/.mr-claimed.* "$PLANS_DIR"/.mr-tmp.*
-    MR_FLAG_137="$PLANS_DIR/.pending-memory-restore-20260718T000000-13701"
-    printf '%s\n%s\n%s\n%s\n' "sess_137" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$CWD_137" "checkpoint-137" > "$MR_FLAG_137"
-    STUCK_137="$PLANS_DIR/.mr-claimed.99999.20260101T000000-13702"
-    printf 'k\n2026-01-01T00:00:00+0900\n%s\nLABEL-137\n' "$TEST_DIR/decoy-137-another-project" > "$STUCK_137"
-    touch -t "$(date -v-8d +%Y%m%d%H%M 2>/dev/null || date -d '8 days ago' +%Y%m%d%H%M)" "$STUCK_137"
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 0555 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_137"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "137" "$OUTPUT" "Checkpoint candidates seen at this /clear" && \
-       assert_contains "137" "$OUTPUT" "1 litter file(s) could NOT be removed" && \
-       assert_not_contains "137" "$OUTPUT" "LABEL-137" && \
-       assert_not_contains "137" "$OUTPUT" "decoy-137-another-project"; then
-        echo "  PASS"
-        PASS=$((PASS + 1))
-    else
-        echo "  FAIL"
-        FAIL=$((FAIL + 1))
-    fi
-    set_aside "$STUCK_137" "$MR_FLAG_137"
+    echo "  FAIL"
+    FAIL=$((FAIL + 1))
 fi
+set_aside "$STUCK_137" "$MR_FLAG_137"
 
 # --- Test 138: the candidates block reports litter whose age it could not establish ---
 # The `stat` shim has to fail for the LITTER file only. A blanket failure takes the flag's
@@ -4935,16 +4885,11 @@ mr_bearing_check() {
 
 echo "Test 148: memory-restore: an unreadable flag suppresses the none-matched claim"
 mr_bearing_repo 148
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root reads a mode-000 file, so the flag would not be unreadable)"
-    PASS=$((PASS + 1))
-else
-    printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_R" "unreadable-148" > "$PLANS_DIR/.pending-memory-restore-x148"
-    chmod 000 "$PLANS_DIR/.pending-memory-restore-x148"
-    OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-    mr_bearing_check 148
-    chmod 644 "$PLANS_DIR/.pending-memory-restore-x148"; set_aside "$PLANS_DIR/.pending-memory-restore-x148"
-fi
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$MR_R" "unreadable-148" > "$PLANS_DIR/.pending-memory-restore-x148"
+chmod 000 "$PLANS_DIR/.pending-memory-restore-x148"
+OUTPUT=$(echo '{"cwd":"'"$MR_R"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+mr_bearing_check 148
+chmod 644 "$PLANS_DIR/.pending-memory-restore-x148"; set_aside "$PLANS_DIR/.pending-memory-restore-x148"
 
 echo "Test 149: memory-restore: an unopenable flag name suppresses the none-matched claim"
 mr_bearing_repo 149
@@ -5191,26 +5136,21 @@ fi
 echo "Test 159: memory-restore: an unenterable but EXISTING path is not called missing"
 CWD_159="$TEST_DIR/wd-159"; SEALED_159="$TEST_DIR/sealed-159"
 mkdir -p "$CWD_159" "$SEALED_159"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root enters a mode-000 directory, so the path would be reachable)"
-    PASS=$((PASS + 1))
+set_aside "$PLANS_DIR"/.pending-memory-restore-*
+printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$SEALED_159" "sealed-159" \
+    > "$PLANS_DIR/.pending-memory-restore-x159"
+chmod 000 "$SEALED_159"
+OUTPUT=$(echo '{"cwd":"'"$CWD_159"'"}' | bash "$TEST_DIR/on-session-clear.sh")
+chmod 755 "$SEALED_159"
+if [[ -d "$SEALED_159" ]] && \
+   assert_contains "159" "$OUTPUT" "scope unverifiable, recorded path unreachable" && \
+   assert_contains "159" "$OUTPUT" "the recorded path could not be resolved" && \
+   assert_not_contains "159" "$OUTPUT" "the recorded directory no longer exists"; then
+    echo "  PASS"; PASS=$((PASS + 1))
 else
-    set_aside "$PLANS_DIR"/.pending-memory-restore-*
-    printf '%s\n%s\n%s\n%s\n' "s" "$(date +%Y-%m-%dT%H:%M:%S%z)" "$SEALED_159" "sealed-159" \
-        > "$PLANS_DIR/.pending-memory-restore-x159"
-    chmod 000 "$SEALED_159"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_159"'"}' | bash "$TEST_DIR/on-session-clear.sh")
-    chmod 755 "$SEALED_159"
-    if [[ -d "$SEALED_159" ]] && \
-       assert_contains "159" "$OUTPUT" "scope unverifiable, recorded path unreachable" && \
-       assert_contains "159" "$OUTPUT" "the recorded path could not be resolved" && \
-       assert_not_contains "159" "$OUTPUT" "the recorded directory no longer exists"; then
-        echo "  PASS"; PASS=$((PASS + 1))
-    else
-        echo "  FAIL"; FAIL=$((FAIL + 1))
-    fi
-    set_aside "$PLANS_DIR/.pending-memory-restore-x159"
+    echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
+set_aside "$PLANS_DIR/.pending-memory-restore-x159"
 
 # --- Test 160: a malformed row must name the file the note tells the user to delete ---
 # The note fires on malformed rows and asks the user to delete them, but a malformed
@@ -5319,20 +5259,15 @@ set_aside "$PLANS_DIR/.plan-state-${KEY_163_PLANSTATE}"
 # exactly when that assignment did not. Nothing covered either branch's path text.
 echo "Test 164: an uninspectable plans directory is named in the directive"
 CWD_164="$TEST_DIR/wd-164"; mkdir -p "$CWD_164"
-if [[ "$(id -u)" == "0" ]]; then
-    echo "  SKIP (root inspects a mode-000 directory, so the branch is unreachable)"
-    PASS=$((PASS + 1))
+trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
+chmod 000 "$PLANS_DIR"
+OUTPUT=$(echo '{"cwd":"'"$CWD_164"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
+chmod 700 "$PLANS_DIR"
+trap - EXIT
+if assert_contains "164" "$OUTPUT" "\`$PLANS_DIR\` could NOT be inspected"; then
+    echo "  PASS"; PASS=$((PASS + 1))
 else
-    trap 'chmod 700 "$PLANS_DIR" 2>/dev/null' EXIT
-    chmod 000 "$PLANS_DIR"
-    OUTPUT=$(echo '{"cwd":"'"$CWD_164"'"}' | bash "$TEST_DIR/on-session-clear.sh" 2>/dev/null)
-    chmod 700 "$PLANS_DIR"
-    trap - EXIT
-    if assert_contains "164" "$OUTPUT" "\`$PLANS_DIR\` could NOT be inspected"; then
-        echo "  PASS"; PASS=$((PASS + 1))
-    else
-        echo "  FAIL"; FAIL=$((FAIL + 1))
-    fi
+    echo "  FAIL"; FAIL=$((FAIL + 1))
 fi
 
 # A working directory that no longer exists is what the branch documents as its
