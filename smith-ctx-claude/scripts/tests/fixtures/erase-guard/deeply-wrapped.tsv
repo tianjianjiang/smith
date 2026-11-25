@@ -1,0 +1,9 @@
+# expectation	name	command the test wraps in ten levels of sh -c
+deep-deny	deep rm	rm notes.txt
+deep-deny	deep unlink	unlink notes.txt
+deep-deny	deep shred	shred notes.txt
+deep-deny	deep git clean	git clean -fd
+deep-deny	deep find -delete	find . -delete
+deep-allow	deep ls	ls notes.txt
+deep-allow	deep words like rm	ls format rmx unlinked
+deep-allow	deep words ending in rm	ls confirm inform

@@ -69,6 +69,16 @@ const WORDS_THAT_PRECEDE_A_COMMAND = new Set([
   "nohup",
   "sudo",
 ]);
+const TIMEOUT_OPTIONS_WITH_A_WORD_VALUE = ["-s", "--signal"];
+const PREFIX_OPTIONS_WITH_A_WORD_VALUE = {
+  timeout: TIMEOUT_OPTIONS_WITH_A_WORD_VALUE,
+  gtimeout: TIMEOUT_OPTIONS_WITH_A_WORD_VALUE,
+  xargs: ["-I", "-J", "-d", "-a", "-E", "--delimiter", "--arg-file"],
+  env: ["-u", "-C", "-P", "--unset", "--chdir"],
+  exec: ["-a"],
+  sudo: ["-u", "-g", "-h", "-p", "-D", "-U", "-r", "-t", "--user", "--group", "--host", "--prompt", "--chdir", "--other-user", "--role", "--type"],
+};
+
 function bareWord(token) {
   if (REDIRECTION_ALONE.test(token)) return null;
   return token
@@ -88,9 +98,18 @@ function precedesACommand(word) {
   );
 }
 
+function isAnOptionValue(words, position) {
+  const wrapper = words.slice(0, position).findLast((word) => WORDS_THAT_PRECEDE_A_COMMAND.has(word));
+  return (
+    Object.hasOwn(PREFIX_OPTIONS_WITH_A_WORD_VALUE, wrapper ?? "") &&
+    PREFIX_OPTIONS_WITH_A_WORD_VALUE[wrapper].includes(words[position - 1]) &&
+    !isAnOptionValue(words, position - 1)
+  );
+}
+
 function invocationOf(program, tokens) {
   const words = tokens.map(bareWord);
-  const position = words.findIndex((word) => !precedesACommand(word));
+  const position = words.findIndex((word, index) => !precedesACommand(word) && !isAnOptionValue(words, index));
   if (position === -1 || basename(words[position]) !== program) return null;
   return [program, ...words.slice(position + 1).filter((word) => word !== null)];
 }

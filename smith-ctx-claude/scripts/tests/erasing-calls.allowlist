@@ -1,5 +1,14 @@
 # file	substring of the one line it covers	mention or rebuildable	why
 smith-checkpoint/scripts/tests/write-checkpoint.test.sh	grep -nE -e '(^|[^a-zA-Z_])(rm|rmdir|unlink)([^a-zA-Z_]|$)|-delete([^a-zA-Z_-]|$)' "$SCRIPT" && fail "write-checkpoint.sh must not erase anything: move the file aside instead"	mention	a grep pattern that checks write-checkpoint.sh erases nothing
+smith-ctx-claude/scripts/erase-guard.mjs	new Set(["rm", "unlink", "shred"])	mention	the programs the hook denies as the command word
+smith-ctx-claude/scripts/erase-guard.mjs	const FIND_ERASING_ACTION = "-delete";	mention	the find action the hook denies
+smith-ctx-claude/scripts/erase-guard.mjs	["rm", [["f", "--force"]]],	mention	the git rm flag the hook denies
+smith-ctx-claude/scripts/erase-guard.mjs	["clean", [["f", "--force"], ["i", "--interactive"]]],	mention	the git clean flags the hook denies
+smith-ctx-claude/scripts/erase-guard.mjs	["rm", { letters: "nfrq",	mention	the git rm flags that take no value, which a dry run may carry
+smith-ctx-claude/scripts/erase-guard.mjs	["clean", { letters: "dfinqxX",	mention	the git clean flags that take no value, which a dry run may carry
+smith-ctx-claude/scripts/erase-guard.mjs	new Map([["rm", "--cached"]])	mention	git rm --cached only unstages, so the hook allows it even with -f
+smith-ctx-claude/scripts/erase-guard.mjs	const CLAUDE_REMOVE_SUBCOMMAND = "rm";	mention	the claude subcommand whose discarding flags the hook denies
+smith-ctx-claude/scripts/erase-guard.mjs	"rmdir, docker rm, git rm without -f and claude rm without its discarding flags. To look up "	mention	the denial reason naming the forms the hook allows
 smith-ctx-claude/scripts/test-inject-plan.sh	# `rm -f` also succeeds on a file	mention	a comment about the hook's earlier behaviour
 smith-ctx-claude/scripts/test-inject-plan.sh	# `rm` needs write permission on the DIRECTORY	mention	a comment about the hook's earlier behaviour
 smith-ctx-claude/scripts/test-inject-plan.sh	making `rm` fail needs a non-writable plans	mention	a comment about why a test cannot reach a branch

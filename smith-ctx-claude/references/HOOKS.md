@@ -29,6 +29,7 @@ and the manual verification checklist. `smith-git/references/HOOKS.md` and
 | `exit-plan-mode-guard.mjs` | PreToolUse (`ExitPlanMode`) | Blocks `ExitPlanMode` without a prior plain-text elaboration turn |
 | `stack-merge-guard.mjs` | PreToolUse (`Bash`) | Asks before `gh pr merge --delete-branch` orphans an open child PR |
 | `amend-shared-commit-guard.mjs` | PreToolUse (`Bash`) | Asks before `git commit --amend` rewrites a parent branch's tip |
+| `erase-guard.mjs` | PreToolUse (`Bash`) | Denies a command that erases files (`rm`, `unlink`, `shred`, `find -delete`, `git clean -f`, `git rm -f`, `claude rm` with a discarding flag) and names the move or `/usr/bin/trash` instead |
 | `attribution-model-stamp.sh` | PreToolUse (`Bash`) | Refreshes the model-id file the Claude model source reads for `Assisted-by:` trailers |
 | `attribution-guard.sh` | PreToolUse (`Bash\|mcp__.*`) | Blocks a commit, pull-request text or Slack draft the agent writes unless it matches a declared write signature and its text passes the attribution rule |
 
@@ -1144,6 +1145,74 @@ existing precedent — not attempted here. Inherits the shared tokenizer's
 command-substitution limitation documented under `external-write-guard`
 above (`` X=$(git commit --amend) ``) — permanent, not tracked-fixable.
 
+## erase-guard
+
+**erase-guard** (`smith-ctx-claude/scripts/erase-guard.mjs`, reading the
+command through `smith-ctx-claude/scripts/lib/shell-scan.mjs`) — PreToolUse
+guard (matcher `Bash`) that enforces `smith-guidance/SKILL.md` "Make every
+operation undoable" on the agent's own commands. It denies, with a reason
+that names a move into a `mktemp -d` folder or `/usr/bin/trash`:
+
+- `rm`, `unlink` and `shred` as the command word, in any path form
+  (`/bin/rm`, `"rm"`, `\rm`), after a command prefix (`sudo`, `env`,
+  `xargs`, `command`, `nohup`, `time`, `timeout`, `exec`, `rtk proxy`) and
+  its option values (`xargs -I {}`, `timeout -s KILL 5`, `env -u NAME`), in a
+  chain, pipeline, subshell, brace group, loop or `if` branch, inside a
+  command substitution or backticks, and inside `sh -c`, `bash -c` or
+  `eval` strings;
+- `find` with `-delete`, or with `-exec`, `-execdir`, `-ok` or `-okdir`
+  running one of those programs, also after a command prefix
+  (`-exec sudo rm`);
+- `git clean` with `-f`, `--force`, `-i` or `--interactive`, and `git rm`
+  with `-f` or `--force`, unless `-n` or `--dry-run` is given; a long
+  option also counts in any abbreviation git accepts (`--forc`, `--dry`).
+  The dry-run flag counts only when every other option is a known flag
+  that takes no value, since a value-taking or negating option can
+  swallow or undo it (`git clean -en -f` and
+  `git clean --exclude -n -f` delete); such a dry run is denied too;
+- `claude rm` with `--discard-unpushed` or `--force-remove-worktree`;
+- a command wrapped too deeply to scan whose text names one of those words.
+
+It matches the command word, so the forms the owner ruled rebuildable stay
+allowed: `rmdir` (an empty folder), `docker rm`, `docker run --rm`, `git rm`
+without `-f` (git refuses to remove a file that differs from the committed
+one), `git rm --cached` even with `-f` (it only unstages) when every other
+option is a known flag that takes no value, `claude rm`
+without its discarding flags, and words such as `rm` that
+appear only as an argument, in a quoted string, a comment or a
+here-document body. smith's own cleanup steps (`git branch -D` after a
+squash merge, `git worktree remove`, `gh pr merge --delete-branch`,
+`git push origin --delete`) are not erasing commands to this hook. It
+denies rather than asks, because an approval prompt mid-build blocks
+parallel sessions (`smith-sdlc/SKILL.md` Stage 3). Every other input
+passes silently. An internal error also passes, as with the other guards,
+but the hook says on standard error that the command was not checked.
+
+**Known limitations**: a command cannot show whether what it erases exists
+elsewhere, so the hook judges the command's name, not the file. It cannot
+see a command whose name is in a variable (`$RM notes.txt`), a script it
+runs (`sh cleanup.sh`, `sh <<EOF` with `rm` in the body, `echo "rm x" | sh`),
+a command another program runs (`ssh host rm x`, `watch rm x`,
+`fd -x rm`, `parallel rm ::: a b`, `gfind . -delete`, `doas rm x`,
+`busybox rm x`, `stdbuf -o0 rm x`), an erasing
+call inside another interpreter (`node -e`, `python -c`), or `git clean`
+without `-f` under `git -c clean.requireForce=false` or the matching
+`GIT_CONFIG_*` variables, or a git alias (`git -c alias.x="clean -fdx" x`).
+Its note on an internal error goes to standard error only, with exit
+code 0 and no decision, so the command runs as if this hook were not
+registered. It over-denies a
+`find` whose arguments hold the word `-delete` anywhere, such as
+`find . -name -delete`. A `command -v rm` or `command -V rm` that starts a
+simple command or a subshell, alone or after `&&`, `||`, `;` or `|`, is
+denied, because the shared tokenizer
+(`smith-git/scripts/lib/git-command-tokenizer.mjs`) unwraps the `command`
+builtin before the hook sees it; the same lookup after `if`, `then`, `do`,
+`while`, `!` or `{` is allowed, and the denial names `type «name»` or
+`which «name»` for a lookup. Tracked code is
+guarded separately by `smith-ctx-claude/scripts/tests/erasing-calls.test.sh`.
+Test: `smith-ctx-claude/scripts/tests/erase-guard.test.sh`, with every
+denied and allowed form in `tests/fixtures/erase-guard/commands.tsv`.
+
 ## attribution-model-stamp
 
 **attribution-model-stamp** (`smith-ctx-claude/scripts/attribution-model-stamp.sh`)
@@ -1424,6 +1493,7 @@ mkdir -p "$HOME/.claude" && ${EDITOR:-nano} "$HOME/.claude/settings.json"
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/rtk-find-symlink-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/stack-merge-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/amend-shared-commit-guard.mjs\"" },
+          { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/erase-guard.mjs\"" },
           { "type": "command", "command": "node \"$HOME/.claude/skills/smith-ctx-claude/scripts/external-write-guard.mjs\"" },
           { "type": "command", "command": "bash \"$HOME/.claude/skills/smith-ctx-claude/scripts/attribution-model-stamp.sh\"" }
         ]
@@ -1657,6 +1727,10 @@ then:
     refused and the refusal names `@smith-git`. Load `smith-git` with the
     Skill tool and run it again; confirm this hook no longer refuses it.
     Confirm `git status` is never refused.
+28. **erase-guard** — in a scratch folder, run `rm probe.txt` as a Bash tool
+    call; confirm it is denied and the reason names `/usr/bin/trash` and a
+    move into a `mktemp -d` folder. Confirm `rmdir` of an empty folder and
+    `/usr/bin/trash probe.txt` proceed.
 
 **Note on `ask` vs another matching hook's decision.** Verified against the
 raw current text of code.claude.com/docs/en/hooks (fetched directly, not

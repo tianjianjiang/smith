@@ -76,6 +76,7 @@ self-check in its owning skill's `scripts/tests/`.
 | `exit-plan-mode-guard` | PreToolUse (`ExitPlanMode`) | `smith-ctx-claude/scripts/exit-plan-mode-guard.mjs` | Blocks `ExitPlanMode` without a prior elaboration turn | ctx-claude |
 | `stack-merge-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/stack-merge-guard.mjs` | Asks before deleting a branch with an open child PR | ctx-claude |
 | `amend-shared-commit-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/amend-shared-commit-guard.mjs` | Asks before amending a commit shared with another branch | ctx-claude |
+| `erase-guard` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/erase-guard.mjs` | Denies a command that erases files (`rm`, `unlink`, `shred`, `find -delete`, `git clean -f`, `git rm -f`, `claude rm` with a discarding flag); names the move into a `mktemp -d` folder or `/usr/bin/trash` | ctx-claude |
 | `attribution-model-stamp` | PreToolUse (`Bash`) | `smith-ctx-claude/scripts/attribution-model-stamp.sh` | Refreshes the model-id file for `Assisted-by:` trailers | ctx-claude |
 | `attribution-guard` | PreToolUse (`Bash\|mcp__.*`) | `smith-ctx-claude/scripts/attribution-guard.sh` | Blocks a commit, pull-request text or Slack draft the agent writes unless it matches a write signature declared in `smith-style/scripts/attribution-signatures.json` and its text passes the attribution rule | ctx-claude |
 | `uv-tool-health-check` | SessionStart (all sources) | `smith-serena/scripts/uv-tool-health-check.sh` | Self-heals a broken `uv tool`-managed venv (e.g. `serena-agent`) | serena |

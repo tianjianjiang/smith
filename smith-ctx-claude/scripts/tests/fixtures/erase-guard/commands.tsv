@@ -1,0 +1,194 @@
+# expectation	name	command (<NL> stands for a newline)	label the deny reason must name (optional)
+deny	plain rm	rm notes.txt
+deny	rm with flags	rm -rf build
+deny	rm of a variable	rm "$file"
+deny	rm after --	rm -- -odd-name
+deny	absolute rm	/bin/rm notes.txt
+deny	usr bin rm	/usr/bin/rm -f notes.txt
+deny	relative rm	./rm notes.txt
+deny	double-quoted rm	"rm" notes.txt
+deny	single-quoted rm	'rm' notes.txt
+deny	backslashed rm	\rm notes.txt
+deny	unlink	unlink notes.txt	unlink
+deny	shred	shred -u notes.txt	shred
+deny	and chain	make && rm notes.txt
+deny	or chain	test -f a || rm notes.txt
+deny	semicolon chain	cd build; rm notes.txt
+deny	pipe into rm	ls | rm notes.txt
+deny	newline chain	cd build<NL>rm notes.txt
+deny	background	rm notes.txt &
+deny	subshell	(cd build && rm notes.txt)
+deny	brace group	{ rm notes.txt; }
+deny	command substitution	echo $(rm notes.txt)
+deny	backticks	echo `rm notes.txt`
+deny	assigned substitution	out=$(rm notes.txt)
+deny	if branch	if test -f a; then rm a; fi
+deny	for loop	for f in *.tmp; do rm "$f"; done
+deny	while loop	while read f; do rm "$f"; done < list
+deny	negated	! rm notes.txt
+deny	sh -c	sh -c 'rm notes.txt'
+deny	bash -c	bash -c "rm notes.txt"
+deny	eval	eval "rm notes.txt"
+deny	xargs rm	find . -name '*.tmp' | xargs rm
+deny	xargs with options	ls | xargs -0 -n 1 rm -f
+deny	xargs with a replace string	ls | xargs -I {} rm {}
+deny	xargs with a delimiter	printf 'a,b' | xargs -d , rm
+deny	xargs with an argument file	xargs -a list rm
+deny	xargs -e takes no detached value	ls | xargs -e rm
+deny	xargs --replace takes no detached value	ls | xargs --replace rm {}
+deny	timeout with a signal	timeout -s KILL 5 rm notes.txt
+deny	timeout with a long signal option	timeout --signal KILL 5 rm notes.txt
+deny	env unsetting a variable	env -u HOME rm notes.txt
+deny	env -S after a wrapper	timeout 5 env -S rm -rf build
+deny	xargs env -C	ls | xargs env -C /tmp rm
+deny	xargs gtimeout with a signal	ls | xargs gtimeout -s KILL 5 rm
+deny	xargs -J	xargs -J % rm %
+deny	xargs --arg-file	xargs --arg-file list rm
+deny	timeout sudo with a user	timeout 5 sudo -u root rm notes.txt
+deny	xargs sudo with a user	ls | xargs sudo -u root rm
+deny	find -exec sudo with a user	find . -exec sudo -u root rm {} +	find -exec rm
+allow	xargs replace string named rm	ls | xargs -I rm echo rm
+deny	env --split-string after xargs	ls | xargs env --split-string rm -f
+deny	find -exec env with an option value	find . -exec env -u X rm {} +	find -exec rm
+deny	find -exec timeout with a signal	find . -exec timeout -s TERM 5 rm {} +	find -exec rm
+deny	sudo rm	sudo rm -rf /var/tmp/cache
+deny	sudo with a user	sudo -u root rm notes.txt
+deny	env rm	env rm notes.txt
+deny	env with assignment	FOO=1 rm notes.txt
+deny	command rm	command rm notes.txt
+deny	nohup rm	nohup rm notes.txt
+deny	time rm	time rm notes.txt
+deny	timeout rm	timeout 5 rm notes.txt
+deny	exec rm	exec rm notes.txt
+deny	rtk proxy rm	rtk proxy rm notes.txt
+deny	find -delete	find . -name '*.tmp' -delete	find -delete
+deny	find -exec rm	find . -name '*.tmp' -exec rm {} \;	find -exec rm
+deny	find -exec absolute rm	find . -name '*.tmp' -exec /bin/rm -f {} +
+deny	find -execdir rm	find . -name '*.tmp' -execdir rm {} \;
+deny	find -ok rm	find . -name '*.tmp' -ok rm {} \;
+deny	find -okdir rm	find . -name '*.tmp' -okdir rm {} \;	find -okdir rm
+deny	find -exec unlink	find . -name '*.tmp' -exec unlink {} \;
+deny	find -exec sudo rm	find . -name '*.tmp' -exec sudo rm {} \;	find -exec rm
+deny	find -exec env rm	find . -name '*.tmp' -exec env rm {} \;
+deny	git clean -f	git clean -f	git clean -f
+deny	git clean -fdx	git clean -fdx
+deny	git clean --force	git clean --force -d
+deny	git clean -i	git clean -i	git clean -i
+deny	git clean --interactive	git clean --interactive
+deny	git -C clean	git -C ../other clean -fd
+deny	git rm -f	git rm -f notes.txt	git rm -f
+deny	git rm -rf	git rm -rf build
+deny	git rm --force	git rm --force notes.txt	git rm -f
+deny	claude rm --discard-unpushed	claude rm abc123 --discard-unpushed	claude rm --discard-unpushed
+deny	claude rm --force-remove-worktree	claude rm --force-remove-worktree abc123	claude rm --force-remove-worktree
+deny	claude option before rm	claude --model opus rm abc123 --discard-unpushed
+deny	rm in a long pipeline	git status && make test && rm -f out.log
+deny	rm in a here-document command	cat <<EOF > list<NL>a<NL>EOF<NL>rm list
+allow	rmdir	rmdir empty-folder
+allow	rmdir -p	rmdir -p a/b/c
+allow	docker rm	docker rm -f box
+allow	docker run --rm	docker run --rm alpine true
+allow	claude rm	claude rm abc123
+allow	claude discarding flag without rm	claude list --discard-unpushed
+allow	claude rm flag after --	claude rm abc123 -- --discard-unpushed
+allow	git rm	git rm notes.txt
+allow	git rm -r	git rm -r build
+allow	git rm --cached	git rm --cached notes.txt
+allow	git rm after --	git rm -- -f
+allow	git rm dry run with force	git rm -n -f notes.txt
+allow	git clean dry run	git clean -n
+allow	git clean dry run with force	git clean -nfd
+allow	git clean --dry-run	git clean --dry-run -f
+allow	git clean without force	git clean -d
+allow	trash	/usr/bin/trash notes.txt
+allow	move to scratch	mv notes.txt "$(mktemp -d)"/
+allow	npm rm	npm rm left-pad
+allow	echo rm	echo rm notes.txt
+allow	quoted rm text	echo "rm notes.txt"
+allow	grep for rm	grep -rn 'rm -rf' .
+allow	commit message	git commit -m "rm notes.txt"
+allow	assignment of rm	tool=rm
+allow	variable command	$RM notes.txt
+allow	rm in a here-document body	cat <<'EOF' > notes.md<NL>rm notes.txt<NL>EOF
+allow	rm in a comment	ls # rm notes.txt
+allow	find -print	find . -name '*.tmp' -print
+allow	find -exec ls	find . -name '*.tmp' -exec ls {} \;
+allow	find name delete	find . -name delete
+allow	words like rm	format remove rmx
+allow	branch delete after a squash merge	git branch -D feat/done
+allow	worktree remove	git worktree remove ../feature-branch
+allow	merge and delete branch	gh pr merge 12 --squash --delete-branch
+allow	push delete	git push origin --delete feat/done
+allow	sync after merge	git fetch --prune origin && git pull --ff-only
+allow	rm as a path	ls rm
+allow	command -pv lookup in an if	if command -pv rm > /dev/null; then echo found; fi
+allow	command -v lookup after a negation	! command -v rm > /dev/null || echo found
+allow	command -V lookup in an if	if command -V rm > /dev/null; then echo found; fi
+allow	command -v lookup in a then branch	if true; then command -v rm > /dev/null; fi
+allow	command -v lookup in a loop body	for f in a; do command -v rm > /dev/null; done
+allow	command -v lookup in a while	while command -v rm > /dev/null; do break; done
+deny	command -v lookup that starts a subshell	(command -v rm > /dev/null)
+allow	command -v lookup in a brace group	{ command -v rm > /dev/null; }
+deny	command -p runs rm in an if	if command -p rm notes.txt; then echo; fi
+deny	command -v lookup that starts a command	command -v rm
+deny	command -v lookup after and	true && command -v rm
+deny	command -v as rm's argument	rm command -v notes.txt
+deny	lookup word after rm in an if	if rm command -v; then echo; fi
+deny	sudo long user	timeout 5 sudo --user root rm notes.txt
+deny	sudo with a group	timeout 5 sudo -g wheel rm notes.txt
+deny	sudo long group	timeout 5 sudo --group wheel rm notes.txt
+deny	sudo with a host	timeout 5 sudo -h box rm notes.txt
+deny	sudo long host	timeout 5 sudo --host box rm notes.txt
+deny	sudo with a prompt	timeout 5 sudo -p pw rm notes.txt
+deny	sudo long prompt	timeout 5 sudo --prompt pw rm notes.txt
+deny	sudo with a directory	timeout 5 sudo -D /tmp rm notes.txt
+deny	sudo long directory	timeout 5 sudo --chdir /tmp rm notes.txt
+deny	sudo with another user	timeout 5 sudo -U bob rm notes.txt
+deny	sudo long other user	timeout 5 sudo --other-user bob rm notes.txt
+deny	sudo with a role	timeout 5 sudo -r admin rm notes.txt
+deny	sudo long role	timeout 5 sudo --role admin rm notes.txt
+deny	sudo with a type	timeout 5 sudo -t admin_t rm notes.txt
+deny	sudo long type	timeout 5 sudo --type admin_t rm notes.txt
+deny	env long unset	ls | xargs env --unset HOME rm
+deny	env long chdir	ls | xargs env --chdir /tmp rm
+deny	env with a path	ls | xargs env -P /bin rm
+deny	xargs with an end-of-file string	ls | xargs -E END rm
+deny	xargs long delimiter	ls | xargs --delimiter , rm
+deny	gtimeout long signal	gtimeout --signal TERM 5 rm notes.txt
+deny	time flag after sudo after a wrapper	timeout 5 sudo time -p rm -rf build
+deny	time flag after sudo after xargs	ls | xargs sudo time -p rm -rf
+deny	time -h after sudo after a wrapper	timeout 5 sudo time -h rm notes.txt
+deny	command -p after sudo after a wrapper	timeout 5 sudo command -p rm notes.txt
+deny	exec with a process name	exec -a cleaner rm notes.txt
+allow	command -v lookup in an else branch	if false; then :; else command -v rm > /dev/null; fi
+allow	command -v lookup in an elif	if false; then :; elif command -v rm > /dev/null; then echo found; fi
+allow	command -v lookup in an until	until command -v rm > /dev/null; do break; done
+deny	xargs option value that looks like an option	xargs -I -I rm -rf build
+deny	xargs end string that looks like an option	xargs -E -I rm -rf build
+deny	exec name that looks like an option	exec -a -a rm -rf build
+deny	sudo xargs option value that looks like an option	sudo xargs -I -a /bin/rm notes.txt
+deny	git clean abbreviated force	git clean --forc -d	git clean -f
+deny	git rm abbreviated force	git rm --forc notes.txt	git rm -f
+deny	git clean abbreviated interactive	git clean --inter	git clean -i
+allow	git clean abbreviated dry run	git clean --dry -f
+deny	rm after a command -v lookup with and	if command -v rm > /dev/null && rm -rf build; then :; fi
+deny	rm in the then branch of a lookup	if command -v rm; then rm -rf build; fi
+deny	git clean dry run undone by --no-dry-run	git clean -n --no-dry-run -f	git clean -f
+deny	git clean n taken as an exclude pattern	git clean -en -f	git clean -f
+deny	git clean dry run beside an exclude	git clean -n -e build -f	git clean -f
+allow	git rm of a dash path	git rm -
+allow	git rm of a path containing f	git rm foo.txt
+deny	git rm -f of a path without n	git rm -f a.txt	git rm -f
+deny	git clean dry run swallowed by --exclude	git clean --exclude -n -f	git clean -f
+deny	git clean dry run beside an exclude assignment	git clean --exclude=build -n -f	git clean -f
+allow	git rm dry run of a cached path	git rm -n --cached -r -f build
+allow	git rm -f with --cached	git rm -r -f --cached build
+allow	git rm -f with abbreviated --cached	git rm -f --cach notes.txt
+deny	git rm -f of a dash path	git rm -f -	git rm -f
+allow	git rm dry run recursive with force	git rm -n -r -f build
+allow	git clean dry run with x	git clean -nfdx
+allow	git rm --dry-run with force	git rm --dry-run -f notes.txt
+deny	git rm -f of a path named --cached	git rm -f -- --cached	git rm -f
+deny	git rm --cached undone by --no-cached	git rm --cached --no-cached -f notes.txt	git rm -f
+deny	git rm --cached undone by an abbreviated --no-cached	git rm --ca --no-ca -f notes.txt	git rm -f
+deny	git rm --cached taken as a pathspec file	git rm -f --pathspec-from-file --cached	git rm -f
