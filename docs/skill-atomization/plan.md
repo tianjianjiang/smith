@@ -410,7 +410,7 @@ Rule: `smith-guidance/SKILL.md:67-74`, "Make every operation undoable",
    script, hook or test would delete, overwrite or truncate a file"), and
    the hook's limits. Name and description settled on 2026-11-25 as
    proposed; they await the owner's review.
-4. **A one-line pointer in smith-guidance.** Done in #PR_NUMBER. The rule
+4. **A one-line pointer in smith-guidance.** Done in #413. The rule
    at `smith-guidance/SKILL.md:67-74` (at 7d7500bb) became one bullet
    naming the skill, its scope (a file, folder, branch or worktree) and
    its action, wrapped to three lines: 55 tokens rather than the planned
