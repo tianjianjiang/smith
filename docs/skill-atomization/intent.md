@@ -79,7 +79,7 @@ them, often only for part of the rule.
 - A hook judges a command's text, not whether its effect can be undone, so
   each hook states which cases it cannot see.
 - No erasing call in any script, hook or test the stacks add
-  (`smith-guidance/SKILL.md:67-74`).
+  (`smith-undoable/SKILL.md`, "Rule").
 
 ## Open questions
 

@@ -1149,9 +1149,9 @@ above (`` X=$(git commit --amend) ``) — permanent, not tracked-fixable.
 
 **erase-guard** (`smith-ctx-claude/scripts/erase-guard.mjs`, reading the
 command through `smith-ctx-claude/scripts/lib/shell-scan.mjs`) — PreToolUse
-guard (matcher `Bash`) that enforces `smith-guidance/SKILL.md` "Make every
-operation undoable" on the agent's own commands. It denies, with a reason
-that names a move into a `mktemp -d` folder or `/usr/bin/trash`:
+guard (matcher `Bash`) that enforces `smith-undoable/SKILL.md` on the
+agent's own commands. It denies, with a reason that names a move into a
+`mktemp -d` folder or `/usr/bin/trash`:
 
 - `rm`, `unlink` and `shred` as the command word, in any path form
   (`/bin/rm`, `"rm"`, `\rm`), after a command prefix (`sudo`, `env`,

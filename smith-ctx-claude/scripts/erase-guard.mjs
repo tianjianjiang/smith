@@ -28,7 +28,7 @@ const ERASING_WORD_IN_UNSCANNED_TEXT = new RegExp(
 );
 const UNDOABLE_ALTERNATIVE =
   'Move it into a scratch folder instead (mv «path» "$(mktemp -d)"/) or send it to the Trash ' +
-  "(/usr/bin/trash «path»), as smith-guidance/SKILL.md \"Make every operation undoable\" asks. " +
+  "(/usr/bin/trash «path»), as smith-undoable/SKILL.md asks. " +
   "This hook judges the command, not whether what it erases survives elsewhere; it allows " +
   "rmdir, docker rm, git rm without -f and claude rm without its discarding flags. To look up " +
   "whether a program exists, use type «name» or which «name».";
