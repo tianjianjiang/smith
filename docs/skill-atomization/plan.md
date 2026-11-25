@@ -352,7 +352,8 @@ own pull requests:
   in `README.md` "Hooks (manual registration)" and in its own skill's
   `references/HOOKS.md`, with a test in its folder's
   `tests/`.
-- Tracked scripts and tests that erase files (stack one).
+- Tracked scripts and tests that erased files (stack one step 1, done in
+  5bb640fd, #410).
 
 ## Order of work
 
@@ -362,36 +363,28 @@ Rule: `smith-guidance/SKILL.md:67-74`, "Make every operation undoable",
 135 tokens. Its stack was decided by the owner.
 
 1. **Scan and convert erasing calls in tracked code, plus a test against
-   new ones.** Two scans of the 181 tracked `.sh`, `.mjs`, `.js`, `.py`
-   and `.bash` files on 3ebaac8d, each with `grep -nE`:
-   - `(^|[^a-zA-Z_.-])rm (-[a-zA-Z]+ )*[^ ]|unlinkSync|rmSync|rmdirSync|unlink\(|shutil\.rmtree|os\.remove|fs\.rm\(`
+   new ones.** Done in 5bb640fd (#410): six of the eight erasing calls
+   below move aside through
+   `smith-ctx-claude/scripts/tests/lib/move-aside.mjs`, and
+   `smith-ctx-claude/scripts/tests/erasing-calls.test.sh` with
+   `erasing-calls.allowlist` fails on any erasing call outside the
+   allowlist. The scan that found them, on 3ebaac8d over the 181 tracked
+   `.sh`, `.mjs`, `.js`, `.py` and `.bash` files:
+   - `grep -nE '(^|[^a-zA-Z_.-])rm (-[a-zA-Z]+ )*[^ ]|unlinkSync|rmSync|rmdirSync|unlink\(|shutil\.rmtree|os\.remove|fs\.rm\('`
      matched 26 lines in 9 files;
    - the whole words `rm|unlink|rmSync|unlinkSync|rmdirSync|rmtree|os\.remove`
      (`grep -nwE`) matched 49 lines in 14 files.
 
-   Both find the same eight erasing calls in code:
+   Both found the same eight erasing calls, at 3ebaac8d
    `smith-ctx-claude/scripts/tests/auto-context-reset-conditions.live-eval.mjs:135,207,426,602`
    and `smith-ctx-claude/scripts/tests/auto-context-reset.live-eval.mjs:178,192,195,298`.
-   Every other match is a string, a comment, a test case, an existing
-   no-erase grep, or a removal the owner ruled rebuildable: `git rm` in a
-   fixture repository, `docker rm` and `docker run --rm`, and `claude rm`
-   without its discarding flags. `find -delete`, `git clean -f`,
-   `truncate` and `shred` appear in no code outside strings and test
-   cases. Four tests already grep for erasing calls in named files:
-   `smith-ctx-claude/scripts/tests/move-to-temp.test.sh:64-66` (four
-   files: `lib-context.sh` and three hooks),
-   `smith-ctx-claude/scripts/tests/set-aside.test.sh:159`,
-   `smith-checkpoint/scripts/tests/write-checkpoint.test.sh:1093` and
-   `smith-ctx-claude/scripts/tests/skill-trigger-eval.test.sh:251`.
-   The step converts each erasing call to a move into a `mktemp -d`
-   folder or `/usr/bin/trash`, except the ones the rule calls undoable:
-   `auto-context-reset.live-eval.mjs:195` is `rmdirSync` of an empty
-   folder. Whether `auto-context-reset-conditions.live-eval.mjs:135`, which
-   removes whatever symbolic link sits at the eval's skills path, is
-   undoable is decided in this step, from whether the link's target
-   survives. It replaces the
-   four greps with one test over every tracked script, with an allowlist
-   for the undoable cases.
+   Of the other two, #410 kept `auto-context-reset.live-eval.mjs:195`'s
+   `rmdirSync(folder)`, an empty folder the allowlist calls rebuildable,
+   and dropped `:298`, the removal of the eval's own `mkdtemp` scratch
+   folder. The four older greps over
+   named files (`move-to-temp.test.sh:64-66`, `set-aside.test.sh:159`,
+   `write-checkpoint.test.sh:1093`, `skill-trigger-eval.test.sh:251`)
+   remain, listed in the allowlist as mentions.
 2. **A PreToolUse erase-guard hook on Bash commands.**
    `smith-ctx-claude/scripts/erase-guard.mjs`, reading the command through
    `smith-ctx-claude/scripts/lib/shell-scan.mjs`, as
