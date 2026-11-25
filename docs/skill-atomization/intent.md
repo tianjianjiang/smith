@@ -85,7 +85,9 @@ them, often only for part of the rule.
 
 - Whether `AGENTS.md` itself (1,489 tokens) and `smith-ctx-claude`
   (3,259 tokens, loaded first on Claude Code by `AGENTS.md` "Platform
-  Context") get the same move. Decided by the owner on 2026-11-25: they
-  stay outside this one; a later intent takes them up.
-- The criterion that separates a preference from a procedure was decided
-  by the owner on 2026-11-25: `plan.md` §Classification criterion.
+  Context") get the same move. Settled on 2026-11-25 as proposed, awaiting
+  the owner's review: they stay outside this one; a later intent takes
+  them up.
+- The criterion that separates a preference from a procedure was settled
+  on 2026-11-25 as proposed and awaits the owner's review: `plan.md`
+  §Classification criterion.

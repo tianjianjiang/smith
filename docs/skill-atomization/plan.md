@@ -45,7 +45,7 @@
 
 ## Classification criterion
 
-Decided by the owner on 2026-11-25, accepting the drafted proposal.
+Settled on 2026-11-25 as proposed; awaits the owner's review.
 
 A rule is a **procedure** when both hold:
 
@@ -96,7 +96,8 @@ Two borderline rules, as the inventory classifies them:
   an annotation whose locator matches no rule. On 3ebaac8d it found 180
   rules and matched all 180 annotations. The script is not committed with
   this plan; a follow-up adds it under `smith-skills/scripts/` with a test
-  before stack one re-measures (decided by the owner on 2026-11-25).
+  before stack one re-measures (settled on 2026-11-25 as proposed;
+  awaits the owner's review).
 - Class, mechanical check and existing enforcement are annotated by hand,
   against the hooks table in `README.md` "Hooks (manual registration)",
   the hook reference `smith-ctx-claude/references/HOOKS.md`, the
@@ -407,13 +408,14 @@ Rule: `smith-guidance/SKILL.md:67-74`, "Make every operation undoable",
    committed one. It allows `rmdir`. Its tests show each allowed and each
    denied form. A command cannot show whether what it erases exists
    elsewhere, so the hook states that it judges the command's name.
-   Decided by the owner on 2026-11-25: the hook denies
-   rather than asks, because an approval prompt mid-build blocks parallel
-   sessions (`smith-sdlc/SKILL.md` Stage 3).
+   Settled on 2026-11-25 as proposed, awaiting the owner's review: the
+   hook denies rather than asks, because an approval prompt mid-build
+   blocks parallel sessions (`smith-sdlc/SKILL.md` Stage 3).
 3. **The procedure skill.** `smith-undoable`, holding the rule's current
    wording, its trigger ("Use when a command, script, hook or test would
    delete, overwrite or truncate a file"), and the hook's limits. Name and
-   description decided by the owner on 2026-11-25.
+   description settled on 2026-11-25 as proposed; they await the owner's
+   review.
 4. **A one-line pointer in smith-guidance.** The rule at
    `smith-guidance/SKILL.md:67-74` becomes one line naming the skill and
    its trigger, about 25 tokens: the file falls from 2,273 to about 2,163,
