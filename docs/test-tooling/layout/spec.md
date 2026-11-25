@@ -20,8 +20,10 @@ intended use and user needs". Applied here, each check names its object:
   it affects; the checker's name follows its object, the test.
 
 Test tooling means the runner, the change-based entry point, the selector,
-the selector's hidden-read declarations and the clean-tree checker. Before the
-move a test file is a `*.test.sh` or `*.test.mjs` file; after it, a test file
+the selector's hidden-read declarations, the folder lister and the
+clean-tree checker. Before the move a test file is a `*.test.sh` file, the
+only kind the runner finds, and a `*.test.mjs` file runs only when a
+`*.test.sh` file runs it; after the move, a test file
 is a file under `tests/` whose mirrored subject exists, and `tests/` holds
 nothing else. An evaluation is a `*.live-eval.mjs` or `*.classifier-eval.sh`
 file.
@@ -35,11 +37,13 @@ its test tooling only in `tools/test/` and its tests only in the root
 **GWT (Given-When-Then)**:
 - Given the default branch after the move
 - When `tools/test/`, `tests/` and every `smith-*/` folder are listed
-- Then `tools/test/` holds only test tooling, its shared helpers in
-  `tools/test/lib/` and test data in `tools/test/fixtures/«mirrored path»`;
-  every file under `tests/` is a test at
-  `tests/«owner»/«path of its subject inside the owner»`; and no `smith-*/`
-  folder holds a test file or a tooling file
+- Then `tools/test/` holds only test tooling, the test helpers open to
+  the tests of every owner in `tools/test/helpers/` and test data in
+  `tools/test/fixtures/«mirrored path»`; every file under `tests/` is a
+  test at `tests/«owner»/«path of its subject inside the owner»`, so if
+  the repository root holds a `lib/` folder of shared code that belongs
+  to no skill, its tests sit in `tests/lib/`; and no `smith-*/` folder
+  holds a test file or a tooling file
 
 **GWT**:
 - Given a file under `tests/` whose mirrored subject does not exist
@@ -76,6 +80,8 @@ Approved, by role:
 - Folder: `tools/test/`, and later `tools/eval/` for the evaluation runner,
   whose evaluations sit in the root `evals/` tree at the mirrored path of
   their subject, as tests sit in `tests/`.
+- Test helpers open to the tests of every owner: `tools/test/helpers/`,
+  which takes what `smith-ctx-claude/scripts/tests/lib/` holds today.
 - Runner: `run.sh`; it runs the tests it is given. Given none, it runs the
   tests that the changes against the default branch affect, and `--all`
   runs the full suite, as the owner chose on 2026-11-18.
@@ -83,6 +89,8 @@ Approved, by role:
 - Selector: `select.mjs`, with the commands `tests` and `files`.
 - Hidden-read declarations: `hidden-reads.json`.
 - Clean-tree checker: `verify-self-containedness.sh`.
+- Folder lister, until stack four step 1 retires it: `list-folders.sh`,
+  kept by the owner on 2026-11-25 although it breaks the verb rule.
 - Job count variable: `SMITH_TEST_JOBS`.
 
 Rejected by the owner: `verify-selection.sh`, `select-tests.validation.sh`,
