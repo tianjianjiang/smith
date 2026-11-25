@@ -1,0 +1,43 @@
+# file	substring of the one line it covers	mention or rebuildable	why
+smith-checkpoint/scripts/tests/write-checkpoint.test.sh	grep -nE -e '(^|[^a-zA-Z_])(rm|rmdir|unlink)([^a-zA-Z_]|$)|-delete([^a-zA-Z_-]|$)' "$SCRIPT" && fail "write-checkpoint.sh must not erase anything: move the file aside instead"	mention	a grep pattern that checks write-checkpoint.sh erases nothing
+smith-ctx-claude/scripts/test-inject-plan.sh	# `rm -f` also succeeds on a file	mention	a comment about the hook's earlier behaviour
+smith-ctx-claude/scripts/test-inject-plan.sh	# `rm` needs write permission on the DIRECTORY	mention	a comment about the hook's earlier behaviour
+smith-ctx-claude/scripts/test-inject-plan.sh	making `rm` fail needs a non-writable plans	mention	a comment about why a test cannot reach a branch
+smith-ctx-claude/scripts/test-inject-plan.sh	rmdir "$CWD_115"	rebuildable	an empty folder; mkdir rebuilds it: the case removes its own empty working folder
+smith-ctx-claude/scripts/test-inject-plan.sh	rmdir "$DOOMED_165"	rebuildable	an empty folder; mkdir rebuilds it: the case removes its own empty working folder
+smith-ctx-claude/scripts/test-inject-plan.sh	rmdir "$REAL_200"	rebuildable	an empty folder; mkdir rebuilds it: the case removes its own empty folder
+smith-ctx-claude/scripts/tests/auto-context-reset-conditions.live-eval.mjs	claude(["rm", shortId]);	rebuildable	claude rm without --discard-unpushed or --force-remove-worktree keeps the conversation for claude --resume
+smith-ctx-claude/scripts/tests/auto-context-reset.live-eval.mjs	realpathSync, rmdirSync, writeFileSync	mention	imports the rmdirSync of the empty-folder entry below
+smith-ctx-claude/scripts/tests/auto-context-reset.live-eval.mjs	claude(["rm", shortId]);	rebuildable	claude rm without --discard-unpushed or --force-remove-worktree keeps the conversation for claude --resume
+smith-ctx-claude/scripts/tests/auto-context-reset.live-eval.mjs	rmdirSync(folder);	rebuildable	an empty folder; mkdir rebuilds it: the .serena and memories folders the run created, emptied by moving the memory file aside; rmdirSync refuses a folder that is not empty
+smith-ctx-claude/scripts/tests/background-dispatch-fresh-session.live-eval.mjs	claude(["rm", shortId]);	rebuildable	claude rm without --discard-unpushed or --force-remove-worktree keeps the conversation for claude --resume
+smith-ctx-claude/scripts/tests/erasing-calls.test.sh	ERASING='(^|[^A-Za-z0-9_.-])rm([^A-Za-z0-9_-]|$)|\\nrm([^A-Za-z0-9_-]|$)|--rm([^A-Za-z0-9_-]|$)|(^|[^A-Za-z0-9_])(rmdir|unlink)([^A-Za-z0-9_]|$)|-delete([^A-Za-z0-9_-]|$)|rmSync|rmdirSync|unlinkSync|(^|[^A-Za-z0-9_])(rm|unlink|rmdir)[[:space:]]*\(|os\.(remove|unlink|rmdir|removedirs)|rmtree|rimraf|(^|[^A-Za-z0-9_-])clean["'"'"'[:space:],]([^;&|]*["'"'"'[:space:],])?(-[A-Za-z]*[fi]|--force|--interactive)|worktree["'"'"'[:space:],]+remove|branch[^;&|]*["'"'"'[:space:],]-[A-Za-z]*D|branch[^;&|]*["'"'"'[:space:],]-[A-Za-z]*(d[A-Za-z]*f|f[A-Za-z]*d)|branch[^;&|]*["'"'"'[:space:],](-d|--delete)[^;&|]*["'"'"'[:space:],](-f|--force)|branch[^;&|]*["'"'"'[:space:],](-f|--force)[^;&|]*["'"'"'[:space:],](-d|--delete)|(^|[^A-Za-z0-9_-])reset[^;&|]*["'"'"'[:space:],]--hard|stash["'"'"'[:space:],]+(-[^;&|]*["'"'"'[:space:],]+)?(drop|clear)|checkout[^;&|]*["'"'"'[:space:],]--(["'"'"'[:space:],]|$)'	mention	the pattern this test scans with
+smith-ctx-claude/scripts/tests/eval-profile-rules.test.sh	expect_rule "a single-slash absolute Bash rule keeps its form" "Bash(rm /Users/fixture/.claude/settings.json)" "$EVAL_FOLDER" "Bash(rm /Users/fixture/.claude-smith-eval/settings.json)"	mention	a permission rule string under test
+smith-ctx-claude/scripts/tests/eval-profile-rules.test.sh	"Bash(rm -rf:*)" '["Bash(rm -rf:*)"]'	mention	a deny rule string under test
+smith-ctx-claude/scripts/tests/move-to-temp.test.sh	must succeed like rm -f, got	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/move-to-temp.test.sh	ERASING='(^|[^a-zA-Z_])(rm|rmdir|unlink)([^a-zA-Z_]|$)|-delete([^a-zA-Z_-]|$)'	mention	a grep pattern that checks the helper erases nothing
+smith-ctx-claude/scripts/tests/run-affected.test.sh	quiet_git -C "$repo" checkout -q -- "smith-ctx-claude/scripts/beta-lib.sh"	rebuildable	discards, in the test's own scratch repository, the edit the test wrote from a literal a few lines above
+smith-ctx-claude/scripts/tests/set-aside.test.sh	an unmatched glob: set_aside must succeed like rm -f	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	as rm -f would have removed it	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	a file named with a slash: set_aside must fail, as rm -f does	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	as rm -f finds nothing there	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	a path under a file: set_aside must fail, as rm -f does	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	a folder that cannot be searched: set_aside must fail, as rm -f does	mention	an assertion message comparing the helper with rm -f
+smith-ctx-claude/scripts/tests/set-aside.test.sh	grep -nwE 'rm|unlink|rmdir' "$LIB"	mention	a grep pattern that checks the helper erases nothing
+smith-ctx-claude/scripts/tests/skill-trigger-eval.test.sh	grep -nE -e 'rmSync|unlinkSync|rmdirSync' "$EVAL"	mention	a grep pattern that checks skill-trigger-eval.mjs erases nothing
+smith-ctx-claude/scripts/tests/stop-transcript-tool-calls.live-eval.mjs	claude(["rm", backgroundId]);	rebuildable	claude rm without --discard-unpushed or --force-remove-worktree keeps the conversation for claude --resume
+smith-git/scripts/hooks/branch-name-guard.mjs	"--delete": "listing",	mention	the name of a git branch flag the guard classifies
+smith-maintainability-rework/scripts/tests/rework-census.test.sh	git_in rm -q calc.py	rebuildable	inside the test's own scratch repository, whose earlier commits still hold calc.py (owner, 2026-11-25: keep it)
+smith-review/scripts/tests/review-receipt.test.sh	repo_git reset -q --hard HEAD~1	rebuildable	drops, in the test's own mktemp scratch repository, a commit the test made from a literal two lines above; the object store still holds it
+smith-serena/scripts/link-worktree-memories.sh	! rmdir "$_lwm_link"	rebuildable	an empty folder; mkdir rebuilds it: rmdir refuses a folder that is not empty
+smith-serena/scripts/tests/link-worktree-memories.test.sh	git -C "$repo" worktree remove --force "$repo/.claude/worktrees/missing"	rebuildable	a worktree of the test's own mktemp scratch repository: its files come from that repository's commits, and its .serena link points at memories the next line asserts survive
+smith-serena/scripts/tests/link-worktree-memories.test.sh	pass "git worktree remove keeps the primary's memories"	mention	a pass message naming the command
+smith-skills/scripts/behaviour-eval-egress.sh	docker run --rm --network bridge "$probe_image" \	rebuildable	a container; the image and the run command rebuild it, and results sit in the host --out folder
+smith-skills/scripts/behaviour-eval-egress.sh	output=$(docker run --rm --network bridge -e	rebuildable	a container; the image and the run command rebuild it, and results sit in the host --out folder
+smith-skills/scripts/behaviour-eval.mjs	execute('docker', ['rm', '-f', name]	rebuildable	a container; the image and the run command rebuild it, and results sit in the host --out folder
+smith-skills/scripts/tests/behaviour-eval.test.sh	"rm -f "*)	mention	the fake docker's branch for docker rm -f; it erases nothing
+smith-skills/scripts/tests/behaviour-eval.test.sh	log_has '^docker rm' && fail "a run that left no new container	mention	an assertion on the fake docker's log
+smith-skills/scripts/tests/behaviour-eval.test.sh	grep -qxF "docker rm -f skilled-leftover" "$FAKE_LOG" || fail "a skilled- container created during the run must be removed with: docker rm -f skilled-leftover"	mention	an assertion on the fake docker's log
+smith-skills/scripts/tests/behaviour-eval.test.sh	log_has "docker rm -f unrelated-new-box"	mention	an assertion on the fake docker's log
+smith-skills/scripts/tests/behaviour-eval.test.sh	removal_line=$(first_line '^docker rm -f skilled-leftover')	mention	a lookup in the fake docker's log
+smith-skills/scripts/tests/behaviour-eval.test.sh	log_has '^docker rm' && fail "a container that existed before the run	mention	an assertion on the fake docker's log

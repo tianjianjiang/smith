@@ -1,0 +1,1 @@
+a.sh	rmdir "$d"	rebuildable	covers only the rmdir, not the call added after it

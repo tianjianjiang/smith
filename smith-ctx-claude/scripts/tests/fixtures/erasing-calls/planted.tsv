@@ -1,0 +1,46 @@
+caught	shell-rm	a.sh	rm -f "$flag"
+caught	printf-rm	a.sh	printf "#!/bin/sh\\nrm -f x\\n"
+caught	docker-rm	a.bash	docker run --rm image
+caught	find-delete	a.sh	find . -name "*.log" -delete
+caught	git-clean	a.sh	git clean -fdx
+caught	unlink-shell	a.sh	unlink "$link"
+caught	rmdir-shell	a.sh	rmdir "$folder"
+caught	rm-sync	a.mjs	rmSync(folder, { recursive: true });
+caught	unlink-sync	a.js	unlinkSync(path);
+caught	rmdir-sync	a.cjs	rmdirSync(path);
+caught	fs-rm	a.mjs	await fs.rm(path);
+caught	promises-unlink	a.mjs	await fs.promises.unlink(path);
+caught	os-remove	a.py	os.remove(path)
+caught	rmtree	a.py	shutil.rmtree(path)
+caught	shebang-without-extension	tool	#!/bin/sh\nrm -f x
+ignored	markdown	notes.md	rm -f x
+ignored	plain-text	notes	rm -f x
+ignored	trash-and-move	a.sh	/usr/bin/trash "$x"; mv "$y" "$(mktemp -d)"; renameSync(a, b)
+caught	absolute-rm	a.sh	/bin/rm -f x
+caught	absolute-rm-in-javascript	a.mjs	execFileSync("/bin/rm", ["-f", path]);
+caught	rimraf	a.mjs	await rimraf(folder);
+caught	git-c-clean	a.sh	git -C "$repo" clean -fdx
+caught	git-clean-in-javascript	a.mjs	execFileSync("git", ["-C", repo, "clean", "-fdx"]);
+caught	nul-byte	a.sh	echo\0\nrm -f x
+caught	quoted-name	a"b.sh	rm -f x
+ignored	words-near-rm	a.sh	perform x; firmware; my-rm x; make clean
+caught	worktree-remove	a.sh	git -C "$repo" worktree remove --force "$wt"
+caught	worktree-remove-in-javascript	a.mjs	execFileSync("git", ["worktree", "remove", folder]);
+caught	branch-force-delete	a.sh	git branch -D feature
+caught	reset-hard	a.sh	git reset --hard origin/main
+caught	stash-drop	a.sh	git stash drop
+caught	stash-clear	a.py	subprocess.run(["git", "stash", "clear"])
+caught	checkout-paths	a.sh	git checkout -- .
+ignored	safe-git	a.sh	git worktree list; git branch -d merged; git reset --soft HEAD~1; git stash list; git checkout -b topic
+caught	clean-long-force	a.sh	git -C "$r" clean --force -d
+caught	clean-split-flags	a.mjs	execFileSync("git", ["clean", "-d", "-f"]);
+caught	reset-quiet-hard	a.sh	git reset -q --hard HEAD~1
+caught	checkout-ref-paths	a.sh	git checkout HEAD -- file
+caught	branch-split-flags	a.sh	git branch --force -D topic
+caught	stash-quiet-drop	a.sh	git stash -q drop
+ignored	safe-git-near-words	a.sh	git clean -n; git clean; git branch -d merged; git branch -f topic main; git reset --soft HEAD; git checkout -b topic; echo reset done; make clean
+caught	branch-delete-then-force	a.sh	git branch -d -f topic
+caught	branch-force-then-delete	a.mjs	execFileSync("git", ["branch", "--force", "--delete", topic]);
+caught	clean-interactive	a.sh	git clean -i
+caught	branch-combined-df	a.sh	git branch -df topic
+caught	branch-combined-fd	a.sh	git branch -fd topic
