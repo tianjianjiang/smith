@@ -360,6 +360,7 @@ frontmatter / triggers). Keep in sync with `skill-triggers.json` semantics.
 <skill name="smith-sdlc" description="AI-native software development lifecycle artifact chain: intent.md, spec.md (Easy Approach to Requirements Syntax plus Given-When-Then), design.md (Architecture Decision Record log), plan.md, evals-on-config, maintain loop">`@smith-sdlc/SKILL.md`</skill>
 <skill name="smith-automation" description="Claude Code automation primitives: /loop, ScheduleWakeup, Monitor, /schedule + decision matrix">`@smith-automation/SKILL.md`</skill>
 <skill name="smith-subagents" description="Subagent spawning + return discipline: read-only default, findings-not-actions, verify returns, reconcile vs live state">`@smith-subagents/SKILL.md`</skill>
+<skill name="smith-undoable" description="Undoable operations: move or Trash a file instead of erasing it, and the limits of that rule">`@smith-undoable/SKILL.md`</skill>
 
 <!-- Communication -->
 <skill name="smith-slack" description="Slack drafting discipline: pre-send gate (draft-not-send, attribution footnote, evidence URLs, no formatting, confirm-before-send)">`@smith-slack/SKILL.md`</skill>
@@ -398,6 +399,7 @@ skill via the Skill tool:
 **Browser MCP**: chrome-devtools-mcp / @playwright/mcp invocation, browser MCP launch failure, OR browser login / interactive auth (login/sign-in near browser/site/portal wording) → `@smith-mcp-browser/SKILL.md`
 **Workflow**: Ralph Loop → `@smith-ralph/SKILL.md`,
   Dev-initiation phrases (add a feature/option/flag/command/skill/test/support, new feature, make a change, start the task/work/implementation) → `@smith-dev/SKILL.md` + `@smith-git/SKILL.md` + `@smith-worktree/SKILL.md` (router also emits the branch-first note: dedicated branch+worktree BEFORE the first edit)
+**Undoable operations**: "undoable", `rm` with `-r` or `-f`, deleting, erasing, overwriting or truncating a file or folder, moving or sending it to the Trash, `/usr/bin/trash` → `@smith-undoable/SKILL.md`
 **Plan**: "execute/load/run/implement the plan", "plan mode" → `@smith-mode-plan/SKILL.md` + `@smith-mode-plan-claude/SKILL.md` (one rule, both skills)
 **SDLC (software development lifecycle)**: `intent.md`/`spec.md`/`design.md`, AI-native or agentic software development lifecycle, the SDLC playbook, an ADR (Architecture Decision Record), Given-When-Then acceptance scenarios, or EARS (Easy Approach to Requirements Syntax) followed by one of `syntax`/`notation`/`form(s)`/`format`/`requirement(s)` — bare `EARS` deliberately does not trigger, because the router matches case-insensitively and would fire on the English word "ears" → `@smith-sdlc/SKILL.md`
 **Automation**: `/loop`, `/schedule`, `ScheduleWakeup`, `cron`, "poll for", "every N minutes/hours" → `@smith-automation/SKILL.md`
@@ -484,6 +486,8 @@ documentation and router-trigger design.
 **smith-dev**: Development workflow standards and quality gates. Use when starting any task that modifies repository files (implement, fix, add, refactor) or running quality checks.
 
 **smith-ship**: Ship pipeline from review to merge. Use when the user runs /smith-ship or asks to ship, land or merge a finished change.
+
+**smith-undoable**: Use when a command, script, hook or test would delete, overwrite or truncate a file.
 
 **smith-review**: Multi-round local review loop. Use when the user runs /smith-review or asks to review local changes before a push.
 

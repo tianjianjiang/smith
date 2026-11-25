@@ -4,7 +4,7 @@
 
 ## Overview
 
-Smith is a collection of **50 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
+Smith is a collection of **51 skills** for AI-assisted development, following the [agentskills.io specification](https://agentskills.io)[[29]](#ref-29) and [AGENTS.md standard](https://agents.md)[[28]](#ref-28).
 
 **Features**:
 - **Progressive disclosure**: Metadata at startup, full content on activation
@@ -118,7 +118,7 @@ smith/
 | **Reasoning** | `smith-analysis`, `smith-clarity`, `smith-design`, `smith-validation`, `smith-postmortem`, `smith-dialectic` |
 | **Languages** | `smith-python`, `smith-typescript`, `smith-nuxt` |
 | **Testing** | `smith-tests`, `smith-playwright`, `smith-mcp-browser`, `smith-maintainability`, `smith-maintainability-rework` |
-| **Workflow** | `smith-ralph`, `smith-mode-plan`, `smith-mode-plan-claude`, `smith-sdlc`, `smith-subagents`, `smith-automation` |
+| **Workflow** | `smith-ralph`, `smith-mode-plan`, `smith-mode-plan-claude`, `smith-sdlc`, `smith-subagents`, `smith-automation`, `smith-undoable` |
 | **Git/GitHub** | `smith-git`, `smith-gh-pr`, `smith-gh-cli`, `smith-style`, `smith-worktree` |
 | **Communication** | `smith-slack` |
 | **Other** | `smith-prompts`, `smith-xml`, `smith-placeholder`, `smith-tools`, `smith-dev`, `smith-ide`, `smith-research`, `smith-skills`, `smith-settings`, `smith-ctx-claude-mode-auto` |
