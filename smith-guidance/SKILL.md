@@ -64,6 +64,14 @@ description: Core agent steering. Always active. Use for every task, especially 
   overwriting files, data, records or branches, a bare `--force` push,
   any push to a shared or default branch, or changing a shared system's
   state
+- Make every operation undoable: move a file or send it to the system
+  Trash (on macOS, `/usr/bin/trash`), never erase it, in commands,
+  scripts, hooks and tests alike. Judge an operation by whether it can be
+  undone, not by its command's name: it is undoable when what it erases
+  can be rebuilt from a source that survives it, such as an empty folder
+  (`rmdir`), a container rebuilt from its image, or a branch whose commits
+  a squash merge already holds; a file whose content exists nowhere else
+  still goes to a move or the Trash
 - Commit, push, open a PR, merge or write externally only on the user's
   explicit instruction for that action; asking to ship covers its whole
   pipeline. Listing, reviewing or finishing work, a plan that names a
